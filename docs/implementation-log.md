@@ -13,9 +13,9 @@ test pending**. No Phase 2 or CMS feature code was started.
 ### Summary
 
 - Added a pnpm 12.15.0 + Turborepo 2.11.10 workspace with Node 24.22.1 pinned.
-- Added strict shared TypeScript, ESLint 10 + typescript-eslint + jsx-a11y,
-  Prettier, `.editorconfig`, `.gitignore`, `.env.example` and environment
-  validation.
+- Added strict shared TypeScript, ESLint 10 + typescript-eslint + jsx-a11y +
+  Prettier, import-boundary rules, `.editorconfig`, `.gitignore`, `.env.example`
+  and environment validation.
 - Added `packages/database` (Prisma 7.10.1 + `@prisma/adapter-pg`, UTC-pinned
   session, empty schema, connectivity/seed scripts).
 - Added `apps/api` (Fastify 5 app factory, logging/request IDs, error envelope,
@@ -114,6 +114,20 @@ A separate clone of commit `48bdbc5` was tested against a brand-new database
 
 The clone's dev servers were stopped afterward so the owner's manual test starts
 from free ports.
+
+### Final re-verification (2026-10-25)
+
+After the generated-file cleanup and the `test:e2e` precondition fix, the clean
+clone was fast-forwarded to `b69e043` and re-tested with no `apps/web/.next` and
+no `apps/web/next-env.d.ts` present:
+
+- `pnpm typecheck` regenerated Next route types and passed.
+- `pnpm test` passed.
+- `pnpm build` passed.
+- `pnpm test:e2e` generated the Prisma client first and passed 3/3.
+- `git status` remained clean; all dev-server ports were free afterward.
+
+This is the authoritative clean-clone result for the final Phase 1 code state.
 
 ### Independent review (2026-10-25)
 

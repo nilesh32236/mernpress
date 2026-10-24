@@ -43,6 +43,53 @@ export default tseslint.config(
         ...globals.browser,
       },
     },
+    rules: {
+      ...jsxA11y.flatConfigs.recommended.rules,
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@mernpress/database', '@prisma/*', 'fastify', '@fastify/*', 'pg', 'node:*'],
+              message:
+                'Browser apps must not import server-only code (database, Prisma, Fastify or Node built-ins).',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['apps/api/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['react', 'react-dom', 'next', 'vite'],
+              message: 'The API must not import browser/UI frameworks.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/database/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['fastify', '@fastify/*', 'react', 'react-dom', 'next'],
+              message: 'The database package must not depend on HTTP or UI frameworks.',
+            },
+          ],
+        },
+      ],
+    },
   },
   {
     files: ['**/*.test.{ts,tsx}', 'tests/**/*.ts', '**/vitest.config.ts', 'playwright.config.ts'],
