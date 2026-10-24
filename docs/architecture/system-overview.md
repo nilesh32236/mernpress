@@ -1,6 +1,7 @@
 # System overview
 
-Status: Phase 0 design baseline. No application code exists yet.
+Status: Phase 1 foundation implemented. The applications and database package
+exist; no CMS feature exists yet. This document remains the target architecture.
 
 ## 1. Goals and constraints
 
@@ -206,12 +207,17 @@ The Phase 0 candidate layout is intentionally not copied wholesale:
 
 ## 6. Local runtime
 
-| Process | Port (target) | Command (Phase 1) |
+| Process | Port (Phase 1) | Command |
 | --- | --- | --- |
-| API | 4000 | `pnpm --filter api dev` |
-| Admin | 5173 | `pnpm --filter admin dev` |
-| Web | 3000 | `pnpm --filter web dev` |
-| PostgreSQL | 5432 | native service (verified) or optional Docker Compose |
+| API | 4000 | `pnpm --filter @mernpress/api dev` |
+| Admin | 5173 | `pnpm --filter @mernpress/admin dev` |
+| Web | 3000 | `pnpm --filter @mernpress/web dev` |
+| PostgreSQL | 5432 (system) / 55432 (optional project cluster) | native service or `pnpm db:local:start` |
+
+Phase 1 implements: `apps/api`, `apps/admin`, `apps/web` and
+`packages/database`. `packages/contracts`, `cms-core`, `block-system`,
+`plugin-sdk`, `theme-sdk`, `themes/*` and `plugins/*` remain future packages; no
+empty placeholder package was created.
 
 - The admin dev server proxies `/api` to 4000 (Vite `server.proxy`).
 - The web app uses `CMS_API_URL` server-side and `NEXT_PUBLIC_SITE_URL` for

@@ -25,14 +25,16 @@ roadmap, MVP definition, testing strategy, threat model, implementation log.
 <a id="phase-1-foundation"></a>
 ## Phase 1 — Repository foundation
 
+**Status: implementation complete 2026-10-25; owner manual acceptance pending.**
+
 **Goal:** a clean clone installs, configures, migrates, runs and passes checks.
 
 Scope:
 
 - pnpm workspace + Turborepo + TypeScript strict + ESLint/Prettier.
 - Node 24 pin, pnpm pin, `.env.example`, env validation.
-- `packages/database` with an empty baseline Prisma migration; UTC sessions;
-  UUIDv7 verified.
+- `packages/database` with an intentionally empty Prisma schema, zero migrations,
+  a documented no-op `db:migrate`, UTC sessions and verified UUIDv7.
 - `apps/api` Fastify skeleton with `/api/health`, `/api/ready`, error envelope,
   logging, CORS/helmet/cookies, graceful shutdown.
 - `apps/admin` Vite skeleton (login placeholder, no content features).
@@ -46,7 +48,8 @@ Acceptance criteria:
 
 1. `pnpm install --frozen-lockfile` succeeds on Node 24.22.x.
 2. `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` pass.
-3. `pnpm db:migrate` creates the schema from empty; `pnpm db:seed` is idempotent.
+3. `pnpm db:migrate` succeeds on a fresh empty database and is an explicit no-op
+   (zero migrations); `pnpm db:seed` is idempotent and creates no CMS data.
 4. `pnpm dev` starts API/admin/web; `/api/health` returns 200; `/api/ready`
    returns 200 with the DB and 503 without it.
 5. A trivial Playwright test opens the admin and web placeholders.

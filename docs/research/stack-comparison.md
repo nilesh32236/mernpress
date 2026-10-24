@@ -11,7 +11,7 @@ facts from **judgement** calls.
 | --- | --- | --- | --- |
 | Node.js | **24.22.1** LTS (Krypton) | 24.22.1 released 2026-10-20; Node 25.9.0 is current, not LTS | `https://nodejs.org/dist/index.json` |
 | PostgreSQL | **18.6** | 18 is the current major; EOL 2030-11-14; local install 18.3 | `https://www.postgresql.org/versions.json`; `psql --version` |
-| pnpm | **11.28.8** | 12.15.0 is the latest major; 11.28.8 is the mature line | `npm view pnpm dist-tags` |
+| pnpm | **12.15.0** | current stable line; 12.0.0 released 2026-08-26, 12.15.0 on 2026-10-21; Node `>=18` | `npm view pnpm dist-tags`; `npm view pnpm@12.15.0 engines` |
 | Turborepo | **2.11.10** | latest | `npm view turbo version` |
 | TypeScript | **5.9.3** | 7.0.2 is latest; `typescript-eslint` 8.72 peers `<6.1.0` | `npm view typescript dist-tags`; `npm view typescript-eslint peerDependencies` |
 | Fastify | **5.12.7** | Fastify 6 is alpha (`6.0.0-alpha.5`) | `npm view fastify dist-tags` |
@@ -24,7 +24,7 @@ facts from **judgement** calls.
 | Tailwind CSS | **4.3.3** | latest | `npm view tailwindcss version` |
 | Vitest | **5.0.5** | latest; Node ^22.12 || ^24 || >=26 | `npm view vitest engines` |
 | Playwright | **1.64.1** | latest | `npm view @playwright/test version` |
-| ESLint | **10.13.0** | latest | `npm view eslint version` |
+| ESLint | **10.13.0** | latest; `@eslint/js` latest is 10.0.1 | `npm view eslint version`; `npm view @eslint/js dist-tags` |
 | typescript-eslint | **8.72.0** | peers ESLint 8/9/10, TypeScript >=4.8.4 <6.1.0 | `npm view typescript-eslint peerDependencies` |
 | Prettier | **3.9.10** | latest | `npm view prettier version` |
 | Argon2 | **0.45.1** | native module; verify build on target OS | `npm view argon2 version` |
@@ -43,9 +43,9 @@ updates are applied deliberately with a lockfile diff and tests.
 - Prisma 7.10.1 declares `^20.19 || ^22.12 || >=24.0`; Vite 8 declares
   `^20.19.0 || >=22.12.0`; Vitest 5 declares `^22.12.0 || ^24.0.0 || >=26.0.0`.
   Node 24 satisfies all three.
-- The local machine has Node 22.23.1. Phase 1 must install/pin 24.22.1 (nvm/fnm or
-  the equivalent) and verify the clean-clone path. Do not silently run production
-  checks on 22 and call it done.
+- The local machine now has Node 24.22.1 and pnpm 12.15.0 (installed in Phase 1);
+  Phase 0 originally ran on Node 22.23.1. Verify the clean-clone path on the
+  pinned versions, not on 22.
 
 **Risk:** native modules (`argon2`, `sharp`) must be rebuilt for Node 24 and the
 target OS. Phase 1/6 must test install and runtime on this machine.
@@ -332,16 +332,21 @@ the database requires it; otherwise Vitest parallelism is fine.
   manual as apps/packages grow. Turborepo is justified by the multi-app layout.
 - Alternative: Nx. More powerful, more configuration and concepts than a hobby
   project needs.
+- pnpm 12 was selected during Phase 1 preflight after re-evaluating the Phase 0
+  pnpm 11 choice: 12.15.0 is stable, supports Node 24, and the local pnpm 11
+  bootstrap-friction reason no longer applies. See ADR 0001.
 
-**Decision: ESLint 10.13 + typescript-eslint 8.72 + jsx-a11y + Prettier 3.9.10.**
-This gives type-aware linting and accessibility rules. Biome 2.6.3 is faster and
-simpler, but the type-aware ESLint ecosystem is stronger for a CMS. The cost is
-more configuration; Phase 1 owns it.
+**Decision: ESLint 10.13.0 + @eslint/js 10.0.1 + typescript-eslint 8.72 +
+jsx-a11y 6.10.2 + Prettier 3.9.10.** This gives type-aware linting and
+accessibility rules. jsx-a11y 6.10.2 still declares ESLint ≤9; the workspace
+uses an explicit peer override after verifying `jsx-a11y/alt-text` fires on
+ESLint 10.13.0. Biome 2.6.3 is faster and simpler, but the type-aware ESLint
+ecosystem is stronger for a CMS. The cost is more configuration; Phase 1 owns it.
 
 <a id="local-runtime"></a>
 ## 11. Local runtime and deployment
 
-- Local: native PostgreSQL 18 on `localhost:5432`, Node 24, pnpm 11. Docker is
+- Local: native PostgreSQL 18 on `localhost:5432`, Node 24, pnpm 12. Docker is
   **not installed** on this machine, so Docker Compose cannot be the only setup
   path. A `docker-compose.yml` will be provided for portability, but native
   Postgres is the verified path.
@@ -384,8 +389,8 @@ alternatives are documented as fallbacks rather than dismissed.
 | Frontend | Next.js 16.4.3 | React Router 7 SSR | Next caching/RSC burden exceeds the SEO/image benefits |
 | Validation | Zod 4.6.7 | Fastify JSON Schema only | Shared browser contracts no longer needed |
 | Tests | Vitest 5 + Playwright 1.64 | Jest/Cypress | Ecosystem/tooling constraint |
-| Workspace | pnpm 11 + Turborepo 2.11 | plain pnpm scripts | Task graph becomes trivial |
-| Lint | ESLint 10 + typescript-eslint 8.72 | Biome 2.6 | Type-aware linting no longer needed, or Biome closes the gap |
+| Workspace | pnpm 12 + Turborepo 2.11 | plain pnpm scripts | Task graph becomes trivial |
+| Lint | ESLint 10 + typescript-eslint 8.72 | Biome 2.6 | jsx-a11y declares ESLint 10 support, or type-aware linting is no longer needed |
 
 ## 14. Unresolved risks
 
@@ -406,8 +411,9 @@ alternatives are documented as fallbacks rather than dismissed.
    thin adapter is allowed; a hard dependency is not.
 7. **Native modules** (`argon2`, `sharp`) need install/rebuild tests on Node 24
    and the target OS.
-8. **Local Node 22.23.1** is below the target. Phase 1 must install/pin Node 24
-   and run the checks there.
+8. **Local Node 22.23.1** was below the target at Phase 0 time. Resolved in
+   Phase 1: Node 24.22.1 and pnpm 12.15.0 are installed and the foundation checks
+   ran on them.
 9. **No Docker** on this machine. The clean-clone path must work with native
    PostgreSQL; Compose is optional.
 10. **Package subpath imports** (`@wordpress/block-library/build-module/*`) are

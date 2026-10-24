@@ -8,7 +8,7 @@ associated code changes. Superseded decisions stay visible.
 
 | ID | Date | Decision | Status | Record |
 | --- | --- | --- | --- | --- |
-| D-001 | 2026-10-24 | Baseline stack: Node 24 LTS, Fastify 5, PostgreSQL 18, Prisma 7.10.1, React 19 + Vite 8, official Gutenberg packages, Next.js 16, TypeScript 5.9.3, pnpm 11 + Turborepo | accepted | [ADR 0001](docs/adr/0001-baseline-stack.md) |
+| D-001 | 2026-10-24 | Baseline stack: Node 24 LTS, Fastify 5, PostgreSQL 18, Prisma 7.10.1, React 19 + Vite 8, official Gutenberg packages, Next.js 16, TypeScript 5.9.3, pnpm 12.15.0 + Turborepo 2.11.10 (pnpm amended 2026-10-25) | accepted | [ADR 0001](docs/adr/0001-baseline-stack.md) |
 | D-002 | 2026-10-24 | PostgreSQL is the only database; no SQLite production/dev schema split | accepted | [content model](docs/architecture/content-model.md#database-choice) |
 | D-003 | 2026-10-24 | Canonical content is WordPress-compatible serialized block markup, versioned; not a proprietary JSON format in MVP | accepted | [Gutenberg](docs/architecture/gutenberg-and-rendering.md#content-contract) |
 | D-004 | 2026-10-24 | The API owns canonical rendering for MVP; themes consume rendered HTML and do not re-implement core block rendering | accepted | [Gutenberg](docs/architecture/gutenberg-and-rendering.md#rendering-contract) |
@@ -23,6 +23,8 @@ associated code changes. Superseded decisions stay visible.
 | D-013 | 2026-10-24 | Use the official `@wordpress/block-serialization-default-parser` 6.0.0 first; port `WP_Block_Parser` only if the real corpus reproduces a failure | accepted | [Gutenberg](docs/architecture/gutenberg-and-rendering.md#parser) |
 | D-014 | 2026-10-24 | The first implementation slice is the Phase 1 foundation, not a CMS feature; the first product feature is Phase 2 authentication | accepted | [roadmap](docs/roadmap/roadmap.md#phase-1-foundation) |
 | D-015 | 2026-10-24 | CodeGraph CLI 1.6.2 is installed for later use; telemetry disabled. opencode-mem and CodeGraphContext are not installed in Phase 0 | accepted | [OpenCode tooling](docs/research/opencode-tooling.md#installed-tooling) |
+| D-016 | 2026-10-25 | Use ESLint 10.13.0 with `@eslint/js` 10.0.1 and an explicit `peerDependencyRules` override for `eslint-plugin-jsx-a11y` 6.10.2 (declares ≤9). The a11y rule was verified firing on ESLint 10.13.0; remove the override when the plugin declares ESLint 10 support | accepted | [ADR 0001](docs/adr/0001-baseline-stack.md#eslint-version) |
+| D-017 | 2026-10-25 | Phase 1 intentionally has no Prisma models, no initial migration and no seed data. `db:migrate` applies zero migrations and verifies connectivity; `db:seed` is a documented, idempotent no-op. The first migration arrives with Phase 2 auth models | accepted | [Phase 1 log](docs/implementation-log.md#2026-10-25--phase-1-repository-foundation) |
 
 ## Proposed / unresolved
 

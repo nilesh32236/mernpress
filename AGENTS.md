@@ -6,9 +6,11 @@ ask rather than silently weakening a boundary.
 
 ## 1. Current state and the approval gate
 
-- The project is in **Phase 0: research and architecture baseline**.
-- **No product-feature code exists and none may be written until the owner
-  explicitly approves Phase 0.**
+- Phase 0 is approved. **Phase 1 (repository foundation) is implemented and
+  awaiting the owner's manual acceptance test.**
+- No CMS product feature exists. Do not start Phase 2 (authentication) or any
+  content, editor, media, theme or plugin work until the owner explicitly
+  approves Phase 1.
 - After approval, implement **one feature/slice at a time**. At the end of each
   slice: report changed files, exact commands, test results, manual test steps,
   limitations, and **stop**. Do not start the next slice without explicit
@@ -162,29 +164,37 @@ Minimum commands once Phase 1 exists (names may be refined there):
 ```bash
 pnpm install --frozen-lockfile
 pnpm lint
+pnpm format:check
 pnpm typecheck
 pnpm test
 pnpm build
 pnpm test:e2e
 ```
 
-## 10. Local development (target; not yet present)
+## 10. Local development (implemented in Phase 1)
 
 ```bash
-# Phase 1 and later
+# Optional no-sudo PostgreSQL; or use a system PostgreSQL 18 server
+pnpm db:local:init            # prints DATABASE_URL; loopback-only, port 55432
+pnpm db:local:start
+
 cp .env.example .env          # fill local values; never commit .env
-pnpm install
-pnpm db:migrate
-pnpm db:seed                  # optional, idempotent
+pnpm install --frozen-lockfile
+pnpm setup                    # generate client, apply migrations, idempotent seed
 pnpm dev                      # api + admin + web
 ```
 
-Expected local ports (to be confirmed in Phase 1): API `4000`, admin `5173`,
-web `3000`. PostgreSQL 18 on `5432`. Docker Compose is optional; native
-PostgreSQL must work.
+Expected local ports: API `4000`, admin `5173`, web `3000`. PostgreSQL 18 on
+`5432` (or the project-local cluster on `55432`). Docker Compose is optional;
+native PostgreSQL is the verified path. Phase 1 has no domain models and no
+initial migration; `db:migrate` is a documented no-op and `db:seed` creates no
+CMS data. See [local setup](docs/operations/local-setup.md).
 
 ## 11. Dependency and version policy
 
+- Node is pinned to `24.22.1` (`.nvmrc`, `engines`); pnpm is pinned to
+  `12.15.0` (`packageManager`). Do not float either in a way that changes the
+  verified path.
 - Pin exact versions in `package.json` for runtime/framework/editor packages;
   use the lockfile as the source of truth.
 - Do not use `latest` for Prisma: the `latest` tag currently points at an 8.0 RC.

@@ -1,7 +1,9 @@
 # Threat model
 
-Status: Phase 0 baseline. Review at every phase that changes authentication,
-authorization, uploads, rendering, plugins or deployment.
+Status: Phase 0 baseline, reviewed during Phase 1. The Phase 1 foundation is
+implemented (env validation, minimal health endpoints, no auth/session yet).
+Review at every phase that changes authentication, authorization, uploads,
+rendering, plugins or deployment.
 
 This document is a working model, not a certification. MERNPress is a hobby/
 self-hosted CMS in its first version. It must not claim production-grade security,

@@ -1,9 +1,12 @@
 # ADR 0001 — Baseline stack
 
-- Status: Accepted (Phase 0)
+- Status: Accepted (Phase 0); amended during Phase 1 preflight 2026-10-25
 - Date: 2026-10-24
 - Deciders: project owner + Phase 0 architecture review
 - Supersedes: none
+- Amendments: pnpm 11.28.8 → **12.15.0** after re-evaluation; ESLint 10.13.0
+  retained with an explicit jsx-a11y peer override (the plugin declares ≤9 but
+  its rules were verified on ESLint 10.13.0)
 - Related: [stack comparison](../research/stack-comparison.md),
   [content model](../architecture/content-model.md),
   [Gutenberg](../architecture/gutenberg-and-rendering.md)
@@ -33,7 +36,7 @@ The stack was not chosen by benchmark or popularity. Versions were checked on
 
 | Area | Decision |
 | --- | --- |
-| Runtime | **Node.js 24.22.1 LTS** (`>=24 <25`), pnpm **11.28.8**, Turborepo **2.11.10** |
+| Runtime | **Node.js 24.22.1 LTS** (`>=24.22.1 <25`), pnpm **12.15.0**, Turborepo **2.11.10** |
 | Language | **TypeScript 5.9.3**, strict mode |
 | API | **Fastify 5.12.7**, modular monolith, Zod 4.6.7 boundary validation |
 | Database | **PostgreSQL 18.6** (current major; local 18.3) |
@@ -42,7 +45,7 @@ The stack was not chosen by benchmark or popularity. Versions were checked on
 | Editor | official `@wordpress/*` set: `block-editor 19.0.0`, `blocks 17.0.0`, `block-library 12.0.0`, etc. |
 | Public web | **Next.js 16.4.3** App Router, React 19.3.1, Tailwind 4.3.3, Node self-hosting |
 | Tests | **Vitest 5.0.5**, **Playwright 1.64.1**, Testing Library 16.3.3, jsdom 30.1.3 |
-| Lint/format | **ESLint 10.13.0 + typescript-eslint 8.72.0 + jsx-a11y + Prettier 3.9.10** |
+| Lint/format | **ESLint 10.13.0 + @eslint/js 10.0.1 + typescript-eslint 8.72.0 + jsx-a11y 6.10.2 + Prettier 3.9.10** |
 | Content | WordPress-compatible serialized block markup, versioned; API renders canonical HTML |
 | Local DB | Native PostgreSQL 18 verified; Docker Compose optional (Docker is absent here) |
 
@@ -52,8 +55,8 @@ The stack was not chosen by benchmark or popularity. Versions were checked on
 
 Node 24 is the Active LTS line in October 2026. Prisma 7.10.1 (`^20.19 || ^22.12
 || >=24`), Vite 8 (`^20.19 || >=22.12`) and Vitest 5 (`^22.12 || ^24 || >=26`) all
-support it. Node 25 is Current, not a baseline. The local machine has Node 22.23.1;
-Phase 1 must install/pin 24 and run verification there.
+support it. Node 25 is Current, not a baseline. Phase 1 installed Node 24.22.1;
+the local machine previously had Node 22.23.1.
 
 ### Fastify 5, not NestJS or Express 5
 
@@ -121,11 +124,28 @@ ESLint or running unsupported. For a new project, a supported lint/typecheck
 toolchain is more valuable than the newest compiler. Revisit when typescript-eslint
 supports TS 7. This is an intentional, documented lag, not an oversight.
 
-### pnpm 11.28.8, not 12.15.0
+### pnpm 12.15.0 (amended 2026-10-25)
 
-pnpm 12 is the latest major, but 11.28.8 is the mature line and is close to the
-local pnpm 11.13.1, reducing bootstrap friction. No feature in 12 is required.
-The `packageManager` field pins the version; CI uses the same.
+Phase 0 selected pnpm 11.28.8 mainly to stay close to the local pnpm 11.13.1.
+Phase 1 re-evaluated that choice: 12.15.0 is the current stable line (12.0.0
+released 2026-08-26; 12.15.0 released 2026-10-21), declares Node `>=18`, and
+needs no feature from 11. The bootstrap-friction argument no longer applies
+because Phase 1 installs Node 24.22.1 and pnpm 12.15.0 explicitly. pnpm 12 also
+gives deterministic peer-cycle resolution and treats unknown workspace settings
+as errors, which improves reproducibility. The `packageManager` field pins the
+version; CI uses the same. Revisit only if pnpm 12 breaks a required tool.
+
+<a id="eslint-version"></a>
+### ESLint 10.13.0 with a documented jsx-a11y peer override (amended 2026-10-25)
+
+`typescript-eslint` 8.72.0 supports ESLint 10. `eslint-plugin-jsx-a11y` 6.10.2
+still declares `eslint: ^3 || ... || ^9` and has no ESLint 10 release. The
+project keeps the accessibility rules and uses an explicit
+`peerDependencyRules.allowedVersions` override after verifying that
+`jsx-a11y/alt-text` fires correctly on ESLint 10.13.0. This is a tested,
+documented compatibility override, not `--force`/`--legacy-peer-deps`. Remove
+it when the plugin declares ESLint 10 support. Do not downgrade to ESLint 9:
+9.39.5 is marked "no longer supported" by the registry.
 
 ## Alternatives considered
 

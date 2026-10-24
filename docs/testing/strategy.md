@@ -235,7 +235,7 @@ required. A passing test suite is not a penetration test.
 
 Recommended stages:
 
-1. Install with a frozen lockfile (Node 24, pnpm 11).
+1. Install with a frozen lockfile (Node 24, pnpm 12).
 2. Lint + format check.
 3. Typecheck.
 4. Unit tests.

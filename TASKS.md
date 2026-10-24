@@ -4,9 +4,9 @@ Status values: `done`, `in progress`, `blocked`, `planned`, `deferred`, `out of 
 A task is only `done` when its acceptance criteria and verification evidence are
 recorded in `docs/implementation-log.md`.
 
-## Phase 0 — Research and architecture baseline (current)
+## Phase 0 — Research and architecture baseline
 
-**Status: complete pending owner review and the verification listed below.**
+**Status: complete; approved for Phase 1 on 2026-10-25.**
 
 | ID | Task | Status | Acceptance criteria |
 | --- | --- | --- | --- |
@@ -28,23 +28,25 @@ that approval.
 
 ## Phase 1 — Repository foundation
 
+**Status: implementation complete; owner manual acceptance pending.**
+
 **Goal:** a clean clone can install, configure, migrate, run and pass checks.
 
 | ID | Task | Status | Depends on | Acceptance criteria |
 | --- | --- | --- | --- | --- |
-| P1-01 | Initialize pnpm workspace + Turborepo | planned | P0 approval | `pnpm-workspace.yaml`, `turbo.json`, root `package.json`; apps/packages empty boundaries documented; no speculative packages |
-| P1-02 | Pin runtime and package manager | planned | P1-01 | `.nvmrc`/`engines` Node 24.22.x; `packageManager` pnpm 11.28.x; corepack/CI check |
-| P1-03 | Add TypeScript strict config | planned | P1-01 | Shared `tsconfig` base; `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`; typecheck passes |
-| P1-04 | Add lint/format config | planned | P1-01 | ESLint 10 + typescript-eslint + jsx-a11y + Prettier; `pnpm lint` passes |
-| P1-05 | Add environment validation | planned | P1-01 | `.env.example`; Zod-validated env; missing/invalid values fail with actionable messages; no secrets committed |
-| P1-06 | Add PostgreSQL + Prisma foundation | planned | P1-05 | `packages/database`; `DATABASE_URL`; `prisma migrate` creates an empty baseline; UTC session; `uuid(7)` verified |
-| P1-07 | Add health/readiness endpoints | planned | P1-06 | `GET /api/health` (liveness) and `/api/ready` (DB check) with tests |
-| P1-08 | Add API skeleton | planned | P1-01, P1-05 | Fastify app factory, error handler, request logging, CORS/helmet/cookies, graceful shutdown; `/api/health` test |
-| P1-09 | Add admin and web skeletons | planned | P1-01 | Minimal Vite admin and Next web pages that boot; no CMS features; shared UI tokens only if justified |
-| P1-10 | Add test foundation | planned | P1-08 | Vitest config for Node + jsdom; one smoke test per app; Playwright config with a trivial browser check |
-| P1-11 | Add CI | planned | P1-01..P1-10 | GitHub Actions: install, lint, typecheck, test, build; Postgres service; no secrets |
-| P1-12 | Add setup/run scripts and docs | planned | P1-06..P1-11 | `pnpm setup`, `pnpm db:migrate`, `pnpm db:seed`, `pnpm dev`; clean-clone instructions work on this machine |
-| P1-13 | Record foundation evidence | planned | P1-12 | Exact commands/results, known issues, manual test steps in implementation log |
+| P1-01 | Initialize pnpm workspace + Turborepo | done | P0 approval | `pnpm-workspace.yaml`, `turbo.json`, root `package.json`; apps/packages empty boundaries documented; no speculative packages |
+| P1-02 | Pin runtime and package manager | done | P1-01 | `.nvmrc`/`engines` Node 24.22.1; `packageManager` pnpm 12.15.0; frozen-lockfile install |
+| P1-03 | Add TypeScript strict config | done | P1-01 | Shared `tsconfig` base; `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`; typecheck passes |
+| P1-04 | Add lint/format config | done | P1-01 | ESLint 10.13.0 + typescript-eslint + jsx-a11y (documented peer override) + Prettier; `pnpm lint` passes |
+| P1-05 | Add environment validation | done | P1-01 | `.env.example`; Zod-validated env; missing/invalid values fail with actionable messages; no secrets committed |
+| P1-06 | Add PostgreSQL + Prisma foundation | done | P1-05 | `packages/database`; `DATABASE_URL`; empty schema + zero migrations documented; UTC session; `uuidv7()`/`uuid(7)` verified |
+| P1-07 | Add health/readiness endpoints | done | P1-06 | `GET /api/health` (liveness) and `/api/ready` (DB check) with tests |
+| P1-08 | Add API skeleton | done | P1-01, P1-05 | Fastify app factory, error handler, request logging, CORS/helmet, graceful shutdown; `/api/health` test. Cookies/auth deferred to Phase 2 |
+| P1-09 | Add admin and web skeletons | done | P1-01 | Minimal Vite admin and Next web pages that boot; no CMS features; shared UI tokens only if justified |
+| P1-10 | Add test foundation | done | P1-08 | Vitest config for Node + jsdom; one smoke test per app; Playwright config with a trivial browser check |
+| P1-11 | Add CI | done | P1-01..P1-10 | GitHub Actions: install, lint, typecheck, test, build; Postgres service; no secrets. Configured; GitHub run unverified |
+| P1-12 | Add setup/run scripts and docs | in progress | P1-06..P1-11 | `pnpm setup`, `pnpm db:migrate`, `pnpm db:seed`, `pnpm dev`; clean-clone instructions work on this machine |
+| P1-13 | Record foundation evidence | done | P1-12 | Exact commands/results, known issues, manual test steps in implementation log |
 
 **Phase 1 exit gate:** owner can clone/copy the repo, follow the README, run
 `pnpm dev`, see health OK, and run the checks. No CMS content feature yet.

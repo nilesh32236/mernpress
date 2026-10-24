@@ -5,6 +5,133 @@ and results, decisions, limitations and the next step. Do not record secrets.
 
 ---
 
+## 2026-10-25 — Phase 1: repository foundation
+
+**Status:** Phase 1 implementation complete and verified locally; **owner manual
+test pending**. No Phase 2 or CMS feature code was started.
+
+### Summary
+
+- Added a pnpm 12.15.0 + Turborepo 2.11.10 workspace with Node 24.22.1 pinned.
+- Added strict shared TypeScript, ESLint 10 + typescript-eslint + jsx-a11y,
+  Prettier, `.editorconfig`, `.gitignore`, `.env.example` and environment
+  validation.
+- Added `packages/database` (Prisma 7.10.1 + `@prisma/adapter-pg`, UTC-pinned
+  session, empty schema, connectivity/seed scripts).
+- Added `apps/api` (Fastify 5 app factory, logging/request IDs, error envelope,
+  helmet, explicit CORS, graceful shutdown, `/api/health`, `/api/ready`).
+- Added `apps/admin` (React 19 + Vite 8 placeholder) and `apps/web` (Next.js 16
+  App Router + Tailwind 4 placeholder). Neither contains CMS features.
+- Added Vitest tests, Playwright smoke tests, a setup script, an optional
+  no-sudo local PostgreSQL helper, CI, and operator/testing documentation.
+- Did not copy reference code, did not touch the reference repositories, and did
+  not run `codegraph init`.
+
+### Preflight findings and decisions
+
+| Check | Result |
+| --- | --- |
+| Node 24.22.1 available | Yes, Krypton LTS; installed with `nvm install 24.22.1` |
+| pnpm line | 12.15.0 is current stable (12.0.0 2026-08-26, 12.15.0 2026-10-21); Node `>=18`; adopted for a new workspace. D-001/ADR 0001 updated |
+| ESLint line | ESLint 9.39.5 is marked "no longer supported"; ESLint 10.13.0 + `@eslint/js` 10.0.1 adopted. `eslint-plugin-jsx-a11y` 6.10.2 declares ESLint ≤9 but its `alt-text` rule was verified failing correctly on ESLint 10.13.0, so an explicit `peerDependencyRules` override is documented (D-016) |
+| Prisma 7 config | `prisma7.config.ts` + `prisma-client` generator + `@prisma/adapter-pg`; schema has no models; client generation and adapter verified in a throwaway project first |
+| Empty-schema migrations | `prisma migrate deploy` exits 0 with "No migration found"; it creates only `_prisma_migrations`. No empty migration or fake CMS rows were added (D-017) |
+| UTC | Adapter pool uses `options: '-c timezone=UTC'`; verified `SHOW TimeZone` = UTC |
+| UUIDv7 | PostgreSQL 18 `uuidv7()` verified; Prisma `@default(uuid(7))` also verified in the throwaway probe (not needed without models) |
+| Local PostgreSQL service | System server runs 18.3 but the current OS user has no role and no sudo; verification used a loopback-only project cluster on port 55432. CI uses PostgreSQL 18 as a service |
+| Peer graph | Install passes with the pinned graph; only the documented jsx-a11y/ESLint override is declared |
+
+### Commands and results
+
+All commands ran with Node `v24.22.1` and pnpm `12.15.0` unless stated.
+
+| Command | Status | Evidence / summary |
+| --- | --- | --- |
+| `pnpm install --frozen-lockfile` | PASS | 5 workspace projects; lockfile up to date; no peer/build errors |
+| `pnpm setup` | PASS | Generated Prisma client; migrate no-op; seed no-op |
+| `pnpm db:migrate` | PASS | "No migration found in prisma/migrations"; "No pending migrations to apply"; `_prisma_migrations` exists |
+| `pnpm db:seed` (twice) | PASS | Identical no-op message; exit 0 both times; no CMS rows |
+| `pnpm db:verify` | PASS | `timezone=UTC`; UUIDv7 printed |
+| `pnpm lint` | PASS | ESLint 10, 0 errors |
+| `pnpm format:check` | PASS | All code/config files formatted; Markdown intentionally excluded from Prettier |
+| `pnpm typecheck` | PASS | 5 turbo tasks: database build/typecheck, API, admin, web |
+| `pnpm test` | PASS | 12 tests: API 9 (health, readiness 200/503, error envelope, env), admin 2, web 1 |
+| `pnpm build` | PASS | API/database tsc; admin 221.26 kB JS (69.18 kB gzip), 2.74 kB CSS; Next 4 static routes |
+| `pnpm dev` | PASS | API 4000, admin 5173, web 3000 all started |
+| `curl /api/health` | PASS | 200, `{"status":"ok","service":"mernpress-api",...}` |
+| `curl /api/ready` with DB | PASS | 200, `{"status":"ready","checks":{"database":"ok"}}` |
+| DB stopped: `/api/ready` | PASS | 503, `{"status":"not_ready","checks":{"database":"unavailable"}}` |
+| DB stopped: `/api/health` | PASS | 200; API process remained alive |
+| DB restarted: `/api/ready` | PASS | 200 again without restarting the API |
+| `pnpm test:e2e` | PASS | 3 Playwright tests; both placeholders clean console/assets; API liveness 200 |
+| `pnpm audit --audit-level=high` | PASS | "No known vulnerabilities found" |
+| CI YAML parse | PASS | `.github/workflows/ci.yml` parsed with PyYAML |
+| GitHub Actions run | BLOCKED / UNVERIFIED | No remote/runner available from this machine; CI is configured, not executed |
+| `codegraph init` | SKIPPED | Indexing is the owner's decision; the MCP was verified in Phase 0 and no index was created |
+| `opencode-mem` update | SKIPPED | Not part of Phase 1; global OpenCode config was not modified |
+
+### Database semantics
+
+- The Prisma schema is intentionally empty; no migration directory exists.
+- `db:migrate` is a documented no-op that also verifies connectivity. On a new
+  database Prisma creates `_prisma_migrations` (bookkeeping only).
+- `db:seed` is a deterministic, idempotent no-op. It creates no administrator,
+  user, post, page, term, media or settings row.
+- The first migration and seed data are Phase 2 work.
+
+### Scope and security checks
+
+- No authentication/session, user, content CRUD, editor, media, taxonomy, theme
+  or plugin runtime code exists.
+- `.env` is ignored; only `.env.example` placeholders are tracked.
+- API CORS uses explicit origins with credentials and rejects wildcards.
+- Readiness responses expose no connection details.
+- Health/readiness headers include the standard helmet set; the API returns a
+  request-id response header.
+- No reference repository or global OpenCode configuration was modified.
+- `.local/`, generated Prisma code, build output and Playwright artifacts are
+  gitignored.
+
+### Limitations / unfinished checks
+
+- Owner manual acceptance has not run yet.
+- CI has not run on GitHub Actions.
+- The local verification database was PostgreSQL 18.3 (project-local cluster),
+  not 18.6; the SQL used is compatible with PostgreSQL 18.
+- `pnpm dev` scripts use POSIX `NODE_OPTIONS`; Windows native shells are not a
+  supported Phase 1 path.
+- The admin/web pages are placeholders; accessibility is limited to semantic
+  structure, skip link, focus styles and a clean browser smoke test. A full axe
+  pass belongs to Phase 4.
+- `docs/research/opencode-tooling.md` still records the Phase 0 decision to skip
+  `opencode-mem`; it was not rewritten because Phase 1 did not change OpenCode
+  tooling.
+
+### Next step
+
+Owner manually tests [the Phase 1 checklist](testing/phase-1-manual-test.md) and
+approves or rejects the foundation. If approved, implement only **Phase 2 —
+secure admin authentication**; do not start content, editor or theme work.
+
+---
+
+## 2026-10-25 — Phase 1 preflight
+
+Short preflight entry required before implementation.
+
+- Read `AGENTS.md`, `README.md`, `TASKS.md`, `DECISIONS.md`, ADR 0001, the system
+  overview, threat model, testing strategy, roadmap Phase 1 and the Phase 0 log.
+- `pwd` = `/home/nilesh/Documents/big-project/mernpress`; branch `master`; commit
+  `60cc1d1`; working tree clean before changes.
+- Installed Node 24.22.1 with nvm and pnpm 12.15.0 globally.
+- Checked current registry versions and peer ranges for Node, pnpm, Turbo,
+  TypeScript, ESLint, typescript-eslint, jsx-a11y, Fastify, Prisma, adapter-pg,
+  React, Vite, Next, Tailwind, Vitest and Playwright.
+- Recorded D-016 (ESLint 10 + tested jsx-a11y override) and D-017 (no Phase 1
+  migration, explicit no-op seed) before writing application code.
+- Confirmed `prisma migrate deploy` on an empty schema is a successful no-op and
+  that `@prisma/adapter-pg` can pin UTC and use PostgreSQL 18 `uuidv7()`.
+
 ## 2026-10-24 — Phase 0: research and architecture baseline
 
 **Status:** Phase 0: planning only; **product feature code not started.**

@@ -1,0 +1,18 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# pnpm blocks dependency build scripts by default. Allow only the packages that
+# need them for this workspace; everything else stays blocked.
+allowBuilds:
+  '@prisma/engines': true
+  '@tailwindcss/oxide': true
+  esbuild: true
+  prisma: true
+
+# eslint-plugin-jsx-a11y 6.10.2 still declares ESLint <=9, but its rules were
+# verified against ESLint 10.13.0 in Phase 1. Remove this when the plugin
+# publishes ESLint 10 peer support.
+peerDependencyRules:
+  allowedVersions:
+    eslint: '10'

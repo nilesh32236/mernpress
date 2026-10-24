@@ -1,0 +1,12 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Phase 1 intentionally has no models and no migration.
+// The first domain tables arrive with Phase 2 (users, sessions, audit events).
+// Do not add a model or an empty migration just to make `db:migrate` look busy.
