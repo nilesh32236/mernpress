@@ -28,7 +28,8 @@ that approval.
 
 ## Phase 1 — Repository foundation
 
-**Status: implementation complete; owner manual acceptance pending.**
+**Status: implementation complete; clean clone verified; owner manual acceptance
+pending.**
 
 **Goal:** a clean clone can install, configure, migrate, run and pass checks.
 
@@ -45,11 +46,15 @@ that approval.
 | P1-09 | Add admin and web skeletons | done | P1-01 | Minimal Vite admin and Next web pages that boot; no CMS features; shared UI tokens only if justified |
 | P1-10 | Add test foundation | done | P1-08 | Vitest config for Node + jsdom; one smoke test per app; Playwright config with a trivial browser check |
 | P1-11 | Add CI | done | P1-01..P1-10 | GitHub Actions: install, lint, typecheck, test, build; Postgres service; no secrets. Configured; GitHub run unverified |
-| P1-12 | Add setup/run scripts and docs | in progress | P1-06..P1-11 | `pnpm setup`, `pnpm db:migrate`, `pnpm db:seed`, `pnpm dev`; clean-clone instructions work on this machine |
+| P1-12 | Add setup/run scripts and docs | done | P1-06..P1-11 | `pnpm setup`, `pnpm db:migrate`, `pnpm db:seed`, `pnpm dev`; clean-clone instructions work on this machine |
 | P1-13 | Record foundation evidence | done | P1-12 | Exact commands/results, known issues, manual test steps in implementation log |
 
 **Phase 1 exit gate:** owner can clone/copy the repo, follow the README, run
 `pnpm dev`, see health OK, and run the checks. No CMS content feature yet.
+
+**Phase 1 verification:** clean clone of `48bdbc5` passed install, setup,
+lint, format check, typecheck, tests, build, dev servers and Playwright against a
+fresh PostgreSQL database. Owner manual acceptance remains.
 
 ## Phase 2 — Authentication and capabilities
 

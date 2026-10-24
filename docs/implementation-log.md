@@ -92,10 +92,36 @@ All commands ran with Node `v24.22.1` and pnpm `12.15.0` unless stated.
 - `.local/`, generated Prisma code, build output and Playwright artifacts are
   gitignored.
 
+### Clean-clone verification (2026-10-25)
+
+A separate clone of commit `48bdbc5` was tested against a brand-new database
+(`mernpress_clean_1792869640` on the project-local PostgreSQL 18.3 cluster).
+
+| Step | Status | Evidence |
+| --- | --- | --- |
+| `git clone` + `git log -1` | PASS | Clone at commit `48bdbc5` |
+| `pnpm install --frozen-lockfile` | PASS | Cold install completed (6m due to registry latency); no peer/build bypass |
+| `pnpm setup` | PASS | No migrations; seed no-op; UTC/UUIDv7 verified |
+| `pnpm lint` | PASS | 0 errors |
+| `pnpm format:check` | FAIL → PASS | First run flagged Next-regenerated `apps/web/next-env.d.ts`; excluded that generated file from Prettier in `f344791`, fast-forwarded the clone and re-ran: PASS |
+| `pnpm typecheck` | PASS | `next typegen` + 5 turbo tasks |
+| `pnpm test` | PASS | 12 tests (API 9, admin 2, web 1) |
+| `pnpm build` | PASS | Admin, API, database and Next production builds |
+| `pnpm dev` | PASS | API 4000, admin 5173, web 3000 |
+| Health/readiness | PASS | 200/200 on the fresh database |
+| Database inspection | PASS | Only `_prisma_migrations` exists |
+| `pnpm test:e2e` | PASS | 3 Playwright tests |
+
+The clone's dev servers were stopped afterward so the owner's manual test starts
+from free ports.
+
 ### Limitations / unfinished checks
 
 - Owner manual acceptance has not run yet.
 - CI has not run on GitHub Actions.
+- The clean clone surfaced and fixed one formatting-gate issue: Next regenerates
+  `apps/web/next-env.d.ts`, so it is excluded from Prettier. No code behavior
+  changed.
 - The local verification database was PostgreSQL 18.3 (project-local cluster),
   not 18.6; the SQL used is compatible with PostgreSQL 18.
 - `pnpm dev` scripts use POSIX `NODE_OPTIONS`; Windows native shells are not a
