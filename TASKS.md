@@ -52,9 +52,10 @@ pending.**
 **Phase 1 exit gate:** owner can clone/copy the repo, follow the README, run
 `pnpm dev`, see health OK, and run the checks. No CMS content feature yet.
 
-**Phase 1 verification:** clean clone of `48bdbc5` passed install, setup,
-lint, format check, typecheck, tests, build, dev servers and Playwright against a
-fresh PostgreSQL database. Owner manual acceptance remains.
+**Phase 1 verification:** a clean clone of the Phase 1 implementation passed
+install, setup, lint, format check, typecheck, tests, build, dev servers and
+Playwright against a fresh PostgreSQL database, including a final re-run with no
+generated Next artifacts present. Owner manual acceptance remains.
 
 ## Phase 2 — Authentication and capabilities
 
