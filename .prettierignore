@@ -6,6 +6,7 @@ playwright-report/
 test-results/
 pnpm-lock.yaml
 packages/database/src/generated/
+apps/web/next-env.d.ts
 
 # Phase 0/1 prose is hand-wrapped for review; Prettier manages code and config.
 *.md
