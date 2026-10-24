@@ -150,8 +150,9 @@ The readiness test also verifies the 503 path against an unreachable database.
 
 `.github/workflows/ci.yml` runs install, lint, format check, typecheck, tests,
 migrations, seed, build, Playwright and `pnpm audit --audit-level=high` against
-an ephemeral PostgreSQL 18 service. CI is configured but was not executed from
-this machine; see the implementation log for that limitation.
+an ephemeral PostgreSQL 18 service. CI passes on GitHub Actions (run
+`40127072446`); the first run exposed and fixed a Turborepo `DATABASE_URL`
+environment-filtering issue.
 
 ## Troubleshooting
 

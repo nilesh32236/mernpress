@@ -45,7 +45,7 @@ pending.**
 | P1-08 | Add API skeleton | done | P1-01, P1-05 | Fastify app factory, error handler, request logging, CORS/helmet, graceful shutdown; `/api/health` test. Cookies/auth deferred to Phase 2 |
 | P1-09 | Add admin and web skeletons | done | P1-01 | Minimal Vite admin and Next web pages that boot; no CMS features; shared UI tokens only if justified |
 | P1-10 | Add test foundation | done | P1-08 | Vitest config for Node + jsdom; one smoke test per app; Playwright config with a trivial browser check |
-| P1-11 | Add CI | done | P1-01..P1-10 | GitHub Actions: install, lint, typecheck, test, build; Postgres service; no secrets. Configured; GitHub run unverified |
+| P1-11 | Add CI | done | P1-01..P1-10 | GitHub Actions: install, lint, typecheck, test, build; Postgres service; no secrets. CI green on run 40127072446; initial env-filtering failure fixed |
 | P1-12 | Add setup/run scripts and docs | done | P1-06..P1-11 | `pnpm setup`, `pnpm db:migrate`, `pnpm db:seed`, `pnpm dev`; clean-clone instructions work on this machine |
 | P1-13 | Record foundation evidence | done | P1-12 | Exact commands/results, known issues, manual test steps in implementation log |
 

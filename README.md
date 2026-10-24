@@ -10,8 +10,8 @@ The name is a project name, not a database mandate. MERNPress uses **PostgreSQL*
 
 ## Current phase
 
-**Phase 1 — Repository foundation: implemented and verified locally, pending the
-owner's manual acceptance test.**
+**Phase 1 — Repository foundation: implemented and verified locally and in CI,
+pending the owner's manual acceptance test.**
 
 There is a bootable API, admin SPA and public Next.js placeholder, plus the
 database/tooling foundation. There is **no CMS feature yet**: no authentication,
@@ -179,8 +179,10 @@ render tests. Playwright opens both placeholders and fails on console errors or
 failed document/script/stylesheet requests.
 
 CI is configured in `.github/workflows/ci.yml` with an ephemeral PostgreSQL 18
-service. It was validated locally as YAML but **not executed on GitHub Actions
-from this machine**; that limitation is recorded in the implementation log.
+service and **passes on GitHub Actions** (run `40127072446`, 2026-10-25). The
+first run exposed a Turborepo environment-filtering bug: `DATABASE_URL` was not
+passed into package tasks. It is now declared in `turbo.json` `globalEnv`, and
+the re-run is green.
 
 ## Documentation
 

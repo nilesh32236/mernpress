@@ -7,8 +7,8 @@ and results, decisions, limitations and the next step. Do not record secrets.
 
 ## 2026-10-25 — Phase 1: repository foundation
 
-**Status:** Phase 1 implementation complete and verified locally; **owner manual
-test pending**. No Phase 2 or CMS feature code was started.
+**Status:** Phase 1 implementation complete, verified locally and green in CI;
+**owner manual test pending**. No Phase 2 or CMS feature code was started.
 
 ### Summary
 
@@ -66,7 +66,7 @@ All commands ran with Node `v24.22.1` and pnpm `12.15.0` unless stated.
 | `pnpm test:e2e` | PASS | 3 Playwright tests; both placeholders clean console/assets; API liveness 200 |
 | `pnpm audit --audit-level=high` | PASS | "No known vulnerabilities found" |
 | CI YAML parse | PASS | `.github/workflows/ci.yml` parsed with PyYAML |
-| GitHub Actions run | BLOCKED / UNVERIFIED | No remote/runner available from this machine; CI is configured, not executed |
+| GitHub Actions run | PASS | Run `40127072446`: all steps green. Initial run `40126832868` failed at typecheck because Turborepo filtered `DATABASE_URL`; fixed by declaring `globalEnv` in `turbo.json` |
 | `codegraph init` | SKIPPED | Indexing is the owner's decision; the MCP was verified in Phase 0 and no index was created |
 | `opencode-mem` update | SKIPPED | Not part of Phase 1; global OpenCode config was not modified |
 
@@ -151,10 +151,30 @@ issues, no CMS feature and no tracked secret found.** Findings and actions:
 The reviewer did not run the commands itself (read-only constraint), so the
 command evidence above remains the authoritative record.
 
+### GitHub remote and CI (2026-10-25)
+
+- Private repository: <https://github.com/nilesh32236/mernpress>; default branch
+  `master`; current pushed commit at the time of this entry: `ef6d6d0`.
+- The initial push needed a temporary repo-scoped write deploy key because the
+  GitHub CLI token lacked the `workflow` OAuth scope and the machine's existing
+  SSH key belongs to a different GitHub account. The deploy key was deleted
+  immediately after the push; the remote is HTTPS and the token now has the
+  `workflow` scope.
+- First CI run `40126832868` failed at typecheck: Turborepo filtered
+  `DATABASE_URL` out of package task environments. Fixed in `ef6d6d0` by
+  declaring `DATABASE_URL` (and the other runtime variables) in `turbo.json`
+  `globalEnv`. The fix was first reproduced locally with `.env` removed.
+- Re-run `40127072446` passed every step: install, lint, format check, typecheck,
+  tests, fresh-database migrate, seed no-op, build, Playwright and dependency
+  audit.
+
 ### Limitations / unfinished checks
 
 - Owner manual acceptance has not run yet.
-- CI has not run on GitHub Actions.
+- CI passes, but GitHub currently warns that `actions/checkout@v4`,
+  `actions/setup-node@v4`, `pnpm/action-setup@v4` and
+  `actions/upload-artifact@v4` target Node 20 while runners force Node 24. Track
+  action updates; the warnings are not failures.
 - The clean clone surfaced and fixed one formatting-gate issue: Next regenerates
   `apps/web/next-env.d.ts`, so it is excluded from Prettier. No code behavior
   changed.
