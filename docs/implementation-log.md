@@ -115,6 +115,28 @@ A separate clone of commit `48bdbc5` was tested against a brand-new database
 The clone's dev servers were stopped afterward so the owner's manual test starts
 from free ports.
 
+### Independent review (2026-10-25)
+
+A read-only review used a different configured free model
+(`opencode/glm-5.3-flash-free`) against commit `7b4ad5a`. It did not edit files
+and did not re-run build/test/dev; it inspected code, config and the recorded
+evidence.
+
+**Verdict: PASS WITH ISSUES — all 10 acceptance gates satisfied, no blocking
+issues, no CMS feature and no tracked secret found.** Findings and actions:
+
+| Finding | Action |
+| --- | --- |
+| `test:e2e` did not generate the Prisma client first, so an isolated fresh-clone E2E run could fail | Fixed: `test:e2e` now runs `pnpm db:generate` first; re-ran Playwright: 3/3 pass |
+| Next regenerates `apps/web/next-env.d.ts`, causing format churn | Accepted: the file stays tracked (Next convention) and is excluded from Prettier |
+| `pnpm audit --audit-level=high` can fail CI on a newly published advisory | Intentional: keep the blocking gate; review the advisory rather than weakening it |
+| Readiness logs only a generic message, losing the failure cause | Intentional anti-leak default; revisit structured debug-level diagnostics in a later phase |
+| Stale ADR line said Node 24 was not installed | Fixed: ADR 0001 now records the Phase 1 installation/verification |
+| Reviewer shell exposed Node 22/pnpm 11 | Environment mismatch, not a repo defect; Node/pnpm pins, setup checks, CI and `.nvmrc` defend against it |
+
+The reviewer did not run the commands itself (read-only constraint), so the
+command evidence above remains the authoritative record.
+
 ### Limitations / unfinished checks
 
 - Owner manual acceptance has not run yet.

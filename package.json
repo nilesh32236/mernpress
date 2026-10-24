@@ -16,7 +16,7 @@
     "format:check": "prettier --check .",
     "typecheck": "pnpm db:generate && turbo run typecheck",
     "test": "pnpm db:generate && turbo run test",
-    "test:e2e": "playwright test",
+    "test:e2e": "pnpm db:generate && playwright test",
     "db:generate": "pnpm --filter @mernpress/database generate",
     "db:migrate": "pnpm --filter @mernpress/database migrate",
     "db:seed": "pnpm --filter @mernpress/database seed",

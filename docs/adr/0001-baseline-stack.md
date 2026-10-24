@@ -194,9 +194,11 @@ Negative / costs:
 4. Prisma 8 upgrade path; 7.10.1 is pinned.
 5. Next 16 cache semantics; explicit policy and preview no-store.
 6. Theme portability; no Next-only APIs in theme packages.
-7. Node 24 not installed locally yet; Phase 1 must verify.
+7. Node 24/pnpm 12 installation and the clean-clone path were verified in Phase
+   1; re-verify on any new machine or base-image change.
 8. Native module builds on the target OS.
-9. No Docker; native Postgres path must be documented/tested.
+9. No Docker; the native PostgreSQL path is documented and was tested locally;
+   Compose remains optional.
 10. WordPress-compatible block markup is a deliberate lock-in to the Gutenberg
     contract; a future format migration needs an ADR.
 
