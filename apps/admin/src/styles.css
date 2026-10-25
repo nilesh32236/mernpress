@@ -9,6 +9,7 @@
   --highlight: #b45309;
   --border: #c9c1b2;
   --focus: #b45309;
+  --danger: #a61b1b;
   font-family:
     'Inter',
     ui-sans-serif,
@@ -31,6 +32,7 @@
     --highlight: #f5b642;
     --border: #33424f;
     --focus: #f5b642;
+    --danger: #ff9c9c;
   }
 }
 
@@ -56,6 +58,8 @@ a:hover {
 }
 
 a:focus-visible,
+button:focus-visible,
+input:focus-visible,
 .card:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 4px;
@@ -142,6 +146,59 @@ h1 {
   font-size: 1.05rem;
 }
 
+.auth-form {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 26rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.field label {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.field input {
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+.primary-button {
+  justify-self: start;
+  min-height: 2.75rem;
+  padding: 0.65rem 1.1rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: var(--accent);
+  color: var(--accent-ink);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.primary-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.form-error {
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--danger);
+  border-radius: 0.5rem;
+  color: var(--danger);
+  font-weight: 600;
+}
+
 .status-list {
   display: grid;
   gap: 1rem;
@@ -171,7 +228,7 @@ h1 {
 }
 
 .note {
-  margin: 0;
+  margin: 1.5rem 0 0;
   padding-top: 1rem;
   border-top: 1px solid var(--border);
   color: var(--ink-muted);

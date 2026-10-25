@@ -10,13 +10,13 @@ The name is a project name, not a database mandate. MERNPress uses **PostgreSQL*
 
 ## Current phase
 
-**Phase 1 — Repository foundation: implemented and verified locally and in CI,
-pending the owner's manual acceptance test.**
-
-There is a bootable API, admin SPA and public Next.js placeholder, plus the
-database/tooling foundation. There is **no CMS feature yet**: no authentication,
-users, posts/pages, editor, media, taxonomy, themes or plugin runtime. Phase 2 is
-secure admin authentication and starts only after Phase 1 approval.
+**Phase 2 — the first authentication slice is implemented; owner manual
+acceptance pending.** Phase 1 foundation and CI are complete. This slice adds a
+single administrator, Argon2id credentials, database-backed sessions,
+login/logout/current-session, CSRF/Origin protection, login rate limiting and a
+minimum accessible login UI. There is still **no content/CMS feature**: no
+posts/pages, editor, media, taxonomy, themes or plugin runtime. Roles,
+capabilities, user administration, password reset/email and MFA remain deferred.
 
 ## Quick start
 
@@ -30,9 +30,11 @@ npm install -g pnpm@12.15.0
 
 pnpm install --frozen-lockfile
 cp .env.example .env
-# set DATABASE_URL in .env (see docs/operations/local-setup.md)
+# set DATABASE_URL, TEST_DATABASE_URL and AUTH_HASH_PEPPER in .env
+# (see docs/operations/local-setup.md)
 
 pnpm setup
+pnpm auth:bootstrap   # create the first administrator (interactive)
 pnpm dev
 ```
 
@@ -42,13 +44,14 @@ Open:
 | --- | --- | --- |
 | API | http://127.0.0.1:4000/api/health | Liveness |
 | API | http://127.0.0.1:4000/api/ready | Readiness (PostgreSQL check) |
-| Admin | http://127.0.0.1:5173 | React/Vite placeholder |
+| API | http://127.0.0.1:4000/api/auth/session | Current session (401 when anonymous) |
+| Admin | http://127.0.0.1:5173 | React/Vite login/session shell |
 | Public web | http://localhost:3000 | Next.js App Router placeholder |
 
 No-sudo local database (uses the installed PostgreSQL binaries, no Docker):
 
 ```bash
-pnpm db:local:init     # prints the DATABASE_URL to put in .env
+pnpm db:local:init     # creates dev + test DBs and prints both URLs
 pnpm db:local:start
 pnpm db:local:stop
 pnpm db:local:status
@@ -66,16 +69,18 @@ troubleshooting: [local setup](docs/operations/local-setup.md).
 | `pnpm lint` | ESLint 10 with TypeScript and jsx-a11y rules |
 | `pnpm format` / `pnpm format:check` | Prettier write/check for code and config |
 | `pnpm typecheck` | Strict TypeScript across all packages/apps |
-| `pnpm test` | Vitest unit/integration tests (needs PostgreSQL) |
-| `pnpm test:e2e` | Playwright smoke test for admin, web and API liveness |
+| `pnpm test` | Vitest unit/integration tests (needs dev + test PostgreSQL) |
+| `pnpm test:e2e` | Playwright login/logout and placeholder smoke tests (test DB) |
+| `pnpm auth:bootstrap` | Creates the first administrator; refuses if one exists |
 | `pnpm db:generate` | Generates the Prisma client |
-| `pnpm db:migrate` | Applies migrations (currently zero) and verifies connectivity |
-| `pnpm db:seed` | Idempotent Phase 1 no-op; creates no CMS data |
+| `pnpm db:migrate` | Applies the auth migration and verifies connectivity |
+| `pnpm db:seed` | Idempotent no-op; creates no administrator or CMS data |
+| `pnpm db:migrate:test` / `pnpm db:reset:test` | Migrates/resets the dedicated test database |
 | `pnpm db:verify` | Checks PostgreSQL connectivity, UTC session and `uuidv7()` |
 | `pnpm setup` | Validates Node/pnpm, generates client, migrates, seeds |
 | `pnpm db:local:*` | Optional loopback-only PostgreSQL cluster in `.local/` |
 
-## What Phase 1 actually implements
+## What is implemented
 
 - pnpm 12 workspace + Turborepo 2.11, exact version pins and a frozen lockfile.
 - Node 24.22.1 pin (`.nvmrc`, `engines`) and pnpm 12.15.0 pin
@@ -93,28 +98,35 @@ troubleshooting: [local setup](docs/operations/local-setup.md).
   PostgreSQL 18 `uuidv7()`.
 - React 19 + Vite 8 admin placeholder and Next.js 16 + Tailwind 4 public
   placeholder, both accessible and bootable.
-- Vitest tests, Playwright smoke tests and a GitHub Actions pipeline with a
-  PostgreSQL service.
+- Argon2id administrator credentials, first-admin CLI, database-backed sessions,
+  login/logout/current-session, CSRF/Origin checks, DB-backed login rate limiting,
+  request-ID validation, audit events and the minimum login/logout UI.
+- Vitest unit/integration/security tests, Playwright auth + placeholder smoke tests
+  and a GitHub Actions pipeline with a PostgreSQL service.
 
-## What Phase 1 deliberately does not implement
+## What is deliberately not implemented
 
-No authentication, sessions, CSRF, users, roles, posts/pages, content API,
-Gutenberg editor, media, taxonomy, themes, plugins, dashboards or fake buttons.
-The placeholders link only to real endpoints and are marked as foundation pages.
+No editor/author roles or capability matrix, user administration, profile editing,
+password reset/email, MFA/SSO, posts/pages, content API, Gutenberg editor, media,
+taxonomy, themes, plugins, dashboards or fake buttons. The public web app remains
+a Phase 1 placeholder; the admin has only login/logout/session UI.
 
-## Database behavior in Phase 1
+## Database behavior
 
-The Prisma schema is intentionally **empty** (datasource and generator only).
-There is no initial migration.
+Phase 2 adds one additive migration: `users`, `sessions`, `audit_events` and
+`login_attempts`, plus the administrator/status enums.
 
-- `pnpm db:migrate` runs `prisma migrate deploy`. It reports no migration files
-  and no pending migrations, then verifies connectivity. On a fresh database,
-  Prisma creates only its own `_prisma_migrations` ledger table.
+- `pnpm db:migrate` runs `prisma migrate deploy` and verifies connectivity. On a
+  fresh database it applies the auth migration and creates only those auth
+  tables plus Prisma's `_prisma_migrations` ledger.
 - `pnpm db:seed` connects, verifies the UTC session and prints an explicit
-  no-op message. It creates no users, content, terms, media or settings. It is
-  deterministic and idempotent.
-- The first migration and first seed data belong to Phase 2 auth. No empty
-  migration or fake CMS rows were added just to make the commands look busy.
+  no-op message. It creates no administrator, content, terms, media or settings.
+- Create the first administrator with `pnpm auth:bootstrap`. It is CLI-only,
+  advisory-locked, refuses if any administrator exists, and never accepts a
+  password in argv or logs it.
+- `pnpm test` uses `TEST_DATABASE_URL` (a dedicated database whose name contains
+  `test` or `e2e`) and truncates only auth tables between tests. Never point it
+  at development data.
 - PostgreSQL 18 is required because `db:verify` uses the built-in `uuidv7()`.
   The Prisma client also pins `-c timezone=UTC` per connection.
 
@@ -130,8 +142,9 @@ There is no initial migration.
 | Database | PostgreSQL | **18.6** baseline; local 18.3 verified |
 | ORM / migrations | Prisma | **7.10.1** pinned; do not use `latest` (8.0 RC) |
 | Validation | Zod | **4.6.7** |
+| Passwords | `@node-rs/argon2` | **2.2.2**, Argon2id 64 MiB / 3 passes / 1 lane |
 | Admin | React + Vite | React **19.3.1**, Vite **8.3.5** |
-| Editor | official `@wordpress/*` packages | Phase 5; not installed in Phase 1 |
+| Editor | official `@wordpress/*` packages | Phase 5; not installed yet |
 | Public frontend | Next.js App Router | **16.4.3**, React 19.3.1, Tailwind **4.3.3** |
 | Unit/integration tests | Vitest | **5.0.5** |
 | Browser tests | Playwright | **1.64.1** |
@@ -145,18 +158,19 @@ documented a tested `eslint-plugin-jsx-a11y` peer override for ESLint 10.
 ## Project layout
 
 ```text
-apps/api        Fastify API, env validation, health/readiness, DB client
-apps/admin      React + Vite admin placeholder
+apps/api        Fastify API, auth routes, env validation, health/readiness, DB client
+apps/admin      React + Vite login/logout/session shell
 apps/web        Next.js App Router public placeholder
-packages/database  Prisma schema/config/client, DB/seed/verify scripts
+packages/cms-core  Framework-agnostic auth domain (passwords, tokens, sessions, rate limit)
+packages/database  Prisma schema/config/client, migrations, DB/seed/test scripts
 scripts         setup and optional local PostgreSQL helper
 tests/e2e       Playwright smoke tests
 docs            research, architecture, ADR, operations, testing, security
 ```
 
-Only `packages/database` exists in Phase 1. `contracts`, `cms-core`,
-`block-system`, `plugin-sdk` and `theme-sdk` are created when their first real
-consumer exists, per the system overview.
+`packages/cms-core` and `packages/database` now exist. `contracts`,
+`block-system`, `plugin-sdk` and `theme-sdk` remain future packages until their
+first real consumer exists, per the system overview.
 
 ## Testing and CI
 
@@ -172,17 +186,18 @@ pnpm build
 pnpm test:e2e
 ```
 
-`pnpm test` expects a reachable PostgreSQL. It covers API liveness, readiness
-200 with the database, readiness 503 without it while liveness stays 200, the
-404 error envelope and environment validation. Admin and web have minimal
-render tests. Playwright opens both placeholders and fails on console errors or
-failed document/script/stylesheet requests.
+`pnpm test` expects the dedicated test PostgreSQL database. It covers API liveness,
+readiness 200/503, environment validation, bootstrap, Argon2id, generic login
+failures, token-hash storage, cookie flags, session expiry/revocation, disabled
+users, CSRF/Origin, rate limiting/recovery, invalid usernames, oversized bodies,
+request IDs, log redaction, admin UI states and web placeholder rendering.
+Playwright signs in, signs out, keyboard-submits, checks browser storage and
+opens both placeholders without unexpected console/asset errors.
 
 CI is configured in `.github/workflows/ci.yml` with an ephemeral PostgreSQL 18
-service and **passes on GitHub Actions** (run `40127072446`, 2026-10-25). The
-first run exposed a Turborepo environment-filtering bug: `DATABASE_URL` was not
-passed into package tasks. It is now declared in `turbo.json` `globalEnv`, and
-the re-run is green.
+service. Phase 1 CI passed (run `40127072446`). The Phase 2 auth-slice run is
+recorded in the implementation log after the commit is pushed. The earlier
+Turborepo `DATABASE_URL` filtering bug is fixed via `globalEnv`.
 
 ## Documentation
 
@@ -195,6 +210,7 @@ Start here, then follow the links.
 | [DECISIONS.md](DECISIONS.md) | Decision index and links to ADRs |
 | [docs/operations/local-setup.md](docs/operations/local-setup.md) | Prerequisites, PostgreSQL, env, commands and troubleshooting |
 | [docs/testing/phase-1-manual-test.md](docs/testing/phase-1-manual-test.md) | Owner's step-by-step Phase 1 acceptance checklist |
+| [docs/testing/phase-2-manual-test.md](docs/testing/phase-2-manual-test.md) | Owner's step-by-step auth-slice acceptance checklist |
 | [docs/implementation-log.md](docs/implementation-log.md) | Dated record of what was actually done and verified |
 | [docs/research/reference-codebase-audit.md](docs/research/reference-codebase-audit.md) | What was inspected in WordPress and the reference archives |
 | [docs/research/feature-matrix.md](docs/research/feature-matrix.md) | Feature comparison and MVP/next/later/out classification |
@@ -202,10 +218,12 @@ Start here, then follow the links.
 | [docs/research/stack-comparison.md](docs/research/stack-comparison.md) | Versions, compatibility evidence, alternatives and trade-offs |
 | [docs/research/opencode-tooling.md](docs/research/opencode-tooling.md) | OpenCode tooling history from Phase 0 |
 | [docs/architecture/system-overview.md](docs/architecture/system-overview.md) | Components, boundaries, request/content flow and local runtime |
+| [docs/architecture/authentication.md](docs/architecture/authentication.md) | Phase 2 auth scope, schema, flows, CSRF, sessions, rate limiting and config |
 | [docs/architecture/content-model.md](docs/architecture/content-model.md) | Entities, lifecycle, slugs, media, taxonomy, revisions and migrations |
 | [docs/architecture/gutenberg-and-rendering.md](docs/architecture/gutenberg-and-rendering.md) | Content format, block registry, editor and renderer |
 | [docs/architecture/plugins-and-themes.md](docs/architecture/plugins-and-themes.md) | Extension contracts and safety boundaries |
 | [docs/adr/0001-baseline-stack.md](docs/adr/0001-baseline-stack.md) | Why this stack, what was rejected and what remains uncertain |
+| [docs/adr/0002-authentication-foundation.md](docs/adr/0002-authentication-foundation.md) | Auth slice boundaries, Argon2id, sessions, CSRF, rate limiting and bootstrap |
 | [docs/roadmap/roadmap.md](docs/roadmap/roadmap.md) | Phase-by-phase implementation order, gates and acceptance criteria |
 | [docs/roadmap/mvp-definition.md](docs/roadmap/mvp-definition.md) | MVP scope, non-goals and definition of done |
 | [docs/testing/strategy.md](docs/testing/strategy.md) | Unit, integration, E2E, migration, serialization, security and a11y testing |
@@ -224,8 +242,8 @@ Details are in the
 
 ## Next step
 
-Owner manually tests the Phase 1 checklist. If approved, implement only
-**Phase 2 — secure admin authentication**: first-admin bootstrap, Argon2id,
-opaque hashed sessions, cookie flags, CSRF, login rate limiting, roles and
-object-level capabilities, and the login/logout/profile UI. No other refactor
+Owner manually tests the Phase 2 auth checklist. If approved, complete the
+remaining Phase 2 work as the next single slice: roles/capabilities and user
+administration (including last-administrator protection), then profile/password
+management. No Phase 3 content work starts before that. No other refactor
 comes first.

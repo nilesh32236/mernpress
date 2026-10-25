@@ -1,15 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { buildApp } from '../src/app.js';
-import type { Env } from '../src/config/env.js';
+import { makeTestEnv } from './helpers/env.js';
 
-const testEnv: Env = {
-  NODE_ENV: 'test',
-  HOST: '127.0.0.1',
-  PORT: 4000,
-  LOG_LEVEL: 'silent',
+const testEnv = makeTestEnv({
   DATABASE_URL: 'postgresql://invalid:invalid@127.0.0.1:59999/not_used',
-  CORS_ORIGINS: ['http://localhost:5173'],
-};
+});
 
 describe('GET /api/health', () => {
   it('returns liveness without requiring PostgreSQL', async () => {

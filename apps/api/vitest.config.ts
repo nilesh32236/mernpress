@@ -7,6 +7,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   resolve: {
     alias: {
+      '@mernpress/cms-core': path.resolve(here, '../../packages/cms-core/src/index.ts'),
       '@mernpress/database': path.resolve(here, '../../packages/database/src/index.ts'),
     },
   },
@@ -15,5 +16,10 @@ export default defineConfig({
     include: ['test/**/*.test.ts'],
     testTimeout: 15_000,
     hookTimeout: 15_000,
+    fileParallelism: false,
+    maxWorkers: 1,
+    sequence: {
+      concurrent: false,
+    },
   },
 });

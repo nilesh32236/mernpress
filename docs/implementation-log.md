@@ -5,6 +5,144 @@ and results, decisions, limitations and the next step. Do not record secrets.
 
 ---
 
+## 2026-10-25 — Phase 2: secure authentication first slice
+
+**Status:** implementation complete and verified locally; **owner manual
+acceptance pending**. No Phase 3 or content/CMS feature was started.
+
+### Summary
+
+- Added one additive auth migration: `users`, `sessions`, `audit_events`,
+  `login_attempts`, plus `UserRole`/`UserStatus` enums.
+- Added `packages/cms-core` as the framework-agnostic auth domain: Argon2id
+  password hashing, opaque token/CSRF helpers, database-backed sessions,
+  advisory-locked first-admin bootstrap, HMAC-peppered rate-limit/audit keys.
+- Added `POST /api/auth/login`, `POST /api/auth/logout`,
+  `GET /api/auth/session`, `GET /api/auth/csrf`; exact Origin + CSRF checks;
+  request-ID UUID allowlist; 16 KiB body limit; `Cache-Control: no-store`.
+- Added `pnpm auth:bootstrap` CLI with a no-echo TTY prompt (or a non-production
+  `MERNPRESS_ADMIN_PASSWORD` for automation), refusing if an administrator exists.
+- Replaced the admin placeholder with a login/logout/session shell: accessible
+  labels, alert region, loading states, keyboard operation, no tokens in browser
+  storage.
+- Added a dedicated test database workflow (`TEST_DATABASE_URL`), 37 API tests,
+  5 admin tests, 1 web test and 3 auth + 3 foundation Playwright tests.
+- Recorded ADR 0002 and decisions D-018/D-019/D-020 before/with the slice.
+
+### Scope boundary
+
+Implemented: secure first-administrator bootstrap, Argon2id, database-backed
+sessions, login/logout/current-session, CSRF/Origin, DB-backed login rate
+limiting, request-ID validation, audit events, minimum login UI.
+
+Deferred: editor/author roles and capability matrix, user administration,
+profile/password change, password reset/email, MFA/SSO, audit UI, and all
+content, editor, media, taxonomy, theme and plugin features.
+
+### Schema and migration
+
+Migration: `packages/database/prisma/migrations/20261024201137_phase2_auth/migration.sql`.
+
+| Table | Purpose |
+| --- | --- |
+| `users` | UUIDv7 id, unique normalized username, Argon2id hash, administrator role, active/disabled |
+| `sessions` | unique SHA-256 token hash, SHA-256 CSRF hash, created/last-used/expires/revoked timestamps |
+| `audit_events` | event type, optional actor/target user, HMAC IP hash, reason-only JSON metadata |
+| `login_attempts` | HMAC key hash + timestamp, composite index |
+
+No content, taxonomy, media, revision, role/capability or plugin tables exist.
+The seed remains an explicit no-op.
+
+### Commands and results
+
+All commands ran with Node `24.22.1`, pnpm `12.15.0`, local PostgreSQL `18.3`
+(project cluster) unless stated.
+
+| Command | Status | Evidence |
+| --- | --- | --- |
+| `pnpm install --frozen-lockfile` | PASS | 6 workspace projects; lockfile up to date |
+| `pnpm lint` | PASS | ESLint 10, 0 errors; import boundaries enforced |
+| `pnpm format:check` | PASS | Code/config formatted |
+| `pnpm typecheck` | PASS | 7 Turbo tasks: database, cms-core, API, admin, web |
+| `pnpm test` | PASS | **43 tests**: API 37, admin 5, web 1 |
+| `pnpm build` | PASS | API/cms-core/database tsc; admin Vite; Next static routes |
+| `pnpm test:e2e` | PASS | **6 Playwright tests**: login/logout, invalid creds, keyboard sign-in, admin/web placeholders, API liveness |
+| `pnpm audit --audit-level=high` | PASS | No known vulnerabilities |
+| `pnpm db:migrate` on a fresh DB | PASS | Applied one auth migration; tables created; `db:verify` UTC/UUIDv7 |
+| `pnpm db:seed` twice on fresh DB | PASS | Identical no-op; users/sessions/audit/attempts rows all 0 |
+| `pnpm auth:bootstrap` on empty DB | PASS | Created one administrator; Argon2id PHC `m=65536,t=3,p=1` |
+| Bootstrap re-run | PASS (expected refusal) | Refused with `An administrator already exists`; no second user |
+| Login → session → logout smoke | PASS | Session cookie HttpOnly/SameSite/Lax Path=/api; CSRF cookie readable; DB token hash 64 chars; logout 204 then session 401; audit events recorded |
+| GitHub Actions | PENDING | Must be run for the final pushed commit; local equivalent is green. No CI green claim is made yet |
+
+### Security verification
+
+- Bootstrap: CLI-only, advisory lock, existing-admin refusal, unique normalized
+  username, 12–128 char password policy, no password in argv/logs, production
+  refuses env-password automation.
+- Password: Argon2id 64 MiB / 3 passes / 1 lane / 32-byte output; unknown users
+  verify a dummy hash; generic `INVALID_CREDENTIALS` for unknown/wrong/disabled.
+- Sessions: 256-bit opaque token, only SHA-256 stored; new session per login;
+  8 h absolute / 30 min idle; logout, expiry and disabled-user revocation;
+  HttpOnly session cookie Path=/api, Secure in production.
+- CSRF/Origin: exact Origin on every mutating request; pre-auth double-submit
+  login CSRF; session-bound CSRF hash for logout; no state-changing GET.
+- Rate limit: DB-backed HMAC IP + username keys, 5/15 min default, 429 +
+  Retry-After, success clears, invalid usernames limited, recovery tested with a
+  fake clock.
+- Request IDs: canonical UUID only; arbitrary/oversized values replaced.
+- Audit: six event types, HMAC IP/identifier hashes, no passwords/tokens/cookies.
+- Errors/logs: production generic 4xx/5xx messages; cookie/password/CSRF
+  redaction tested.
+- No secrets tracked; `.env`/test credentials are not in git.
+
+### Independent review
+
+A read-only adversarial review used a different configured free model
+(`opencode/glm-5.3-flash-free`). First verdict: **PASS WITH ISSUES**, no blockers.
+Medium findings fixed and re-checked:
+
+1. Invalid usernames bypassed the rate limiter → limiter now runs before the
+   username-policy branch; test added.
+2. Production could fail open with dev CORS/NODE_ENV defaults → `NODE_ENV` is
+   required and production requires explicit HTTPS non-loopback CORS + a real
+   `AUTH_HASH_PEPPER`; tests added.
+3. Audit/rate-limit hashes were unpeppered → HMAC-SHA256 with
+   `AUTH_HASH_PEPPER`.
+4. CLI arrow-key escape bytes could corrupt passwords → CSI state machine.
+
+Also fixed/verified: key-scoped rate-limit cleanup, session cookie Path=/api,
+Turbo env propagation, generic production error messages, no plaintext username
+in bootstrap audit metadata. Re-check verdict: **PASS**, 37/37 API tests, no
+regressions.
+
+### Limitations / unfinished checks
+
+- Owner manual acceptance has not run.
+- GitHub Actions for this exact commit has not run yet; local CI-equivalent
+  commands pass.
+- No MFA/2FA, password reset/email, SSO or account recovery; losing the only
+  admin password needs a separately approved recovery procedure.
+- Rate-limit count/insert can overshoot by a small amount under extreme
+  concurrency; accepted at MVP login volume and documented.
+- E2E is Chromium-only; cross-browser and axe checks remain later work.
+- SameSite=Lax assumes same-site admin/API deployment; cross-site deployment
+  needs `SameSite=None; Secure` and a new review.
+- `TRUST_PROXY` must be set correctly behind a reverse proxy or IP rate limiting
+  sees the proxy address.
+- The admin UI is intentionally only login/logout/session; no dashboard/content.
+- No content/CMS feature or Phase 3 work exists.
+
+### Next step
+
+Owner manually tests `docs/testing/phase-2-manual-test.md` and approves or
+rejects this slice. If approved, the next single slice is the remaining Phase 2
+work: roles/capabilities and user administration (last-admin protection), then
+profile/password management. Do not start Phase 3 content, Gutenberg, media,
+taxonomy, themes or plugins.
+
+---
+
 ## 2026-10-25 — Phase 1: repository foundation
 
 **Status:** Phase 1 implementation complete, verified locally and green in CI;

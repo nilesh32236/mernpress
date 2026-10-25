@@ -6,11 +6,11 @@ ask rather than silently weakening a boundary.
 
 ## 1. Current state and the approval gate
 
-- Phase 0 is approved. **Phase 1 (repository foundation) is implemented and
-  awaiting the owner's manual acceptance test.**
-- No CMS product feature exists. Do not start Phase 2 (authentication) or any
-  content, editor, media, theme or plugin work until the owner explicitly
-  approves Phase 1.
+- Phase 0 and Phase 1 are approved. **The Phase 2 first authentication slice is
+  implemented and awaiting the owner's manual acceptance test.**
+- No CMS content feature exists. Do not start roles/capabilities, user
+  administration, profile/password reset, or any content, editor, media, theme or
+  plugin work until the owner explicitly approves this auth slice.
 - After approval, implement **one feature/slice at a time**. At the end of each
   slice: report changed files, exact commands, test results, manual test steps,
   limitations, and **stop**. Do not start the next slice without explicit
@@ -110,8 +110,12 @@ Rules:
 
 - Deny by default. Every admin/API mutating route checks authentication **and**
   object-level capability on the server. UI hiding is not authorization.
-- Passwords use Argon2id (preferred) or bcrypt with an explicitly reviewed cost.
-  Never store or log plaintext passwords or session tokens.
+- Passwords use Argon2id with the parameters in ADR 0002. Never store or log
+  plaintext passwords, session tokens or CSRF tokens. Administrator bootstrap is
+  CLI-only and refuses if an administrator exists. Session tokens are stored only
+  as hashes; cookies are HttpOnly/SameSite/Secure as configured; all
+  state-changing requests require exact Origin + CSRF; login rate limiting is
+  database-backed.
 - Session cookies are `HttpOnly`, `Secure` in production, `SameSite=Lax` (or
   stricter), with a narrow path and expiry. State-changing requests require CSRF
   protection in addition to SameSite.
@@ -171,24 +175,27 @@ pnpm build
 pnpm test:e2e
 ```
 
-## 10. Local development (implemented in Phase 1)
+## 10. Local development (Phase 1 foundation + Phase 2 auth slice)
 
 ```bash
 # Optional no-sudo PostgreSQL; or use a system PostgreSQL 18 server
-pnpm db:local:init            # prints DATABASE_URL; loopback-only, port 55432
+pnpm db:local:init            # creates dev + test DBs; loopback-only, port 55432
 pnpm db:local:start
 
 cp .env.example .env          # fill local values; never commit .env
 pnpm install --frozen-lockfile
 pnpm setup                    # generate client, apply migrations, idempotent seed
+pnpm auth:bootstrap           # create the first administrator (TTY password prompt)
 pnpm dev                      # api + admin + web
 ```
 
 Expected local ports: API `4000`, admin `5173`, web `3000`. PostgreSQL 18 on
 `5432` (or the project-local cluster on `55432`). Docker Compose is optional;
-native PostgreSQL is the verified path. Phase 1 has no domain models and no
-initial migration; `db:migrate` is a documented no-op and `db:seed` creates no
-CMS data. See [local setup](docs/operations/local-setup.md).
+native PostgreSQL is the verified path. Phase 2 has four auth tables and one
+additive migration; `db:seed` is still an explicit no-op. Tests use
+`TEST_DATABASE_URL` and truncate only auth tables. `pnpm test:e2e` needs ports
+4000/5173/3000 free and the test database migrated. See
+[local setup](docs/operations/local-setup.md).
 
 ## 11. Dependency and version policy
 

@@ -1,7 +1,9 @@
 # System overview
 
-Status: Phase 1 foundation implemented. The applications and database package
-exist; no CMS feature exists yet. This document remains the target architecture.
+Status: Phase 1 foundation and the Phase 2 authentication first slice are
+implemented. `apps/api`, `apps/admin`, `apps/web`, `packages/database` and
+`packages/cms-core` exist; no CMS content feature exists yet. This document
+remains the target architecture.
 
 ## 1. Goals and constraints
 
@@ -59,7 +61,7 @@ flowchart LR
 | `apps/web` | Public routes, theme selection, layout/chrome, SEO metadata, caching/revalidation | Import Prisma/API internals; re-implement core block rendering in MVP |
 | `packages/contracts` | Isomorphic DTOs, Zod schemas, error codes, route types | Import Node, React, database or editor code |
 | `packages/database` | Prisma schema/client, migrations, repositories | Contain HTTP or UI concerns |
-| `packages/cms-core` | Content lifecycle, auth/capabilities, slug/taxonomy/media services, hook bus | Depend on Fastify/React |
+| `packages/cms-core` | Auth services now; later content lifecycle, capabilities, slug/taxonomy/media services and hook bus | Depend on Fastify/React |
 | `packages/block-system` | Block contracts/registry, parser, sanitizer, server renderers, editor helpers (separate entrypoints) | Put React into the server entrypoint or Node code into the browser entrypoint |
 | `packages/plugin-sdk` | Public plugin interfaces, manifest types, test helpers | Expose internal tables/services as stable API |
 | `packages/theme-sdk` | Theme manifest, template/part contracts, tokens, preview/cache helpers | Bind themes to Next-only APIs |
@@ -214,10 +216,10 @@ The Phase 0 candidate layout is intentionally not copied wholesale:
 | Web | 3000 | `pnpm --filter @mernpress/web dev` |
 | PostgreSQL | 5432 (system) / 55432 (optional project cluster) | native service or `pnpm db:local:start` |
 
-Phase 1 implements: `apps/api`, `apps/admin`, `apps/web` and
-`packages/database`. `packages/contracts`, `cms-core`, `block-system`,
-`plugin-sdk`, `theme-sdk`, `themes/*` and `plugins/*` remain future packages; no
-empty placeholder package was created.
+Phase 1 implemented `apps/api`, `apps/admin`, `apps/web` and
+`packages/database`. Phase 2 added `packages/cms-core` for the auth domain.
+`packages/contracts`, `block-system`, `plugin-sdk`, `theme-sdk`, `themes/*` and
+`plugins/*` remain future packages; no empty placeholder package was created.
 
 - The admin dev server proxies `/api` to 4000 (Vite `server.proxy`).
 - The web app uses `CMS_API_URL` server-side and `NEXT_PUBLIC_SITE_URL` for

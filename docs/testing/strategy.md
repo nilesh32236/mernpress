@@ -284,7 +284,7 @@ The owner then tests independently before approving the next slice.
 | Phase | Required evidence |
 | --- | --- |
 | 1 | lint/typecheck/unit/build, health/ready, clean-clone |
-| 2 | auth/authz/CSRF/rate-limit tests, cookie flags |
+| 2 | Auth slice: bootstrap/generic failures/session hashes/expiry/cookie flags/CSRF/Origin/rate-limit/request-ID/log-redaction tests + browser login/keyboard; roles/object authz deferred to P2-04 |
 | 3 | content lifecycle, slug/conflict, API auth matrix |
 | 4 | admin E2E create/publish, keyboard/axe |
 | 5 | block round-trip/golden/XSS, editor E2E, bundle budget |

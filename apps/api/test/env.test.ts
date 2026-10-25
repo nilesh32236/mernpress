@@ -35,4 +35,53 @@ describe('loadEnv', () => {
   it('rejects an invalid port', () => {
     expect(() => loadEnv({ ...validEnv, PORT: '70000' })).toThrow(/PORT/);
   });
+
+  it('requires NODE_ENV explicitly', () => {
+    const { NODE_ENV: _nodeEnv, ...withoutNodeEnv } = validEnv;
+    expect(() => loadEnv(withoutNodeEnv)).toThrow(/NODE_ENV/);
+  });
+
+  it('requires explicit production CORS and HTTPS non-loopback origins', () => {
+    const { CORS_ORIGINS: _corsOrigins, ...withoutCors } = validEnv;
+    expect(() => loadEnv({ ...withoutCors, NODE_ENV: 'production' })).toThrow(/CORS_ORIGINS/);
+
+    expect(() =>
+      loadEnv({
+        ...validEnv,
+        NODE_ENV: 'production',
+        CORS_ORIGINS: 'http://localhost:5173',
+        AUTH_HASH_PEPPER: 'a'.repeat(40),
+      }),
+    ).toThrow(/HTTPS|loopback/);
+
+    expect(() =>
+      loadEnv({
+        ...validEnv,
+        NODE_ENV: 'production',
+        CORS_ORIGINS: 'https://admin.example.com',
+        AUTH_HASH_PEPPER: 'change-me-change-me-change-me-change-me',
+      }),
+    ).toThrow(/AUTH_HASH_PEPPER/);
+  });
+
+  it('accepts a complete production configuration', () => {
+    const env = loadEnv({
+      ...validEnv,
+      NODE_ENV: 'production',
+      CORS_ORIGINS: 'https://admin.example.com',
+      AUTH_HASH_PEPPER: 'a-real-production-pepper-with-enough-length',
+    });
+
+    expect(env.CORS_ORIGINS).toEqual(['https://admin.example.com']);
+    expect(env.AUTH_HASH_PEPPER).toBe('a-real-production-pepper-with-enough-length');
+  });
+
+  it('rejects CORS origins with paths and idle timeouts longer than absolute TTL', () => {
+    expect(() => loadEnv({ ...validEnv, CORS_ORIGINS: 'https://admin.example.com/evil' })).toThrow(
+      /origin/,
+    );
+    expect(() =>
+      loadEnv({ ...validEnv, SESSION_TTL_MINUTES: '10', SESSION_IDLE_MINUTES: '20' }),
+    ).toThrow(/SESSION_IDLE_MINUTES/);
+  });
 });

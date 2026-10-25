@@ -1,7 +1,7 @@
 # Local setup
 
-Status: Phase 1 implementation. This page is the supported local path; Docker is
-optional and not required.
+Status: Phase 1 foundation + Phase 2 authentication first slice. This page is the
+supported local path; Docker is optional and not required.
 
 ## 1. Prerequisites
 
@@ -35,12 +35,14 @@ production credential.
 ```bash
 sudo -u postgres psql -c "CREATE ROLE mernpress LOGIN PASSWORD 'replace-me';"
 sudo -u postgres createdb -O mernpress mernpress_dev
+sudo -u postgres createdb -O mernpress mernpress_test
 ```
 
 Then set:
 
 ```dotenv
 DATABASE_URL=postgresql://mernpress:replace-me@127.0.0.1:5432/mernpress_dev
+TEST_DATABASE_URL=postgresql://mernpress:replace-me@127.0.0.1:5432/mernpress_test
 ```
 
 ### Option B — project-local cluster (no sudo, no Docker)
@@ -53,10 +55,11 @@ pnpm db:local:init
 pnpm db:local:status
 ```
 
-The command prints the URL to use:
+The command creates both databases and prints the URLs to use:
 
 ```dotenv
 DATABASE_URL=postgresql://mernpress@127.0.0.1:55432/mernpress_dev
+TEST_DATABASE_URL=postgresql://mernpress@127.0.0.1:55432/mernpress_test
 ```
 
 Stop it with `pnpm db:local:stop`; start it again with `pnpm db:local:start`.
@@ -67,14 +70,17 @@ development convenience, not a production database.
 
 ```bash
 cp .env.example .env
-# edit .env and replace DATABASE_URL with the value from step 2
+# edit .env: DATABASE_URL and TEST_DATABASE_URL from step 2,
+# and AUTH_HASH_PEPPER (a long random local value; never commit it)
 ```
 
 `.env` is ignored by git. Only placeholders belong in `.env.example`. The API
 validates the environment at startup and fails with an actionable message when a
 required value is missing or malformed. `CORS_ORIGINS` must be an explicit
 comma-separated list; wildcards are rejected because credentialed CORS is
-enabled.
+enabled. `NODE_ENV` is required. Production also requires explicit non-loopback
+HTTPS origins and a real `AUTH_HASH_PEPPER`; a partial production environment
+fails closed.
 
 ## 4. Install and initialize
 
@@ -85,26 +91,35 @@ pnpm setup
 
 `pnpm setup` checks Node/pnpm, refuses the placeholder `change-me` password,
 generates the Prisma client, applies migrations, and runs the idempotent seed.
+Create the first administrator separately:
 
-### What the database commands actually do in Phase 1
+```bash
+pnpm auth:bootstrap
+```
 
-Phase 1 deliberately has **no domain models**. The Prisma schema contains only
-the PostgreSQL datasource and the `prisma-client` generator.
+The bootstrap is a no-echo TTY prompt. For automation outside production only,
+`MERNPRESS_ADMIN_PASSWORD` may be set. Re-running bootstrap is refused once an
+administrator exists.
+
+### What the database commands actually do
+
+Phase 2 has four auth tables and one additive migration: `users`, `sessions`,
+`audit_events` and `login_attempts`.
 
 - `pnpm db:generate` generates the typed Prisma client into
   `packages/database/src/generated/prisma` (gitignored).
-- `pnpm db:migrate` runs `prisma migrate deploy`. There are zero migration files,
-  so it applies nothing and exits successfully. On a brand-new database Prisma
-  creates only its own `_prisma_migrations` ledger table. No CMS tables exist.
-- `pnpm db:seed` connects, verifies the UTC session, prints an explicit message,
-  and exits 0. It creates no users, posts, pages, terms, media or settings.
-  Re-running it is safe and produces the same result.
+- `pnpm db:migrate` runs `prisma migrate deploy`, applies the auth migration on a
+  fresh database, and verifies connectivity. No content/CMS tables exist.
+- `pnpm db:seed` connects, verifies the UTC session, prints an explicit no-op
+  message, and exits 0. It creates no administrator or CMS data. Re-running is
+  safe and produces the same result.
 - `pnpm db:verify` checks the connection, the UTC session timezone and
   PostgreSQL 18's `uuidv7()`.
-
-The first real migration and the first seed data arrive in Phase 2 with the
-authentication models. Do not add an empty migration or fake CMS rows to make
-these commands look busier.
+- `pnpm auth:bootstrap` creates exactly one administrator. It is not a seed and
+  not a public endpoint.
+- `pnpm db:migrate:test` / `pnpm db:reset:test` migrate or truncate only the
+  dedicated test database. `reset:test` refuses a database name without
+  `test`/`e2e`.
 
 ## 5. Run
 
@@ -115,7 +130,8 @@ pnpm dev
 | Application | URL | Notes |
 | --- | --- | --- |
 | API | http://127.0.0.1:4000 | `/api/health`, `/api/ready` |
-| Admin | http://127.0.0.1:5173 | Vite dev server; proxies `/api` to 4000 |
+| Admin | http://127.0.0.1:5173 | Vite login/logout shell; proxies `/api` to 4000 |
+| API auth | http://127.0.0.1:4000/api/auth/* | CSRF, login, logout and current session |
 | Public web | http://127.0.0.1:3000 | Next.js App Router |
 
 Each app can also be started alone:
@@ -143,16 +159,21 @@ The Playwright suite needs a browser once:
 pnpm exec playwright install chromium
 ```
 
-`pnpm test` includes a database readiness test, so PostgreSQL must be running.
-The readiness test also verifies the 503 path against an unreachable database.
+`pnpm test` uses the dedicated `TEST_DATABASE_URL` and truncates only auth tables;
+never point it at development data. It covers bootstrap, Argon2id, generic login
+failures, sessions, cookies, CSRF/Origin, rate limits, oversized bodies, request
+IDs and log redaction. `pnpm test:e2e` also uses the test database, resets it,
+and starts fresh servers on ports 4000/5173/3000; stop `pnpm dev` first because
+the E2E web servers do not reuse existing processes.
 
 ## 7. CI
 
 `.github/workflows/ci.yml` runs install, lint, format check, typecheck, tests,
 migrations, seed, build, Playwright and `pnpm audit --audit-level=high` against
-an ephemeral PostgreSQL 18 service. CI passes on GitHub Actions (run
-`40127072446`); the first run exposed and fixed a Turborepo `DATABASE_URL`
-environment-filtering issue.
+an ephemeral PostgreSQL 18 service. Phase 1 CI passed (run `40127072446`); the
+Phase 2 auth-slice run is recorded in the implementation log once the commit is
+pushed. The earlier Turborepo `DATABASE_URL` filtering issue is fixed via
+`globalEnv`.
 
 ## Troubleshooting
 
@@ -169,6 +190,27 @@ package and add a narrow `allowBuilds` entry only when justified.
 There is no `.env`, or `DATABASE_URL` is empty. Copy `.env.example` to `.env`
 and set a working PostgreSQL URL.
 
+### `TEST_DATABASE_URL is required` / test database missing
+
+Create `mernpress_test` (the project-local helper creates it) and set
+`TEST_DATABASE_URL`. Then run `pnpm db:migrate:test`. API/E2E tests refuse to run
+without a database whose name contains `test` or `e2e`.
+
+### `AUTH_HASH_PEPPER must be set to a real secret in production`
+
+Set a long random value in the server environment. It keys audit/rate-limit
+HMACs; changing it makes old HMAC identifiers non-comparable. Never commit it.
+
+### `An administrator already exists`
+
+Bootstrap is intentionally one-shot. Use the existing administrator; there is no
+public reset flow in this slice. Do not delete the only admin row to bypass it.
+
+### Every login returns 429
+
+Wait for `LOGIN_RATE_LIMIT_WINDOW_MINUTES` (default 15) or, only in the test
+database, reset the dedicated DB. Do not disable the limiter to bypass it.
+
 ### `password authentication failed` or `ECONNREFUSED`
 
 Check the role, password, host and port in `DATABASE_URL`. With the project-local
@@ -180,6 +222,8 @@ PostgreSQL must be reachable before `pnpm test`, `pnpm db:migrate` or
 
 The apps use strict ports: API `4000`, admin `5173`, web `3000`. Stop the old
 process (for example `lsof -i :4000`) instead of changing the documented ports.
+`pnpm test:e2e` deliberately refuses to reuse an existing server so it cannot
+accidentally test the development database.
 
 ### Playwright says the browser is missing
 

@@ -12,7 +12,14 @@ function trackBrowserErrors(page: Page): {
   const failedRequests: string[] = [];
 
   page.on('console', (message) => {
-    if (message.type() === 'error') {
+    // The anonymous admin page intentionally probes /api/auth/session and
+    // expects a 401. Chrome reports that expected network status as a console
+    // error; it is not an application error. Auth tests cover the 401 path.
+    const expectedSessionProbe =
+      message.text().includes('Failed to load resource') &&
+      message.text().includes('401 (Unauthorized)');
+
+    if (message.type() === 'error' && !expectedSessionProbe) {
       consoleErrors.push(message.text());
     }
   });
@@ -29,11 +36,13 @@ function trackBrowserErrors(page: Page): {
   return { consoleErrors, failedRequests };
 }
 
-test('admin placeholder boots without console or asset errors', async ({ page }) => {
+test('admin login page boots without console or asset errors', async ({ page }) => {
   const errors = trackBrowserErrors(page);
 
   await page.goto(ADMIN_URL);
   await expect(page.getByRole('heading', { level: 1, name: 'MERNPress admin' })).toBeVisible();
+  await expect(page.getByLabel('Username')).toBeVisible();
+  await expect(page.getByLabel('Password')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Skip to content' })).toBeAttached();
 
   expect(errors.consoleErrors).toEqual([]);

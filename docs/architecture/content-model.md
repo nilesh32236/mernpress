@@ -1,7 +1,9 @@
 # Content model
 
-Status: Phase 0 proposal. The Prisma schema is written in Phase 1; this document
-is the contract it must implement. Field names are indicative, not final SQL.
+Status: Phase 0 proposal, partially implemented. Phase 2's first slice implements
+a reduced `users`/`sessions`/`audit_events`/`login_attempts` schema; the content,
+taxonomy, media, revision and roles tables remain the target design. Field names
+for implemented tables match `packages/database/prisma/schema.prisma`.
 
 ## 1. Principles
 
@@ -26,6 +28,7 @@ is the contract it must implement. Field names are indicative, not final SQL.
 ```mermaid
 erDiagram
   users ||--o{ sessions : has
+  users ||--o{ audit_events : acts
   roles ||--o{ users : assigns
   roles ||--o{ role_capabilities : grants
   users ||--o{ posts : authors
@@ -50,28 +53,33 @@ erDiagram
   jobs
 ```
 
+The Phase 2 first slice deliberately does not create the `roles`,
+`role_capabilities`, `posts`, `media`, `terms`, `revisions`, `options`,
+`redirects`, `not_found_logs`, `plugin_migrations` or `jobs` tables. They are
+future migrations, not hidden current state.
+
 ## 3. Tables
 
-### 3.1 `users`
+### 3.1 `users` (Phase 2 first slice)
 
 | Column | Type | Rules |
 | --- | --- | --- |
 | `id` | uuid | PK, UUIDv7 (`@default(uuid(7))`) |
-| `email` | text | normalized lowercase; unique; not returned publicly |
-| `password_hash` | text | Argon2id; never selected by default |
-| `name` | text | display name, required |
-| `slug` | text | unique public author slug; normalized |
-| `role_id` | uuid | FK `roles.id`; one role in MVP |
-| `status` | text | `active`, `suspended`; default `active` |
-| `bio` | text | nullable |
-| `avatar_media_id` | uuid | FK `media.id`, set null |
-| `created_at`, `updated_at` | timestamptz(3) | defaults/trigger |
-| `last_login_at` | timestamptz(3) | nullable |
+| `username` | varchar(32) | normalized lowercase; unique; login identifier |
+| `password_hash` | varchar(255) | Argon2id PHC string; never returned by the API |
+| `role` | enum | `administrator` only in this slice; roles/capabilities are deferred |
+| `status` | enum | `active`, `disabled`; default `active` |
+| `created_at`, `updated_at` | timestamptz(6) | database/app defaults |
 
-Indexes: unique `lower(email)`, unique `slug`, `role_id`.
-Do not expose `password_hash`, session tokens or email in public DTOs.
+`email`, display `name`, `slug`, `bio`, `avatar_media_id` and `last_login_at`
+are deferred with user administration. Do not expose `password_hash` in any DTO.
 
-### 3.2 `roles` and `role_capabilities`
+### 3.2 `roles` and `role_capabilities` (deferred)
+
+The Phase 2 first slice uses a single `administrator` enum value, not a roles
+table. P2-04 will introduce editor/author roles, a capability map and
+object-level checks before content routes expose mutations. The design below is
+still the target:
 
 | `roles` | Type | Rules |
 | --- | --- | --- |
@@ -89,20 +97,41 @@ PK `(role_id, capability)`. Capabilities are strings registered in code; the tab
 is the grant. Object-level checks (`post.edit.own` vs `post.edit.any`) live in the
 capability service, not in the route.
 
-### 3.3 `sessions`
+### 3.3 `sessions` (Phase 2 first slice)
 
 | Column | Type | Rules |
 | --- | --- | --- |
 | `id` | uuid | PK |
-| `user_id` | uuid | FK, cascade |
-| `token_hash` | text | unique; SHA-256 of an opaque random token |
-| `expires_at` | timestamptz(3) | required |
-| `created_at`, `last_used_at` | timestamptz(3) | |
-| `ip` | inet | nullable; privacy-reviewed |
-| `user_agent` | text | nullable; truncated |
+| `user_id` | uuid | FK `users.id`, cascade |
+| `token_hash` | char(64) | unique; SHA-256 of the opaque session token |
+| `csrf_hash` | char(64) | SHA-256 of the session CSRF token |
+| `created_at`, `last_used_at`, `expires_at` | timestamptz(6) | absolute + idle expiry |
+| `revoked_at` | timestamptz(6) | nullable; logout/expiry/disable |
 
-The raw token is only in the HttpOnly cookie. A leaked database does not yield a
-usable session.
+The raw session token only exists in the HttpOnly cookie. `ip` and `user_agent`
+columns are not stored in this slice.
+
+#### `audit_events` (Phase 2 first slice)
+
+| Column | Type | Rules |
+| --- | --- | --- |
+| `id` | uuid | PK |
+| `event_type` | varchar(64) | auth event name |
+| `actor_user_id`, `target_user_id` | uuid | nullable FKs, set null on delete |
+| `ip_hash` | char(64) | HMAC-SHA256 with `AUTH_HASH_PEPPER` |
+| `metadata` | jsonb | reason/identifier HMAC only; no secrets |
+| `created_at` | timestamptz(6) | UTC |
+
+#### `login_attempts` (Phase 2 first slice)
+
+| Column | Type | Rules |
+| --- | --- | --- |
+| `id` | bigserial | PK |
+| `key_hash` | char(64) | HMAC of `ip:<ip>` or `user:<username>` |
+| `attempted_at` | timestamptz(6) | indexed with `key_hash` |
+
+The seed is an idempotent no-op. The first administrator is created only through
+`pnpm auth:bootstrap`.
 
 ### 3.4 `posts`
 

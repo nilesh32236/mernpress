@@ -59,15 +59,21 @@ generated Next artifacts present. Owner manual acceptance remains.
 
 ## Phase 2 — Authentication and capabilities
 
+**Status: first vertical slice implemented; owner manual acceptance pending.**
+Bootstrap, login/logout/session, CSRF/Origin, DB-backed login rate limiting,
+request-ID validation and the minimum login UI are implemented. Roles,
+capabilities, user administration, profile editing, password reset, email and
+MFA remain deferred.
+
 | ID | Task | Status | Depends on | Acceptance criteria |
 | --- | --- | --- | --- | --- |
-| P2-01 | First-admin bootstrap | planned | P1 | CLI/seed creates one administrator idempotently; password never logged; re-run safe |
-| P2-02 | Login/logout/session | planned | P2-01 | Argon2id; opaque session token hashed in DB; HttpOnly/Secure/SameSite cookie; rotation; logout revokes; tests |
-| P2-03 | CSRF + login rate limiting | planned | P2-02 | Origin check + CSRF token for state-changing requests; rate limit; lockout/backoff; tests |
-| P2-04 | Roles/capabilities | planned | P2-02 | Roles (administrator/editor/author) and capability map; server-side object checks; tests for wrong role/object |
-| P2-05 | User administration | planned | P2-04 | Admin-only list/create/edit/deactivate; cannot delete last administrator; audit events |
-| P2-06 | Auth UI | planned | P2-02..P2-05 | Login, logout, session expiry, profile, users screen; accessible labels/focus/errors |
-| P2-07 | Security verification | planned | P2-02..P2-06 | Unauthenticated/wrong-role/wrong-object/malformed input; cookie flags; no secret leakage; report |
+| P2-01 | First-admin bootstrap | done | P1 | CLI creates one administrator on an empty DB; refuses re-run safely; advisory lock; password never logged |
+| P2-02 | Login/logout/session | done | P2-01 | Argon2id; opaque session token hashed in DB; HttpOnly/Secure/SameSite cookie; fresh session on login; idle/absolute expiry; logout/disabled revoke; tests |
+| P2-03 | CSRF + login rate limiting | done | P2-02 | Origin check + CSRF for login/logout; DB-backed dual-key rate limit with recovery; tests |
+| P2-04 | Roles/capabilities | planned | P2-02 | Deferred: only the administrator principal exists; add editor/author, capability map and object checks before content routes |
+| P2-05 | User administration | planned | P2-04 | Deferred: admin-only list/create/edit/deactivate; cannot delete last administrator; audit events |
+| P2-06 | Auth UI | in progress | P2-02..P2-05 | Login/logout/session UI done with accessible labels, alerts, focus and keyboard E2E; profile/users screens deferred |
+| P2-07 | Security verification | in progress | P2-02..P2-06 | Auth slice tests + independent review done; wrong-role/wrong-object tests require P2-04/P2-05 and content routes |
 
 ## Phase 3 — Core content model and API
 

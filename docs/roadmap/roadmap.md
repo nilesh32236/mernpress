@@ -61,6 +61,12 @@ commit; the database is empty and disposable.
 
 ## Phase 2 — Authentication and capabilities
 
+**Status: first vertical slice implemented 2026-10-25; owner manual acceptance
+pending.** Bootstrap, Argon2id, database-backed sessions, login/logout/current
+session, CSRF/Origin, DB-backed login rate limiting, request-ID validation and
+the minimum login UI are done. Roles/capabilities, user administration, profile,
+password reset, email and MFA remain.
+
 **Goal:** a secure first-admin login and server-enforced authorization.
 
 Scope:

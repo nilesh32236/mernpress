@@ -27,7 +27,7 @@ facts from **judgement** calls.
 | ESLint | **10.13.0** | latest; `@eslint/js` latest is 10.0.1 | `npm view eslint version`; `npm view @eslint/js dist-tags` |
 | typescript-eslint | **8.72.0** | peers ESLint 8/9/10, TypeScript >=4.8.4 <6.1.0 | `npm view typescript-eslint peerDependencies` |
 | Prettier | **3.9.10** | latest | `npm view prettier version` |
-| Argon2 | **0.45.1** | native module; verify build on target OS | `npm view argon2 version` |
+| Password hashing | **@node-rs/argon2 2.2.2** | MIT, prebuilt NAPI for Node 24; Argon2id 64 MiB / 3 passes / 1 lane | `npm view @node-rs/argon2 version`; ADR 0002 |
 | sharp | **0.35.5** | native module; verify libvips packaging | `npm view sharp version` |
 
 Version policy: pin exact versions for runtime/framework/editor packages, keep a
@@ -47,7 +47,7 @@ updates are applied deliberately with a lockfile diff and tests.
   Phase 0 originally ran on Node 22.23.1. Verify the clean-clone path on the
   pinned versions, not on 22.
 
-**Risk:** native modules (`argon2`, `sharp`) must be rebuilt for Node 24 and the
+**Risk:** native modules (`sharp` later) must be rebuilt for Node 24 and the
 target OS. Phase 1/6 must test install and runtime on this machine.
 
 ## 3. API framework
@@ -409,8 +409,8 @@ alternatives are documented as fallbacks rather than dismissed.
    Do not let public pages serve stale drafts; previews are always no-store.
 6. **Theme portability:** Next-specific APIs must stay out of theme packages. A
    thin adapter is allowed; a hard dependency is not.
-7. **Native modules** (`argon2`, `sharp`) need install/rebuild tests on Node 24
-   and the target OS.
+7. **Native modules** (`sharp` later) need install/rebuild tests on Node 24 and
+   the target OS. Argon2 uses a prebuilt NAPI package and was verified in Phase 2.
 8. **Local Node 22.23.1** was below the target at Phase 0 time. Resolved in
    Phase 1: Node 24.22.1 and pnpm 12.15.0 are installed and the foundation checks
    ran on them.

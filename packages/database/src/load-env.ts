@@ -20,3 +20,13 @@ export function requireDatabaseUrl(): string {
   }
   return value;
 }
+
+export function requireTestDatabaseUrl(): string {
+  const value = process.env['TEST_DATABASE_URL'];
+  if (!value) {
+    throw new Error(
+      'TEST_DATABASE_URL is not set. Copy .env.example to .env and configure a dedicated test database.',
+    );
+  }
+  return value;
+}

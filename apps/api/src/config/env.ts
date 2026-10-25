@@ -28,7 +28,7 @@ function loadLocalEnv(): void {
 loadLocalEnv();
 
 const rawEnvSchema = z.object({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  NODE_ENV: z.enum(['development', 'test', 'production']),
   HOST: z.string().min(1, 'HOST must not be empty').default('127.0.0.1'),
   PORT: z.coerce
     .number()
@@ -48,17 +48,35 @@ const rawEnvSchema = z.object({
         return false;
       }
     }, 'DATABASE_URL must be a valid postgresql:// connection URL'),
-  CORS_ORIGINS: z.string().default('http://localhost:5173'),
+  CORS_ORIGINS: z.string().optional(),
+  AUTH_HASH_PEPPER: z
+    .string()
+    .min(32, 'AUTH_HASH_PEPPER must be at least 32 characters')
+    .optional(),
+  TRUST_PROXY: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
+  SESSION_TTL_MINUTES: z.coerce.number().int().min(5).max(43_200).default(480),
+  SESSION_IDLE_MINUTES: z.coerce.number().int().min(1).max(1_440).default(30),
+  LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().min(1).max(100).default(5),
+  LOGIN_RATE_LIMIT_WINDOW_MINUTES: z.coerce.number().int().min(1).max(1_440).default(15),
 });
 
-export interface Env {
+export type Env = {
   NODE_ENV: 'development' | 'test' | 'production';
   HOST: string;
   PORT: number;
   LOG_LEVEL: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'silent';
   DATABASE_URL: string;
+  AUTH_HASH_PEPPER: string;
   CORS_ORIGINS: string[];
-}
+  TRUST_PROXY: boolean;
+  SESSION_TTL_MINUTES: number;
+  SESSION_IDLE_MINUTES: number;
+  LOGIN_RATE_LIMIT_MAX: number;
+  LOGIN_RATE_LIMIT_WINDOW_MINUTES: number;
+};
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   const parsed = rawEnvSchema.safeParse(source);
@@ -72,7 +90,26 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     );
   }
 
-  const origins = parsed.data.CORS_ORIGINS.split(',')
+  if (parsed.data.SESSION_IDLE_MINUTES > parsed.data.SESSION_TTL_MINUTES) {
+    throw new Error('SESSION_IDLE_MINUTES must not exceed SESSION_TTL_MINUTES');
+  }
+
+  const isProduction = parsed.data.NODE_ENV === 'production';
+
+  if (isProduction && !parsed.data.CORS_ORIGINS) {
+    throw new Error('CORS_ORIGINS is required in production');
+  }
+
+  if (
+    isProduction &&
+    (!parsed.data.AUTH_HASH_PEPPER || /change-me|replace/i.test(parsed.data.AUTH_HASH_PEPPER))
+  ) {
+    throw new Error('AUTH_HASH_PEPPER must be set to a real secret in production');
+  }
+
+  const hashPepper = parsed.data.AUTH_HASH_PEPPER ?? 'dev-only-auth-hash-pepper-not-for-production';
+  const origins = (parsed.data.CORS_ORIGINS ?? 'http://127.0.0.1:5173,http://localhost:5173')
+    .split(',')
     .map((origin) => origin.trim())
     .filter((origin) => origin.length > 0);
 
@@ -80,22 +117,43 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     throw new Error('CORS_ORIGINS must contain at least one explicit origin');
   }
 
+  const normalizedOrigins: string[] = [];
   for (const origin of origins) {
     if (origin === '*') {
       throw new Error('CORS_ORIGINS must not contain a wildcard when credentials are enabled');
     }
+
+    let url: URL;
     try {
-      const url = new URL(origin);
-      if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-        throw new Error('unsupported protocol');
-      }
+      url = new URL(origin);
     } catch {
       throw new Error(`CORS_ORIGINS contains an invalid origin: ${origin}`);
+    }
+
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      throw new Error(`CORS_ORIGINS contains an unsupported origin: ${origin}`);
+    }
+    if (url.pathname !== '/' || url.search || url.hash || url.username || url.password) {
+      throw new Error(
+        'CORS_ORIGINS origins must not include a path, query, fragment or credentials',
+      );
+    }
+    if (isProduction && url.protocol !== 'https:') {
+      throw new Error('production origins must use HTTPS');
+    }
+    if (isProduction && ['localhost', '127.0.0.1', '::1'].includes(url.hostname)) {
+      throw new Error('production origins must not be loopback addresses');
+    }
+
+    const normalized = url.origin;
+    if (!normalizedOrigins.includes(normalized)) {
+      normalizedOrigins.push(normalized);
     }
   }
 
   return {
     ...parsed.data,
-    CORS_ORIGINS: origins,
+    AUTH_HASH_PEPPER: hashPepper,
+    CORS_ORIGINS: normalizedOrigins,
   };
 }

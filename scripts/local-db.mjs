@@ -13,7 +13,7 @@ const dataDir = path.join(baseDir, 'data');
 const socketDir = path.join(baseDir, 'socket');
 const logFile = path.join(baseDir, 'server.log');
 const port = process.env['MERNPRESS_LOCAL_DB_PORT'] ?? '55432';
-const databaseName = 'mernpress_dev';
+const databaseNames = ['mernpress_dev', 'mernpress_test'];
 const user = 'mernpress';
 
 function commandExists(command) {
@@ -47,7 +47,7 @@ function connectionArgs() {
   return ['-h', socketDir, '-p', port, '-U', user];
 }
 
-function ensureDatabase() {
+function ensureDatabase(databaseName) {
   const exists = spawnSync(
     'psql',
     [
@@ -101,7 +101,8 @@ function init() {
   console.log(`
 Local database ready. Put this in .env:
 
-DATABASE_URL=postgresql://${user}@127.0.0.1:${port}/${databaseName}
+DATABASE_URL=postgresql://${user}@127.0.0.1:${port}/mernpress_dev
+TEST_DATABASE_URL=postgresql://${user}@127.0.0.1:${port}/mernpress_test
 
 Stop it with: pnpm db:local:stop
 This cluster is for local development only and listens on 127.0.0.1.
@@ -130,9 +131,11 @@ function start() {
       encoding: 'utf8',
     });
     if (ready.status === 0) {
-      ensureDatabase();
+      for (const databaseName of databaseNames) {
+        ensureDatabase(databaseName);
+      }
       console.log(
-        `Local PostgreSQL is ready: postgresql://${user}@127.0.0.1:${port}/${databaseName}`,
+        `Local PostgreSQL is ready on 127.0.0.1:${port} (mernpress_dev and mernpress_test)`,
       );
       return;
     }

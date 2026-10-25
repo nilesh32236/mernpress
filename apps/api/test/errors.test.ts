@@ -1,15 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { buildApp } from '../src/app.js';
-import type { Env } from '../src/config/env.js';
+import { makeTestEnv } from './helpers/env.js';
 
-const testEnv: Env = {
-  NODE_ENV: 'test',
-  HOST: '127.0.0.1',
-  PORT: 4000,
-  LOG_LEVEL: 'silent',
+const testEnv = makeTestEnv({
   DATABASE_URL: 'postgresql://invalid:invalid@127.0.0.1:59999/not_used',
-  CORS_ORIGINS: ['http://localhost:5173'],
-};
+});
 
 describe('error envelope', () => {
   it('returns a stable 404 envelope with the request id', async () => {
@@ -23,13 +18,13 @@ describe('error envelope', () => {
       });
 
       expect(response.statusCode).toBe(404);
-      expect(response.json()).toEqual({
+      expect(response.json()).toMatchObject({
         error: {
           code: 'NOT_FOUND',
           message: 'Route not found',
-          requestId: 'test-request-id',
         },
       });
+      expect(response.json().error.requestId).not.toBe('test-request-id');
     } finally {
       await app.close();
     }

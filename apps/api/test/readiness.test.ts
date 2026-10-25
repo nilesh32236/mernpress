@@ -1,20 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { buildApp } from '../src/app.js';
-import { loadEnv, type Env } from '../src/config/env.js';
-
-function envWithDatabaseUrl(databaseUrl: string): Env {
-  return {
-    ...loadEnv(),
-    NODE_ENV: 'test',
-    LOG_LEVEL: 'silent',
-    DATABASE_URL: databaseUrl,
-  };
-}
+import { makeTestEnv, testDatabaseUrl } from './helpers/env.js';
 
 describe('GET /api/ready', () => {
   it('returns 200 when PostgreSQL is reachable', async () => {
-    const env = envWithDatabaseUrl(loadEnv().DATABASE_URL);
-    const app = await buildApp({ env, logger: false });
+    const app = await buildApp({
+      env: makeTestEnv({ DATABASE_URL: testDatabaseUrl }),
+      logger: false,
+    });
 
     try {
       const response = await app.inject({ method: 'GET', url: '/api/ready' });
@@ -30,10 +23,12 @@ describe('GET /api/ready', () => {
   });
 
   it('returns 503 while the process stays alive when PostgreSQL is unreachable', async () => {
-    const env = envWithDatabaseUrl(
-      'postgresql://invalid:invalid@127.0.0.1:59999/mernpress_unreachable',
-    );
-    const app = await buildApp({ env, logger: false });
+    const app = await buildApp({
+      env: makeTestEnv({
+        DATABASE_URL: 'postgresql://invalid:invalid@127.0.0.1:59999/mernpress_unreachable',
+      }),
+      logger: false,
+    });
 
     try {
       const ready = await app.inject({ method: 'GET', url: '/api/ready' });

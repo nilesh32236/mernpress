@@ -1,13 +1,21 @@
 # Threat model
 
-Status: Phase 0 baseline, reviewed during Phase 1. The Phase 1 foundation is
-implemented (env validation, minimal health endpoints, no auth/session yet).
-Review at every phase that changes authentication, authorization, uploads,
-rendering, plugins or deployment.
+Status: Phase 0 baseline, reviewed in Phase 1 and Phase 2. Phase 1 foundation and
+the Phase 2 authentication first slice are implemented; owner manual acceptance
+of the auth slice is pending. Review at every phase that changes authentication,
+authorization, uploads, rendering, plugins or deployment.
 
 This document is a working model, not a certification. MERNPress is a hobby/
 self-hosted CMS in its first version. It must not claim production-grade security,
 HIPAA compliance, PCI compliance or multi-tenant isolation.
+
+Phase 2 first slice now implements: Argon2id administrator credentials, opaque
+SHA-256-hashed sessions, HttpOnly/SameSite/Secure cookie rules, idle/absolute
+expiry, session revocation, login/logout/current-session endpoints, Origin +
+CSRF checks, database-backed dual-key login rate limiting, a bootstrap-only
+administrator CLI, HMAC-peppered audit/rate-limit identifiers, bounded auth
+bodies and strict request-ID validation. Roles/capabilities, user administration,
+password reset/email, MFA and all content features remain out of scope.
 
 ## 1. Scope and assumptions
 
@@ -127,16 +135,21 @@ Boundaries:
 
 ### Authentication
 
-- Argon2id with a reviewed memory/time cost; bcrypt fallback only with a documented
-  cost (≥12) and a migration path.
-- Opaque random session tokens (≥256 bits), stored as SHA-256 hashes; no JWT in
-  the admin cookie.
-- Cookie: `HttpOnly`, `Secure` in production, `SameSite=Lax` or stricter, `Path=/`,
-  bounded expiry. No session token in localStorage/sessionStorage/URLs.
-- Login rate limit per IP + per account, with backoff; generic error messages.
-- Session rotation on login/privilege change; logout-all; idle/absolute expiry.
-- Password reset (later): hashed, single-use, short-lived token; no user
-  enumeration; invalidate sessions after reset.
+- Argon2id 64 MiB / 3 passes / 1 lane / 32-byte output via `@node-rs/argon2`;
+  unknown users and disabled users take the same generic failure path (dummy
+  verification for unknown users). No bcrypt fallback is implemented.
+- Opaque 256-bit session tokens stored only as SHA-256 hex; no JWT. New token on
+  every login; logout, idle expiry, absolute expiry and disabled users revoke.
+- Cookie: session `HttpOnly`, `Secure` in production, `SameSite=Lax`, `Path=/api`,
+  bounded Max-Age; readable CSRF cookie at `/` by design. No session token in
+  localStorage/sessionStorage/URLs.
+- Login rate limit: database-backed dual keys (HMAC IP + HMAC username), 5
+  failures/15 min, 429 with Retry-After, success clears; malformed usernames also
+  rate-limited. A small concurrent over-limit race is accepted at MVP volume.
+- Session rotation on login; logout revokes one session. Logout-all/password
+  reset/MFA/privilege-change rotation are later slices.
+- Bootstrap is CLI-only, advisory-locked, refuses if an administrator exists and
+  never accepts a password in argv. There is no public create-admin route.
 
 ### Authorization
 
@@ -149,14 +162,15 @@ Boundaries:
 
 ### CSRF/CORS/headers
 
-- SameSite cookies + Origin/Referer check + a per-session CSRF token for
-  state-changing requests.
-- No state-changing GET.
-- CORS: explicit allowlist, credentials only for the admin origin.
-- Helmet/Fastify: CSP, HSTS (prod), `X-Content-Type-Options`, `Referrer-Policy`,
-  `X-Frame-Options`/frame-ancestors.
-- CSP must allow the editor's styles/workers; document exceptions. Avoid
-  `unsafe-eval` unless a package requires it; test the editor.
+- SameSite cookies + exact Origin allowlist + CSRF. Login uses pre-auth
+  double-submit; logout uses the session-bound CSRF hash. Missing/wrong/mismatched
+  values are 403. CORS is not treated as CSRF defense.
+- No state-changing GET; auth responses use `Cache-Control: no-store`.
+- CORS: exact origins, credentials enabled, explicitly allowed methods/headers;
+  wildcards rejected. Production requires HTTPS non-loopback origins.
+- Helmet/Fastify: HSTS (prod), `X-Content-Type-Options`, `Referrer-Policy`,
+  `X-Frame-Options`/frame-ancestors. API CSP is disabled because the API returns
+  JSON; the login UI uses no inline/eval. Gutenberg CSP remains Phase 5.
 
 ### Content/XSS
 
@@ -196,11 +210,13 @@ Boundaries:
 
 ### Logging/errors
 
-- Structured logs with request ID; redact cookies, authorization headers,
-  passwords, tokens, emails where not needed.
-- Production errors return a stable code/message; no stack traces/SQL.
+- Structured logs with a sanitized UUID request ID; redact cookies, authorization
+  headers and password/CSRF fields. Auth bodies are not logged.
+- Production errors return a stable generic code/message; no stack traces/SQL.
 - Health endpoints expose minimal status, not configuration.
-- Audit log for auth/user/content/settings/plugin actions (no secrets).
+- `audit_events` records bootstrap, login success/failure, rate limit, logout and
+  session revocation; IP/identifier hashes use HMAC with `AUTH_HASH_PEPPER`.
+  Passwords, raw tokens, cookies and full bodies are never stored in audit rows.
 
 ## 7. Safe defaults for local development
 
@@ -217,7 +233,11 @@ Boundaries:
 ## 8. Residual risks (accepted for MVP)
 
 - No WAF/DDoS protection; the operator/reverse proxy must provide it.
-- No 2FA; strong passwords + rate limiting only.
+- No 2FA/MFA, password reset/email or SSO; strong passwords + rate limiting only.
+- A lost sole-administrator password requires a separately approved recovery
+  procedure; there is no reset endpoint in this slice.
+- Audit/rate-limit HMAC identifiers are pseudonymous, not anonymous; a DB + pepper
+  compromise can link activity.
 - No malware scanning of uploads; image re-encode reduces but does not eliminate
   risk.
 - No sandbox for plugins/themes; trust is organizational.
@@ -233,7 +253,7 @@ Boundaries:
 | Phase | Gate |
 | --- | --- |
 | 1 | Env validation, no secrets in git, health endpoints minimal, dependency audit |
-| 2 | Auth/session/CSRF/rate-limit tests, cookie flags, authz matrix |
+| 2 | Auth/session/CSRF/rate-limit tests, cookie flags, admin authz; roles/object authz deferred to P2-04 |
 | 3 | Object-level authz, mass-assignment review, validation, conflict handling |
 | 4 | XSS in admin forms/lists, CSRF, admin route guards |
 | 5 | Sanitizer/XSS suite, unknown-block safety, CSP compatibility, no eval |

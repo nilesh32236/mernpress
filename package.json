@@ -15,12 +15,15 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "pnpm db:generate && turbo run typecheck",
-    "test": "pnpm db:generate && turbo run test",
-    "test:e2e": "pnpm db:generate && playwright test",
+    "test": "pnpm db:generate && pnpm db:migrate:test && turbo run test",
+    "test:e2e": "pnpm db:generate && pnpm db:migrate:test && pnpm db:reset:test && playwright test",
     "db:generate": "pnpm --filter @mernpress/database generate",
     "db:migrate": "pnpm --filter @mernpress/database migrate",
+    "db:migrate:test": "pnpm --filter @mernpress/database migrate:test",
+    "db:reset:test": "pnpm --filter @mernpress/database reset:test",
     "db:seed": "pnpm --filter @mernpress/database seed",
     "db:verify": "pnpm --filter @mernpress/database verify",
+    "auth:bootstrap": "pnpm --filter @mernpress/api auth:bootstrap",
     "db:local:init": "node scripts/local-db.mjs init",
     "db:local:start": "node scripts/local-db.mjs start",
     "db:local:stop": "node scripts/local-db.mjs stop",
@@ -37,6 +40,7 @@
     "prettier": "3.9.10",
     "turbo": "2.11.10",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.72.0"
+    "typescript-eslint": "8.72.0",
+    "dotenv": "18.0.9"
   }
 }
