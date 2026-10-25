@@ -167,17 +167,84 @@ describe('login rate limiting', () => {
       expect(limited.response.json()).toMatchObject({ error: { code: 'RATE_LIMITED' } });
       expect(limited.response.headers['retry-after']).toBeDefined();
 
-      const stillLimited = await loginAs(app, ADMIN_USERNAME, ADMIN_PASSWORD);
-      expect(stillLimited.response.statusCode).toBe(429);
+      // A blocked client can retry indefinitely. The limiter must keep
+      // returning 429 without writing one durable audit row per rejection.
+      for (let attempt = 0; attempt < 20; attempt += 1) {
+        const blocked = await loginAs(app, ADMIN_USERNAME, ADMIN_PASSWORD);
+        expect(blocked.response.statusCode).toBe(429);
+        expect(blocked.response.json()).toMatchObject({ error: { code: 'RATE_LIMITED' } });
+        expect(blocked.response.headers['retry-after']).toBeDefined();
+      }
 
       const audits = await app.database.auditEvent.findMany({
         where: { eventType: 'auth.login.rate_limited' },
       });
-      expect(audits.length).toBeGreaterThanOrEqual(2);
+      expect(audits.length).toBeGreaterThan(0);
+      expect(audits.length).toBeLessThanOrEqual(2);
+      for (const audit of audits) {
+        const metadata = audit.metadata as { reason?: string; identifierHash?: string };
+        expect(metadata.reason).toBe('threshold_reached');
+        expect(metadata.identifierHash).toMatch(/^[0-9a-f]{64}$/);
+        expect(JSON.stringify(metadata)).not.toContain(ADMIN_USERNAME);
+      }
 
       current = new Date(current.getTime() + 16 * 60_000);
       const recovered = await loginAs(app, ADMIN_USERNAME, ADMIN_PASSWORD);
       expect(recovered.response.statusCode).toBe(200);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('limits a username across different client IPs', async () => {
+    const app = await createTestApp({
+      LOGIN_RATE_LIMIT_MAX: 2,
+      LOGIN_RATE_LIMIT_WINDOW_MINUTES: 15,
+    });
+
+    try {
+      await seedAdmin(app);
+      const attemptFrom = (ip: string) =>
+        app.auth.login({ username: ADMIN_USERNAME, password: 'wrong password', ip });
+
+      await expect(attemptFrom('10.9.0.1')).rejects.toMatchObject({ code: 'INVALID_CREDENTIALS' });
+      await expect(attemptFrom('10.9.0.2')).rejects.toMatchObject({ code: 'INVALID_CREDENTIALS' });
+      // Both IP keys are fresh, so only the shared username key can explain this.
+      await expect(attemptFrom('10.9.0.3')).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('does not add durable rate-limit rows for concurrent blocked retries', async () => {
+    const app = await createTestApp({
+      LOGIN_RATE_LIMIT_MAX: 2,
+      LOGIN_RATE_LIMIT_WINDOW_MINUTES: 15,
+    });
+
+    try {
+      await seedAdmin(app);
+      await loginAs(app, ADMIN_USERNAME, 'wrong password');
+      await loginAs(app, ADMIN_USERNAME, 'wrong password');
+
+      const before = await app.database.auditEvent.count({
+        where: { eventType: 'auth.login.rate_limited' },
+      });
+      expect(before).toBeGreaterThan(0);
+
+      const blocked = await Promise.all(
+        Array.from({ length: 10 }, () => loginAs(app, ADMIN_USERNAME, ADMIN_PASSWORD)),
+      );
+
+      for (const attempt of blocked) {
+        expect(attempt.response.statusCode).toBe(429);
+        expect(attempt.response.headers['retry-after']).toBeDefined();
+      }
+
+      const after = await app.database.auditEvent.count({
+        where: { eventType: 'auth.login.rate_limited' },
+      });
+      expect(after).toBe(before);
     } finally {
       await app.close();
     }

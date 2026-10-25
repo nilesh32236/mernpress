@@ -72,5 +72,6 @@ model LoginAttempt {
   attemptedAt DateTime @default(now()) @map("attempted_at") @db.Timestamptz(6)
 
   @@index([keyHash, attemptedAt])
+  @@index([attemptedAt])
   @@map("login_attempts")
 }

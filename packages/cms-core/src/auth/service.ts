@@ -1,12 +1,14 @@
-import { createHmac } from 'node:crypto';
-import type { DatabaseClient, Prisma } from '@mernpress/database';
+import type { DatabaseClient } from '@mernpress/database';
+import { createAuthAudit, type LoginFailureReason } from './audit.js';
+import { createIdentifierHasher } from './identifiers.js';
 import {
   hashPassword,
   passwordPolicyError,
   verifyDummyPassword,
   verifyPassword,
 } from './password.js';
-import { generateOpaqueToken, hashCsrfToken, hashSessionToken, verifyCsrfToken } from './tokens.js';
+import { createLoginRateLimiter } from './rate-limit.js';
+import { generateOpaqueToken, hashCsrfToken, hashSessionToken } from './tokens.js';
 import type {
   AuthConfig,
   AuthService,
@@ -20,10 +22,17 @@ import { AuthError } from './types.js';
 import { normalizeUsername, usernamePolicyError } from './username.js';
 
 const BOOTSTRAP_LOCK = 'mernpress.auth.bootstrap';
-const UNKNOWN_IP = 'unknown';
 
-type AuditData = Prisma.AuditEventUncheckedCreateInput;
-
+/**
+ * Authentication use cases: first-admin bootstrap, login, session validation
+ * and logout.
+ *
+ * This factory only orchestrates. Password hashing, token formats, identifier
+ * hashing, audit writes and login-attempt persistence live in their own
+ * modules, so each can change (or be tested) without rewriting the use case.
+ * The service depends only on the database port and explicit configuration; it
+ * imports no Fastify, cookie or HTTP types.
+ */
 export function createAuthService(options: {
   prisma: DatabaseClient;
   config: AuthConfig;
@@ -32,84 +41,26 @@ export function createAuthService(options: {
   const now = config.now ?? (() => new Date());
   const sessionTtlMs = config.sessionTtlMinutes * 60_000;
   const sessionIdleMs = config.sessionIdleMinutes * 60_000;
-  const rateWindowMs = config.loginRateLimitWindowMinutes * 60_000;
 
-  function keyedHash(domain: 'ip' | 'user', value: string): string {
-    return createHmac('sha256', config.hashPepper).update(`${domain}:${value}`).digest('hex');
-  }
-
-  function ipHash(ip: string): string {
-    return keyedHash('ip', ip || UNKNOWN_IP);
-  }
-
-  function identifierHash(username: string): string {
-    return keyedHash('user', username);
-  }
-
-  function rateKeys(username: string, ip: string): string[] {
-    return [ipHash(ip), identifierHash(username)];
-  }
+  const hasher = createIdentifierHasher(config.hashPepper);
+  const audit = createAuthAudit(prisma, hasher);
+  const rateLimiter = createLoginRateLimiter({
+    prisma,
+    hasher,
+    now,
+    config: {
+      max: config.loginRateLimitMax,
+      windowMinutes: config.loginRateLimitWindowMinutes,
+    },
+  });
 
   function invalidCredentials(): AuthError {
     return new AuthError('INVALID_CREDENTIALS', 'Invalid username or password', 401);
   }
 
-  function auditData(input: {
-    eventType: string;
-    actorUserId?: string | null;
-    targetUserId?: string | null;
-    ipHashValue?: string | null;
-    metadata?: Prisma.InputJsonValue;
-  }): AuditData {
-    return {
-      eventType: input.eventType,
-      actorUserId: input.actorUserId ?? null,
-      targetUserId: input.targetUserId ?? null,
-      ipHash: input.ipHashValue ?? null,
-      ...(input.metadata === undefined ? {} : { metadata: input.metadata }),
-    };
-  }
-
-  async function checkRateLimit(keys: string[]): Promise<void> {
-    const current = now();
-    const cutoff = new Date(current.getTime() - rateWindowMs);
-
-    await prisma.loginAttempt.deleteMany({
-      where: { keyHash: { in: keys }, attemptedAt: { lt: cutoff } },
-    });
-
-    const counts = await Promise.all(
-      keys.map((keyHash) =>
-        prisma.loginAttempt.count({
-          where: { keyHash, attemptedAt: { gte: cutoff } },
-        }),
-      ),
-    );
-
-    if (counts.some((count) => count >= config.loginRateLimitMax)) {
-      const oldest = await prisma.loginAttempt.findFirst({
-        where: { keyHash: { in: keys }, attemptedAt: { gte: cutoff } },
-        orderBy: { attemptedAt: 'asc' },
-        select: { attemptedAt: true },
-      });
-
-      const retryAfterSeconds = oldest
-        ? Math.max(
-            1,
-            Math.ceil((oldest.attemptedAt.getTime() + rateWindowMs - current.getTime()) / 1000),
-          )
-        : Math.ceil(rateWindowMs / 1000);
-
-      throw new AuthError('RATE_LIMITED', 'Too many login attempts. Try again later.', 429, {
-        retryAfterSeconds,
-      });
-    }
-  }
-
-  async function recordFailure(keys: string[]): Promise<void> {
-    const attemptedAt = now();
-    await prisma.loginAttempt.createMany({
-      data: keys.map((keyHash) => ({ keyHash, attemptedAt })),
+  function rateLimited(retryAfterSeconds: number): AuthError {
+    return new AuthError('RATE_LIMITED', 'Too many login attempts. Try again later.', 429, {
+      retryAfterSeconds,
     });
   }
 
@@ -135,22 +86,15 @@ export function createAuthService(options: {
     sessionId: string,
     userId: string,
     reason: string,
-    createdAt: Date,
+    revokedAt: Date,
   ): Promise<void> {
     const result = await prisma.session.updateMany({
       where: { id: sessionId, revokedAt: null },
-      data: { revokedAt: createdAt },
+      data: { revokedAt },
     });
 
     if (result.count === 1) {
-      await prisma.auditEvent.create({
-        data: auditData({
-          eventType: 'auth.session.revoked',
-          actorUserId: userId,
-          targetUserId: userId,
-          metadata: { reason },
-        }),
-      });
+      await audit.sessionRevoked({ userId, reason });
     }
   }
 
@@ -194,13 +138,7 @@ export function createAuthService(options: {
         },
       });
 
-      await tx.auditEvent.create({
-        data: auditData({
-          eventType: 'auth.bootstrap',
-          actorUserId: user.id,
-          targetUserId: user.id,
-        }),
-      });
+      await audit.bootstrap({ userId: user.id }, tx);
 
       return toPublicUser(user);
     });
@@ -209,77 +147,56 @@ export function createAuthService(options: {
   async function login(input: LoginInput): Promise<LoginResult> {
     const username = normalizeUsername(input.username);
     const usernameError = usernamePolicyError(username);
-    const keys = rateKeys(username, input.ip);
+    const keys = rateLimiter.keysFor(username, input.ip);
+    const identifierHash = hasher.username(username);
 
-    try {
-      await checkRateLimit(keys);
-    } catch (error) {
-      if (error instanceof AuthError && error.code === 'RATE_LIMITED') {
-        await prisma.auditEvent.create({
-          data: auditData({
-            eventType: 'auth.login.rate_limited',
-            ipHashValue: ipHash(input.ip),
-            metadata: { identifierHash: identifierHash(username) },
-          }),
-        });
+    const decision = await rateLimiter.check(keys);
+    if (!decision.allowed) {
+      throw rateLimited(decision.retryAfterSeconds);
+    }
+
+    /**
+     * Shared failure path: every generic failure records exactly one attempt,
+     * one per-attempt audit event, and at most one coalesced threshold event.
+     */
+    async function fail(
+      reason: LoginFailureReason,
+      options: { userId?: string } = {},
+    ): Promise<never> {
+      const { thresholdReached } = await rateLimiter.record(keys);
+      await audit.loginFailure({
+        ip: input.ip,
+        reason,
+        identifierHash,
+        ...(options.userId === undefined ? {} : { userId: options.userId }),
+      });
+      if (thresholdReached) {
+        await audit.rateLimitThreshold({ ip: input.ip, identifierHash });
       }
-      throw error;
+
+      throw invalidCredentials();
     }
 
     if (usernameError) {
       await verifyDummyPassword(input.password);
-      await recordFailure(keys);
-      await prisma.auditEvent.create({
-        data: auditData({
-          eventType: 'auth.login.failure',
-          ipHashValue: ipHash(input.ip),
-          metadata: { reason: 'invalid_username', identifierHash: identifierHash(username) },
-        }),
-      });
-      throw invalidCredentials();
+      return fail('invalid_username');
     }
 
     const user = await prisma.user.findUnique({ where: { username } });
 
     if (!user) {
       await verifyDummyPassword(input.password);
-      await recordFailure(keys);
-      await prisma.auditEvent.create({
-        data: auditData({
-          eventType: 'auth.login.failure',
-          ipHashValue: ipHash(input.ip),
-          metadata: { reason: 'unknown_user', identifierHash: identifierHash(username) },
-        }),
-      });
-      throw invalidCredentials();
+      return fail('unknown_user');
     }
 
     if (user.status !== 'active') {
       await verifyPassword(user.passwordHash, input.password);
-      await recordFailure(keys);
-      await prisma.auditEvent.create({
-        data: auditData({
-          eventType: 'auth.login.failure',
-          targetUserId: user.id,
-          ipHashValue: ipHash(input.ip),
-          metadata: { reason: 'disabled_user' },
-        }),
-      });
-      throw invalidCredentials();
+      return fail('disabled_user', { userId: user.id });
     }
 
     const validPassword = await verifyPassword(user.passwordHash, input.password);
     if (!validPassword) {
-      await recordFailure(keys);
-      await prisma.auditEvent.create({
-        data: auditData({
-          eventType: 'auth.login.failure',
-          targetUserId: user.id,
-          ipHashValue: ipHash(input.ip),
-          metadata: { reason: 'invalid_password' },
-        }),
-      });
-      throw invalidCredentials();
+      return fail('invalid_password', { userId: user.id });
     }
 
     const sessionToken = generateOpaqueToken();
@@ -288,7 +205,7 @@ export function createAuthService(options: {
     const expiresAt = new Date(createdAt.getTime() + sessionTtlMs);
 
     await prisma.$transaction(async (tx) => {
-      await tx.loginAttempt.deleteMany({ where: { keyHash: { in: keys } } });
+      await rateLimiter.clear(keys, tx);
       await tx.session.create({
         data: {
           userId: user.id,
@@ -299,15 +216,7 @@ export function createAuthService(options: {
           expiresAt,
         },
       });
-      await tx.auditEvent.create({
-        data: auditData({
-          eventType: 'auth.login.success',
-          actorUserId: user.id,
-          targetUserId: user.id,
-          ipHashValue: ipHash(input.ip),
-          metadata: { role: user.role },
-        }),
-      });
+      await audit.loginSuccess({ userId: user.id, role: user.role, ip: input.ip }, tx);
     });
 
     return {
@@ -373,20 +282,13 @@ export function createAuthService(options: {
       return;
     }
 
-    const current = now();
     const result = await prisma.session.updateMany({
       where: { id: session.id, revokedAt: null },
-      data: { revokedAt: current },
+      data: { revokedAt: now() },
     });
 
     if (result.count === 1) {
-      await prisma.auditEvent.create({
-        data: auditData({
-          eventType: 'auth.logout',
-          actorUserId: session.userId,
-          targetUserId: session.userId,
-        }),
-      });
+      await audit.logout({ userId: session.userId });
     }
   }
 
@@ -397,5 +299,3 @@ export function createAuthService(options: {
     logout,
   };
 }
-
-export { verifyCsrfToken };

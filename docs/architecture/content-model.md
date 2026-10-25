@@ -108,8 +108,11 @@ capability service, not in the route.
 | `created_at`, `last_used_at`, `expires_at` | timestamptz(6) | absolute + idle expiry |
 | `revoked_at` | timestamptz(6) | nullable; logout/expiry/disable |
 
-The raw session token only exists in the HttpOnly cookie. `ip` and `user_agent`
-columns are not stored in this slice.
+The raw session token only exists in the HttpOnly `mernpress_session` cookie
+(`Path=/api`). The session-bound CSRF token travels in the separate readable
+`mernpress_csrf` cookie; the login double-submit token uses
+`mernpress_csrf_preauth`. `ip` and `user_agent` columns are not stored in this
+slice.
 
 #### `audit_events` (Phase 2 first slice)
 
@@ -119,7 +122,7 @@ columns are not stored in this slice.
 | `event_type` | varchar(64) | auth event name |
 | `actor_user_id`, `target_user_id` | uuid | nullable FKs, set null on delete |
 | `ip_hash` | char(64) | HMAC-SHA256 with `AUTH_HASH_PEPPER` |
-| `metadata` | jsonb | reason/identifier HMAC only; no secrets |
+| `metadata` | jsonb | reason/identifier HMAC only; no secrets. `auth.login.rate_limited` is coalesced at the threshold |
 | `created_at` | timestamptz(6) | UTC |
 
 #### `login_attempts` (Phase 2 first slice)
@@ -128,7 +131,7 @@ columns are not stored in this slice.
 | --- | --- | --- |
 | `id` | bigserial | PK |
 | `key_hash` | char(64) | HMAC of `ip:<ip>` or `user:<username>` |
-| `attempted_at` | timestamptz(6) | indexed with `key_hash` |
+| `attempted_at` | timestamptz(6) | indexed with `key_hash` and alone for bounded pruning |
 
 The seed is an idempotent no-op. The first administrator is created only through
 `pnpm auth:bootstrap`.

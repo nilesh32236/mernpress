@@ -37,7 +37,8 @@ pnpm db:seed
 ```
 
 Expected:
-- one auth migration applied (or already applied);
+- both additive auth migrations applied: the initial auth schema and the
+  `login_attempts(attempted_at)` hardening index;
 - `db:seed` prints the no-op message both times;
 - no administrator/content row is created by the seed.
 
@@ -49,6 +50,15 @@ psql "$DATABASE_URL" -c '\dt'
 
 Expected: `_prisma_migrations`, `users`, `sessions`, `audit_events`,
 `login_attempts`. No posts/pages/media/terms tables.
+
+Confirm the hardening indexes on the attempts table:
+
+```bash
+psql "$DATABASE_URL" -c '\d login_attempts'
+```
+
+Expected indexes: primary key, `(key_hash, attempted_at)` and
+`(attempted_at)`. The latter supports bounded retention cleanup.
 
 ## C. First administrator
 
@@ -93,9 +103,19 @@ Expected: exactly one `administrator`, `active`.
 7. Open DevTools Application/Storage. Expected: no session token in
    localStorage, sessionStorage or the URL. The HttpOnly session cookie is not
    readable by JavaScript.
-8. Click **Sign out**. Expected: login form returns; reload remains anonymous.
-9. Sign in again, then submit a wrong password. Expected generic “Invalid
-   username or password.” — no account-existence detail.
+8. With the session still active, open DevTools Console and run:
+
+   ```js
+   await (await fetch('/api/auth/csrf', { credentials: 'include' })).json()
+   ```
+
+   Expected: a token is returned. In Application → Cookies, `mernpress_csrf`
+   (the session token) is unchanged; `mernpress_csrf_preauth` is new. This is
+   the regression check: refreshing the login token must not break logout.
+9. Click **Sign out**. Expected: login form returns with no CSRF error; reload
+   remains anonymous. If this fails, stop and record the exact response.
+10. Sign in again, then submit a wrong password. Expected generic “Invalid
+    username or password.” — no account-existence detail.
 
 ## E. Session and audit evidence
 
@@ -109,7 +129,11 @@ psql "$DATABASE_URL" -c "select event_type from audit_events order by created_at
 Expected:
 - token/CSRF columns are 64-character hashes, never raw tokens;
 - audit events include `auth.bootstrap`, `auth.login.success` and `auth.logout`;
-- no password, raw session token or CSRF token is stored in audit metadata.
+- `auth.login.failure` appears per accepted failed attempt;
+- `auth.login.rate_limited` has `reason=threshold_reached` and is not written
+  once per blocked retry;
+- no password, raw username, raw session token or CSRF token is stored in audit
+  metadata.
 
 Do not paste hashes or tokens into a report.
 
@@ -132,7 +156,18 @@ The automated tests cover these in depth; manual spot checks:
 - Login requests without an allowed `Origin` are 403.
 - Login/logout without the CSRF token are 403.
 - After 5 failed logins in 15 minutes, the API returns 429 with `Retry-After`.
-  Do not disable the limiter; wait for the window or use the dedicated test DB.
+  Retrying while blocked keeps returning 429. Count durable rows, not requests:
+
+  ```bash
+  psql "$DATABASE_URL" -c "select event_type, count(*) from audit_events group by 1 order by 1;"
+  ```
+
+  Expected: `auth.login.rate_limited` stays small (at most a few threshold
+  events), while the number of blocked requests is larger. Do not disable the
+  limiter; wait for the window or use the dedicated test DB.
+- After the limiter window has passed and a login attempt runs, inspect
+  `login_attempts`: no row older than the configured window remains, up to the
+  bounded batch per attempt. One-off usernames must not leave permanent rows.
 - `GET /api/auth/session` returns 401 when anonymous and 200 when signed in.
 - `/api/auth/session` and `/api/auth/login` responses carry `Cache-Control:
   no-store`.
@@ -153,8 +188,8 @@ pnpm audit --audit-level=high
 ```
 
 Expected (current slice):
-- 43 Vitest tests pass (API 37, admin 5, web 1);
-- 6 Playwright tests pass (3 auth, 3 foundation);
+- 58 Vitest tests pass (API 47, admin 10, web 1);
+- 7 Playwright tests pass (4 auth, 3 foundation);
 - builds pass;
 - audit reports no known vulnerabilities.
 
@@ -180,10 +215,13 @@ The only admin authenticated view is the session placeholder and sign-out.
 - [ ] Bootstrap creates exactly one administrator; repeat is refused.
 - [ ] Login succeeds with Argon2id; wrong/unknown credentials are generic.
 - [ ] Session cookie is HttpOnly/SameSite and not in browser storage.
-- [ ] Reload keeps the session; logout revokes it.
-- [ ] CSRF/Origin, rate-limit and request-ID behavior matches the guide/tests.
+- [ ] Pre-auth and session CSRF cookies are separate; refreshing `/api/auth/csrf`
+      while signed in leaves `mernpress_csrf` unchanged.
+- [ ] Reload keeps the session; logout revokes it even after a CSRF refresh.
+- [ ] CSRF/Origin, rate-limit, bounded retention, coalesced audit and request-ID
+      behavior matches the guide/tests.
 - [ ] DB stores only token/CSRF hashes and safe audit events.
-- [ ] 43 unit/integration tests and 6 browser tests pass.
+- [ ] 58 unit/integration tests and 7 browser tests pass.
 - [ ] No CMS/content/editor/media/theme/plugin feature exists.
 - [ ] CI result for the exact commit is recorded separately.
 

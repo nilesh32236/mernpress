@@ -12,10 +12,13 @@ HIPAA compliance, PCI compliance or multi-tenant isolation.
 Phase 2 first slice now implements: Argon2id administrator credentials, opaque
 SHA-256-hashed sessions, HttpOnly/SameSite/Secure cookie rules, idle/absolute
 expiry, session revocation, login/logout/current-session endpoints, Origin +
-CSRF checks, database-backed dual-key login rate limiting, a bootstrap-only
-administrator CLI, HMAC-peppered audit/rate-limit identifiers, bounded auth
-bodies and strict request-ID validation. Roles/capabilities, user administration,
-password reset/email, MFA and all content features remain out of scope.
+CSRF checks with separate pre-auth and session-bound cookies, database-backed
+dual-key login rate limiting with bounded retention and coalesced audit, a
+bootstrap-only administrator CLI, HMAC-peppered audit/rate-limit identifiers,
+bounded auth bodies and strict request-ID validation. The supported deployment
+is same-origin admin + `/api` reverse proxy. Roles/capabilities, user
+administration, password reset/email, MFA and all content features remain out of
+scope.
 
 ## 1. Scope and assumptions
 
@@ -140,12 +143,16 @@ Boundaries:
   verification for unknown users). No bcrypt fallback is implemented.
 - Opaque 256-bit session tokens stored only as SHA-256 hex; no JWT. New token on
   every login; logout, idle expiry, absolute expiry and disabled users revoke.
-- Cookie: session `HttpOnly`, `Secure` in production, `SameSite=Lax`, `Path=/api`,
-  bounded Max-Age; readable CSRF cookie at `/` by design. No session token in
-  localStorage/sessionStorage/URLs.
+- Cookies: session `HttpOnly`, `Secure` in production, `SameSite=Lax`, `Path=/api`,
+  bounded Max-Age; readable `mernpress_csrf_preauth` for login double-submit
+  (10 min) and `mernpress_csrf` bound to the session for logout, both at `/` by
+  design. No session token in localStorage/sessionStorage/URLs.
 - Login rate limit: database-backed dual keys (HMAC IP + HMAC username), 5
   failures/15 min, 429 with Retry-After, success clears; malformed usernames also
-  rate-limited. A small concurrent over-limit race is accepted at MVP volume.
+  rate-limited. Expired attempts are pruned in bounded batches (100, `SKIP
+  LOCKED`) so one-off keys cannot accumulate. Rate-limit audit is coalesced at
+  the threshold, so rejected requests cannot cause unbounded audit writes. A
+  small concurrent over-limit race is accepted at MVP volume.
 - Session rotation on login; logout revokes one session. Logout-all/password
   reset/MFA/privilege-change rotation are later slices.
 - Bootstrap is CLI-only, advisory-locked, refuses if an administrator exists and
@@ -163,8 +170,14 @@ Boundaries:
 ### CSRF/CORS/headers
 
 - SameSite cookies + exact Origin allowlist + CSRF. Login uses pre-auth
-  double-submit; logout uses the session-bound CSRF hash. Missing/wrong/mismatched
-  values are 403. CORS is not treated as CSRF defense.
+  double-submit on `mernpress_csrf_preauth`; logout uses the separately stored
+  session-bound `mernpress_csrf` hash. Missing/wrong/mismatched values are 403.
+  `GET /api/auth/csrf` only provisions the pre-auth cookie and never mutates
+  session CSRF state, so refreshing it cannot break logout. CORS is not treated
+  as CSRF defense.
+- The admin/API deployment is same-origin behind a reverse proxy; the admin client
+  uses relative `/api` URLs and reads only its own path-`/` cookie. A
+  separate-origin client is unsupported until it is implemented and tested.
 - No state-changing GET; auth responses use `Cache-Control: no-store`.
 - CORS: exact origins, credentials enabled, explicitly allowed methods/headers;
   wildcards rejected. Production requires HTTPS non-loopback origins.
@@ -214,9 +227,11 @@ Boundaries:
   headers and password/CSRF fields. Auth bodies are not logged.
 - Production errors return a stable generic code/message; no stack traces/SQL.
 - Health endpoints expose minimal status, not configuration.
-- `audit_events` records bootstrap, login success/failure, rate limit, logout and
-  session revocation; IP/identifier hashes use HMAC with `AUTH_HASH_PEPPER`.
-  Passwords, raw tokens, cookies and full bodies are never stored in audit rows.
+- `audit_events` records bootstrap, login success/failure, threshold rate limiting,
+  logout and session revocation; IP/identifier hashes use HMAC with
+  `AUTH_HASH_PEPPER`. `auth.login.rate_limited` is coalesced at the threshold, so
+  blocked retries do not each create a durable row. Passwords, raw tokens,
+  cookies and full bodies are never stored in audit rows.
 
 ## 7. Safe defaults for local development
 
@@ -233,6 +248,10 @@ Boundaries:
 ## 8. Residual risks (accepted for MVP)
 
 - No WAF/DDoS protection; the operator/reverse proxy must provide it.
+- Same-origin deployment is required for the admin; a separate-origin client would
+  need a returned CSRF token, CORS/cookie review and browser tests.
+- Rate-limit audit can emit a few threshold events under a concurrency race; it
+  still cannot grow with the number of rejected requests.
 - No 2FA/MFA, password reset/email or SSO; strong passwords + rate limiting only.
 - A lost sole-administrator password requires a separately approved recovery
   procedure; there is no reset endpoint in this slice.
@@ -253,7 +272,7 @@ Boundaries:
 | Phase | Gate |
 | --- | --- |
 | 1 | Env validation, no secrets in git, health endpoints minimal, dependency audit |
-| 2 | Auth/session/CSRF/rate-limit tests, cookie flags, admin authz; roles/object authz deferred to P2-04 |
+| 2 | Auth/session/CSRF/rate-limit tests, cookie flags, bounded retention/audit, same-origin client contract, admin authz; roles/object authz deferred to P2-04 |
 | 3 | Object-level authz, mass-assignment review, validation, conflict handling |
 | 4 | XSS in admin forms/lists, CSRF, admin route guards |
 | 5 | Sanitizer/XSS suite, unknown-block safety, CSP compatibility, no eval |

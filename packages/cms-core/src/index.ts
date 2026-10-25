@@ -1,4 +1,5 @@
 export { createAuthService } from './auth/service.js';
+export { LOGIN_ATTEMPT_CLEANUP_BATCH } from './auth/rate-limit.js';
 export {
   ARGON2_OPTIONS,
   hashPassword,

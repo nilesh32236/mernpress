@@ -25,8 +25,11 @@ At the start of every implementation session, read:
 1. This file.
 2. `README.md` and the current phase in `TASKS.md`.
 3. The relevant ADRs and architecture docs (start at `DECISIONS.md`).
-4. The last entry in `docs/implementation-log.md`.
-5. `git status` and the current diff.
+4. [Engineering standards](docs/architecture/code-standards.md) — module
+   boundaries, SOLID/DRY interpretation, error/logging rules, testing and
+   scalability conventions.
+5. The last entry in `docs/implementation-log.md`.
+6. `git status` and the current diff.
 
 Do not start from stale assumptions or from a previous chat summary. The
 repository is the source of truth.
@@ -141,6 +144,8 @@ Rules:
 - Record alternatives, evidence, trade-offs, security/compatibility impact and
   the reason for the choice.
 - Update `docs/implementation-log.md` and `TASKS.md` at the end of every slice.
+- Follow [engineering standards](docs/architecture/code-standards.md); update the
+  relevant module map when a module boundary changes.
 - Link documents from `README.md`; keep cross-links valid.
 - Do not put secrets, credentials, customer data or private tokens in docs,
   fixtures or AI memory.
@@ -191,8 +196,9 @@ pnpm dev                      # api + admin + web
 
 Expected local ports: API `4000`, admin `5173`, web `3000`. PostgreSQL 18 on
 `5432` (or the project-local cluster on `55432`). Docker Compose is optional;
-native PostgreSQL is the verified path. Phase 2 has four auth tables and one
-additive migration; `db:seed` is still an explicit no-op. Tests use
+native PostgreSQL is the verified path. Phase 2 has four auth tables and two
+additive migrations (initial auth schema + hardening index); `db:seed` is still
+an explicit no-op. Tests use
 `TEST_DATABASE_URL` and truncate only auth tables. `pnpm test:e2e` needs ports
 4000/5173/3000 free and the test database migrated. See
 [local setup](docs/operations/local-setup.md).

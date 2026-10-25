@@ -1,7 +1,8 @@
 # Local setup
 
-Status: Phase 1 foundation + Phase 2 authentication first slice. This page is the
-supported local path; Docker is optional and not required.
+Status: Phase 1 foundation + Phase 2 authentication first slice (including the
+hardening follow-up). This page is the supported local path; Docker is optional
+and not required.
 
 ## 1. Prerequisites
 
@@ -103,8 +104,10 @@ administrator exists.
 
 ### What the database commands actually do
 
-Phase 2 has four auth tables and one additive migration: `users`, `sessions`,
-`audit_events` and `login_attempts`.
+Phase 2 has four auth tables and two additive migrations: the initial auth
+schema (`users`, `sessions`, `audit_events`, `login_attempts`) and the
+`login_attempts(attempted_at)` hardening index. Migrations are forward-only; an
+applied migration is never edited.
 
 - `pnpm db:generate` generates the typed Prisma client into
   `packages/database/src/generated/prisma` (gitignored).
@@ -131,8 +134,28 @@ pnpm dev
 | --- | --- | --- |
 | API | http://127.0.0.1:4000 | `/api/health`, `/api/ready` |
 | Admin | http://127.0.0.1:5173 | Vite login/logout shell; proxies `/api` to 4000 |
-| API auth | http://127.0.0.1:4000/api/auth/* | CSRF, login, logout and current session |
+| API auth | http://127.0.0.1:4000/api/auth/* | Pre-auth CSRF, login, logout and current session |
 | Public web | http://127.0.0.1:3000 | Next.js App Router |
+
+The supported topology is **same-origin**: the admin page and `/api` share one
+browser origin. In development Vite proxies `/api` to port 4000. In production an
+HTTPS reverse proxy must serve the admin build and route `/api` to the API on the
+same origin. The admin client intentionally uses relative `/api/...` URLs and
+reads the path-`/` `mernpress_csrf` cookie; a separate-origin API deployment is
+not supported or tested.
+
+Cookies in the browser:
+
+| Cookie | Purpose | Path | Readable by JS |
+| --- | --- | --- | --- |
+| `mernpress_session` | opaque session | `/api` | no (HttpOnly) |
+| `mernpress_csrf` | session-bound logout CSRF | `/` | yes |
+| `mernpress_csrf_preauth` | login double-submit (10 min) | `/` | yes |
+
+Behind a proxy, set `TRUST_PROXY=true` only when it correctly supplies the client
+address; otherwise rate limiting keys the proxy address. Keep `CORS_ORIGINS` set
+to the browser origin even though the admin is same-origin, because mutating
+requests are checked against it.
 
 Each app can also be started alone:
 
@@ -161,10 +184,11 @@ pnpm exec playwright install chromium
 
 `pnpm test` uses the dedicated `TEST_DATABASE_URL` and truncates only auth tables;
 never point it at development data. It covers bootstrap, Argon2id, generic login
-failures, sessions, cookies, CSRF/Origin, rate limits, oversized bodies, request
-IDs and log redaction. `pnpm test:e2e` also uses the test database, resets it,
-and starts fresh servers on ports 4000/5173/3000; stop `pnpm dev` first because
-the E2E web servers do not reuse existing processes.
+failures, sessions, cookies, CSRF/Origin, pre-auth vs session CSRF separation,
+rate limits with bounded retention and coalesced audit, oversized bodies,
+request IDs and log redaction. `pnpm test:e2e` also uses the test database,
+resets it, and starts fresh servers on ports 4000/5173/3000; stop `pnpm dev`
+first because the E2E web servers do not reuse existing processes.
 
 ## 7. CI
 

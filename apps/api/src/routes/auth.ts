@@ -13,6 +13,7 @@ import {
   clearSessionCookieOptions,
   csrfCookieOptions,
   CSRF_COOKIE,
+  PREAUTH_CSRF_COOKIE,
   PREAUTH_CSRF_TTL_SECONDS,
   SESSION_COOKIE,
   sessionCookieOptions,
@@ -46,7 +47,7 @@ function csrfHeader(request: FastifyRequest): string | undefined {
 }
 
 function preAuthCsrfValid(request: FastifyRequest): boolean {
-  const cookie = cookieValue(request, CSRF_COOKIE);
+  const cookie = cookieValue(request, PREAUTH_CSRF_COOKIE);
   const header = csrfHeader(request);
 
   if (!cookie || !header) {
@@ -91,10 +92,18 @@ function handleAuthError(
 export function registerAuthRoutes(app: FastifyInstance, options: AuthRouteOptions): void {
   const { env, auth } = options;
 
+  // Login-token bootstrap for anonymous and authenticated callers. It writes
+  // only the pre-auth cookie: it never reads, rotates or clears the session or
+  // the session-bound CSRF cookie, so calling it after login cannot break
+  // logout and the GET does not mutate server-side session state.
   app.get('/api/auth/csrf', async (_request, reply) => {
     const csrfToken = generateOpaqueToken();
 
-    reply.setCookie(CSRF_COOKIE, csrfToken, csrfCookieOptions(env, PREAUTH_CSRF_TTL_SECONDS));
+    reply.setCookie(
+      PREAUTH_CSRF_COOKIE,
+      csrfToken,
+      csrfCookieOptions(env, PREAUTH_CSRF_TTL_SECONDS),
+    );
     noStore(reply);
     return { csrfToken };
   });
@@ -128,6 +137,7 @@ export function registerAuthRoutes(app: FastifyInstance, options: AuthRouteOptio
         result.csrfToken,
         csrfCookieOptions(env, env.SESSION_TTL_MINUTES * 60),
       );
+      reply.clearCookie(PREAUTH_CSRF_COOKIE, clearCsrfCookieOptions(env));
 
       return {
         user: result.user,

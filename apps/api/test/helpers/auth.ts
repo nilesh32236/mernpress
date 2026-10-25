@@ -46,15 +46,15 @@ export async function getCsrf(app: FastifyInstance): Promise<{
 }> {
   const response = await app.inject({ method: 'GET', url: '/api/auth/csrf' });
   const body = response.json() as { csrfToken: string };
-  const cookie = response.cookies.find((entry) => entry.name === 'mernpress_csrf');
+  const cookie = response.cookies.find((entry) => entry.name === 'mernpress_csrf_preauth');
 
   if (!cookie) {
-    throw new Error('CSRF cookie was not set');
+    throw new Error('Pre-auth CSRF cookie was not set');
   }
 
   return {
     token: body.csrfToken,
-    cookieHeader: `mernpress_csrf=${cookie.value}`,
+    cookieHeader: `mernpress_csrf_preauth=${cookie.value}`,
   };
 }
 
@@ -77,13 +77,17 @@ export async function loginAs(
     payload: { username, password },
   });
 
-  const responseCookies = response.cookies.map((entry) => `${entry.name}=${entry.value}`);
-  const hasResponseCsrf = response.cookies.some((entry) => entry.name === 'mernpress_csrf');
+  // A successful login sets the session cookie and the session-bound CSRF
+  // cookie and clears the pre-auth cookie. Failed logins set nothing, so the
+  // returned header is then only useful for assertions, not for reuse.
+  const responseCookies = response.cookies
+    .filter((entry) => entry.value !== '')
+    .map((entry) => `${entry.name}=${entry.value}`);
   const body = response.json() as { csrfToken?: string };
 
   return {
     response,
-    cookieHeader: [...responseCookies, ...(hasResponseCsrf ? [] : [csrf.cookieHeader])].join('; '),
+    cookieHeader: responseCookies.join('; '),
     csrfToken: body.csrfToken ?? csrf.token,
   };
 }

@@ -10,8 +10,9 @@ The name is a project name, not a database mandate. MERNPress uses **PostgreSQL*
 
 ## Current phase
 
-**Phase 2 — the first authentication slice is implemented, CI-green; owner
-manual acceptance pending.** Phase 1 foundation and CI are complete. This slice adds a
+**Phase 2 — the first authentication slice is implemented with post-review
+hardening, CI-green; owner manual acceptance pending.** Phase 1 foundation and
+CI are complete. This slice adds a
 single administrator, Argon2id credentials, database-backed sessions,
 login/logout/current-session, CSRF/Origin protection, login rate limiting and a
 minimum accessible login UI. There is still **no content/CMS feature**: no
@@ -99,8 +100,13 @@ troubleshooting: [local setup](docs/operations/local-setup.md).
 - React 19 + Vite 8 admin placeholder and Next.js 16 + Tailwind 4 public
   placeholder, both accessible and bootable.
 - Argon2id administrator credentials, first-admin CLI, database-backed sessions,
-  login/logout/current-session, CSRF/Origin checks, DB-backed login rate limiting,
-  request-ID validation, audit events and the minimum login/logout UI.
+  login/logout/current-session, CSRF/Origin checks with separate pre-auth and
+  session-bound cookies, DB-backed login rate limiting with bounded retention and
+  coalesced audit, request-ID validation, audit events and the minimum
+  login/logout UI.
+- Same-origin deployment contract: the admin calls relative `/api` URLs and is
+  served with the API behind one HTTPS reverse proxy (Vite proxies `/api` in
+  development). A separate-origin API client is not supported yet.
 - Vitest unit/integration/security tests, Playwright auth + placeholder smoke tests
   and a GitHub Actions pipeline with a PostgreSQL service.
 
@@ -113,8 +119,9 @@ a Phase 1 placeholder; the admin has only login/logout/session UI.
 
 ## Database behavior
 
-Phase 2 adds one additive migration: `users`, `sessions`, `audit_events` and
-`login_attempts`, plus the administrator/status enums.
+Phase 2 adds two additive migrations: the initial auth schema (`users`,
+`sessions`, `audit_events`, `login_attempts`) and the
+`login_attempts(attempted_at)` hardening index.
 
 - `pnpm db:migrate` runs `prisma migrate deploy` and verifies connectivity. On a
   fresh database it applies the auth migration and creates only those auth
@@ -189,7 +196,9 @@ pnpm test:e2e
 `pnpm test` expects the dedicated test PostgreSQL database. It covers API liveness,
 readiness 200/503, environment validation, bootstrap, Argon2id, generic login
 failures, token-hash storage, cookie flags, session expiry/revocation, disabled
-users, CSRF/Origin, rate limiting/recovery, invalid usernames, oversized bodies,
+users, CSRF/Origin, the pre-auth/session CSRF split and CSRF refresh regression,
+rate limiting/recovery, bounded retention of one-off attempts, coalesced
+rate-limit audit under a blocked burst, invalid usernames, oversized bodies,
 request IDs, log redaction, admin UI states and web placeholder rendering.
 Playwright signs in, signs out, keyboard-submits, checks browser storage and
 opens both placeholders without unexpected console/asset errors.
@@ -218,6 +227,7 @@ Start here, then follow the links.
 | [docs/research/stack-comparison.md](docs/research/stack-comparison.md) | Versions, compatibility evidence, alternatives and trade-offs |
 | [docs/research/opencode-tooling.md](docs/research/opencode-tooling.md) | OpenCode tooling history from Phase 0 |
 | [docs/architecture/system-overview.md](docs/architecture/system-overview.md) | Components, boundaries, request/content flow and local runtime |
+| [docs/architecture/code-standards.md](docs/architecture/code-standards.md) | Module boundaries, SOLID/DRY rules, error/logging, testing and scalability conventions |
 | [docs/architecture/authentication.md](docs/architecture/authentication.md) | Phase 2 auth scope, schema, flows, CSRF, sessions, rate limiting and config |
 | [docs/architecture/content-model.md](docs/architecture/content-model.md) | Entities, lifecycle, slugs, media, taxonomy, revisions and migrations |
 | [docs/architecture/gutenberg-and-rendering.md](docs/architecture/gutenberg-and-rendering.md) | Content format, block registry, editor and renderer |

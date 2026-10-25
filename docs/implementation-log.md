@@ -5,6 +5,127 @@ and results, decisions, limitations and the next step. Do not record secrets.
 
 ---
 
+## 2026-10-25 — Phase 2 auth hardening: fixes, modular pass and verification
+
+**Status:** implementation complete and verified locally; owner manual
+acceptance pending. No roles, user administration, content or editor work was
+started.
+
+### Findings and fixes
+
+| Finding | Fix | Regression evidence |
+| --- | --- | --- |
+| A. Expired `login_attempts` rows for one-off keys accumulated forever | Bounded opportunistic prune on every login (100 rows, oldest first, `FOR UPDATE SKIP LOCKED`), `login_attempts(attempted_at)` index, cutoff equals the live limiter window start | `rate-limit-cleanup.test.ts`: one-off keys pruned, recent rows kept, exactly one batch deleted, live limiter not reset |
+| B. Every 429 wrote a durable audit row | Coalesced `auth.login.rate_limited` at the threshold; rejected requests return 429 + `Retry-After` with no write; per-attempt failures remain | 20-request burst: all 429, ≤2 threshold events; concurrent blocked burst adds none |
+| C. `GET /api/auth/csrf` overwrote the session CSRF cookie | Separate `mernpress_csrf_preauth` (login, 10 min) and `mernpress_csrf` (session-bound, login only); GET never touches session state | Authenticated refresh then logout 204; anonymous/invalid/expired session cases; browser regression through the Vite proxy |
+| D. Docs implied a configurable separate API origin | Supported topology is same-origin admin + `/api` reverse proxy; client stays relative `/api`; separate-origin is explicitly unsupported | Admin client unit test pins relative URLs/credentials; Playwright asserts the `/api` response origin equals the admin origin |
+| E. Session cookie path docs/code mismatch | All docs now agree with `Path=/api`; CSRF cookies use `Path=/` | Cookie assertions in login tests and docs grep |
+
+### Design decisions
+
+Recorded before code changes: D-021 (bounded retention + index), D-022
+(coalesced rate-limit audit), D-023 (pre-auth/session CSRF split), D-024
+(same-origin topology). Full rationale and residuals:
+[ADR 0002](../adr/0002-authentication-foundation.md#auth-hardening-follow-up-2026-10-25).
+
+### Modularity and standards
+
+The auth service was split so each module has one reason to change:
+
+- `auth/rate-limit.ts` owns all `login_attempts` reads/writes, pruning and
+  threshold detection;
+- `auth/audit.ts` is the only auth audit writer and owns HMAC-safe metadata;
+- `auth/identifiers.ts` owns domain-separated HMAC hashing;
+- `auth/service.ts` now only orchestrates bootstrap/login/session/logout.
+
+[Engineering standards](../architecture/code-standards.md) now documents the
+SOLID/DRY interpretation, package boundaries, auth module map, error/logging
+rules, testing expectations, formatting and scalability rules, and is linked
+from `AGENTS.md` so a new session reads it before changing code.
+
+### Verification
+
+| Command | Result |
+| --- | --- |
+| `pnpm install --frozen-lockfile` | PASS |
+| `pnpm lint` | PASS |
+| `pnpm format:check` | PASS |
+| `pnpm typecheck` | PASS (7 Turbo tasks) |
+| `pnpm test` | PASS — **58 tests** (API 47, admin 10, web 1) |
+| `pnpm build` | PASS |
+| `pnpm test:e2e` | PASS — **7 Playwright tests** (4 auth incl. CSRF refresh, 3 foundation) |
+| `pnpm audit --audit-level=high` | PASS — no known vulnerabilities |
+| Fresh database `pnpm db:migrate` | PASS — both additive migrations, auth tables, both attempt indexes, UTC/UUIDv7 check |
+| Existing-schema upgrade | PASS — applied only the hardening index via `migrate deploy`; existing `login_attempts` row preserved |
+| Seed on fresh DB | PASS — idempotent no-op, no administrator/content rows |
+| GitHub Actions | PENDING — recorded after the push; no CI claim is made yet |
+
+### Independent review
+
+Read-only adversarial review by a different free model
+(`opencode/glm-5.3-flash-free` with max reasoning). Verdict: **PASS WITH
+ISSUES**, no blockers or high findings. It confirmed findings A–E fixed with
+file:line evidence, scope clean and no secrets.
+
+It raised documentation accuracy and test-hygiene issues, all corrected before
+commit:
+
+- ADR now says five issues and distinguishes tested reproductions (A–C) from the
+  static topology/docs checks (D–E).
+- The retention test now asserts the exact exported batch size, so the ADR's
+  "one batch of 100" claim is proven, and the constant is no longer an unused
+  public export.
+- The review-entry status line no longer claims fixes are pending; `AGENTS.md`
+  now says two additive migrations.
+- Removed a dead assertion; added a same-username/different-IP rate-limit test,
+  a concurrent-blocked-retry audit test, and a no-session-clear assertion for
+  invalid-session CSRF refresh.
+
+### Limitations / residual risks
+
+- Owner manual acceptance has not run.
+- Rate-limit audit can emit a few threshold events under an admitted-request
+  race; it cannot grow with rejected requests. Documented, accepted at MVP
+  volume.
+- Pruning runs only while login traffic exists; a static table does not grow.
+- No MFA/password reset/email/SSO; a lost sole-admin password needs a separately
+  approved recovery procedure.
+- Same-origin deployment is required; separate-origin API support is future work.
+- E2E is Chromium-only; full axe/cross-browser checks remain later work.
+- No content/CMS feature exists.
+
+### Next step
+
+Owner follows `docs/testing/phase-2-manual-test.md` and accepts or rejects this
+hardened auth slice. If accepted, the next single slice is the remaining Phase 2
+work: roles/capabilities and user administration with last-administrator
+protection, then profile/password management. Phase 3 must not start first.
+
+---
+
+## 2026-10-25 — Phase 2 auth hardening: review and reproduction
+
+**Status:** review and reproduction recorded before the fixes; superseded by the
+completion entry above. No slice scope added.
+
+A static follow-up review of `223a35f` found five issues. Each was reproduced
+with a focused failing test before any code change:
+
+| Finding | Reproduction | Result |
+| --- | --- | --- |
+| A. Expired `login_attempts` rows for one-off keys are never pruned | `apps/api/test/auth/rate-limit-cleanup.test.ts` | Failed: 6 expired rows remained; 0 of 150 expired rows deleted |
+| B. One durable audit row per rate-limited rejection | `apps/api/test/auth/security.test.ts` stress | Failed: 21 `auth.login.rate_limited` rows after a 20-request burst |
+| C. `GET /api/auth/csrf` overwrites the session CSRF cookie | `apps/api/test/auth/csrf.test.ts` | Failed: 4 cases, including logout 403 after an authenticated refresh |
+| D. Docs imply a configurable separate API origin | static review of `apps/admin/src/api.ts`, Vite config, ADR 0002 | Confirmed: client is relative `/api` only |
+| E. Session cookie path mismatch (`/` vs `/api`) | ADR 0002 vs `apps/api/src/auth/cookies.ts` | Confirmed: docs said `/`, code uses `/api` |
+
+Decisions recorded before implementation: D-021 to D-024 and
+[ADR 0002](../adr/0002-authentication-foundation.md#auth-hardening-follow-up-2026-10-25).
+The fixes stay inside the authentication slice and add no roles, user
+administration, content or editor work.
+
+---
+
 ## 2026-10-25 — Phase 2: secure authentication first slice
 
 **Status:** implementation complete, verified locally and CI-green; **owner
