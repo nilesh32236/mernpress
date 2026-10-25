@@ -10,8 +10,8 @@ The name is a project name, not a database mandate. MERNPress uses **PostgreSQL*
 
 ## Current phase
 
-**Phase 2 — the first authentication slice is implemented; owner manual
-acceptance pending.** Phase 1 foundation and CI are complete. This slice adds a
+**Phase 2 — the first authentication slice is implemented, CI-green; owner
+manual acceptance pending.** Phase 1 foundation and CI are complete. This slice adds a
 single administrator, Argon2id credentials, database-backed sessions,
 login/logout/current-session, CSRF/Origin protection, login rate limiting and a
 minimum accessible login UI. There is still **no content/CMS feature**: no
@@ -195,9 +195,9 @@ Playwright signs in, signs out, keyboard-submits, checks browser storage and
 opens both placeholders without unexpected console/asset errors.
 
 CI is configured in `.github/workflows/ci.yml` with an ephemeral PostgreSQL 18
-service. Phase 1 CI passed (run `40127072446`). The Phase 2 auth-slice run is
-recorded in the implementation log after the commit is pushed. The earlier
-Turborepo `DATABASE_URL` filtering bug is fixed via `globalEnv`.
+service. Phase 1 passed in run `40127072446`; the Phase 2 auth slice passed in
+run `40166039330` (2m17s, commit `3f29e9f`). The earlier Turborepo
+`DATABASE_URL` filtering bug is fixed via `globalEnv`.
 
 ## Documentation
 

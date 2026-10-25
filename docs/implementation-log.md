@@ -7,8 +7,8 @@ and results, decisions, limitations and the next step. Do not record secrets.
 
 ## 2026-10-25 — Phase 2: secure authentication first slice
 
-**Status:** implementation complete and verified locally; **owner manual
-acceptance pending**. No Phase 3 or content/CMS feature was started.
+**Status:** implementation complete, verified locally and CI-green; **owner
+manual acceptance pending**. No Phase 3 or content/CMS feature was started.
 
 ### Summary
 
@@ -73,7 +73,7 @@ All commands ran with Node `24.22.1`, pnpm `12.15.0`, local PostgreSQL `18.3`
 | `pnpm auth:bootstrap` on empty DB | PASS | Created one administrator; Argon2id PHC `m=65536,t=3,p=1` |
 | Bootstrap re-run | PASS (expected refusal) | Refused with `An administrator already exists`; no second user |
 | Login → session → logout smoke | PASS | Session cookie HttpOnly/SameSite/Lax Path=/api; CSRF cookie readable; DB token hash 64 chars; logout 204 then session 401; audit events recorded |
-| GitHub Actions | PENDING | Must be run for the final pushed commit; local equivalent is green. No CI green claim is made yet |
+| GitHub Actions | PASS | Run `40166039330` on commit `3f29e9f`, 2m17s: install, lint, format, typecheck, 43 tests, fresh-DB migrate, seed, build, 6 Playwright tests and audit all green |
 
 ### Security verification
 
@@ -119,8 +119,8 @@ regressions.
 ### Limitations / unfinished checks
 
 - Owner manual acceptance has not run.
-- GitHub Actions for this exact commit has not run yet; local CI-equivalent
-  commands pass.
+- CI run `40166039330` passed; GitHub still warns that several actions target
+  Node 20 while runners force Node 24. Track action updates; not a failure.
 - No MFA/2FA, password reset/email, SSO or account recovery; losing the only
   admin password needs a separately approved recovery procedure.
 - Rate-limit count/insert can overshoot by a small amount under extreme
