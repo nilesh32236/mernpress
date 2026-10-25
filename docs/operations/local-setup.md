@@ -195,8 +195,9 @@ first because the E2E web servers do not reuse existing processes.
 `.github/workflows/ci.yml` runs install, lint, format check, typecheck, tests,
 migrations, seed, build, Playwright and `pnpm audit --audit-level=high` against
 an ephemeral PostgreSQL 18 service. Phase 1 passed in run `40127072446`; the
-Phase 2 auth slice passed in run `40166039330` (commit `3f29e9f`). The earlier
-Turborepo `DATABASE_URL` filtering issue is fixed via `globalEnv`.
+Phase 2 auth slice passed in run `40166039330` (commit `3f29e9f`); the hardening
+follow-up passed in run `40180070433` (commit `cd56d09`). The earlier Turborepo
+`DATABASE_URL` filtering issue is fixed via `globalEnv`.
 
 ## Troubleshooting
 

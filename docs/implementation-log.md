@@ -7,9 +7,9 @@ and results, decisions, limitations and the next step. Do not record secrets.
 
 ## 2026-10-25 — Phase 2 auth hardening: fixes, modular pass and verification
 
-**Status:** implementation complete and verified locally; owner manual
-acceptance pending. No roles, user administration, content or editor work was
-started.
+**Status:** implementation complete, verified locally and CI-green; owner
+manual acceptance pending. No roles, user administration, content or editor
+work was started.
 
 ### Findings and fixes
 
@@ -58,7 +58,7 @@ from `AGENTS.md` so a new session reads it before changing code.
 | Fresh database `pnpm db:migrate` | PASS — both additive migrations, auth tables, both attempt indexes, UTC/UUIDv7 check |
 | Existing-schema upgrade | PASS — applied only the hardening index via `migrate deploy`; existing `login_attempts` row preserved |
 | Seed on fresh DB | PASS — idempotent no-op, no administrator/content rows |
-| GitHub Actions | PENDING — recorded after the push; no CI claim is made yet |
+| GitHub Actions | PASS — run `40180070433` on commit `cd56d09`, 2m56s: install, lint, format, typecheck, 58 tests, fresh-DB migrations, seed, build, 7 Playwright tests and audit all green |
 
 ### Independent review
 

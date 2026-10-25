@@ -205,8 +205,9 @@ opens both placeholders without unexpected console/asset errors.
 
 CI is configured in `.github/workflows/ci.yml` with an ephemeral PostgreSQL 18
 service. Phase 1 passed in run `40127072446`; the Phase 2 auth slice passed in
-run `40166039330` (2m17s, commit `3f29e9f`). The earlier Turborepo
-`DATABASE_URL` filtering bug is fixed via `globalEnv`.
+run `40166039330` (commit `3f29e9f`); the auth hardening follow-up passed in run
+`40180070433` (2m56s, commit `cd56d09`). The earlier Turborepo `DATABASE_URL`
+filtering bug is fixed via `globalEnv`.
 
 ## Documentation
 
