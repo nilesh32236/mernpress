@@ -199,7 +199,7 @@ export function createAuthService(options: {
         },
       });
 
-      await audit.bootstrap({ userId: user.id }, tx);
+      await audit.manualTestAccountCreated({ userId: user.id, role: input.role }, tx);
 
       return toPublicUser(user);
     });

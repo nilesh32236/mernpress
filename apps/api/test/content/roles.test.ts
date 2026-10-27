@@ -247,6 +247,17 @@ describe('role × capability matrix (ADR 0004)', () => {
 
     const trash = await transitionAs(authorB, post.id, 'trash', post.version);
     expect(trash.statusCode).toBe(403);
+
+    // Authorization must run before the optimistic-concurrency check: a wrong
+    // version must not turn into 409, which would let an unauthorized caller
+    // probe the hidden object's version counter.
+    const publishWrongVersion = await transitionAs(authorB, post.id, 'publish', post.version + 1);
+    expect(publishWrongVersion.statusCode).toBe(403);
+    expect((publishWrongVersion.json() as ErrorEnvelope).error.code).toBe('FORBIDDEN');
+
+    const trashWrongVersion = await transitionAs(authorB, post.id, 'trash', post.version + 1);
+    expect(trashWrongVersion.statusCode).toBe(403);
+    expect((trashWrongVersion.json() as ErrorEnvelope).error.code).toBe('FORBIDDEN');
   });
 
   it('author cannot manage taxonomy but can assign existing terms to their own content', async () => {
@@ -311,22 +322,34 @@ describe('role × capability matrix (ADR 0004)', () => {
     expect(roleHasCapability('administrator', 'user.manage')).toBe(true);
   });
 
-  // ---- private drafts: object-level read is admin-wide, edit is ownership-bound ----
+  // ---- private drafts: visibility is ownership-bound (pre-Phase-3-acceptance fix) ----
 
-  it('any role with content.read.any can list drafts, but only the owner/editor can edit them', async () => {
+  it('an author cannot read, list, or count another author\u2019s draft', async () => {
     const author = await makeUser(app, 'author', 'author4');
     const authorB = await makeUser(app, 'author', 'author5');
     const post = await mustCreatePostAs(author, 'Private draft');
 
-    // Another author can see it in the admin list (editorial visibility)…
+    // Direct read of a hidden draft returns 404 (not 403) to avoid leaking existence.
+    const get = await app.inject({
+      method: 'GET',
+      url: `/api/admin/posts/${post.id}`,
+      headers: readHeaders(authorB),
+    });
+    expect(get.statusCode).toBe(404);
+    expect((get.json() as ErrorEnvelope).error.code).toBe('NOT_FOUND');
+
+    // The draft is absent from the other author's list.
     const list = await app.inject({
       method: 'GET',
       url: '/api/admin/posts',
       headers: readHeaders(authorB),
     });
     expect(list.statusCode).toBe(200);
+    const body = list.json() as { items: Array<{ id: string }>; pagination: { total: number } };
+    expect(body.items.map((p) => p.id)).not.toContain(post.id);
+    expect(body.pagination.total).toBe(0);
 
-    // …but cannot edit it.
+    // Still cannot edit it.
     const edit = await patchAs(authorB, post.id, post.version, 'Hijack');
     expect(edit.statusCode).toBe(403);
   });

@@ -1,5 +1,6 @@
 import { ContentError } from '../content/errors.js';
 import type { Principal } from '../content/types.js';
+import type { PostStatus } from '@mernpress/database';
 
 /**
  * Capability registry (ADR 0004, D-2/D-3). Code-level role → capability map; the
@@ -86,4 +87,34 @@ export function requireCapability(principal: Principal, capability: Capability):
  */
 export function ownsObject(principal: Principal, authorId: string | null): boolean {
   return authorId !== null && authorId === principal.userId;
+}
+
+/**
+ * Visibility policy for admin content reads (pre-Phase-3-acceptance correction).
+ *
+ * Administrators and editors see every content state. The owner sees their own
+ * content in every state. Any other principal with `content.read.any` (authors,
+ * contributors) sees only PUBLISHED content of other authors. Subscribers are
+ * denied earlier via `content.read.any` (403). Hidden objects must surface as
+ * 404, never 403, so existence is not leaked.
+ */
+export const FULL_VISIBILITY_ROLES: ReadonlySet<string> = new Set(['administrator', 'editor']);
+
+export function canReadPost(
+  principal: Principal,
+  authorId: string | null,
+  status: PostStatus,
+): boolean {
+  if (ownsObject(principal, authorId)) {
+    return true;
+  }
+  if (FULL_VISIBILITY_ROLES.has(principal.role)) {
+    return true;
+  }
+  // Fail closed: only principals that actually hold content.read.any may see
+  // published content of others. Unknown roles are denied.
+  if (!roleHasCapability(principal.role, 'content.read.any')) {
+    return false;
+  }
+  return status === 'PUBLISHED';
 }

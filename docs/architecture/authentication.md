@@ -163,7 +163,9 @@ the count is bounded by concurrent requests, not by total rejections.
 ## 8. Audit and logging
 
 Events: `auth.bootstrap`, `auth.login.success`, `auth.login.failure`,
-`auth.login.rate_limited`, `auth.logout`, `auth.session.revoked`.
+`auth.login.rate_limited`, `auth.logout`, `auth.session.revoked`,
+`auth.manual_test_account.created` (development-only manual test account; distinct
+from `auth.bootstrap`).
 `auth.login.failure` is per accepted failed attempt; `auth.login.rate_limited`
 means the key reached the threshold (`reason: threshold_reached`), not that every
 later request was persisted. Failed-login metadata contains a reason plus an

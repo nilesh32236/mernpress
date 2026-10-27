@@ -10,14 +10,14 @@ The name is a project name, not a database mandate. MERNPress uses **PostgreSQL*
 
 ## Current phase
 
-**Phase 2 — the first authentication slice is implemented with post-review
-hardening, CI-green; owner manual acceptance pending.** Phase 1 foundation and
-CI are complete. This slice adds a
-single administrator, Argon2id credentials, database-backed sessions,
-login/logout/current-session, CSRF/Origin protection, login rate limiting and a
-minimum accessible login UI. There is still **no content/CMS feature**: no
-posts/pages, editor, media, taxonomy, themes or plugin runtime. Roles,
-capabilities, user administration, password reset/email and MFA remain deferred.
+**Phase 3 — the core content model and API are accepted by the owner
+(2026-10-27).** Phase 1 is approved. The Phase 2 authentication first slice is
+implemented but still awaits owner acceptance. Phase 3 adds unified posts/pages,
+the draft/publish/trash lifecycle, slug history, categories and tags, the internal
+hook contract, published-only public reads, an idempotent development seed, and
+the five-role capability model (P2-04). The admin content dashboard and editor are
+**Phase 4** and have not started; media, public rendering/themes and the plugin
+runtime remain later phases.
 
 ## Quick start
 
@@ -70,12 +70,13 @@ troubleshooting: [local setup](docs/operations/local-setup.md).
 | `pnpm lint` | ESLint 10 with TypeScript and jsx-a11y rules |
 | `pnpm format` / `pnpm format:check` | Prettier write/check for code and config |
 | `pnpm typecheck` | Strict TypeScript across all packages/apps |
-| `pnpm test` | Vitest unit/integration tests (needs dev + test PostgreSQL) |
+| `pnpm test` | Vitest unit/integration tests (needs the dedicated test PostgreSQL database) |
 | `pnpm test:e2e` | Playwright login/logout and placeholder smoke tests (test DB) |
 | `pnpm auth:bootstrap` | Creates the first administrator; refuses if one exists |
+| `pnpm dev:create-test-account` | Development-only, opt-in role account for manual acceptance (never administrator) |
 | `pnpm db:generate` | Generates the Prisma client |
-| `pnpm db:migrate` | Applies the auth migration and verifies connectivity |
-| `pnpm db:seed` | Idempotent no-op; creates no administrator or CMS data |
+| `pnpm db:migrate` | Applies pending migrations and verifies connectivity |
+| `pnpm db:seed` | Idempotent demo content (dev/test only; refuses production; never creates an administrator) |
 | `pnpm db:migrate:test` / `pnpm db:reset:test` | Migrates/resets the dedicated test database |
 | `pnpm db:verify` | Checks PostgreSQL connectivity, UTC session and `uuidv7()` |
 | `pnpm setup` | Validates Node/pnpm, generates client, migrates, seeds |
@@ -104,36 +105,62 @@ troubleshooting: [local setup](docs/operations/local-setup.md).
   session-bound cookies, DB-backed login rate limiting with bounded retention and
   coalesced audit, request-ID validation, audit events and the minimum
   login/logout UI.
+- Five roles (`administrator`, `editor`, `author`, `contributor`, `subscriber`)
+  with a code-level capability map and object-level, server-enforced checks for
+  content and taxonomy operations (P2-04, ADR 0004). User administration (P2-05)
+  is not implemented.
+- Phase 3 content model and API: unified posts/pages, draft/publish/trash/restore,
+  optimistic versioning, slug normalization and history, categories/tags,
+  admin CRUD/list/search/pagination, a published-only public read API, and an
+  internal action/filter hook contract (ADR 0003).
+- Content read visibility: authors and contributors cannot read another author's
+  draft or trashed content (404); administrators/editors see all states; list rows
+  and totals use the same predicate (ADR 0005).
+- A development-only, opt-in role-account CLI for manual acceptance
+  (`pnpm dev:create-test-account`); it refuses production, never creates an
+  administrator, never overwrites an account, and prints a one-time password.
+- An idempotent, dev/test-only demo seed that never creates an administrator and
+  never overwrites existing content.
 - Same-origin deployment contract: the admin calls relative `/api` URLs and is
   served with the API behind one HTTPS reverse proxy (Vite proxies `/api` in
   development). A separate-origin API client is not supported yet.
-- Vitest unit/integration/security tests, Playwright auth + placeholder smoke tests
-  and a GitHub Actions pipeline with a PostgreSQL service.
+- Vitest unit/integration/security tests (auth, roles/capabilities, content,
+  taxonomy, visibility, hooks), Playwright auth + placeholder smoke tests and a
+  GitHub Actions pipeline with a PostgreSQL service.
 
 ## What is deliberately not implemented
 
-No editor/author roles or capability matrix, user administration, profile editing,
-password reset/email, MFA/SSO, posts/pages, content API, Gutenberg editor, media,
-taxonomy, themes, plugins, dashboards or fake buttons. The public web app remains
-a Phase 1 placeholder; the admin has only login/logout/session UI.
+The admin content dashboard/editor (Phase 4), Gutenberg editor (Phase 5), media
+library (Phase 6), public rendering and themes (Phase 7), revisions/autosave/
+preview/scheduled publishing (Phase 8), plugin runtime and SDK (Phase 9), and
+theme contracts (Phase 10) are not implemented. User administration (P2-05),
+profile editing, password reset/email and MFA/SSO remain deferred. The public web
+app remains a placeholder; the admin has only the login/logout/session UI. There
+are no fake buttons or unimplemented controls.
 
 ## Database behavior
 
-Phase 2 adds two additive migrations: the initial auth schema (`users`,
-`sessions`, `audit_events`, `login_attempts`) and the
-`login_attempts(attempted_at)` hardening index.
+There are four additive migrations:
+
+1. `20261024201137_phase2_auth` — `users`, `sessions`, `audit_events`,
+   `login_attempts`.
+2. `20261025085158_auth_hardening` — the `login_attempts(attempted_at)` index.
+3. `20261027120000_phase3_content_taxonomy` — `posts`, `post_slug_history`,
+   `terms`, `post_terms`, status/check constraints and indexes.
+4. `20261027130000_phase2_roles` — the additive five-role `UserRole` enum values.
 
 - `pnpm db:migrate` runs `prisma migrate deploy` and verifies connectivity. On a
-  fresh database it applies the auth migration and creates only those auth
-  tables plus Prisma's `_prisma_migrations` ledger.
-- `pnpm db:seed` connects, verifies the UTC session and prints an explicit
-  no-op message. It creates no administrator, content, terms, media or settings.
+  fresh database it applies all four migrations.
+- `pnpm db:seed` creates idempotent demo content (one post, one page, two
+  categories, two tags) in development/test only. It refuses
+  `NODE_ENV=production`, never creates an administrator and never overwrites
+  existing content. The seed is not run automatically by `db:migrate`.
 - Create the first administrator with `pnpm auth:bootstrap`. It is CLI-only,
   advisory-locked, refuses if any administrator exists, and never accepts a
   password in argv or logs it.
 - `pnpm test` uses `TEST_DATABASE_URL` (a dedicated database whose name contains
-  `test` or `e2e`) and truncates only auth tables between tests. Never point it
-  at development data.
+  `test` or `e2e`) and truncates the auth and content tables between tests.
+  Never point it at development data.
 - PostgreSQL 18 is required because `db:verify` uses the built-in `uuidv7()`.
   The Prisma client also pins `-c timezone=UTC` per connection.
 
@@ -168,7 +195,7 @@ documented a tested `eslint-plugin-jsx-a11y` peer override for ESLint 10.
 apps/api        Fastify API, auth routes, env validation, health/readiness, DB client
 apps/admin      React + Vite login/logout/session shell
 apps/web        Next.js App Router public placeholder
-packages/cms-core  Framework-agnostic auth domain (passwords, tokens, sessions, rate limit)
+packages/cms-core  Framework-agnostic auth, capabilities, content/taxonomy and hooks
 packages/database  Prisma schema/config/client, migrations, DB/seed/test scripts
 scripts         setup and optional local PostgreSQL helper
 tests/e2e       Playwright smoke tests
@@ -199,15 +226,23 @@ failures, token-hash storage, cookie flags, session expiry/revocation, disabled
 users, CSRF/Origin, the pre-auth/session CSRF split and CSRF refresh regression,
 rate limiting/recovery, bounded retention of one-off attempts, coalesced
 rate-limit audit under a blocked burst, invalid usernames, oversized bodies,
-request IDs, log redaction, admin UI states and web placeholder rendering.
+request IDs and log redaction. It also covers the Phase 3 content lifecycle,
+slug rules, taxonomy hierarchy/assignment, optimistic concurrency, published-only
+public reads, the role x capability matrix, cross-author visibility, the hook
+contract and the development-only role-account audit event. The current local
+gate is **214 API + 10 admin + 1 web = 225 tests** plus 7 Playwright tests.
 Playwright signs in, signs out, keyboard-submits, checks browser storage and
 opens both placeholders without unexpected console/asset errors.
 
 CI is configured in `.github/workflows/ci.yml` with an ephemeral PostgreSQL 18
 service. Phase 1 passed in run `40127072446`; the Phase 2 auth slice passed in
 run `40166039330` (commit `3f29e9f`); the auth hardening follow-up passed in run
-`40180070433` (2m56s, commit `cd56d09`). The earlier Turborepo `DATABASE_URL`
-filtering bug is fixed via `globalEnv`.
+`40180070433` (2m56s, commit `cd56d09`); the Phase 3 content commit `dd4ffc6`
+passed in run `40468067008`; the roles/capabilities + dev CLI commit `0bf7754`
+passed in run `40475649080`. The earlier Turborepo `DATABASE_URL` filtering bug
+is fixed via `globalEnv`. The current **uncommitted** visibility/hook/audit
+correction set and this documentation reconciliation are not CI-verified; only
+the local gate above applies.
 
 ## Documentation
 
@@ -219,8 +254,9 @@ Start here, then follow the links.
 | [TASKS.md](TASKS.md) | Staged backlog, statuses, dependencies and acceptance criteria |
 | [DECISIONS.md](DECISIONS.md) | Decision index and links to ADRs |
 | [docs/operations/local-setup.md](docs/operations/local-setup.md) | Prerequisites, PostgreSQL, env, commands and troubleshooting |
-| [docs/testing/phase-1-manual-test.md](docs/testing/phase-1-manual-test.md) | Owner's step-by-step Phase 1 acceptance checklist |
+| [docs/testing/phase-1-manual-test.md](docs/testing/phase-1-manual-test.md) | Owner's step-by-step Phase 1 acceptance checklist (approved) |
 | [docs/testing/phase-2-manual-test.md](docs/testing/phase-2-manual-test.md) | Owner's step-by-step auth-slice acceptance checklist |
+| [docs/testing/phase-3-manual-acceptance.md](docs/testing/phase-3-manual-acceptance.md) | Owner's consolidated Phase 3 content/taxonomy acceptance checklist |
 | [docs/implementation-log.md](docs/implementation-log.md) | Dated record of what was actually done and verified |
 | [docs/research/reference-codebase-audit.md](docs/research/reference-codebase-audit.md) | What was inspected in WordPress and the reference archives |
 | [docs/research/feature-matrix.md](docs/research/feature-matrix.md) | Feature comparison and MVP/next/later/out classification |
@@ -235,6 +271,9 @@ Start here, then follow the links.
 | [docs/architecture/plugins-and-themes.md](docs/architecture/plugins-and-themes.md) | Extension contracts and safety boundaries |
 | [docs/adr/0001-baseline-stack.md](docs/adr/0001-baseline-stack.md) | Why this stack, what was rejected and what remains uncertain |
 | [docs/adr/0002-authentication-foundation.md](docs/adr/0002-authentication-foundation.md) | Auth slice boundaries, Argon2id, sessions, CSRF, rate limiting and bootstrap |
+| [docs/adr/0003-phase-3-content-and-taxonomy.md](docs/adr/0003-phase-3-content-and-taxonomy.md) | Phase 3 content model, slug/taxonomy scope, hooks and deferred fields |
+| [docs/adr/0004-roles-and-capabilities.md](docs/adr/0004-roles-and-capabilities.md) | Five roles, code capability map and object-level content authorization |
+| [docs/adr/0005-content-visibility-policy.md](docs/adr/0005-content-visibility-policy.md) | Admin content read visibility and the 403/404 mutation residual |
 | [docs/roadmap/roadmap.md](docs/roadmap/roadmap.md) | Phase-by-phase implementation order, gates and acceptance criteria |
 | [docs/roadmap/mvp-definition.md](docs/roadmap/mvp-definition.md) | MVP scope, non-goals and definition of done |
 | [docs/testing/strategy.md](docs/testing/strategy.md) | Unit, integration, E2E, migration, serialization, security and a11y testing |
@@ -253,8 +292,10 @@ Details are in the
 
 ## Next step
 
-Owner manually tests the Phase 2 auth checklist. If approved, complete the
-remaining Phase 2 work as the next single slice: roles/capabilities and user
-administration (including last-administrator protection), then profile/password
-management. No Phase 3 content work starts before that. No other refactor
-comes first.
+Phase 3 was accepted by the owner on 2026-10-27
+([evidence record](docs/testing/phase-3-manual-acceptance.md)). The accepted
+baseline is still uncommitted and not CI-verified. With explicit owner
+publication authorization, it must be committed, pushed and CI-green for that
+exact commit before Phase 4 (admin content UX) starts. P2-05 user administration
+remains deferred, as do the Phase 5–10 editor, media, rendering, reliability,
+plugin and theme slices.

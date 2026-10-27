@@ -111,6 +111,28 @@ describe('auth.createManualTestAccount (dev-only role accounts)', () => {
     ).rejects.toMatchObject({ statusCode: 400 });
   });
 
+  it('records a distinct audit event describing the operation (not auth.bootstrap)', async () => {
+    const user = await app.auth.createManualTestAccount({
+      username: 'auditeditor',
+      password: 'Correct horse battery staple',
+      role: 'editor',
+    });
+
+    const created = await app.database.auditEvent.findMany({
+      where: { eventType: 'auth.manual_test_account.created' },
+    });
+    expect(created).toHaveLength(1);
+    expect(created[0]?.actorUserId).toBe(user.id);
+    expect(created[0]?.targetUserId).toBe(user.id);
+    expect(created[0]?.metadata).toMatchObject({ role: 'editor' });
+
+    // Bootstrap event must not have been emitted by this operation.
+    const bootstrap = await app.database.auditEvent.findMany({
+      where: { eventType: 'auth.bootstrap' },
+    });
+    expect(bootstrap).toHaveLength(0);
+  });
+
   it('coexists with the bootstrapped administrator without affecting it', async () => {
     await seedAdmin(app);
     await app.auth.createManualTestAccount({

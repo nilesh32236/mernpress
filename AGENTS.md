@@ -7,10 +7,19 @@ ask rather than silently weakening a boundary.
 ## 1. Current state and the approval gate
 
 - Phase 0 and Phase 1 are approved. **The Phase 2 first authentication slice is
-  implemented and awaiting the owner's manual acceptance test.**
-- No CMS content feature exists. Do not start roles/capabilities, user
-  administration, profile/password reset, or any content, editor, media, theme or
-  plugin work until the owner explicitly approves this auth slice.
+  implemented and awaiting the owner's manual acceptance. Phase 3 (core content
+  model/API, P2-04 roles/capabilities and the pre-acceptance corrections) was
+  explicitly accepted by the owner on 2026-10-27.** The accepted baseline is the
+  current local working tree and is not yet published to GitHub. Phase 2 and
+  Phase 3 remain separate owner gates; Phase 3 acceptance does not accept Phase 2.
+- Phase 4 (admin content UX) may begin only after the accepted Phase 3 baseline is
+  committed, pushed and CI-green for that exact commit, with explicit owner
+  authorization to publish. P2-05 user administration remains deferred and
+  requires separate owner approval; editor (Phase 5), media (Phase 6),
+  rendering/themes (Phase 7/10) and plugin (Phase 9) work follow their own phase
+  gates. The implemented Phase 3 surface is the API, roles/capabilities, taxonomy,
+  idempotent seed and internal hooks; there is no admin content dashboard/editor
+  yet.
 - After approval, implement **one feature/slice at a time**. At the end of each
   slice: report changed files, exact commands, test results, manual test steps,
   limitations, and **stop**. Do not start the next slice without explicit
@@ -180,7 +189,7 @@ pnpm build
 pnpm test:e2e
 ```
 
-## 10. Local development (Phase 1 foundation + Phase 2 auth slice)
+## 10. Local development (Phase 1 foundation + Phase 2 auth + Phase 3 content API)
 
 ```bash
 # Optional no-sudo PostgreSQL; or use a system PostgreSQL 18 server
@@ -191,17 +200,21 @@ cp .env.example .env          # fill local values; never commit .env
 pnpm install --frozen-lockfile
 pnpm setup                    # generate client, apply migrations, idempotent seed
 pnpm auth:bootstrap           # create the first administrator (TTY password prompt)
+# optional: dev-only role accounts for manual acceptance (one-time passwords)
+pnpm dev:create-test-account --i-understand-dev-only --role editor
 pnpm dev                      # api + admin + web
 ```
 
 Expected local ports: API `4000`, admin `5173`, web `3000`. PostgreSQL 18 on
 `5432` (or the project-local cluster on `55432`). Docker Compose is optional;
-native PostgreSQL is the verified path. Phase 2 has four auth tables and two
-additive migrations (initial auth schema + hardening index); `db:seed` is still
-an explicit no-op. Tests use
-`TEST_DATABASE_URL` and truncate only auth tables. `pnpm test:e2e` needs ports
-4000/5173/3000 free and the test database migrated. See
-[local setup](docs/operations/local-setup.md).
+native PostgreSQL is the verified path. Phase 2 has four auth tables; Phase 3
+adds `posts`, `post_slug_history`, `terms` and `post_terms`. There are four
+additive migrations in total (two auth, content/taxonomy, and the roles enum).
+`db:seed` creates idempotent demo content in development/test only, refuses
+production, never creates an administrator and never overwrites existing content.
+Tests use `TEST_DATABASE_URL` and truncate only the auth and content tables.
+`pnpm test:e2e` needs ports 4000/5173/3000 free and the test database migrated.
+See [local setup](docs/operations/local-setup.md).
 
 ## 11. Dependency and version policy
 

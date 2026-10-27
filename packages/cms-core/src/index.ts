@@ -43,6 +43,8 @@ export {
   ownsObject,
   requireCapability,
   roleHasCapability,
+  canReadPost,
+  FULL_VISIBILITY_ROLES,
   type Capability,
   type Role,
 } from './auth/capabilities.js';

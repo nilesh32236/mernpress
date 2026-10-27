@@ -1,7 +1,13 @@
 import type { DatabaseClient, PostStatus, Prisma } from '@mernpress/database';
 import type { HookRegistry } from '../hooks/types.js';
 import { HookRejectedError } from '../hooks/types.js';
-import { ownsObject, requireCapability, roleHasCapability } from '../auth/capabilities.js';
+import {
+  FULL_VISIBILITY_ROLES,
+  canReadPost,
+  ownsObject,
+  requireCapability,
+  roleHasCapability,
+} from '../auth/capabilities.js';
 import { ContentError } from './errors.js';
 import {
   deriveSlugFromTitle,
@@ -369,6 +375,11 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     if (!row) {
       throw new ContentError('NOT_FOUND', 'Not found', 404);
     }
+    // Hidden (non-readable) unpublished/trashed objects surface as 404 so
+    // existence is not leaked (visibility policy, pre-Phase-3-acceptance fix).
+    if (!canReadPost(principal, row.authorId, row.status)) {
+      throw new ContentError('NOT_FOUND', 'Not found', 404);
+    }
     return toAdmin(row);
   }
 
@@ -478,19 +489,38 @@ export function createContentService(options: ContentServiceOptions): ContentSer
 
   async function listAdmin(principal: Principal, query: AdminListQuery): Promise<Paged<AdminPost>> {
     requireCapability(principal, 'content.read.any');
-    const where: Prisma.PostWhereInput = {};
+
+    // Build the filter as a list of AND conditions so the role-specific
+    // visibility predicate (below) composes with the user's type/status/search
+    // filters without overwriting them.
+    const conditions: Prisma.PostWhereInput[] = [];
     if (query.type) {
-      where.type = query.type;
+      conditions.push({ type: query.type });
     }
     if (query.status) {
-      where.status = query.status;
+      conditions.push({ status: query.status });
     }
     if (query.search) {
-      where.OR = [
-        { title: { contains: query.search, mode: 'insensitive' } },
-        { excerpt: { contains: query.search, mode: 'insensitive' } },
-      ];
+      conditions.push({
+        OR: [
+          { title: { contains: query.search, mode: 'insensitive' } },
+          { excerpt: { contains: query.search, mode: 'insensitive' } },
+        ],
+      });
     }
+
+    // Visibility: administrators/editors see every state; other read.any
+    // holders (authors, contributors) see only their own content in any state
+    // plus PUBLISHED content of others. Drafts/trashed content of other authors
+    // are excluded from both rows and the total count.
+    if (!FULL_VISIBILITY_ROLES.has(principal.role)) {
+      conditions.push({
+        OR: [{ authorId: principal.userId }, { status: 'PUBLISHED' }],
+      });
+    }
+
+    const where: Prisma.PostWhereInput = conditions.length === 0 ? {} : { AND: conditions };
+
     const orderBy = [
       { [query.sort]: query.order } as Prisma.PostOrderByWithRelationInput,
       { id: query.order },
@@ -538,16 +568,18 @@ export function createContentService(options: ContentServiceOptions): ContentSer
       if (!existing) {
         throw new ContentError('NOT_FOUND', 'Not found', 404);
       }
-      if (existing.version !== baseVersion) {
-        throw new ContentError('VERSION_CONFLICT', 'Version conflict', 409);
-      }
-      // Object-level transition authorization: publish needs publish capability;
+      // Object-level transition authorization runs BEFORE the version check so
+      // an unauthorized caller cannot use 409-vs-403 responses to probe an
+      // object's version counter. Publish needs publish capability;
       // trash/restore/unpublish need trash capability (unpublishing returns a
       // post to draft, the inverse of publish, so it uses publish capability).
       if (action === 'content.post.published' || action === 'content.post.unpublished') {
         canTransition(principal, existing.authorId, 'publish');
       } else {
         canTransition(principal, existing.authorId, 'trash');
+      }
+      if (existing.version !== baseVersion) {
+        throw new ContentError('VERSION_CONFLICT', 'Version conflict', 409);
       }
       const result = apply({
         status: existing.status,

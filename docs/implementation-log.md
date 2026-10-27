@@ -5,6 +5,212 @@ and results, decisions, limitations and the next step. Do not record secrets.
 
 ---
 
+## 2026-10-27 — Post-acceptance Phase 3 security correction before publication
+
+**Status:** Phase 3 remains owner-accepted (2026-10-27). Two independent review
+findings were triaged before publication; one real issue was fixed, one was a
+false positive. The baseline is still **uncommitted and not CI-verified**.
+
+### Review findings and disposition
+
+- **Transition version oracle (real, fixed).** `ContentService.transition()` checked
+  `baseVersion` before `canTransition()`, so an unauthorized caller could use
+  409-vs-403 responses to probe an object's version. Authorization now runs first
+  (`packages/cms-core/src/content/service.ts`); authorized callers still receive
+  409 `VERSION_CONFLICT` for a stale version. Regression assertions were added to
+  `apps/api/test/content/roles.test.ts`: an author using another author's draft
+  with both the correct and an incorrect version receives 403 `FORBIDDEN`, never
+  409.
+- **`applyFilters()` double-decrement (false positive).** The reviewer claimed
+  `applyFilters()` decremented depth twice when `enter()` threw. The code calls
+  `enter()` before the `try/finally`, so a rejected entry never reaches
+  `leave()`. A temporary simulation produced exactly 2 calls for a second chain at
+  `maxDepth: 2` (a negative depth would have produced 3). A regression test was
+  added anyway (`apps/api/test/content/hook-recursion.test.ts`) to lock the
+  restoration behavior.
+
+### Models used
+
+- Implementation: `opencode-go/deepseek-v4.1-flash` (existing Go entitlement;
+  explicitly allowed paid Go model).
+- First independent review: `opencode/glm-5.3-flash-free#high` (free).
+- Re-review after fixes: `opencode/nemotron-3.5-super-vl-free#high` (free).
+- An attempted third review with `opencode/flint-40b-free#high` failed with
+  “Endpoint is unavailable”; no result is claimed for it.
+
+### Verification (current tree)
+
+| Command | Result |
+| --- | --- |
+| `pnpm --filter @mernpress/api test` | PASS — 25 files, **214 tests** |
+| `pnpm --filter @mernpress/admin test` | PASS — 3 files, **10 tests** |
+| `pnpm --filter @mernpress/web test` | PASS — 1 file, **1 test** |
+| Focused visibility/roles/hooks/audit/CLI | PASS — 8 files, **65 tests** |
+| `pnpm lint` | PASS |
+| `pnpm format:check` | PASS |
+| `pnpm typecheck` | PASS |
+| `pnpm build` | PASS |
+| `pnpm test:e2e` | PASS — 7 Playwright |
+| `pnpm audit --audit-level=high` | PASS |
+| `git diff --check` | PASS |
+
+Total current local gate: **214 API + 10 admin + 1 web = 225 tests**, plus 7
+Playwright tests. Earlier log entries that say 224 describe the pre-correction
+gate at acceptance time; the current baseline is 225.
+
+### Publication gate
+
+The accepted Phase 3 baseline (now including these fixes) remains uncommitted.
+Phase 4 has not started. Explicit owner authorization is required to commit and
+push this baseline; CI must be green for that exact commit before Phase 4 begins.
+
+---
+
+## 2026-10-27 — Phase 3 owner acceptance recorded
+
+**Status:** Phase 3 explicitly accepted by the owner on 2026-10-27. The accepted
+baseline is the current local working tree (the Phase 3 correction set plus the
+documentation reconciliation); it is **not** committed or published to GitHub.
+Phase 2 remains pending owner acceptance; Phase 3 acceptance does not accept
+Phase 2.
+
+No application source, tests, schema, migrations or runtime configuration changed
+in this documentation-only acceptance record. The 224-test local gate and the
+agent-executed live acceptance checks remain the evidence; no new test run was
+required to record the owner’s decision.
+
+Publication remains a separate gate: the accepted Phase 3 baseline must be
+prepared as a clean diff, explicitly authorized by the owner, committed, pushed,
+and verified by GitHub Actions for that exact commit before Phase 4 begins.
+
+---
+
+## 2026-10-27 — Documentation reconciliation before Phase 3 owner acceptance
+
+**Status:** documentation-only slice; Phase 3 still awaits explicit owner
+acceptance. No application source, tests, Prisma schema, migrations or runtime
+configuration were changed. Nothing was committed or pushed; the current GitHub
+revision remains `0bf7754`.
+
+### What changed
+
+- `README.md`: current phase is Phase 3 (implemented, awaiting owner acceptance),
+  not Phase 2; described roles/capabilities, content/taxonomy API, visibility,
+  hooks, dev CLI and seed; corrected the migration list (4), database/seed
+  behavior, test counts, documentation links and next step.
+- `AGENTS.md` §1/§10: removed the obsolete “no CMS content feature” prohibition and
+  the “two migrations / no-op seed” text; preserved the Phase 4 stop gate,
+  one-slice-at-a-time workflow and all security/testing/boundary rules.
+- `TASKS.md`: reconciled the Phase 1 approval paragraph; recorded P2-04 as
+  implemented; added P3-08 for the pre-acceptance corrections; updated Phase 3
+  authorization/tests; reconciled Phase 4 with the API by removing unsupported
+  author/date/media/bulk controls and adding P4-06 (dashboard real counts).
+- `DECISIONS.md`: added D-033 for the Phase 4 scope limit (API-supported fields
+  only; media Phase 6; bulk actions deferred).
+- `docs/roadmap/roadmap.md`: corrected phase statuses, Phase 2 five-role scope,
+  Phase 3 actual scope (slug history, no featured media/redirects), and Phase 4
+  scope/acceptance so no unsupported control is promised.
+- `docs/architecture/system-overview.md`: corrected the current-state statement and
+  distinguished implemented components from target responsibilities.
+- `docs/testing/phase-3-manual-acceptance.md`: corrected the test count to the
+  verified 224, enumerated the 4 migrations, added the visibility/recursion/audit
+  evidence, documented the 403-vs-404 hidden-mutation residual, and split
+  development-account cleanup from demo-content cleanup.
+- `docs/implementation-log.md`: added this entry; fixed three broken relative
+  links (`../adr/...`, `../architecture/...`) that pointed outside `docs/`.
+
+### Correction to the previous entry
+
+The 2026-10-27 pre-acceptance entry said all six hook-recursion tests “fail on the
+old code.” That was imprecise. Against the old double-decrement behavior, the
+**restoration** and **repeated-invocation** tests fail (second invocation: 3 calls
+instead of 2; five invocations: 20 calls instead of 10). The other four tests cover
+adjacent scenarios and pass on the old code. The production fix is correct; the
+regression suite as a whole detects the bug.
+
+### Verification (docs-only tree)
+
+| Command | Result |
+| --- | --- |
+| `pnpm test` | PASS — root cached run 224 tests |
+| `pnpm --filter @mernpress/api test` | PASS — 25 files, **213 tests** |
+| `pnpm --filter @mernpress/admin test` | PASS — 3 files, **10 tests** |
+| `pnpm --filter @mernpress/web test` | PASS — 1 file, **1 test** |
+| `pnpm lint` | PASS (exit 0) |
+| `pnpm format:check` | PASS (exit 0) |
+| `git diff --check` | PASS (exit 0) |
+| Relative Markdown link check (10 edited docs) | PASS — 83 links, 0 missing |
+| Targeted stale-wording search | No obsolete current-state claims in the reconciled docs (historical Phase 1 acceptance text in `TASKS.md`/`roadmap.md` retained intentionally) |
+
+The 224 count is from a fresh direct API/admin/web test run against the current
+tree, not from a cached root log. The uncommitted correction/documentation set is
+**not** CI-verified; the CI-green claims in the README refer only to the committed
+`dd4ffc6` and `0bf7754` revisions.
+
+### Next step
+
+Owner runs `docs/testing/phase-3-manual-acceptance.md` and explicitly accepts or
+rejects Phase 3. No Phase 4 work starts before that.
+
+---
+
+## 2026-10-27 — Pre-Phase-3-acceptance correction: content visibility, hook recursion, audit event
+
+**Status:** complete and verified locally; Phase 3 still awaits owner manual
+acceptance; Phase 1/2 status unchanged (Phase 1 approved per AGENTS.md §1;
+Phase 2 still pending owner acceptance).
+
+### Findings addressed (independent review before acceptance)
+
+1. **Content visibility (Finding 1).** Added `canReadPost(principal, authorId,
+   status)` to `packages/cms-core/src/auth/capabilities.ts` plus
+   `FULL_VISIBILITY_ROLES`. `ContentService.getPost()` now returns 404 for
+   hidden unpublished/trashed objects; `listAdmin()` composes type/status/search/
+   visibility as `AND` so hidden rows and totals agree. Public API unchanged.
+   ADR 0005 documents the policy, alternatives and the residual on mutating
+   paths. Replaced the cross-author draft-visibility test with regression
+   coverage (direct reads, list rows, pagination counts, ownership, draft/trashed
+   states, all five roles) plus a pure unit test.
+2. **Hook recursion (Finding 2).** `doAction()` now calls `leave()` only after a
+   successful `enter()` via an `entered` flag, fixing the double-decrement when
+   `enter()` throws. `applyFilters()` already called `enter()` outside its try.
+   Depth-limit rejections are now logged distinctly. Added 6 regression tests
+   (handler-count based, so they fail on the old code).
+3. **Audit event (additional correction 1).** Added
+   `auth.manual_test_account.created` distinct from `auth.bootstrap`; bootstrap
+   unchanged. Test verifies actor/target/metadata and absence of bootstrap event.
+4. **Phase 1 status reconciliation (additional correction 2).** TASKS.md and the
+   Phase 3 acceptance guide now record Phase 1 as approved per AGENTS.md §1;
+   Phase 2/3 status unchanged.
+
+### Verification (exact commands, all green)
+
+| Command | Result |
+| --- | --- |
+| `pnpm install --frozen-lockfile` | PASS |
+| `pnpm lint` | PASS |
+| `pnpm format:check` | PASS |
+| `pnpm typecheck` | PASS (7 tasks) |
+| `pnpm test` | PASS — API 213, admin 10, web 1 = **224 tests** |
+| `pnpm build` | PASS (5 tasks) |
+| `pnpm test:e2e` | PASS (7 Playwright) |
+| `pnpm audit --audit-level=high` | PASS |
+| `prisma migrate status` | up to date (4 migrations) |
+| `git diff --check` | PASS |
+
+Independent review: `opencode/deepseek-v4.1-flash-free#high` (zero-cost, different
+family from implementer) — verdict PASS WITH ISSUES; all high/medium findings
+fixed or documented as residuals; see ADR 0005 residual note. Low findings
+fixed (fail-closed unknown roles, test naming, search coverage, audit catalogue
+doc, ADR cross-link, distinct depth log).
+
+### Next step
+
+Owner runs `docs/testing/phase-3-manual-acceptance.md` and decides on Phase 3
+acceptance. No Phase 4 started.
+
+---
+
 ## 2026-10-27 — Manual-acceptance aid: development-only role-account CLI
 
 **Status:** complete and verified locally; **Phase 3 still awaits owner manual
@@ -321,7 +527,7 @@ work was started.
 Recorded before code changes: D-021 (bounded retention + index), D-022
 (coalesced rate-limit audit), D-023 (pre-auth/session CSRF split), D-024
 (same-origin topology). Full rationale and residuals:
-[ADR 0002](../adr/0002-authentication-foundation.md#auth-hardening-follow-up-2026-10-25).
+[ADR 0002](adr/0002-authentication-foundation.md#auth-hardening-follow-up-2026-10-25).
 
 ### Modularity and standards
 
@@ -333,7 +539,7 @@ The auth service was split so each module has one reason to change:
 - `auth/identifiers.ts` owns domain-separated HMAC hashing;
 - `auth/service.ts` now only orchestrates bootstrap/login/session/logout.
 
-[Engineering standards](../architecture/code-standards.md) now documents the
+[Engineering standards](architecture/code-standards.md) now documents the
 SOLID/DRY interpretation, package boundaries, auth module map, error/logging
 rules, testing expectations, formatting and scalability rules, and is linked
 from `AGENTS.md` so a new session reads it before changing code.
@@ -415,7 +621,7 @@ with a focused failing test before any code change:
 | E. Session cookie path mismatch (`/` vs `/api`) | ADR 0002 vs `apps/api/src/auth/cookies.ts` | Confirmed: docs said `/`, code uses `/api` |
 
 Decisions recorded before implementation: D-021 to D-024 and
-[ADR 0002](../adr/0002-authentication-foundation.md#auth-hardening-follow-up-2026-10-25).
+[ADR 0002](adr/0002-authentication-foundation.md#auth-hardening-follow-up-2026-10-25).
 The fixes stay inside the authentication slice and add no roles, user
 administration, content or editor work.
 

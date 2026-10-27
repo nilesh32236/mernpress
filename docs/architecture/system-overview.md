@@ -1,9 +1,13 @@
 # System overview
 
-Status: Phase 1 foundation and the Phase 2 authentication first slice are
-implemented. `apps/api`, `apps/admin`, `apps/web`, `packages/database` and
-`packages/cms-core` exist; no CMS content feature exists yet. This document
-remains the target architecture.
+Status: Phase 1 foundation, the Phase 2 authentication first slice, the Phase 3
+core content/taxonomy API and the P2-04 roles/capabilities are implemented.
+Phase 3 was accepted by the owner on 2026-10-27; Phase 1 is approved and Phase 2
+remains pending owner acceptance. `apps/api`, `apps/admin`, `apps/web`,
+`packages/database` and `packages/cms-core` exist. There is no admin content
+dashboard/editor yet (Phase 4), and media, public rendering, scheduled publishing
+and the plugin runtime remain later phases. This document describes the target
+architecture; implemented scope is tracked in `TASKS.md`.
 
 ## 1. Goals and constraints
 
@@ -54,6 +58,11 @@ flowchart LR
   CORE -.optional.-> EXT
 ```
 
+The table below describes the target responsibilities. Implemented today: auth,
+roles/capabilities, the content/taxonomy API, the internal hook registry and the
+minimum admin login shell. Dashboard, content lists, editor, media, users,
+settings, public rendering and plugins are later phases.
+
 | Component | Responsibility | Must not |
 | --- | --- | --- |
 | `apps/admin` | Login, dashboard, content lists, editor, media, users, settings; browser-only | Import Prisma/DB/Node internals; render public pages |
@@ -61,7 +70,7 @@ flowchart LR
 | `apps/web` | Public routes, theme selection, layout/chrome, SEO metadata, caching/revalidation | Import Prisma/API internals; re-implement core block rendering in MVP |
 | `packages/contracts` | Isomorphic DTOs, Zod schemas, error codes, route types | Import Node, React, database or editor code |
 | `packages/database` | Prisma schema/client, migrations, repositories | Contain HTTP or UI concerns |
-| `packages/cms-core` | Auth services now; later content lifecycle, capabilities, slug/taxonomy/media services and hook bus | Depend on Fastify/React |
+| `packages/cms-core` | Auth, capabilities, content lifecycle, slug/taxonomy services and the internal hook registry; later media and the public plugin bus | Depend on Fastify/React |
 | `packages/block-system` | Block contracts/registry, parser, sanitizer, server renderers, editor helpers (separate entrypoints) | Put React into the server entrypoint or Node code into the browser entrypoint |
 | `packages/plugin-sdk` | Public plugin interfaces, manifest types, test helpers | Expose internal tables/services as stable API |
 | `packages/theme-sdk` | Theme manifest, template/part contracts, tokens, preview/cache helpers | Bind themes to Next-only APIs |
@@ -86,7 +95,7 @@ database/package layer; a full microservice split is not required.
 
 ## 4. Request and content flow
 
-### 4.1 Admin edit/save
+### 4.1 Admin edit/save (target; Phase 4/5)
 
 ```mermaid
 sequenceDiagram
@@ -100,7 +109,7 @@ sequenceDiagram
   A->>D: load content + terms + media
   A-->>E: DTO + raw block markup + version
   E->>E: Gutenberg edit, serialize block markup
-  E->>A: PUT /api/admin/posts/:id (content, baseVersion, CSRF)
+  E->>A: PATCH /api/admin/posts/:id (content, baseVersion, CSRF)
   A->>A: auth + capability + validate + sanitize/parse
   A->>D: transaction: update content, terms, revision
   A->>A: render HTML (derived) / invalidate cache
@@ -116,7 +125,7 @@ Key rules:
 - The API may store a derived `rendered_html` cache and a `render_hash`; the raw
   `content` remains canonical.
 
-### 4.2 Public read
+### 4.2 Public read (target; Phase 7)
 
 ```mermaid
 sequenceDiagram
@@ -138,7 +147,7 @@ sequenceDiagram
 - The web app caches by tag/path and revalidates via a secret-protected webhook.
 - The theme controls layout/chrome; the API controls content HTML.
 
-### 4.3 Media upload
+### 4.3 Media upload (target; Phase 6)
 
 ```mermaid
 sequenceDiagram
@@ -218,8 +227,11 @@ The Phase 0 candidate layout is intentionally not copied wholesale:
 
 Phase 1 implemented `apps/api`, `apps/admin`, `apps/web` and
 `packages/database`. Phase 2 added `packages/cms-core` for the auth domain.
-`packages/contracts`, `block-system`, `plugin-sdk`, `theme-sdk`, `themes/*` and
-`plugins/*` remain future packages; no empty placeholder package was created.
+Phase 3 added the content/taxonomy services, roles/capabilities and internal hook
+registry to `packages/cms-core`, plus the Phase 3/roles migrations and the
+development seed. `packages/contracts`, `block-system`, `plugin-sdk`,
+`theme-sdk`, `themes/*` and `plugins/*` remain future packages; no empty
+placeholder package was created.
 
 - The admin dev server proxies `/api` to 4000 (Vite `server.proxy`).
 - The web app uses `CMS_API_URL` server-side and `NEXT_PUBLIC_SITE_URL` for

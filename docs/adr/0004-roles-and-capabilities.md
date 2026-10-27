@@ -105,3 +105,4 @@ deferred item (tracked).
 - Content-model §3.2 target design (roles/role_capabilities) — `docs/architecture/content-model.md`.
 - Roadmap Phase 2 acceptance #4 and Phase 3 acceptance #5 — `docs/roadmap/roadmap.md`.
 - ADR 0003 D-5 (the superseded stopgap).
+- ADR 0005 (content visibility policy; amends the meaning of `content.read.any` in D-3).

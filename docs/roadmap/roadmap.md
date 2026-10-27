@@ -1,7 +1,10 @@
 # Roadmap
 
-Status: Phase 0 baseline. Each phase ends with a **stop gate**: report evidence,
-manual test steps and limitations, then wait for approval before the next phase.
+Status: Phases 0–3 are implemented to their current scope; Phase 1 is approved,
+Phase 2 and Phase 3 await owner acceptance, and Phase 4 has not started. This
+roadmap records phase order, scope and gates; `TASKS.md` tracks task-level
+status. Each phase ends with a **stop gate**: report evidence, manual test steps
+and limitations, then wait for approval before the next phase.
 
 Principles:
 
@@ -12,7 +15,7 @@ Principles:
 
 ## Phase 0 — Research and architecture baseline
 
-**Status: complete pending review.**
+**Status: complete; approved for Phase 1 on 2026-10-25.**
 
 Deliverables: reference audit, feature matrix, WordPress audit, stack comparison,
 OpenCode tooling audit, system/content/Gutenberg/plugin-theme architecture, ADR,
@@ -25,7 +28,7 @@ roadmap, MVP definition, testing strategy, threat model, implementation log.
 <a id="phase-1-foundation"></a>
 ## Phase 1 — Repository foundation
 
-**Status: implementation complete 2026-10-25; owner manual acceptance pending.**
+**Status: complete; approved for Phase 2 on 2026-10-25.**
 
 **Goal:** a clean clone installs, configures, migrates, runs and passes checks.
 
@@ -44,7 +47,8 @@ Scope:
 - Clean-clone documentation tested on this machine (native PostgreSQL; Docker
   optional).
 
-Acceptance criteria:
+Historical Phase 1 acceptance criteria (the zero-migration/no-content state was
+intentional when Phase 1 was approved; later phases add schema and content):
 
 1. `pnpm install --frozen-lockfile` succeeds on Node 24.22.x.
 2. `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` pass.
@@ -61,25 +65,30 @@ commit; the database is empty and disposable.
 
 ## Phase 2 — Authentication and capabilities
 
-**Status: first vertical slice implemented 2026-10-25; owner manual acceptance
-pending.** Bootstrap, Argon2id, database-backed sessions, login/logout/current
-session, CSRF/Origin, DB-backed login rate limiting, request-ID validation and
-the minimum login UI are done. Roles/capabilities, user administration, profile,
-password reset, email and MFA remain.
+**Status: first vertical slice implemented with post-review hardening; owner
+manual acceptance pending.** Bootstrap, Argon2id, database-backed sessions,
+login/logout/current session, CSRF/Origin, DB-backed login rate limiting,
+request-ID validation and the minimum login UI are done. The five roles and
+capability map (P2-04) are done. User administration (P2-05), profile, password
+reset, email and MFA remain deferred.
 
 **Goal:** a secure first-admin login and server-enforced authorization.
 
 Scope:
 
-- First-admin bootstrap (CLI/seed; idempotent; no password in logs).
+- First-admin bootstrap (CLI-only; refuses if an administrator exists; no password
+  in logs).
 - Argon2id password hashing; opaque session token hashed in DB; HttpOnly/Secure/
   SameSite cookie; rotation; logout; session revocation.
 - CSRF defense (origin check + token) and login rate limiting.
-- Roles (`administrator`, `editor`, `author`) and capability map; object-level
-  checks.
-- User administration (create/edit/deactivate; protect last admin).
-- Login/logout/profile/users UI with accessible errors and focus.
-- Audit events for login, logout, user changes.
+- Five roles (`administrator`, `editor`, `author`, `contributor`, `subscriber`)
+  and capability map; object-level checks.
+- User administration (create/edit/deactivate; protect last admin) — deferred to
+  P2-05.
+- Login/logout UI with accessible errors and focus (implemented); profile/users
+  screens deferred with P2-05.
+- Audit events for login, logout and user changes (login/logout implemented;
+  user-change events arrive with P2-05).
 
 Acceptance criteria:
 
@@ -88,8 +97,9 @@ Acceptance criteria:
    limiting triggers after the configured threshold.
 3. Session cookie flags verified; logout revokes; a stolen/expired token is
    rejected.
-4. An editor cannot access admin-only routes; an author cannot edit another
-   author's content; server returns 403, not just UI hiding.
+4. An editor cannot access admin-only routes; an author cannot read or edit
+   another author's unpublished/trashed content; the server enforces this
+   (documented 403/404 behavior), not just UI hiding.
 5. CSRF token required for state-changing requests; a request without it fails.
 6. Tests cover unauthenticated, wrong-role, wrong-object and malformed input.
 7. Manual test steps documented.
@@ -99,31 +109,42 @@ secrets; existing sessions invalidated.
 
 ## Phase 3 — Core content model and API
 
+**Status: accepted by the owner on 2026-10-27.** Implementation and the
+pre-acceptance corrections are complete; the accepted local baseline is not yet
+published to GitHub. Scoped per [ADR 0003](../adr/0003-phase-3-content-and-taxonomy.md);
+authorization per [ADR 0004](../adr/0004-roles-and-capabilities.md) and read
+visibility per [ADR 0005](../adr/0005-content-visibility-policy.md).
+
 **Goal:** posts and pages can be created, edited, published, trashed and read
 through a typed API.
 
 Scope:
 
 - Unified `posts` table (post/page type), statuses, author, dates, slug, excerpt,
-  featured media, core SEO fields, version.
-- Slug service with uniqueness, reserved words and redirects.
+  core SEO fields, version. Media (Phase 6), page hierarchy (Phase 4/8), render
+  cache (Phase 5/7), and scheduled publishing/revisions (Phase 8) are deferred.
+- Slug service with uniqueness, reserved words and slug history. Redirect
+  **resolution** is Phase 7.
 - Content service/repository: create/read/update/list/search/paginate; draft/
-  publish/trash/restore; optimistic concurrency.
+  publish/trash/restore; optimistic concurrency; role × capability object-level
+  authorization; cross-author read visibility.
 - Admin API + public published-only API; Zod validation; pagination/error
   contracts.
 - Categories/tags and assignment.
-- Seed/demo content.
-- API tests for authorization, validation, conflicts and lifecycle.
+- Idempotent, dev/test-only seed/demo content.
+- API tests for authorization, visibility, validation, conflicts and lifecycle.
 
 Acceptance criteria:
 
 1. Create a draft post and page; publish, unpublish, trash, restore.
 2. Public API returns only published content; drafts/trash are 404.
-3. Duplicate slug returns a clear conflict or a `-2` slug per the documented rule;
-   changing a published slug creates a redirect.
+3. Duplicate explicit slug returns a clear conflict (`409 SLUG_TAKEN`); a derived
+   slug auto-suffixes `-2`, `-3`, …; changing a published slug records
+   `post_slug_history` (redirect resolution is Phase 7).
 4. Validation rejects missing title, oversized content, invalid status/type,
    invalid term IDs and malformed pagination.
-5. An author cannot edit another author's post; an editor can; an admin can.
+5. An author cannot read or edit another author's unpublished/trashed content; an
+   editor can read and edit any content; an administrator can do both.
 6. Concurrent updates with a stale `baseVersion` return 409 and do not overwrite.
 7. Tests pass; manual `curl`/HTTP steps documented.
 
@@ -137,11 +158,16 @@ restore the DB backup and revert code.
 Scope:
 
 - Admin shell/nav, responsive layout, skip link, keyboard navigation.
-- Posts/pages list tables: filters, search, pagination, bulk actions, empty/
-  loading/error states.
-- Create/edit forms: title, slug, excerpt, status, author, date, media, terms;
-  validation and notices; unsaved-changes guard.
-- Dashboard with a few real counts.
+- Posts/pages list tables: type/status filters, search, pagination, empty/
+  loading/error states. Bulk actions are deferred until the API exposes bulk
+  operations.
+- Create/edit forms using API-supported fields only: title, slug, excerpt,
+  status, terms; validation and notices; unsaved-changes guard. Author is
+  read-only (the API assigns the creator; there is no reassignment endpoint),
+  publication date is lifecycle-managed/read-only (there is no scheduled date),
+  and media controls are deferred to Phase 6.
+- Dashboard with real counts (posts/pages by status, terms by taxonomy) using
+  the existing list/taxonomy endpoints. This is task P4-06.
 - Accessibility pass (axe + keyboard walkthrough).
 
 Acceptance criteria:
@@ -155,6 +181,9 @@ Acceptance criteria:
    trap/restore focus.
 6. No console errors; responsive at tablet width.
 7. Manual test script and screenshots/notes recorded.
+8. No control exposes an unsupported field or workflow: no author reassignment,
+   no publication-date editing/scheduling, no media picker and no bulk actions
+   until the API and the assigned later phase support them.
 
 **Size:** L. **Depends on:** Phase 3. **Rollback:** revert UI; API remains.
 

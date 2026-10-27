@@ -20,6 +20,10 @@ export type LoginFailureReason =
  */
 export interface AuthAudit {
   bootstrap(input: { userId: string }, client?: AuditClient): Promise<void>;
+  manualTestAccountCreated(
+    input: { userId: string; role: string },
+    client?: AuditClient,
+  ): Promise<void>;
   loginSuccess(
     input: { userId: string; role: string; ip: string },
     client?: AuditClient,
@@ -43,6 +47,17 @@ export function createAuthAudit(prisma: DatabaseClient, hasher: IdentifierHasher
           eventType: 'auth.bootstrap',
           actorUserId: input.userId,
           targetUserId: input.userId,
+        },
+      });
+    },
+
+    async manualTestAccountCreated(input, client = prisma) {
+      await client.auditEvent.create({
+        data: {
+          eventType: 'auth.manual_test_account.created',
+          actorUserId: input.userId,
+          targetUserId: input.userId,
+          metadata: { role: input.role },
         },
       });
     },

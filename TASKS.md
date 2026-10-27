@@ -28,8 +28,9 @@ that approval.
 
 ## Phase 1 — Repository foundation
 
-**Status: implementation complete; clean clone verified; owner manual acceptance
-pending.**
+**Status: complete; approved for Phase 2 on 2026-10-25 (per AGENTS.md §1
+approval record).** Implementation and clean-clone verification recorded in
+`docs/implementation-log.md`; no further owner action required for Phase 1.
 
 **Goal:** a clean clone can install, configure, migrate, run and pass checks.
 
@@ -49,13 +50,15 @@ pending.**
 | P1-12 | Add setup/run scripts and docs | done | P1-06..P1-11 | `pnpm setup`, `pnpm db:migrate`, `pnpm db:seed`, `pnpm dev`; clean-clone instructions work on this machine |
 | P1-13 | Record foundation evidence | done | P1-12 | Exact commands/results, known issues, manual test steps in implementation log |
 
-**Phase 1 exit gate:** owner can clone/copy the repo, follow the README, run
-`pnpm dev`, see health OK, and run the checks. No CMS content feature yet.
+**Phase 1 exit gate (historical):** owner can clone/copy the repo, follow the
+README, run `pnpm dev`, see health OK, and run the checks. No CMS content feature
+was required at that gate; Phase 3 now provides the content API.
 
 **Phase 1 verification:** a clean clone of the Phase 1 implementation passed
 install, setup, lint, format check, typecheck, tests, build, dev servers and
 Playwright against a fresh PostgreSQL database, including a final re-run with no
-generated Next artifacts present. Owner manual acceptance remains.
+generated Next artifacts present. Phase 1 was approved for Phase 2 on
+2026-10-25; no further owner action is required.
 
 ## Phase 2 — Authentication and capabilities
 
@@ -63,8 +66,10 @@ generated Next artifacts present. Owner manual acceptance remains.
 manual acceptance pending.** Bootstrap, login/logout/session, CSRF/Origin,
 DB-backed login rate limiting with bounded retention and coalesced audit,
 request-ID validation and the minimum login UI are implemented. The supported
-topology is same-origin admin + `/api`. Roles, capabilities, user administration,
-profile editing, password reset, email and MFA remain deferred.
+topology is same-origin admin + `/api`. The five roles and capability map (P2-04)
+are implemented and enforced in the content/taxonomy services (ADR 0004). User
+administration (P2-05), profile editing, password reset, email and MFA remain
+deferred.
 
 | ID | Task | Status | Depends on | Acceptance criteria |
 | --- | --- | --- | --- | --- |
@@ -72,41 +77,50 @@ profile editing, password reset, email and MFA remain deferred.
 | P2-02 | Login/logout/session | done | P2-01 | Argon2id; opaque session token hashed in DB; HttpOnly/Secure/SameSite cookie; fresh session on login; idle/absolute expiry; logout/disabled revoke; tests |
 | P2-03 | CSRF + login rate limiting | done | P2-02 | Origin check + CSRF for login/logout; separate pre-auth/session CSRF cookies; DB-backed dual-key rate limit with recovery, bounded retention and coalesced audit; tests |
 | P2-04 | Roles/capabilities | done | P2-02 | Five roles (administrator/editor/author/contributor/subscriber) + code capability map + object-level checks enforced server-side in the content service; additive enum migration; role × operation tests. [ADR 0004](docs/adr/0004-roles-and-capabilities.md) |
-| P2-05 | User administration | planned | P2-04 | Deferred: admin-only list/create/edit/deactivate; cannot delete last administrator; audit events. **Note:** tests can create users with roles directly, but there is no admin UI/API for user management yet |
+| P2-05 | User administration | planned | P2-04 | Deferred: admin-only list/create/edit/deactivate; cannot delete last administrator; audit events. **Note:** tests and the development-only `dev:create-test-account` CLI can create role accounts, but there is no admin UI/API for user management yet |
 | P2-06 | Auth UI | in progress | P2-02..P2-05 | Login/logout/session UI done with accessible labels, alerts, focus and keyboard E2E; profile/users screens deferred |
-| P2-07 | Security verification | in progress | P2-02..P2-06 | Auth slice tests + two independent reviews done, including the hardening follow-up (retention, coalesced audit, CSRF refresh, same-origin topology); wrong-role/wrong-object tests require P2-04/P2-05 and content routes |
+| P2-07 | Security verification | in progress | P2-02..P2-06 | Auth slice tests + independent reviews done, including the hardening follow-up (retention, coalesced audit, CSRF refresh, same-origin topology). Phase 3 role/object tests cover wrong-role and wrong-object authorization; P2-05 user administration remains deferred |
 
 ## Phase 3 — Core content model and API
 
-**Status: implementation complete and verified locally; owner manual acceptance
-pending.** Built from a clean Phase 2 base (the historical P3-01 report did not
-exist in this checkout). Scoped per [ADR 0003](docs/adr/0003-phase-3-content-and-taxonomy.md):
-no media, page-hierarchy, render-cache, scheduled-publish or revision columns.
-Redirect **resolution** is deferred to Phase 7 (slug history is recorded).
-Authorization is now the full role × capability matrix ([ADR 0004](docs/adr/0004-roles-and-capabilities.md))
-with object-level checks enforced server-side; the role × operation matrix is
-tested. P2-05 user **administration** (admin UI/API to manage users) remains
-deferred — roles exist in the DB and are created directly in tests.
+**Status: accepted by the owner on 2026-10-27.** Implementation and the
+pre-acceptance corrections are complete and verified locally. The accepted
+baseline is the current local working tree; it is not yet published to GitHub.
+Built from a clean Phase 2 base (the historical P3-01 report did not exist in
+this checkout). Scoped per
+[ADR 0003](docs/adr/0003-phase-3-content-and-taxonomy.md): no media,
+page-hierarchy, render-cache, scheduled-publish or revision columns. Redirect
+**resolution** is deferred to Phase 7 (slug history is recorded). Authorization
+is the full role × capability matrix ([ADR 0004](docs/adr/0004-roles-and-capabilities.md))
+with object-level checks enforced server-side; the role × operation matrix and
+cross-author read visibility ([ADR 0005](docs/adr/0005-content-visibility-policy.md))
+are tested. The pre-acceptance corrections (read visibility, hook action
+recursion, distinct manual-test-account audit event) are applied but uncommitted
+and not CI-verified; only the local gate applies. P2-05 user **administration**
+(admin UI/API to manage users) remains deferred — roles exist in the DB and are
+created directly in tests or by the development-only CLI.
 
 | ID | Task | Status | Depends on | Acceptance criteria |
 | --- | --- | --- | --- | --- |
 | P3-01 | Content schema + migration | done | P1 | `posts` unified table (post/page) + `post_slug_history`; statuses, author, dates, slug, excerpt, SEO fields, optimistic `version`; additive migration with check constraints + indexes. Media/hierarchy/render/scheduled/revision columns deferred (ADR D-1) |
 | P3-02 | Slug service | done | P3-01 | NFKC normalization, ASCII transliteration, reserved words, 200-char cap, per-(type,slug) uniqueness via DB constraint + advisory locks; explicit duplicate → 409, derived slug auto-suffixes. Redirect **resolution** deferred to Phase 7; `post_slug_history` recorded on published slug change |
-| P3-03 | Content repository/service | done | P3-01 | create/read/update/list/search/paginate; draft/publish/unpublish/trash/restore; optimistic concurrency (baseVersion → 409); internal hook/filter contract; administrator-only authorization on every operation |
+| P3-03 | Content repository/service | done | P3-01 | create/read/update/list/search/paginate; draft/publish/unpublish/trash/restore; optimistic concurrency (baseVersion → 409); internal hook/filter contract; role × capability object-level authorization on every operation (ADR 0004), with cross-author read visibility (ADR 0005) |
 | P3-04 | Content API | done | P3-03 | Admin CRUD/transitions/terms + published-only public read; Zod `.strict()` validation; consistent error envelope; bounded pagination; no mass assignment |
 | P3-05 | Taxonomy basics | done | P3-01 | categories (hierarchical, cycle-safe) + tags (flat); term CRUD, assign/unassign via `PUT .../terms`; unique slug per taxonomy; transactional content-safe delete; computed counts |
-| P3-06 | Content API tests | done | P3-03..P3-05 | 130 content tests: happy path, validation, 401/403/404/409, slug conflict, trash/restore, pagination bounds, hooks, concurrency, taxonomy, authz, **role × operation matrix** (subscriber/contributor/author/editor × own/other × draft/published/trashed) |
+| P3-06 | Content API tests | done | P3-03..P3-05 | Content/taxonomy/authz/visibility/hook suites: happy path, validation, 401/403/404/409, slug conflict, trash/restore, pagination bounds, hooks, concurrency, taxonomy, authz, **role × operation matrix** (subscriber/contributor/author/editor × own/other × draft/published/trashed), cross-author read visibility, list/count consistency |
 | P3-07 | Seed/demo content | done | P3-01 | Idempotent dev-only seed: one post, one page, 2 categories, 2 tags; refuses production; never creates an admin; never overwrites existing content |
+| P3-08 | Pre-acceptance corrections | done | P3-03..P3-07 | Cross-author read visibility (404 individual reads; list rows and totals share the predicate), hook action recursion double-decrement fix, distinct `auth.manual_test_account.created` audit event, regression tests and ADR 0005. Locally verified; owner accepted Phase 3 on 2026-10-27. Uncommitted at acceptance |
 
 ## Phase 4 — Admin content UX
 
 | ID | Task | Status | Depends on | Acceptance criteria |
 | --- | --- | --- | --- | --- |
 | P4-01 | Admin shell | planned | P2, P3 | WordPress-inspired layout/nav, skip link, responsive, keyboard navigable, active states |
-| P4-02 | Content list tables | planned | P3 | Posts/pages lists, filters, search, pagination, bulk actions, empty/loading/error states |
-| P4-03 | Create/edit forms | planned | P3 | Title/slug/excerpt/status/author/date/media/taxonomy; validation messages; unsaved-changes guard |
+| P4-02 | Content list tables | planned | P3 | Posts/pages lists, type/status filters, search, pagination, empty/loading/error states. Bulk actions deferred until the API exposes bulk operations |
+| P4-03 | Create/edit forms | planned | P3 | API-supported fields only: title, slug, excerpt, status, terms; validation messages; unsaved-changes guard. Author is read-only (API assigns the creator; no reassignment endpoint), publication date is lifecycle-managed/read-only (no scheduled date), and media is deferred to Phase 6 |
 | P4-04 | Notices and feedback | planned | P4-03 | Success/error notices, inline validation, retry on save failure; no silent failures |
-| P4-05 | Accessibility pass | planned | P4-01..P4-04 | Keyboard-only walkthrough, focus visible, labels, dialogs, error announcements; axe check |
+| P4-05 | Accessibility pass | planned | P4-01..P4-06 | Keyboard-only walkthrough, focus visible, labels, dialogs, error announcements; axe check |
+| P4-06 | Dashboard real counts | planned | P3 | Read-only dashboard using the existing list/taxonomy endpoints: posts/pages by status, terms by taxonomy. No controls for unsupported fields or workflows |
 
 ## Phase 5 — Gutenberg foundation
 

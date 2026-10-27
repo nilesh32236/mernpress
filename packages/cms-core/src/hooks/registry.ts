@@ -78,15 +78,27 @@ export function createHookRegistry(options: HookRegistryOptions = {}): HookRegis
         return;
       }
       for (const entry of list) {
+        // enter() increments the depth counter and rolls back its own increment
+        // before throwing on the limit. leave() must therefore run only when
+        // entry was actually registered as entered; otherwise a rejected entry
+        // would decrement the counter a second time.
+        let entered = false;
         try {
           enter();
+          entered = true;
           await entry.handler(payload as never);
-        } catch {
+        } catch (error) {
           // Contained and sanitized: never include the payload (which may carry
           // content) in the log, and never fail a committed write.
-          logger.warn(`hook action failed: ${name}`);
+          if (error instanceof HookRejectedError) {
+            logger.warn(`hook action rejected: ${name}`);
+          } else {
+            logger.warn(`hook action failed: ${name}`);
+          }
         } finally {
-          leave();
+          if (entered) {
+            leave();
+          }
         }
       }
     },

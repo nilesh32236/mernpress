@@ -1,10 +1,11 @@
 # Phase 3 manual acceptance — core content model and API
 
-**Status: agent-executed verification is complete and green; awaiting OWNER
-manual acceptance. The owner has NOT yet run these steps.** This guide covers the
-entire Phase 3 surface at once (per the owner's instruction, the phase is tested
-as a whole, not slice-by-slice). Earlier phases remain separately pending:
-Phase 1 and the Phase 2 auth slice are **not** owner-accepted.
+**Status: Phase 3 was explicitly accepted by the owner on 2026-10-27.** The guide
+is retained as the evidence record and reproducible acceptance procedure. This
+guide covers the entire Phase 3 surface at once (per the owner's instruction, the
+phase is tested as a whole, not slice-by-slice). Phase 1 is **approved** (per the
+AGENTS.md §1 approval record). The Phase 2 auth slice remains **not**
+owner-accepted; Phase 3 acceptance does not accept Phase 2.
 
 Phase 3 was implemented from a clean Phase 2 base. Scoped per
 [ADR 0003](../adr/0003-phase-3-content-and-taxonomy.md). Read that ADR first for
@@ -23,15 +24,25 @@ Delivered:
 - `terms` + `post_terms` tables: categories (hierarchical) and tags (flat).
 - Admin API: content CRUD/list/search/pagination/transitions, term CRUD, term
   assignment. Public API: published-only list + single-by-slug.
-- Internal async hook/filter contract (not a public plugin SDK).
+- Five roles and the code capability map (P2-04, ADR 0004), with object-level
+  server-side authorization. Cross-author read visibility: authors/contributors
+  cannot read another author's draft or trashed content; list rows and totals use
+  the same predicate (ADR 0005).
+- Internal async hook/filter contract (not a public plugin SDK), including the
+  action-recursion depth fix.
+- A distinct `auth.manual_test_account.created` audit event for the
+  development-only role-account CLI.
 - Idempotent, dev-only demo seed.
-- 176 automated tests, E2E, live HTTP smoke — all green.
+- **225 automated tests** (214 API, 10 admin, 1 web) plus 7 Playwright tests and a
+  live HTTP smoke pass — all green locally. The correction set is uncommitted and
+  is not claimed as CI-verified.
 
 Deliberately NOT in Phase 3 (do not test for these):
 
 - An admin **user-management** UI/API (P2-05) — roles exist in the DB and the
   capability matrix is enforced, but there is no admin screen/endpoint to create
-  or edit users yet. Tests create users directly.
+  or edit users yet. Tests create users directly; the owner can create manual-test
+  role accounts with the development-only CLI described in §8.
 - Media, featured image, page hierarchy, render cache, scheduled publishing,
   revisions, permanent delete, redirects served over HTTP (all Phase 5–8).
 - The public website renderer, themes, caching (Phase 7).
@@ -44,14 +55,22 @@ Deliberately NOT in Phase 3 (do not test for these):
 ```bash
 cd /srv/mernpress
 pnpm install --frozen-lockfile
-cp .env.example .env   # fill DATABASE_URL, TEST_DATABASE_URL, CORS_ORIGINS, AUTH_HASH_PEPPER
-pnpm setup             # generate client, apply migrations (incl. Phase 3), idempotent seed
+# If .env does not exist yet: cp .env.example .env, then fill DATABASE_URL,
+# TEST_DATABASE_URL, CORS_ORIGINS and AUTH_HASH_PEPPER. Do not overwrite an
+# existing .env with real local secrets.
+pnpm db:generate       # generate the Prisma client
+pnpm db:migrate        # apply all 4 migrations (no seed)
 ```
 
-Verify the Phase 3 migration is applied:
+`pnpm setup` is the one-command alternative, but it also runs the demo seed. If
+you use it, the first `pnpm db:seed` in §10 will already be an idempotent no-op
+(“Demo content already present”); that is expected. The granular commands above
+keep the seed step separate so §10 can observe the first creation.
+
+Verify the migrations are applied:
 
 ```bash
-pnpm db:migrate        # applies 20261027120000_phase3_content_taxonomy if pending
+pnpm db:migrate        # applies any pending migration; exits after a connectivity check
 ```
 
 Start the stack:
@@ -252,16 +271,27 @@ curl -s -X POST http://127.0.0.1:4000/api/admin/posts \
 
 Roles now exist (`administrator`, `editor`, `author`, `contributor`, `subscriber`).
 Object-level checks are enforced **server-side** (the UI is not the boundary).
-The automated suite (`apps/api/test/content/roles.test.ts`) proves:
+The automated suites (`apps/api/test/content/roles.test.ts`,
+`visibility.test.ts`, `visibility-policy.test.ts`) prove:
 
 - **subscriber** → create/read/taxonomy all **403**.
 - **contributor** → create + edit **own drafts only**; publish/trash/edit-others/
-  manage-taxonomy all **403**; cannot edit own post once published.
+  manage-taxonomy all **403**; cannot edit own post once published; cannot read
+  another user's draft or trashed content (404).
 - **author** → full lifecycle on **own** content; edit/publish/trash others'
   content **403**; cannot manage taxonomy; can assign existing terms to own content.
+  Cannot read another author's draft or trashed content (404); can read others'
+  published content.
 - **editor** → full lifecycle on **any** content + manage taxonomy; **not**
   `user.manage`.
 - **administrator** → everything.
+
+**Known hidden-object mutation behavior (ADR 0005 residual):** individual reads
+and lists return **404** for another author's hidden draft/trashed content, so
+existence is not leaked on read paths. Mutating endpoints (`PATCH`, transitions,
+term assignment) still return **403** for an existing but unauthorized object.
+This 403-vs-404 difference is a documented residual, not a test failure; do not
+treat it as a visibility regression.
 
 ### Provisioning role accounts for manual testing (development-only CLI)
 
@@ -288,13 +318,15 @@ Each command prints a unique `dev-<role>-<suffix>` username (or pass
 password in your own notes if you need it again — it is not stored anywhere
 recoverable (only its Argon2id hash is persisted). Sign in as each account via
 §3, then repeat §4–§6 to confirm: a subscriber's create/read returns 403; a
-contributor's publish/trash/edit-of-others returns 403; an author's
-edit/publish/trash of another user's content returns 403 while their own content
-works end-to-end; an editor manages any content and taxonomy but not users.
+contributor's publish/trash/edit-of-others returns 403 and another user's
+draft/trashed read returns 404; an author's read of another user's draft/trashed
+content returns 404 and their edit/publish/trash returns 403, while their own
+content works end-to-end; an editor manages any content and taxonomy but not
+users.
 
 **Cleanup is optional and manual** — the tool never deletes accounts. To remove
-the `dev-*` accounts after testing, delete those specific usernames yourself (the
-guide's §13 shows the safe pattern); nothing is automatic.
+the `dev-*` accounts after testing, use the dedicated account-cleanup pattern in
+§13.1; never run a broad user delete. Nothing is automatic.
 
 > ⚠️ Local development only. The `dev:create-test-account` CLI is refused in
 > production and must never be exposed as a UI or API. P2-05 (real user
@@ -304,12 +336,15 @@ guide's §13 shows the safe pattern); nothing is automatic.
 
 ## 9. Hooks (internal contract)
 
-The hook/filter registry is internal (`app.contentHooks`). It is exercised by the
-automated suite (`apps/api/test/content/hooks.test.ts`): priority + stable
-registration order, awaited + revalidated filters, veto → 400, actions only after
-commit, contained failures, re-entrancy guard, disposal, isolation. There is no
-public plugin runtime in Phase 3 (Phase 9). Nothing to run manually; see the ADR
-D-6 contract.
+The hook/filter registry is internal (`app.contentHooks`). It is exercised by
+`apps/api/test/content/hooks.test.ts` and `hook-recursion.test.ts`: priority +
+stable registration order, awaited + revalidated filters, veto → 400, actions only
+after commit, contained failures, filter and action recursion limits, depth
+restoration, disposal and per-application isolation. The action recursion fix is
+covered by two tests that fail against the old double-decrement behavior
+(restoration and repeated-invocation); the other recursion tests cover adjacent
+scenarios. There is no public plugin runtime in Phase 3 (Phase 9). Nothing to run
+manually; see the ADR D-6 contract.
 
 ---
 
@@ -322,17 +357,28 @@ NODE_ENV=production pnpm db:seed   # refuses: "Refusing to seed demo content in 
 ```
 
 The seed never creates an administrator (bootstrap is CLI-only) and never
-overwrites existing content (it keys on stable slugs).
+overwrites existing content (it keys on stable slugs). If you used `pnpm setup`,
+which already seeds, both runs may report “Demo content already present”; that is
+the idempotent behavior, not a failure. To observe the first creation, use the
+granular §2 commands (which do not seed) or a clean development database.
 
 ---
 
 ## 11. Migration verification (already executed by the agent)
 
-- Fresh disposable DB: all 3 migrations applied; `prisma migrate diff` → **No
-  difference detected** (zero drift).
-- Existing dev DB (auth-only schema): `migrate deploy` applied **only** the Phase
-  3 migration; the 2 auth migrations and all rows (0 users/sessions/audit) were
-  preserved. The dev DB was never reset or dropped.
+- There are **four** additive migrations:
+  `20261024201137_phase2_auth`,
+  `20261025085158_auth_hardening`,
+  `20261027120000_phase3_content_taxonomy`, and
+  `20261027130000_phase2_roles`.
+- Fresh disposable DB (recorded during the implementation gate): all four
+  migrations applied; `prisma migrate diff` → **No difference detected** (zero
+  drift).
+- Current dev and test databases: `prisma migrate status` reports four migrations
+  and “Database schema is up to date.”
+- Existing dev DB: migrations were applied additively; the dev database was never
+  reset or dropped. Only read-only status/count checks were performed during the
+  current verification.
 
 ---
 
@@ -344,21 +390,48 @@ overwrites existing content (it keys on stable slugs).
 | Lint | `pnpm lint` | PASS |
 | Format | `pnpm format:check` | PASS |
 | Typecheck | `pnpm typecheck` | PASS (7 tasks) |
-| Unit+integration | `pnpm test` | PASS — API 178, admin 10, web 1 = **189 tests** |
+| Unit+integration | `pnpm test` | PASS — API 214, admin 10, web 1 = **225 tests** |
 | Build | `pnpm build` | PASS (5 tasks) |
 | E2E | `pnpm test:e2e` | PASS — 7 Playwright tests |
 | Audit | `pnpm audit --audit-level=high` | PASS |
-| Migration drift | `prisma migrate diff --exit-code` | No difference |
-| Live HTTP smoke | content+taxonomy+public flow | PASS (see §4–§7) |
+| Migration status (dev/test) | `prisma migrate status` | 4 migrations; schema up to date |
+| Migration drift | `prisma migrate diff --from-migrations ... --to-schema ... --exit-code` | No difference |
+| Seed idempotency | seed twice against the isolated test DB | First creates demo content; second reports “nothing created” |
+| Focused regressions | visibility, roles, hooks, audit, CLI tests | PASS — 8 files / 65 tests |
+| Live HTTP smoke | content+taxonomy+public flow | PASS (recorded during Phase 3 implementation; the pre-acceptance correction set is covered by the focused automated tests above) |
 
-Independent review: `amazon-bedrock/deepseek.v3.2` (different model family from
-the implementer, Kimi K3) — verdict **PASS WITH ISSUES**, no blockers; 5
-medium/low findings, all fixed with regression tests; re-review pending owner
-spot-check of this guide.
+Independent reviews: `amazon-bedrock/deepseek.v3.2` (Phase 3, PASS WITH ISSUES,
+findings fixed); `opencode/deepseek-v4.1-flash-free#high` (correction set, PASS
+WITH ISSUES, findings fixed or documented); `opencode/flint-40b-free#high`
+(post-fix, PASS, no blocking/high findings). Owner spot-check of this guide
+remains pending.
 
 ---
 
 ## 13. Cleanup (optional)
+
+Cleanup is split deliberately: development test accounts and demo content are
+different data sets.
+
+### 13.1 Development-only test accounts
+
+The CLI never deletes accounts. To remove only the `dev-*` accounts created for
+this acceptance session (adjust the username pattern if you passed custom
+`--username` values):
+
+```bash
+# psql or any client; never run a broad DELETE FROM users.
+psql "$(grep '^DATABASE_URL=' .env | cut -d= -f2-)" -c "
+DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'dev-%');
+DELETE FROM audit_events WHERE actor_user_id IN (SELECT id FROM users WHERE username LIKE 'dev-%')
+  OR target_user_id IN (SELECT id FROM users WHERE username LIKE 'dev-%');
+DELETE FROM users WHERE username LIKE 'dev-%';"
+```
+
+This removes the test accounts, their sessions and their audit rows. It does not
+touch the administrator or any other account.
+
+### 13.2 Demo content (only if you ran `pnpm db:seed`)
 
 The Phase 3 demo content is yours to keep or delete. To remove the seeded demo
 rows only (never other content):
@@ -374,6 +447,8 @@ DELETE FROM terms WHERE (taxonomy='category' AND slug IN ('news','guides')) OR (
 
 ## Acceptance
 
-If every flow above behaves as documented, Phase 3 is accepted. Phase 3 becomes
-owner-accepted **only when the owner explicitly says so**. Phase 4 (admin content
-UX) must not start before that.
+Phase 3 was explicitly accepted by the owner on **2026-10-27**. This guide is
+retained as the evidence record and reproducible procedure. The accepted local
+baseline is not yet published to GitHub. Phase 4 (admin content UX) starts only
+after that baseline is committed, pushed and CI-green for the exact commit, with
+explicit owner publication authorization.
