@@ -9,6 +9,7 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/server.js",
     "auth:bootstrap": "NODE_OPTIONS=--conditions=development tsx src/cli/bootstrap-admin.ts",
+    "dev:create-test-account": "NODE_OPTIONS=--conditions=development tsx src/cli/create-test-account.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

@@ -71,20 +71,22 @@ profile editing, password reset, email and MFA remain deferred.
 | P2-01 | First-admin bootstrap | done | P1 | CLI creates one administrator on an empty DB; refuses re-run safely; advisory lock; password never logged |
 | P2-02 | Login/logout/session | done | P2-01 | Argon2id; opaque session token hashed in DB; HttpOnly/Secure/SameSite cookie; fresh session on login; idle/absolute expiry; logout/disabled revoke; tests |
 | P2-03 | CSRF + login rate limiting | done | P2-02 | Origin check + CSRF for login/logout; separate pre-auth/session CSRF cookies; DB-backed dual-key rate limit with recovery, bounded retention and coalesced audit; tests |
-| P2-04 | Roles/capabilities | planned | P2-02 | Deferred: only the administrator principal exists; add editor/author, capability map and object checks before content routes |
-| P2-05 | User administration | planned | P2-04 | Deferred: admin-only list/create/edit/deactivate; cannot delete last administrator; audit events |
+| P2-04 | Roles/capabilities | done | P2-02 | Five roles (administrator/editor/author/contributor/subscriber) + code capability map + object-level checks enforced server-side in the content service; additive enum migration; role × operation tests. [ADR 0004](docs/adr/0004-roles-and-capabilities.md) |
+| P2-05 | User administration | planned | P2-04 | Deferred: admin-only list/create/edit/deactivate; cannot delete last administrator; audit events. **Note:** tests can create users with roles directly, but there is no admin UI/API for user management yet |
 | P2-06 | Auth UI | in progress | P2-02..P2-05 | Login/logout/session UI done with accessible labels, alerts, focus and keyboard E2E; profile/users screens deferred |
 | P2-07 | Security verification | in progress | P2-02..P2-06 | Auth slice tests + two independent reviews done, including the hardening follow-up (retention, coalesced audit, CSRF refresh, same-origin topology); wrong-role/wrong-object tests require P2-04/P2-05 and content routes |
 
 ## Phase 3 — Core content model and API
 
-**Status: implementation complete and verified locally (176 automated tests +
-live HTTP smoke + E2E green); owner manual acceptance pending.** Built from a
-clean Phase 2 base (the historical P3-01 report did not exist in this checkout).
-Scoped per [ADR 0003](docs/adr/0003-phase-3-content-and-taxonomy.md): no media,
-page-hierarchy, render-cache, scheduled-publish or revision columns. Redirect
-**resolution** is deferred to Phase 7 (slug history is recorded instead).
-Authorization is administrator-only because P2-04 roles do not exist yet.
+**Status: implementation complete and verified locally; owner manual acceptance
+pending.** Built from a clean Phase 2 base (the historical P3-01 report did not
+exist in this checkout). Scoped per [ADR 0003](docs/adr/0003-phase-3-content-and-taxonomy.md):
+no media, page-hierarchy, render-cache, scheduled-publish or revision columns.
+Redirect **resolution** is deferred to Phase 7 (slug history is recorded).
+Authorization is now the full role × capability matrix ([ADR 0004](docs/adr/0004-roles-and-capabilities.md))
+with object-level checks enforced server-side; the role × operation matrix is
+tested. P2-05 user **administration** (admin UI/API to manage users) remains
+deferred — roles exist in the DB and are created directly in tests.
 
 | ID | Task | Status | Depends on | Acceptance criteria |
 | --- | --- | --- | --- | --- |
@@ -93,7 +95,7 @@ Authorization is administrator-only because P2-04 roles do not exist yet.
 | P3-03 | Content repository/service | done | P3-01 | create/read/update/list/search/paginate; draft/publish/unpublish/trash/restore; optimistic concurrency (baseVersion → 409); internal hook/filter contract; administrator-only authorization on every operation |
 | P3-04 | Content API | done | P3-03 | Admin CRUD/transitions/terms + published-only public read; Zod `.strict()` validation; consistent error envelope; bounded pagination; no mass assignment |
 | P3-05 | Taxonomy basics | done | P3-01 | categories (hierarchical, cycle-safe) + tags (flat); term CRUD, assign/unassign via `PUT .../terms`; unique slug per taxonomy; transactional content-safe delete; computed counts |
-| P3-06 | Content API tests | done | P3-03..P3-05 | 120 content tests: happy path, validation, 401/403/404/409, slug conflict, trash/restore, pagination bounds, hooks, concurrency, taxonomy, authz. **Object-level role matrix NOT RUN — blocked on P2-04 roles (documented)** |
+| P3-06 | Content API tests | done | P3-03..P3-05 | 130 content tests: happy path, validation, 401/403/404/409, slug conflict, trash/restore, pagination bounds, hooks, concurrency, taxonomy, authz, **role × operation matrix** (subscriber/contributor/author/editor × own/other × draft/published/trashed) |
 | P3-07 | Seed/demo content | done | P3-01 | Idempotent dev-only seed: one post, one page, 2 categories, 2 tags; refuses production; never creates an admin; never overwrites existing content |
 
 ## Phase 4 — Admin content UX

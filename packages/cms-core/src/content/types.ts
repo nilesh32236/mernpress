@@ -4,7 +4,7 @@ export type { PostStatus };
 
 export type ContentType = 'post' | 'page';
 
-/** The acting principal. Only `administrator` exists in Phase 3 (ADR 0003, D-5). */
+/** The acting principal `{ userId, role }`, derived from the validated session. Role is one of the five ADR 0004 roles; capabilities are checked in the service. */
 export interface Principal {
   userId: string;
   role: string;

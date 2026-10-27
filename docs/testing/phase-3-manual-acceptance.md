@@ -29,8 +29,9 @@ Delivered:
 
 Deliberately NOT in Phase 3 (do not test for these):
 
-- Editor/author/contributor roles and the role matrix — **blocked on P2-04**
-  (roles do not exist). Only the `administrator` principal exists.
+- An admin **user-management** UI/API (P2-05) — roles exist in the DB and the
+  capability matrix is enforced, but there is no admin screen/endpoint to create
+  or edit users yet. Tests create users directly.
 - Media, featured image, page hierarchy, render cache, scheduled publishing,
   revisions, permanent delete, redirects served over HTTP (all Phase 5–8).
 - The public website renderer, themes, caching (Phase 7).
@@ -247,8 +248,57 @@ curl -s -X POST http://127.0.0.1:4000/api/admin/posts \
 # Non-allowlisted Origin on a mutation -> 403 ORIGIN_NOT_ALLOWED
 ```
 
-The **role matrix (editor/author) cannot be tested** — those roles do not exist
-yet (P2-04). That acceptance criterion is documented as blocked, not skipped.
+### Role × capability matrix (now testable — ADR 0004)
+
+Roles now exist (`administrator`, `editor`, `author`, `contributor`, `subscriber`).
+Object-level checks are enforced **server-side** (the UI is not the boundary).
+The automated suite (`apps/api/test/content/roles.test.ts`) proves:
+
+- **subscriber** → create/read/taxonomy all **403**.
+- **contributor** → create + edit **own drafts only**; publish/trash/edit-others/
+  manage-taxonomy all **403**; cannot edit own post once published.
+- **author** → full lifecycle on **own** content; edit/publish/trash others'
+  content **403**; cannot manage taxonomy; can assign existing terms to own content.
+- **editor** → full lifecycle on **any** content + manage taxonomy; **not**
+  `user.manage`.
+- **administrator** → everything.
+
+### Provisioning role accounts for manual testing (development-only CLI)
+
+There is **no admin user-management UI/API yet (P2-05, deferred)**. To exercise
+the role matrix locally without hand-editing database rows, use the dedicated
+**development-only, opt-in CLI**. This is a narrow manual-testing aid, **not**
+user administration and **never for production**.
+
+```bash
+# First bootstrap the administrator once (interactive password prompt):
+pnpm auth:bootstrap
+
+# Create one account per non-admin role. Each prints a ONE-TIME password once.
+# The CLI refuses production, requires --i-understand-dev-only, never creates an
+# administrator, and never overwrites an existing account.
+pnpm dev:create-test-account --i-understand-dev-only --role editor
+pnpm dev:create-test-account --i-understand-dev-only --role author
+pnpm dev:create-test-account --i-understand-dev-only --role contributor
+pnpm dev:create-test-account --i-understand-dev-only --role subscriber
+```
+
+Each command prints a unique `dev-<role>-<suffix>` username (or pass
+`--username <name>`) and a one-time password shown exactly once. Record the
+password in your own notes if you need it again — it is not stored anywhere
+recoverable (only its Argon2id hash is persisted). Sign in as each account via
+§3, then repeat §4–§6 to confirm: a subscriber's create/read returns 403; a
+contributor's publish/trash/edit-of-others returns 403; an author's
+edit/publish/trash of another user's content returns 403 while their own content
+works end-to-end; an editor manages any content and taxonomy but not users.
+
+**Cleanup is optional and manual** — the tool never deletes accounts. To remove
+the `dev-*` accounts after testing, delete those specific usernames yourself (the
+guide's §13 shows the safe pattern); nothing is automatic.
+
+> ⚠️ Local development only. The `dev:create-test-account` CLI is refused in
+> production and must never be exposed as a UI or API. P2-05 (real user
+> administration) remains not implemented.
 
 ---
 
@@ -294,7 +344,7 @@ overwrites existing content (it keys on stable slugs).
 | Lint | `pnpm lint` | PASS |
 | Format | `pnpm format:check` | PASS |
 | Typecheck | `pnpm typecheck` | PASS (7 tasks) |
-| Unit+integration | `pnpm test` | PASS — API 167, admin 10, web 1 = **178 tests** |
+| Unit+integration | `pnpm test` | PASS — API 178, admin 10, web 1 = **189 tests** |
 | Build | `pnpm build` | PASS (5 tasks) |
 | E2E | `pnpm test:e2e` | PASS — 7 Playwright tests |
 | Audit | `pnpm audit --audit-level=high` | PASS |

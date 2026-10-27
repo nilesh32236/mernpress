@@ -1,5 +1,6 @@
 import { Prisma, type DatabaseClient } from '@mernpress/database';
 import type { HookRegistry } from '../hooks/types.js';
+import { requireCapability } from '../auth/capabilities.js';
 import { ContentError } from '../content/errors.js';
 import { isReservedSlug, normalizeSlug } from '../content/slug.js';
 import type { Principal } from '../content/types.js';
@@ -28,9 +29,8 @@ export function createTaxonomyService(options: TaxonomyServiceOptions) {
   const { prisma, hooks } = options;
 
   function requireAdmin(principal: Principal): void {
-    if (principal.role !== 'administrator') {
-      throw new ContentError('FORBIDDEN', 'You are not allowed to manage taxonomy.', 403);
-    }
+    // Taxonomy management requires the taxonomy.manage capability (ADR 0004).
+    requireCapability(principal, 'taxonomy.manage');
   }
 
   function assertTaxonomy(taxonomy: string): asserts taxonomy is TaxonomyType {

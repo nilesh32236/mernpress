@@ -1,7 +1,10 @@
+import { hashPassword, normalizeUsername } from '@mernpress/cms-core';
 import type { FastifyInstance } from 'fastify';
 import { buildApp } from '../../src/app.js';
 import type { Env } from '../../src/config/env.js';
 import { makeTestEnv } from './env.js';
+
+export type TestRole = 'administrator' | 'editor' | 'author' | 'contributor' | 'subscriber';
 
 export const ADMIN_ORIGIN = 'http://127.0.0.1:5173';
 export const ADMIN_USERNAME = 'admin';
@@ -40,6 +43,26 @@ export async function seedAdmin(
   password = ADMIN_PASSWORD,
 ) {
   return app.auth.bootstrapAdmin({ username, password });
+}
+
+/**
+ * Create a user with an arbitrary role directly (bootstrap only makes the first
+ * administrator). Used to exercise the role × capability matrix (ADR 0004).
+ */
+export async function seedUser(
+  app: FastifyInstance,
+  options: { username: string; password: string; role: TestRole },
+) {
+  const passwordHash = await hashPassword(options.password);
+  const user = await app.database.user.create({
+    data: {
+      username: normalizeUsername(options.username),
+      passwordHash,
+      role: options.role,
+      status: 'active',
+    },
+  });
+  return { id: user.id, username: user.username, role: user.role };
 }
 
 export async function getCsrf(app: FastifyInstance): Promise<{

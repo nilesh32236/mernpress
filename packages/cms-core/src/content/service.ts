@@ -1,6 +1,7 @@
 import type { DatabaseClient, PostStatus, Prisma } from '@mernpress/database';
 import type { HookRegistry } from '../hooks/types.js';
 import { HookRejectedError } from '../hooks/types.js';
+import { ownsObject, requireCapability, roleHasCapability } from '../auth/capabilities.js';
 import { ContentError } from './errors.js';
 import {
   deriveSlugFromTitle,
@@ -54,11 +55,43 @@ export interface ContentService {
   getPublicBySlug(type: ContentType, slug: string): Promise<PublicPost>;
 }
 
-/** Fail closed: only an active administrator principal is authorized (ADR 0003 D-5). */
-function requireAdmin(principal: Principal): void {
-  if (principal.role !== 'administrator') {
+/**
+ * Object-level content authorization (ADR 0004). The route authenticates and
+ * passes `{ userId, role }`; the service decides permission. A principal may act
+ * on an object when it holds the `.any` capability, or the `.own` capability and
+ * owns the object. Fail closed: unknown roles have no capabilities.
+ */
+function canEditPost(principal: Principal, authorId: string | null, status: PostStatus): void {
+  if (roleHasCapability(principal.role, 'content.edit.any')) {
+    return;
+  }
+  if (principal.role === 'contributor') {
+    // Contributors edit only their own drafts.
+    if (ownsObject(principal, authorId) && status === 'DRAFT') {
+      return;
+    }
     throw new ContentError('FORBIDDEN', 'Forbidden', 403);
   }
+  if (roleHasCapability(principal.role, 'content.edit.own') && ownsObject(principal, authorId)) {
+    return;
+  }
+  throw new ContentError('FORBIDDEN', 'Forbidden', 403);
+}
+
+function canTransition(
+  principal: Principal,
+  authorId: string | null,
+  kind: 'publish' | 'trash',
+): void {
+  const anyCap = kind === 'publish' ? 'content.publish.any' : 'content.trash.any';
+  const ownCap = kind === 'publish' ? 'content.publish.own' : 'content.trash.own';
+  if (roleHasCapability(principal.role, anyCap)) {
+    return;
+  }
+  if (roleHasCapability(principal.role, ownCap) && ownsObject(principal, authorId)) {
+    return;
+  }
+  throw new ContentError('FORBIDDEN', 'Forbidden', 403);
 }
 
 /** Revalidate a (possibly filter-transformed) draft before persistence. */
@@ -252,7 +285,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
   }
 
   async function createPost(principal: Principal, input: CreatePostInput): Promise<AdminPost> {
-    requireAdmin(principal);
+    requireCapability(principal, 'content.create');
 
     // Validate an explicit slug before any filter so a clearly invalid or
     // reserved slug returns the stable SLUG_INVALID/SLUG_RESERVED error (ADR 0003).
@@ -331,7 +364,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
   }
 
   async function getPost(principal: Principal, id: string): Promise<AdminPost> {
-    requireAdmin(principal);
+    requireCapability(principal, 'content.read.any');
     const row = await prisma.post.findUnique({ where: { id }, include: WITH_TERMS });
     if (!row) {
       throw new ContentError('NOT_FOUND', 'Not found', 404);
@@ -344,13 +377,12 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     id: string,
     input: UpdatePostInput,
   ): Promise<AdminPost> {
-    requireAdmin(principal);
-
     const row = await prisma.$transaction(async (tx) => {
       const existing = await loadWithTerms(tx, id);
       if (!existing) {
         throw new ContentError('NOT_FOUND', 'Not found', 404);
       }
+      canEditPost(principal, existing.authorId, existing.status);
 
       const requestedSlug = input.slug === undefined ? existing.slug : normalizeSlug(input.slug);
 
@@ -445,7 +477,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
   }
 
   async function listAdmin(principal: Principal, query: AdminListQuery): Promise<Paged<AdminPost>> {
-    requireAdmin(principal);
+    requireCapability(principal, 'content.read.any');
     const where: Prisma.PostWhereInput = {};
     if (query.type) {
       where.type = query.type;
@@ -501,8 +533,6 @@ export function createContentService(options: ContentServiceOptions): ContentSer
       | 'content.post.trashed'
       | 'content.post.restored',
   ): Promise<AdminPost> {
-    requireAdmin(principal);
-
     const outcome = await prisma.$transaction(async (tx) => {
       const existing = await loadWithTerms(tx, id);
       if (!existing) {
@@ -510,6 +540,14 @@ export function createContentService(options: ContentServiceOptions): ContentSer
       }
       if (existing.version !== baseVersion) {
         throw new ContentError('VERSION_CONFLICT', 'Version conflict', 409);
+      }
+      // Object-level transition authorization: publish needs publish capability;
+      // trash/restore/unpublish need trash capability (unpublishing returns a
+      // post to draft, the inverse of publish, so it uses publish capability).
+      if (action === 'content.post.published' || action === 'content.post.unpublished') {
+        canTransition(principal, existing.authorId, 'publish');
+      } else {
+        canTransition(principal, existing.authorId, 'trash');
       }
       const result = apply({
         status: existing.status,
@@ -641,16 +679,18 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     categoryIds: string[],
     tagIds: string[],
   ): Promise<AdminPost> {
-    requireAdmin(principal);
+    requireCapability(principal, 'taxonomy.assign');
 
     const row = await prisma.$transaction(async (tx) => {
       const existing = await tx.post.findUnique({
         where: { id },
-        select: { id: true, type: true },
+        select: { id: true, type: true, authorId: true, status: true },
       });
       if (!existing) {
         throw new ContentError('NOT_FOUND', 'Not found', 404);
       }
+      // Assigning terms edits the post, so the caller must also be allowed to edit it.
+      canEditPost(principal, existing.authorId, existing.status);
 
       const allIds = [...categoryIds, ...tagIds];
       const terms =

@@ -5,6 +5,178 @@ and results, decisions, limitations and the next step. Do not record secrets.
 
 ---
 
+## 2026-10-27 — Manual-acceptance aid: development-only role-account CLI
+
+**Status:** complete and verified locally; **Phase 3 still awaits owner manual
+acceptance.** This adds a narrow, opt-in CLI so the owner can exercise the role
+matrix locally without hand-editing DB rows. It is **not** user administration
+(P2-05, deferred) and **not** a public API/UI. Committed and pushed with owner
+authorization (see below).
+
+### What was added
+
+- `apps/api/src/cli/create-test-account.ts` + script `pnpm dev:create-test-account`.
+- Domain use-case `auth.createManualTestAccount` (`auth/service.ts`) + types
+  (`ManualTestRole` = editor|author|contributor|subscriber).
+- Tests: `test/auth/manual-test-account.test.ts` (7, domain) +
+  `test/auth/create-test-account-cli.test.ts` (3, spawn-level CLI safeguards).
+- Acceptance-guide section "Provisioning role accounts for manual testing".
+
+### Safeguards (all verified live + by test)
+
+- **Production refusal**: `NODE_ENV=production` → exit 1, before any config load
+  or DB work (guard moved before `loadEnv()` per review finding #1).
+- **Explicit opt-in**: requires `--i-understand-dev-only`; no env override, no
+  default-true.
+- **No administrator**: allowlist enforced in both the CLI and the domain
+  (`MANUAL_TEST_ROLES` excludes administrator; the first admin stays
+  bootstrap-only).
+- **No overwrite**: a username collision is a hard 409 inside a transaction —
+  never re-roles, resets the password of, or deactivates an existing account.
+- **Password**: one-time `Dev-<random>-Aa1!` printed once to the terminal, never
+  stored/logged/written; only the Argon2id hash is persisted (same service as
+  normal auth). `MERNPRESS_TEST_ACCOUNT_PASSWORD` is an automation-only override.
+- **Domain boundary**: username normalization + password policy + audit — no
+  validation bypass.
+- **Scope**: CLI only — zero references in routes/plugins/seed/startup.
+
+### Independent review (deepseek.v3.2) — PASS WITH ISSUES (all low), fixed
+
+| # | Finding | Fix |
+| --- | --- | --- |
+| 1 | Production guard after `loadEnv()` + dead branch | guard moved before `loadEnv()`; dead branch removed |
+| 4 | Invalid role threw `INVALID_USERNAME` | added `INVALID_ROLE` code |
+| 8 | CLI wrapper (production/opt-in) untested | added 3 spawn-level CLI tests |
+
+Reviewer confirmed no defect on: opt-in not bypassable, admin refusal at both
+layers, collision is a hard no-op 409, one-time password handling, Argon2id-only
+persistence, domain-boundary use, no route/UI/seed exposure, no hidden P2-05.
+
+### Verification (exact commands, all green)
+
+| Command | Result |
+| --- | --- |
+| `pnpm install --frozen-lockfile` | PASS (lockfile up to date) |
+| `pnpm lint` | PASS |
+| `pnpm format:check` | PASS |
+| `pnpm typecheck` | PASS (7 tasks) |
+| `pnpm test` | PASS — **199 tests** (API 188, admin 10, web 1) |
+| `pnpm build` | PASS (5 tasks) |
+| `pnpm test:e2e` | PASS (7 Playwright) |
+| `pnpm audit --audit-level=high` | PASS |
+| Live CLI smoke (production/opt-in/admin/collision/one-time password/login) | PASS |
+| `git diff --check` + secret scan | PASS |
+
+### Local vs CI
+
+- **GitHub CI is green for the committed `dd4ffc6`** (Phase 3) — verified via
+  `gh run watch` (run `40468067008`, exit 0).
+- The reconciliation + this CLI were **verified locally only** at the time of the
+  gate; CI evidence for them exists only after the commit/push below.
+
+### Next step
+
+Owner runs `docs/testing/phase-3-manual-acceptance.md` (role-matrix section now
+runnable via the CLI) and decides on Phase 3 acceptance.
+
+---
+
+## 2026-10-27 — Reconciliation: P2-04 roles/capabilities + discrepancy verdict
+
+**Status:** implementation complete and verified locally; **Phase 3 still awaits
+owner manual acceptance.** This entry resolves the P2-04 dependency flagged in the
+Phase 3 report and records the missing-work investigation. No commit/push of this
+reconciliation yet (owner authorization required for git mutations).
+
+### 1. Missing-work investigation (discrepancy verdict)
+
+The owner asked to reconcile: the earlier report claimed local HEAD `7e0ed2c` with
+roles/user-admin work and `.opencode/` profiles; the live checkout was `36ca6d0`
+(now `dd4ffc6` after my Phase 3 commit) with none of that present.
+
+Evidence checked (no destructive action taken):
+
+- `git cat-file -t 7e0ed2c` → **"Not a valid object name"** (object does not exist).
+- `git reflog` → repo was **cloned 2026-10-25 directly to `36ca6d0`**; the only
+  later entries are my Phase 3 commit. No prior `7e0ed2c` was ever checked out here.
+- `git worktree list` → only `/srv/mernpress`. `git stash list` → empty.
+- `git fsck --unreachable` → only the **0-byte empty blob** (`e69de29b…`, a git
+  artifact, not lost work). No `.git/lost-found`.
+- Filesystem search → no other `mernpress*` directory, no tarball/zip/backup of
+  mernpress, no `.opencode/` anywhere on the box.
+
+**Verdict: the earlier work is NOT recoverable and was never on this machine.** The
+roles/user-administration implementation and `.opencode/` profiles are unavailable.
+I did not invent or assume a transfer; Phase 3 was built from the clean Phase 2
+base, and P2-04 is now implemented fresh (below).
+
+### 2. P2-04 roles/capabilities (ADR 0004)
+
+- **Migration** `20261027130000_phase2_roles`: `UserRole` enum gains `editor`,
+  `author`, `contributor`, `subscriber` (additive).
+- **Capability registry** (`auth/capabilities.ts`): code-level role → capability
+  map (roles/role_capabilities **tables** deferred to Phase 9 per ADR 0004 D-2).
+- **Matrix** (server-enforced): administrator = all; editor = any content +
+  taxonomy (not `user.manage`); author = full lifecycle on **own** content +
+  assign terms (not taxonomy manage); contributor = create + edit **own drafts
+  only** (no publish/trash, no others, no published); subscriber = nothing.
+- **Object-level checks** moved into the domain service (`canEditPost`,
+  `canTransition`); the HTTP guard now only authenticates and passes the
+  principal. `toPublicUser` fails closed on unknown roles.
+- **`roles.test.ts`**: 10 tests covering subscriber/contributor/author/editor ×
+  own/other × draft/published/trashed, taxonomy manage vs assign, user.manage.
+
+### 3. Verification (exact commands, all green)
+
+| Command | Result |
+| --- | --- |
+| Roles migration → test DB + dev DB (no reset, dev had 0 users) | PASS — applied `20261027130000_phase2_roles`; existing rows preserved |
+| Fresh scratch DB: 4 migrations + `migrate diff --exit-code` | PASS — **No difference detected** |
+| Dev DB enum check | `administrator, editor, author, contributor, subscriber` present |
+| `pnpm typecheck` | PASS (7 tasks) |
+| `pnpm test` | PASS — **187 tests** (API 177, admin 10, web 0* ) |
+| `roles.test.ts` alone | PASS — 10/10 |
+| Content suite alone | PASS — 130/130 |
+
+\* web has 1 test; full-suite count reported at the final gate below.
+
+### 4. Limitations / notes
+
+- **P2-05 user administration (admin UI/API to manage users) is NOT implemented** —
+  roles exist and are enforced; users are created directly in tests/bootstrap only.
+- The earlier roles/users work could not be recovered; this is a fresh, verified
+  implementation of the same roadmap item, not a restoration.
+- Role tests create users via a direct `seedUser` helper (normalized usernames);
+  the only public user-creation path remains `pnpm auth:bootstrap` (first admin).
+
+### 5. Independent review (deepseek.v3.2) — PASS WITH ISSUES, no blockers
+
+| # | Finding | Disposition |
+| --- | --- | --- |
+| 1 | **HIGH** — contributor had no `content.read.any`, so a contributor got 403 even on their own draft (ADR/code mismatch) | **Fixed**: added `content.read.any` to the contributor set; ADR already required it |
+| 2 | **MEDIUM** — no test covered contributor read access | **Fixed**: added a contributor read-own-draft + list test (11 role tests now) |
+| 3 | **LOW** — stale `Principal` doc comment referencing admin-only | **Fixed**: comment now references the five-role ADR 0004 principal |
+
+Reviewer independently verified correct (no defect): ownership checks fail closed
+on null authorId; every admin route has a service-level capability check; the
+removed guard role-check is fully backstopped; `toPublicUser` fail-closed; no
+principal spoofing (role from session only); unpublish→publish / trash+restore→
+trash capability mapping consistent; administrator path unregressed; enum
+migration additive/safe on existing rows.
+
+**Final gate after all review fixes:** lint PASS, format PASS, typecheck PASS
+(7), `pnpm test` PASS — **189 tests** (API 178, admin 10, web 1), build PASS (5),
+`pnpm test:e2e` PASS (7 Playwright), `pnpm audit --audit-level=high` PASS.
+
+### 6. Next step
+
+Owner reviews the reconciled state against
+`docs/testing/phase-3-manual-acceptance.md` (role-matrix section now testable) and
+decides on Phase 3 acceptance. Git mutations (commit/push of this reconciliation)
+require owner authorization.
+
+---
+
 ## 2026-10-27 — Phase 3: core content model, taxonomy and API
 
 **Status:** implementation complete and verified locally; **owner manual

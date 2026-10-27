@@ -24,6 +24,7 @@
     "db:seed": "pnpm --filter @mernpress/database seed",
     "db:verify": "pnpm --filter @mernpress/database verify",
     "auth:bootstrap": "pnpm --filter @mernpress/api auth:bootstrap",
+    "dev:create-test-account": "pnpm --filter @mernpress/api dev:create-test-account",
     "db:local:init": "node scripts/local-db.mjs init",
     "db:local:start": "node scripts/local-db.mjs start",
     "db:local:stop": "node scripts/local-db.mjs stop",

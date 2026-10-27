@@ -94,6 +94,11 @@ One `terms` table + one `post_terms` junction, per the content-model doc §3.6:
 
 ### D-5. Authorization: administrator-only, fail closed
 
+**Superseded by [ADR 0004](0004-roles-and-capabilities.md) (2026-10-27).** The
+administrator-only stopgap below was the Phase 3 state at implementation time;
+P2-04 has since been resolved and the content API now enforces the full role ×
+capability matrix with object-level checks. Kept for history:
+
 Only the `administrator` role exists. Every content/taxonomy route requires an
 authenticated **active** administrator session plus session CSRF on mutations;
 unknown or absent roles are denied. The service takes an explicit

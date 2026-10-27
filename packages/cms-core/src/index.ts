@@ -30,11 +30,22 @@ export type {
   BootstrapInput,
   LoginInput,
   LoginResult,
+  ManualTestAccountInput,
+  ManualTestRole,
   PublicUser,
   SessionValidation,
   UserRole,
   UserStatus,
 } from './auth/types.js';
+
+// ---- Phase 2 roles/capabilities (ADR 0004) ----
+export {
+  ownsObject,
+  requireCapability,
+  roleHasCapability,
+  type Capability,
+  type Role,
+} from './auth/capabilities.js';
 
 // ---- Phase 3: content, taxonomy, hooks ----
 export { createHookRegistry } from './hooks/registry.js';

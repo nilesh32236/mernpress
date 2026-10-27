@@ -3,6 +3,7 @@ export type AuthErrorCode =
   | 'USERNAME_TAKEN'
   | 'WEAK_PASSWORD'
   | 'INVALID_USERNAME'
+  | 'INVALID_ROLE'
   | 'INVALID_CREDENTIALS'
   | 'RATE_LIMITED'
   | 'UNAUTHENTICATED';
@@ -28,7 +29,7 @@ export class AuthError extends Error {
   }
 }
 
-export type UserRole = 'administrator';
+export type UserRole = 'administrator' | 'editor' | 'author' | 'contributor' | 'subscriber';
 export type UserStatus = 'active' | 'disabled';
 
 export interface PublicUser {
@@ -72,8 +73,19 @@ export interface BootstrapInput {
   password: string;
 }
 
+/** Roles creatable via the development-only manual-test account CLI (ADR 0004).
+ * Administrator is deliberately excluded — the first admin is bootstrap-only. */
+export type ManualTestRole = 'editor' | 'author' | 'contributor' | 'subscriber';
+
+export interface ManualTestAccountInput {
+  username: string;
+  password: string;
+  role: ManualTestRole;
+}
+
 export interface AuthService {
   bootstrapAdmin(input: BootstrapInput): Promise<PublicUser>;
+  createManualTestAccount(input: ManualTestAccountInput): Promise<PublicUser>;
   login(input: LoginInput): Promise<LoginResult>;
   validateSession(sessionToken: string): Promise<SessionValidation | null>;
   logout(sessionToken: string): Promise<void>;

@@ -39,6 +39,7 @@ associated code changes. Superseded decisions stay visible.
 | D-028 | 2026-10-27 | Phase 3 content/taxonomy authorization is administrator-only and fail-closed because editor/author roles (P2-04) are not implemented; the roadmap role-matrix acceptance is documented as blocked, not faked | accepted | [ADR 0003](docs/adr/0003-phase-3-content-and-taxonomy.md) |
 | D-029 | 2026-10-27 | Internal async hook/filter contract: awaited filters (priority + stable registration order) revalidated before persistence; actions run only post-commit with contained/sanitized failures; per-instance registry, no global state; re-entrancy guard; not a public plugin SDK (Phase 9) | accepted | [ADR 0003](docs/adr/0003-phase-3-content-and-taxonomy.md) |
 | D-030 | 2026-10-27 | Minimal published-only public read is Phase 3 scope per roadmap P3-04; demo seed is idempotent, dev-only, never creates an admin and never overwrites existing content | accepted | [ADR 0003](docs/adr/0003-phase-3-content-and-taxonomy.md) |
+| D-031 | 2026-10-27 | Five roles (administrator/editor/author/contributor/subscriber) as an enum; capability map in code (roles/role_capabilities tables deferred to Phase 9); object-level checks in the domain service. Supersedes the admin-only stopgap in ADR 0003 D-5 | accepted | [ADR 0004](docs/adr/0004-roles-and-capabilities.md) |
 
 ## Proposed / unresolved
 

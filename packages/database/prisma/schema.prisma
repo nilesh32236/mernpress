@@ -9,6 +9,10 @@ datasource db {
 
 enum UserRole {
   administrator
+  editor
+  author
+  contributor
+  subscriber
 }
 
 enum UserStatus {

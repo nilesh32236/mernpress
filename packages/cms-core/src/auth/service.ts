@@ -15,6 +15,7 @@ import type {
   BootstrapInput,
   LoginInput,
   LoginResult,
+  ManualTestAccountInput,
   PublicUser,
   SessionValidation,
 } from './types.js';
@@ -64,20 +65,24 @@ export function createAuthService(options: {
     });
   }
 
+  const VALID_ROLES = new Set(['administrator', 'editor', 'author', 'contributor', 'subscriber']);
+  const MANUAL_TEST_ROLES = new Set(['editor', 'author', 'contributor', 'subscriber']);
+
   function toPublicUser(user: {
     id: string;
     username: string;
     role: string;
     status: string;
   }): PublicUser {
-    if (user.role !== 'administrator' || (user.status !== 'active' && user.status !== 'disabled')) {
+    // Fail closed on an unknown role/status rather than silently authorizing.
+    if (!VALID_ROLES.has(user.role) || (user.status !== 'active' && user.status !== 'disabled')) {
       throw new Error('Unsupported user role or status');
     }
 
     return {
       id: user.id,
       username: user.username,
-      role: user.role,
+      role: user.role as PublicUser['role'],
       status: user.status,
     };
   }
@@ -134,6 +139,62 @@ export function createAuthService(options: {
           username,
           passwordHash,
           role: 'administrator',
+          status: 'active',
+        },
+      });
+
+      await audit.bootstrap({ userId: user.id }, tx);
+
+      return toPublicUser(user);
+    });
+  }
+
+  /**
+   * Create a development-only manual-test account (ADR 0004 / P2-04 manual
+   * acceptance aid). NOT user administration (P2-05): it is a narrow bootstrap
+   * for local role-matrix testing. Administrator is never creatable here; the
+   * first admin stays bootstrap-only. Never overwrites or changes an existing
+   * account — a username collision is a 409.
+   */
+  async function createManualTestAccount(input: ManualTestAccountInput): Promise<PublicUser> {
+    if (!MANUAL_TEST_ROLES.has(input.role)) {
+      throw new AuthError(
+        'INVALID_ROLE',
+        `Role must be one of: ${[...MANUAL_TEST_ROLES].join(', ')}.`,
+        400,
+      );
+    }
+
+    const username = normalizeUsername(input.username);
+    const usernameError = usernamePolicyError(username);
+    if (usernameError) {
+      throw new AuthError('INVALID_USERNAME', usernameError, 400);
+    }
+
+    const passwordError = passwordPolicyError(input.password);
+    if (passwordError) {
+      throw new AuthError('WEAK_PASSWORD', passwordError, 400);
+    }
+
+    const passwordHash = await hashPassword(input.password);
+
+    return prisma.$transaction(async (tx) => {
+      const existing = await tx.user.findUnique({ where: { username } });
+      if (existing) {
+        // Never overwrite, re-role, reset the password of, or deactivate an
+        // existing account. Stop with a clear conflict.
+        throw new AuthError(
+          'USERNAME_TAKEN',
+          `An account named "${username}" already exists; refusing to overwrite it.`,
+          409,
+        );
+      }
+
+      const user = await tx.user.create({
+        data: {
+          username,
+          passwordHash,
+          role: input.role,
           status: 'active',
         },
       });
@@ -294,6 +355,7 @@ export function createAuthService(options: {
 
   return {
     bootstrapAdmin,
+    createManualTestAccount,
     login,
     validateSession,
     logout,

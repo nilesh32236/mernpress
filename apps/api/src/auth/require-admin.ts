@@ -25,9 +25,11 @@ function sendError(
 }
 
 /**
- * Authenticate an admin request: valid session + active administrator + (for
- * mutations) session-bound CSRF. Returns the principal or sends an error and
- * returns null. Fail closed: anything but a valid active administrator is denied.
+ * Authenticate an admin-area request: valid active session + (for mutations)
+ * session-bound CSRF. Returns the principal `{ userId, role }` for the domain
+ * service to authorize, or sends an error and returns null. This layer does NOT
+ * decide permission — object-level capability checks live in the service
+ * (ADR 0004). Fail closed: missing/invalid/disabled session is denied here.
  */
 export async function requireAdmin(
   request: FastifyRequest,
@@ -54,11 +56,6 @@ export async function requireAdmin(
     reply.clearCookie(SESSION_COOKIE, clearSessionCookieOptions(env));
     reply.clearCookie(CSRF_COOKIE, clearCsrfCookieOptions(env));
     sendError(reply, request, 401, 'UNAUTHENTICATED', 'Not authenticated');
-    return null;
-  }
-
-  if (session.user.role !== 'administrator') {
-    sendError(reply, request, 403, 'FORBIDDEN', 'Forbidden');
     return null;
   }
 
