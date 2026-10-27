@@ -35,3 +35,54 @@ export type {
   UserRole,
   UserStatus,
 } from './auth/types.js';
+
+// ---- Phase 3: content, taxonomy, hooks ----
+export { createHookRegistry } from './hooks/registry.js';
+export { HookRejectedError } from './hooks/types.js';
+export type {
+  ActionMap,
+  FilterMap,
+  HookLogger,
+  HookRegistry,
+  HookRegistryOptions,
+} from './hooks/types.js';
+
+export { createContentService, type ContentService } from './content/service.js';
+export { ContentError, type ContentErrorCode } from './content/errors.js';
+export {
+  deriveSlugFromTitle,
+  fallbackSlug,
+  isReservedSlug,
+  normalizeSlug,
+  RESERVED_SLUGS,
+  SLUG_MAX_LENGTH,
+  truncateSlug,
+  validateExplicitSlug,
+} from './content/slug.js';
+export type {
+  AdminListQuery,
+  AdminPost,
+  AdminTermSummary,
+  ContentType,
+  CreatePostInput,
+  Paged,
+  PostActionPayload,
+  PostFilterDraft,
+  PostStatus,
+  PostTermsActionPayload,
+  Principal,
+  PublicListQuery,
+  PublicPost,
+  UpdatePostInput,
+} from './content/types.js';
+
+export { createTaxonomyService, type TaxonomyService } from './taxonomy/service.js';
+export type {
+  AdminTerm,
+  CreateTermInput,
+  TaxonomyType,
+  TermActionPayload,
+  TermFilterDraft,
+  TermListQuery,
+  UpdateTermInput,
+} from './taxonomy/types.js';

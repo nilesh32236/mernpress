@@ -5,6 +5,129 @@ and results, decisions, limitations and the next step. Do not record secrets.
 
 ---
 
+## 2026-10-27 — Phase 3: core content model, taxonomy and API
+
+**Status:** implementation complete and verified locally; **owner manual
+acceptance pending** (whole phase, per owner instruction). Phase 1 and the Phase
+2 auth slice remain separately **not owner-accepted**.
+
+**Important preflight finding:** the live checkout was a fresh clone at `36ca6d0`
+with a **clean** working tree. The user-provided P3-01 report (local HEAD
+`7e0ed2c`, "substantial uncommitted changes", roles/user-admin work) did **not**
+exist here — no such commit object, no stash, no worktree, no `.opencode/`
+profiles. Phase 3 was therefore implemented **from the clean Phase 2 base**, not
+built on prior P3-01 work.
+
+### Safe preflight (recorded before any change)
+
+- `git status --short --branch` → `## master...origin/master`, clean; HEAD
+  `36ca6d07`, origin `36ca6d07`, divergence `0 0`.
+- `git cat-file -t 7e0ed2c` → "Not a valid object name" (historical report
+  unverifiable). `git worktree list` → only `/srv/mernpress`. `git stash list` →
+  empty.
+- Read AGENTS.md, TASKS.md, DECISIONS.md, roadmap, content-model, code-standards,
+  implementation log, schema/migrations, auth service/routes/tests, project
+  scripts. No P3-01 code, no contracts package, no hooks existed.
+
+### Model/agent workflow
+
+- **Implementer:** Kimi K3 (`amazon-bedrock/global.moonshotai.kimi-k3`).
+- **Independent reviewer (Model B, read-only):** `amazon-bedrock/deepseek.v3.2` —
+  a different model family, selected after a live 19-model capability benchmark
+  (Nova, Mistral, Qwen, DeepSeek, Kimi, MiniMax, NVIDIA families probed; Claude/
+  OpenAI-GPT6/Grok/Zai-GLM entitlement-blocked on this account). Owner explicitly
+  authorized paid Bedrock credits, superseding the original "zero-cost only" rule.
+- **Planning support (Model A):** `opencode/beam-free#high` (zero-cost) — first
+  design review (slug-history-not-redirect, admin-only authz, no speculative
+  packages) and it agreed with the live-repo analysis.
+- **Test authoring:** a `general` subagent drafted the content test suites under
+  `apps/api/test/content/` (test-only allowlist, no runtime edits).
+- `.opencode/agents/` and `docs/architecture/ai-agent-workflow.md` do **not**
+  exist in this checkout — the configured `architecture-planner`/`test-engineer`/
+  `independent-reviewer` profiles were unavailable, so `general` was used with
+  explicit read-only/test-only instructions. Noted, not pretended.
+
+### What was built (ADR 0003)
+
+- **Schema/migration** `20261027120000_phase3_content_taxonomy`: `posts`,
+  `post_slug_history`, `terms`, `post_terms`; `PostStatus` enum; check
+  constraints (type, content_format, taxonomy, category-only-parent, no
+  self-parent); two partial unique indexes for taxonomy slugs; FKs (author
+  SET NULL, others cascade). Media/hierarchy/render/scheduled/revision columns
+  deferred (D-1).
+- **Slug service** (`content/slug.ts`): NFKC, transliteration, reserved words,
+  200-char cap, per-(type,slug) uniqueness (DB constraint + advisory locks).
+  Explicit duplicate → 409 `SLUG_TAKEN`; derived slug auto-suffixes. Redirect
+  **resolution** deferred to Phase 7 — published slug change records
+  `post_slug_history` in the same transaction (D-3).
+- **Content service + admin/public routes**: CRUD, list/search/pagination,
+  publish/unpublish/trash/restore (idempotent; publishedAt set once, preserved;
+  restore returns to previous status), optimistic concurrency (baseVersion → 409
+  `VERSION_CONFLICT`), term assignment via `PUT .../terms`. Public read is
+  published-only + `publishedAt <= now`, leaks no author/version/status.
+- **Taxonomy service + routes**: categories (hierarchical, cycle-safe) + tags
+  (flat, DB-enforced); unique slug per taxonomy; transactional content-safe
+  delete; computed counts (D-4).
+- **Internal hook/filter contract** (`hooks/`): awaited filters (priority +
+  stable registration order) revalidated before persistence; actions only
+  post-commit with contained/sanitized failures; per-instance registry; depth
+  guard; not a public SDK (D-6).
+- **Idempotent dev-only seed** (`seed-demo.ts`): 1 post, 1 page, 2 categories,
+  2 tags; refuses production; never creates an admin; never overwrites (D-8).
+- **Authorization**: administrator-only, fail-closed (route guard + service
+  guard + active-user revocation). Editor/author matrix **blocked on P2-04** (D-5).
+
+### Independent review (deepseek.v3.2) — verdict PASS WITH ISSUES, no blockers
+
+| # | Finding | Fix | Regression |
+| --- | --- | --- | --- |
+| 1 | Re-publish overwrote `publishedAt` (D-2) | preserve it when already set | `transitions.test.ts` re-publish test |
+| 2 | Taxonomy slug precheck asymmetric → delete could 500 | symmetric per-taxonomy slug reservation + P2002 map on delete | `taxonomy.test.ts` promote-to-root test |
+| 3 | Cycle check not race-safe | per-taxonomy hierarchy advisory lock around parent changes | covered by lock (race test documented) |
+| 4 | `updatePost` missing P2002 → 409 map | added `isUniqueViolation` mapping | update-onto-taken test |
+| 5 | `validateDraft` didn't re-check reserved/normalized slug | added normalization + reserved re-check | reserved-slug tests |
+| 6 | TASKS/log not updated | this entry + TASKS P3 rows | — |
+| 7 | Title persisted untrimmed | persist `title.trim()` | covered by create tests |
+
+### Verification (exact commands, all green)
+
+| Command | Result |
+| --- | --- |
+| `pnpm install --frozen-lockfile` | PASS |
+| `pnpm lint` | PASS |
+| `pnpm format:check` | PASS |
+| `pnpm typecheck` | PASS (7 Turbo tasks) |
+| `pnpm test` | PASS — **178 tests** (API 167, admin 10, web 1) |
+| `pnpm build` | PASS (5 tasks) |
+| `pnpm test:e2e` | PASS — **7 Playwright tests** |
+| `pnpm audit --audit-level=high` | PASS |
+| Scratch DB `migrate deploy` (3 migrations) + `migrate diff --exit-code` | PASS — **No difference detected** |
+| Existing dev DB `migrate deploy` | PASS — applied **only** the Phase 3 migration; 2 auth migrations + all rows (0 users/sessions/audit) preserved; dev DB never reset |
+| Live HTTP smoke (`node` fetch vs running API) | PASS — login, CRUD, publish/unpublish/trash, terms, public-only visibility, 401/403/409, slug conflict |
+| Seed ×2 + production refusal | PASS — run 1 created demo content, run 2 idempotent skip, `NODE_ENV=production` refused |
+
+### Limitations / residual risks
+
+- **Owner manual acceptance has NOT run.** This guide
+  (`docs/testing/phase-3-manual-acceptance.md`) is the acceptance surface.
+- **Role matrix (editor/author) NOT tested** — roles do not exist (P2-04);
+  documented as blocked, not skipped.
+- **Redirects are recorded, not served** — Phase 7 resolves `post_slug_history`
+  into 301s once the public URL grammar is fixed.
+- **No permanent delete, revisions, media, page hierarchy, scheduled publish** —
+  Phase 5–8.
+- Public API has no caching/SEO templates (Phase 7).
+- The taxonomy cycle race is mitigated by the hierarchy advisory lock but not
+  covered by an explicit concurrent-reparent integration test.
+
+### Next step
+
+Owner follows `docs/testing/phase-3-manual-acceptance.md` and accepts or rejects
+the **whole** Phase 3. Only after explicit acceptance does Phase 4 (admin content
+UX) begin. Do not start Phase 4 on the strength of the green gate.
+
+---
+
 ## 2026-10-25 — Phase 2 auth hardening: fixes, modular pass and verification
 
 **Status:** implementation complete, verified locally and CI-green; owner

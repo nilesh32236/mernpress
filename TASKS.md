@@ -78,15 +78,23 @@ profile editing, password reset, email and MFA remain deferred.
 
 ## Phase 3 — Core content model and API
 
+**Status: implementation complete and verified locally (176 automated tests +
+live HTTP smoke + E2E green); owner manual acceptance pending.** Built from a
+clean Phase 2 base (the historical P3-01 report did not exist in this checkout).
+Scoped per [ADR 0003](docs/adr/0003-phase-3-content-and-taxonomy.md): no media,
+page-hierarchy, render-cache, scheduled-publish or revision columns. Redirect
+**resolution** is deferred to Phase 7 (slug history is recorded instead).
+Authorization is administrator-only because P2-04 roles do not exist yet.
+
 | ID | Task | Status | Depends on | Acceptance criteria |
 | --- | --- | --- | --- | --- |
-| P3-01 | Content schema + migration | planned | P1 | `posts` unified table for post/page; statuses, author, dates, slug, excerpt, featured media, SEO fields; indexes |
-| P3-02 | Slug service | planned | P3-01 | Normalization, uniqueness per type, reserved words, max length, redirect on change; tests |
-| P3-03 | Content repository/service | planned | P3-01 | Create/read/update/list/search/paginate; draft/publish/trash/restore; authorization on every operation |
-| P3-04 | Content API | planned | P3-03 | Admin CRUD + public published-only endpoints; Zod validation; consistent error envelope; pagination contract |
-| P3-05 | Taxonomy basics | planned | P3-01 | Categories/tags, term CRUD, assign/unassign, unique slug per taxonomy; tests |
-| P3-06 | Content API tests | planned | P3-03..P3-05 | Happy path, validation, 401/403/404, object-level auth, slug conflict, trash/restore, pagination bounds |
-| P3-07 | Seed/demo content | planned | P3-01 | Idempotent seed with a page, a post, categories/tags; safe for local only |
+| P3-01 | Content schema + migration | done | P1 | `posts` unified table (post/page) + `post_slug_history`; statuses, author, dates, slug, excerpt, SEO fields, optimistic `version`; additive migration with check constraints + indexes. Media/hierarchy/render/scheduled/revision columns deferred (ADR D-1) |
+| P3-02 | Slug service | done | P3-01 | NFKC normalization, ASCII transliteration, reserved words, 200-char cap, per-(type,slug) uniqueness via DB constraint + advisory locks; explicit duplicate → 409, derived slug auto-suffixes. Redirect **resolution** deferred to Phase 7; `post_slug_history` recorded on published slug change |
+| P3-03 | Content repository/service | done | P3-01 | create/read/update/list/search/paginate; draft/publish/unpublish/trash/restore; optimistic concurrency (baseVersion → 409); internal hook/filter contract; administrator-only authorization on every operation |
+| P3-04 | Content API | done | P3-03 | Admin CRUD/transitions/terms + published-only public read; Zod `.strict()` validation; consistent error envelope; bounded pagination; no mass assignment |
+| P3-05 | Taxonomy basics | done | P3-01 | categories (hierarchical, cycle-safe) + tags (flat); term CRUD, assign/unassign via `PUT .../terms`; unique slug per taxonomy; transactional content-safe delete; computed counts |
+| P3-06 | Content API tests | done | P3-03..P3-05 | 120 content tests: happy path, validation, 401/403/404/409, slug conflict, trash/restore, pagination bounds, hooks, concurrency, taxonomy, authz. **Object-level role matrix NOT RUN — blocked on P2-04 roles (documented)** |
+| P3-07 | Seed/demo content | done | P3-01 | Idempotent dev-only seed: one post, one page, 2 categories, 2 tags; refuses production; never creates an admin; never overwrites existing content |
 
 ## Phase 4 — Admin content UX
 

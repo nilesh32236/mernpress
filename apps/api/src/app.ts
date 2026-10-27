@@ -1,11 +1,22 @@
 import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
-import { AuthError, createAuthService, type AuthConfig } from '@mernpress/cms-core';
+import {
+  AuthError,
+  ContentError,
+  createAuthService,
+  createContentService,
+  createHookRegistry,
+  createTaxonomyService,
+  type AuthConfig,
+} from '@mernpress/cms-core';
 import { checkDatabase, createDatabaseClient } from '@mernpress/database';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { loadEnv, type Env } from './config/env.js';
 import { registerAuthRoutes } from './routes/auth.js';
+import { registerContentRoutes } from './routes/content.js';
+import { registerPublicContentRoutes } from './routes/public-content.js';
+import { registerTaxonomyRoutes } from './routes/taxonomy.js';
 import { resolveRequestId } from './http/request-id.js';
 
 export interface BuildAppOptions {
@@ -52,7 +63,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(cors, {
     origin: env.CORS_ORIGINS,
     credentials: true,
-    methods: ['GET', 'HEAD', 'POST', 'OPTIONS'],
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['content-type', 'x-csrf-token', 'x-request-id'],
     exposedHeaders: ['x-request-id'],
   });
@@ -72,6 +83,20 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   };
   const auth = createAuthService({ prisma: database, config: authConfig });
   app.decorate('auth', auth);
+
+  // Phase 3: internal hook registry + content/taxonomy services (ADR 0003).
+  // The registry is per-app-instance, not a global singleton, so tests and
+  // multiple instances stay isolated.
+  const contentHooks = createHookRegistry({
+    logger: { warn: (message) => app.log.warn(message) },
+  });
+  app.decorate('contentHooks', contentHooks);
+
+  const content = createContentService({ prisma: database, hooks: contentHooks });
+  app.decorate('content', content);
+
+  const taxonomy = createTaxonomyService({ prisma: database, hooks: contentHooks });
+  app.decorate('taxonomy', taxonomy);
 
   app.addHook('onRequest', async (request, reply) => {
     if (!MUTATING_METHODS.has(request.method)) {
@@ -100,6 +125,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   });
 
   registerAuthRoutes(app, { env, auth });
+  registerContentRoutes(app, { env, auth, content });
+  registerTaxonomyRoutes(app, { env, auth, taxonomy });
+  registerPublicContentRoutes(app, { content });
 
   app.get('/api/health', async () => ({
     status: 'ok',
@@ -132,6 +160,16 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   );
 
   app.setErrorHandler((error, request, reply) => {
+    if (error instanceof ContentError) {
+      return reply.code(error.statusCode).send({
+        error: {
+          code: error.code,
+          message: error.message,
+          requestId: request.id,
+        },
+      });
+    }
+
     if (error instanceof AuthError) {
       if (error.retryAfterSeconds !== undefined) {
         reply.header('retry-after', String(error.retryAfterSeconds));

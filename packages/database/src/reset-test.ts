@@ -17,10 +17,12 @@ const client = createDatabaseClient({ connectionString: testDatabaseUrl });
 try {
   await checkDatabase(client);
   await client.$executeRaw`
-    TRUNCATE TABLE "audit_events", "sessions", "login_attempts", "users"
+    TRUNCATE TABLE
+      "post_terms", "post_slug_history", "terms", "posts",
+      "audit_events", "sessions", "login_attempts", "users"
     RESTART IDENTITY CASCADE
   `;
-  console.log('Test database reset: auth tables truncated.');
+  console.log('Test database reset: content + auth tables truncated.');
 } finally {
   await client.$disconnect();
 }

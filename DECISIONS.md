@@ -33,6 +33,13 @@ associated code changes. Superseded decisions stay visible.
 | D-023 | 2026-10-25 | Pre-auth login CSRF uses its own `mernpress_csrf_preauth` cookie; `mernpress_csrf` is session-bound and set only at login. `GET /api/auth/csrf` never mutates session CSRF state and is safe while authenticated | accepted | [ADR 0002](docs/adr/0002-authentication-foundation.md#auth-hardening-follow-up-2026-10-25) |
 | D-024 | 2026-10-25 | MVP topology is same-origin: the admin SPA and `/api` are served behind one reverse-proxy origin (Vite proxy in development). A separate-origin API client is not supported or tested | accepted | [ADR 0002](docs/adr/0002-authentication-foundation.md#auth-hardening-follow-up-2026-10-25) |
 
+| D-025 | 2026-10-27 | Phase 3 unified `posts` table is scoped: no media, page-hierarchy, render-cache, scheduled or revision columns; those are deferred to Phases 5–8 (ADR 0003, D-1) | accepted | [ADR 0003](docs/adr/0003-phase-3-content-and-taxonomy.md) |
+| D-026 | 2026-10-27 | Slug conflict model: explicit duplicate → 409 `SLUG_TAKEN`; missing slug derives from title and auto-suffixes `-2`; reserved words rejected. Redirect resolution deferred to Phase 7 — a published slug change records an immutable `post_slug_history` row instead of writing a redirect now | accepted | [ADR 0003](docs/adr/0003-phase-3-content-and-taxonomy.md) |
+| D-027 | 2026-10-27 | Taxonomy: one `terms` + one `post_terms` table; unique slug per taxonomy via two partial unique indexes (root vs child); categories hierarchical with DB-enforced flat tags + service-side cycle checks; term delete is transactional and content-safe; counts computed, never stored | accepted | [ADR 0003](docs/adr/0003-phase-3-content-and-taxonomy.md) |
+| D-028 | 2026-10-27 | Phase 3 content/taxonomy authorization is administrator-only and fail-closed because editor/author roles (P2-04) are not implemented; the roadmap role-matrix acceptance is documented as blocked, not faked | accepted | [ADR 0003](docs/adr/0003-phase-3-content-and-taxonomy.md) |
+| D-029 | 2026-10-27 | Internal async hook/filter contract: awaited filters (priority + stable registration order) revalidated before persistence; actions run only post-commit with contained/sanitized failures; per-instance registry, no global state; re-entrancy guard; not a public plugin SDK (Phase 9) | accepted | [ADR 0003](docs/adr/0003-phase-3-content-and-taxonomy.md) |
+| D-030 | 2026-10-27 | Minimal published-only public read is Phase 3 scope per roadmap P3-04; demo seed is idempotent, dev-only, never creates an admin and never overwrites existing content | accepted | [ADR 0003](docs/adr/0003-phase-3-content-and-taxonomy.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

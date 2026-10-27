@@ -28,6 +28,7 @@ model User {
   sessions             Session[]
   auditEventsAsActor   AuditEvent[] @relation("AuditActor")
   auditEventsAsTarget  AuditEvent[] @relation("AuditTarget")
+  posts                Post[]
 
   @@map("users")
 }
@@ -74,4 +75,92 @@ model LoginAttempt {
   @@index([keyHash, attemptedAt])
   @@index([attemptedAt])
   @@map("login_attempts")
+}
+
+// ---- Phase 3: content + taxonomy (ADR 0003) ----
+// Scoped per ADR 0003: no media/hierarchy/render-cache/scheduled/revision columns.
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  TRASHED
+}
+
+model Post {
+  id            String      @id @default(uuid(7)) @db.Uuid
+  type          String      @db.VarChar(32)
+  status        PostStatus  @default(DRAFT)
+  title         String      @db.VarChar(300)
+  slug          String      @db.VarChar(200)
+  excerpt       String?
+  content       String      @default("")
+  contentFormat String      @default("wp_block_html") @map("content_format") @db.VarChar(32)
+  contentVersion Int        @default(1) @map("content_version")
+  authorId      String?     @map("author_id") @db.Uuid
+  seoTitle       String?    @map("seo_title") @db.VarChar(300)
+  seoDescription String?    @map("seo_description") @db.VarChar(500)
+  canonicalUrl   String?    @map("canonical_url") @db.VarChar(2048)
+  robots        String?     @db.VarChar(100)
+  ogTitle       String?     @map("og_title") @db.VarChar(300)
+  ogDescription String?     @map("og_description") @db.VarChar(500)
+  publishedAt   DateTime?   @map("published_at") @db.Timestamptz(6)
+  trashedAt     DateTime?   @map("trashed_at") @db.Timestamptz(6)
+  previousStatus PostStatus? @map("previous_status")
+  version       Int         @default(1)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  author   User?           @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  terms    PostTerm[]
+  slugHistory PostSlugHistory[]
+
+  @@unique([type, slug])
+  @@index([type, status, publishedAt])
+  @@index([status, updatedAt])
+  @@index([authorId])
+  @@map("posts")
+}
+
+model PostSlugHistory {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  oldSlug   String   @map("old_slug") @db.VarChar(200)
+  changedAt DateTime @default(now()) @map("changed_at") @db.Timestamptz(6)
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, changedAt])
+  @@map("post_slug_history")
+}
+
+model Term {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  taxonomy    String   @db.VarChar(32)
+  name        String   @db.VarChar(200)
+  slug        String   @db.VarChar(200)
+  description String?
+  parentId    String?  @map("parent_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  parent   Term?      @relation("TermParent", fields: [parentId], references: [id], onDelete: SetNull)
+  children Term[]     @relation("TermParent")
+  posts    PostTerm[]
+
+  @@index([taxonomy, parentId])
+  @@index([taxonomy, name])
+  @@map("terms")
+}
+
+model PostTerm {
+  postId   String @map("post_id") @db.Uuid
+  termId   String @map("term_id") @db.Uuid
+  position Int    @default(0)
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  term Term @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  @@id([postId, termId])
+  @@index([termId, postId])
+  @@map("post_terms")
 }
