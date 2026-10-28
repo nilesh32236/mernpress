@@ -35,11 +35,11 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
   return (
     <section aria-labelledby="login-heading">
-      <p className="eyebrow">Secure admin · Phase 2</p>
+      <p className="eyebrow">Secure admin · Phase 4</p>
       <h1 id="login-heading">MERNPress admin</h1>
       <p className="lede">
-        Sign in to continue. This slice contains authentication only; content, the editor and media
-        arrive in later phases.
+        Sign in to manage posts and pages. The block editor and media library arrive in later
+        phases.
       </p>
 
       <form className="auth-form" onSubmit={handleSubmit}>

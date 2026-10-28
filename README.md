@@ -10,14 +10,15 @@ The name is a project name, not a database mandate. MERNPress uses **PostgreSQL*
 
 ## Current phase
 
-**Phase 3 — the core content model and API are accepted by the owner
-(2026-10-27).** Phase 1 is approved. The Phase 2 authentication first slice is
-implemented but still awaits owner acceptance. Phase 3 adds unified posts/pages,
-the draft/publish/trash lifecycle, slug history, categories and tags, the internal
-hook contract, published-only public reads, an idempotent development seed, and
-the five-role capability model (P2-04). The admin content dashboard and editor are
-**Phase 4** and have not started; media, public rendering/themes and the plugin
-runtime remain later phases.
+**Phase 4 — the admin content UX is implemented locally and awaiting owner
+review.** Phase 3 was accepted by the owner on 2026-10-27 and published as
+`46bd5c1`. Phase 1 is approved; the Phase 2 authentication first slice still
+awaits owner acceptance. Phase 4 adds the responsive admin shell, real dashboard
+counts, posts/pages lists, create/edit forms using the Phase 3 API, lifecycle
+actions, taxonomy assignment, accessible feedback and keyboard/responsive
+coverage. The Phase 4 working tree is uncommitted and not CI-verified; Gutenberg
+(Phase 5), media (Phase 6), public rendering/themes (Phase 7/10), revisions and
+scheduling (Phase 8) and plugins (Phase 9) remain later phases.
 
 ## Quick start
 
@@ -121,6 +122,12 @@ troubleshooting: [local setup](docs/operations/local-setup.md).
   administrator, never overwrites an account, and prints a one-time password.
 - An idempotent, dev/test-only demo seed that never creates an administrator and
   never overwrites existing content.
+- Phase 4 admin content UX: responsive shell and navigation, real status counts
+  from the content API, posts/pages lists with search/status filters and server
+  pagination, create/edit forms with optimistic concurrency, lifecycle actions,
+  category/tag assignment, accessible notices, unsaved-change guards and
+  keyboard/responsive browser tests. Bulk multi-item actions remain deferred
+  until the API supports them.
 - Same-origin deployment contract: the admin calls relative `/api` URLs and is
   served with the API behind one HTTPS reverse proxy (Vite proxies `/api` in
   development). A separate-origin API client is not supported yet.
@@ -130,13 +137,13 @@ troubleshooting: [local setup](docs/operations/local-setup.md).
 
 ## What is deliberately not implemented
 
-The admin content dashboard/editor (Phase 4), Gutenberg editor (Phase 5), media
-library (Phase 6), public rendering and themes (Phase 7), revisions/autosave/
-preview/scheduled publishing (Phase 8), plugin runtime and SDK (Phase 9), and
-theme contracts (Phase 10) are not implemented. User administration (P2-05),
-profile editing, password reset/email and MFA/SSO remain deferred. The public web
-app remains a placeholder; the admin has only the login/logout/session UI. There
-are no fake buttons or unimplemented controls.
+Gutenberg editor (Phase 5), media library (Phase 6), public rendering and themes
+(Phase 7), revisions/autosave/preview/scheduled publishing (Phase 8), plugin
+runtime and SDK (Phase 9), and theme contracts (Phase 10) are not implemented.
+User administration (P2-05), profile editing, password reset/email and MFA/SSO
+remain deferred. Media upload and a featured-image picker are not present. Bulk
+multi-item actions are deferred until the API provides bulk endpoints. There are
+no fake buttons or unimplemented controls.
 
 ## Database behavior
 
@@ -230,7 +237,7 @@ request IDs and log redaction. It also covers the Phase 3 content lifecycle,
 slug rules, taxonomy hierarchy/assignment, optimistic concurrency, published-only
 public reads, the role x capability matrix, cross-author visibility, the hook
 contract and the development-only role-account audit event. The current local
-gate is **214 API + 10 admin + 1 web = 225 tests** plus 7 Playwright tests.
+gate is **216 API + 47 admin + 1 web = 264 tests** plus 12 Playwright tests.
 Playwright signs in, signs out, keyboard-submits, checks browser storage and
 opens both placeholders without unexpected console/asset errors.
 
@@ -239,10 +246,10 @@ service. Phase 1 passed in run `40127072446`; the Phase 2 auth slice passed in
 run `40166039330` (commit `3f29e9f`); the auth hardening follow-up passed in run
 `40180070433` (2m56s, commit `cd56d09`); the Phase 3 content commit `dd4ffc6`
 passed in run `40468067008`; the roles/capabilities + dev CLI commit `0bf7754`
-passed in run `40475649080`. The earlier Turborepo `DATABASE_URL` filtering bug
-is fixed via `globalEnv`. The current **uncommitted** visibility/hook/audit
-correction set and this documentation reconciliation are not CI-verified; only
-the local gate above applies.
+passed in run `40475649080`; the accepted Phase 3 hardening commit `46bd5c1`
+passed in run `40507958602`. The earlier Turborepo `DATABASE_URL` filtering bug
+is fixed via `globalEnv`. The current **uncommitted Phase 4** work is not
+CI-verified; only the local gate above applies.
 
 ## Documentation
 
@@ -254,9 +261,11 @@ Start here, then follow the links.
 | [TASKS.md](TASKS.md) | Staged backlog, statuses, dependencies and acceptance criteria |
 | [DECISIONS.md](DECISIONS.md) | Decision index and links to ADRs |
 | [docs/operations/local-setup.md](docs/operations/local-setup.md) | Prerequisites, PostgreSQL, env, commands and troubleshooting |
+| [docs/operations/production-hosting.md](docs/operations/production-hosting.md) | DuckDNS + Caddy + systemd production hosting, current status and rollback |
 | [docs/testing/phase-1-manual-test.md](docs/testing/phase-1-manual-test.md) | Owner's step-by-step Phase 1 acceptance checklist (approved) |
 | [docs/testing/phase-2-manual-test.md](docs/testing/phase-2-manual-test.md) | Owner's step-by-step auth-slice acceptance checklist |
-| [docs/testing/phase-3-manual-acceptance.md](docs/testing/phase-3-manual-acceptance.md) | Owner's consolidated Phase 3 content/taxonomy acceptance checklist |
+| [docs/testing/phase-3-manual-acceptance.md](docs/testing/phase-3-manual-acceptance.md) | Phase 3 acceptance evidence and reproducible checklist |
+| [docs/phase-4-implementation-plan.md](docs/phase-4-implementation-plan.md) | Phase 4 goal, acceptance criteria, risks and completion checklist |
 | [docs/implementation-log.md](docs/implementation-log.md) | Dated record of what was actually done and verified |
 | [docs/research/reference-codebase-audit.md](docs/research/reference-codebase-audit.md) | What was inspected in WordPress and the reference archives |
 | [docs/research/feature-matrix.md](docs/research/feature-matrix.md) | Feature comparison and MVP/next/later/out classification |
@@ -292,10 +301,9 @@ Details are in the
 
 ## Next step
 
-Phase 3 was accepted by the owner on 2026-10-27
-([evidence record](docs/testing/phase-3-manual-acceptance.md)). The accepted
-baseline is still uncommitted and not CI-verified. With explicit owner
-publication authorization, it must be committed, pushed and CI-green for that
-exact commit before Phase 4 (admin content UX) starts. P2-05 user administration
-remains deferred, as do the Phase 5–10 editor, media, rendering, reliability,
-plugin and theme slices.
+Phase 3 was accepted by the owner on 2026-10-27 and published as `46bd5c1`
+(CI run `40507958602`). Phase 4 is implemented locally and awaits owner review;
+its changes are uncommitted and not CI-verified. Do not commit, push or start
+Phase 5 without explicit owner authorization. P2-05 user administration remains
+deferred, as do the Phase 5–10 editor, media, rendering, reliability, plugin and
+theme slices.

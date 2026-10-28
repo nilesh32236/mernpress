@@ -53,6 +53,7 @@ export const transitionSchema = z
 
 export const assignTermsSchema = z
   .object({
+    baseVersion: z.number().int().min(1),
     categoryIds: z.array(uuid).max(100).default([]),
     tagIds: z.array(uuid).max(100).default([]),
   })

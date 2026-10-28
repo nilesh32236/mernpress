@@ -209,8 +209,9 @@ curl -s -X POST http://127.0.0.1:4000/api/admin/terms "${AUTH[@]}" -d '{"taxonom
 # Same slug as a category AND a tag -> 201 (scoped per taxonomy).
 
 # Assign terms to a post (200): post.terms shows categories + tags.
+# baseVersion is required; a stale version returns 409 VERSION_CONFLICT.
 curl -s -X PUT http://127.0.0.1:4000/api/admin/posts/<ID>/terms "${AUTH[@]}" \
-  -d '{"categoryIds":["<CAT_ID>"],"tagIds":["<TAG_ID>"]}'
+  -d '{"baseVersion":<VERSION>,"categoryIds":["<CAT_ID>"],"tagIds":["<TAG_ID>"]}'
 
 # Invalid term id -> 400 TERM_NOT_FOUND. Cross-taxonomy -> 400 TERM_TAXONOMY_MISMATCH.
 # Duplicate ids -> 400 VALIDATION_ERROR.

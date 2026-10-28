@@ -138,3 +138,123 @@ describe('admin auth API client', () => {
     expectSameOriginApiCalls(fetchMock.mock.calls);
   });
 });
+
+describe('admin content API client', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    document.cookie = 'mernpress_csrf=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+  });
+
+  it('serializes list filters and pagination on the relative posts endpoint', async () => {
+    const paged = {
+      items: [],
+      pagination: { page: 2, perPage: 10, total: 21, totalPages: 3 },
+    };
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValueOnce(jsonResponse(200, paged));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      (await import('./api.js')).fetchPosts({
+        type: 'post',
+        status: 'DRAFT',
+        search: 'hello world',
+        page: 2,
+        perPage: 10,
+        sort: 'updatedAt',
+        order: 'desc',
+      }),
+    ).resolves.toEqual(paged);
+
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(url).toBe(
+      '/api/admin/posts?type=post&status=DRAFT&search=hello+world&page=2&perPage=10&sort=updatedAt&order=desc',
+    );
+    expect(init?.method).toBe('GET');
+    expectSameOriginApiCalls(fetchMock.mock.calls);
+  });
+
+  it('sends the CSRF cookie on create, update, transition and term assignment', async () => {
+    document.cookie = 'mernpress_csrf=session-token; path=/';
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse(201, { id: 'post-1' }))
+      .mockResolvedValueOnce(jsonResponse(200, { id: 'post-1' }))
+      .mockResolvedValueOnce(jsonResponse(200, { id: 'post-1' }))
+      .mockResolvedValueOnce(jsonResponse(200, { id: 'post-1' }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const api = await import('./api.js');
+    await api.createPost({ type: 'post', title: 'Hello' });
+    await api.updatePost('post-1', { baseVersion: 2, title: 'Hello again' });
+    await api.transitionPost('post-1', 'publish', 3);
+    await api.assignTerms('post-1', ['cat-1'], ['tag-1'], 4);
+
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    const calls = fetchMock.mock.calls;
+    expect(calls[0]?.[0]).toBe('/api/admin/posts');
+    expect(calls[1]?.[0]).toBe('/api/admin/posts/post-1');
+    expect(calls[2]?.[0]).toBe('/api/admin/posts/post-1/publish');
+    expect(calls[3]?.[0]).toBe('/api/admin/posts/post-1/terms');
+    for (const [, init] of calls) {
+      expect(init?.headers).toMatchObject({ 'x-csrf-token': 'session-token' });
+      expect(init?.credentials).toBe('include');
+      expect(init?.cache).toBe('no-store');
+    }
+    expect(JSON.parse(String(calls[0]?.[1]?.body))).toEqual({ type: 'post', title: 'Hello' });
+    expect(JSON.parse(String(calls[1]?.[1]?.body))).toEqual({
+      baseVersion: 2,
+      title: 'Hello again',
+    });
+    expect(JSON.parse(String(calls[2]?.[1]?.body))).toEqual({ baseVersion: 3 });
+    expect(JSON.parse(String(calls[3]?.[1]?.body))).toEqual({
+      baseVersion: 4,
+      categoryIds: ['cat-1'],
+      tagIds: ['tag-1'],
+    });
+  });
+
+  it('parses server field validation details', async () => {
+    document.cookie = 'mernpress_csrf=session-token; path=/';
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValueOnce(
+      jsonResponse(400, {
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid request',
+          details: [{ path: 'title', message: 'Title is required' }],
+        },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const api = await import('./api.js');
+    await expect(api.createPost({ type: 'post', title: '' })).rejects.toMatchObject({
+      status: 400,
+      code: 'VALIDATION_ERROR',
+      details: [{ path: 'title', message: 'Title is required' }],
+    });
+  });
+
+  it('requests terms with the taxonomy and pagination filters', async () => {
+    const page = { items: [], pagination: { page: 1, perPage: 100, total: 0, totalPages: 0 } };
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValueOnce(jsonResponse(200, page));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const api = await import('./api.js');
+    await expect(api.fetchTerms({ taxonomy: 'category', perPage: 100 })).resolves.toEqual(page);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('/api/admin/terms?taxonomy=category&perPage=100');
+    expectSameOriginApiCalls(fetchMock.mock.calls);
+  });
+
+  it('maps API failures to actionable messages', async () => {
+    const api = await import('./api.js');
+    expect(api.actionErrorMessage(new api.ApiError(403, 'FORBIDDEN', 'Forbidden'))).toContain(
+      'permission',
+    );
+    expect(
+      api.actionErrorMessage(new api.ApiError(409, 'VERSION_CONFLICT', 'Version conflict')),
+    ).toContain('changed since you loaded');
+    expect(api.actionErrorMessage(new api.ApiError(404, 'NOT_FOUND', 'Not found'))).toContain(
+      'no longer exists',
+    );
+  });
+});

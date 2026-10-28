@@ -12,14 +12,12 @@ ask rather than silently weakening a boundary.
   explicitly accepted by the owner on 2026-10-27.** The accepted baseline is the
   current local working tree and is not yet published to GitHub. Phase 2 and
   Phase 3 remain separate owner gates; Phase 3 acceptance does not accept Phase 2.
-- Phase 4 (admin content UX) may begin only after the accepted Phase 3 baseline is
-  committed, pushed and CI-green for that exact commit, with explicit owner
-  authorization to publish. P2-05 user administration remains deferred and
-  requires separate owner approval; editor (Phase 5), media (Phase 6),
+- Phase 4 (admin content UX) is implemented locally and awaits owner review. Its
+  changes are uncommitted and not CI-verified. Do not commit, push or start Phase 5
+  without explicit owner authorization. P2-05 user administration remains
+  deferred and requires separate owner approval; editor (Phase 5), media (Phase 6),
   rendering/themes (Phase 7/10) and plugin (Phase 9) work follow their own phase
-  gates. The implemented Phase 3 surface is the API, roles/capabilities, taxonomy,
-  idempotent seed and internal hooks; there is no admin content dashboard/editor
-  yet.
+  gates.
 - After approval, implement **one feature/slice at a time**. At the end of each
   slice: report changed files, exact commands, test results, manual test steps,
   limitations, and **stop**. Do not start the next slice without explicit

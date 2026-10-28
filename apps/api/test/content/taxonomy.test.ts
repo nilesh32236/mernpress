@@ -228,7 +228,7 @@ describe('admin taxonomy: terms', () => {
         method: 'PUT',
         url: `/api/admin/posts/${post.id}/terms`,
         headers: adminHeaders(),
-        payload: { categoryIds: [term.id], tagIds: [] },
+        payload: { baseVersion: post.version, categoryIds: [term.id], tagIds: [] },
       });
       expect(assign.statusCode).toBe(200);
 
@@ -346,13 +346,43 @@ describe('admin taxonomy: terms', () => {
         method: 'PUT',
         url: `/api/admin/posts/${post.id}/terms`,
         headers: adminHeaders(),
-        payload: { categoryIds: [category.id], tagIds: [tag.id] },
+        payload: { baseVersion: post.version, categoryIds: [category.id], tagIds: [tag.id] },
       });
 
       expect(response.statusCode).toBe(200);
       const updated = response.json() as AdminPostShape;
       expect(updated.terms.categories.map((t) => t.id)).toEqual([category.id]);
       expect(updated.terms.tags.map((t) => t.id)).toEqual([tag.id]);
+      expect(updated.version).toBe(post.version + 1);
+    });
+
+    it('rejects a stale baseVersion when assigning terms with 409 VERSION_CONFLICT', async () => {
+      const category = await mustCreateTerm({ taxonomy: 'category', name: 'Stale cat' });
+      const post = await createPost('Stale terms');
+
+      const response = await app.inject({
+        method: 'PUT',
+        url: `/api/admin/posts/${post.id}/terms`,
+        headers: adminHeaders(),
+        payload: { baseVersion: post.version + 1, categoryIds: [category.id], tagIds: [] },
+      });
+
+      expect(response.statusCode).toBe(409);
+      expect((response.json() as ErrorEnvelope).error.code).toBe('VERSION_CONFLICT');
+    });
+
+    it('requires baseVersion when assigning terms', async () => {
+      const post = await createPost('No version');
+
+      const response = await app.inject({
+        method: 'PUT',
+        url: `/api/admin/posts/${post.id}/terms`,
+        headers: adminHeaders(),
+        payload: { categoryIds: [], tagIds: [] },
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect((response.json() as ErrorEnvelope).error.code).toBe('VALIDATION_ERROR');
     });
 
     it('replaces existing assignments on PUT', async () => {
@@ -360,18 +390,23 @@ describe('admin taxonomy: terms', () => {
       const second = await mustCreateTerm({ taxonomy: 'category', name: 'Second cat' });
       const post = await createPost('Reassigned');
 
-      await app.inject({
+      const firstAssign = await app.inject({
         method: 'PUT',
         url: `/api/admin/posts/${post.id}/terms`,
         headers: adminHeaders(),
-        payload: { categoryIds: [first.id], tagIds: [] },
+        payload: { baseVersion: post.version, categoryIds: [first.id], tagIds: [] },
       });
+      expect(firstAssign.statusCode).toBe(200);
 
       const response = await app.inject({
         method: 'PUT',
         url: `/api/admin/posts/${post.id}/terms`,
         headers: adminHeaders(),
-        payload: { categoryIds: [second.id], tagIds: [] },
+        payload: {
+          baseVersion: (firstAssign.json() as AdminPostShape).version,
+          categoryIds: [second.id],
+          tagIds: [],
+        },
       });
 
       const updated = response.json() as AdminPostShape;
@@ -385,7 +420,11 @@ describe('admin taxonomy: terms', () => {
         method: 'PUT',
         url: `/api/admin/posts/${post.id}/terms`,
         headers: adminHeaders(),
-        payload: { categoryIds: ['11111111-1111-4111-8111-111111111111'], tagIds: [] },
+        payload: {
+          baseVersion: post.version,
+          categoryIds: ['11111111-1111-4111-8111-111111111111'],
+          tagIds: [],
+        },
       });
 
       expect(response.statusCode).toBe(400);
@@ -400,7 +439,7 @@ describe('admin taxonomy: terms', () => {
         method: 'PUT',
         url: `/api/admin/posts/${post.id}/terms`,
         headers: adminHeaders(),
-        payload: { categoryIds: [], tagIds: [category.id] },
+        payload: { baseVersion: post.version, categoryIds: [], tagIds: [category.id] },
       });
 
       expect(response.statusCode).toBe(400);
@@ -415,7 +454,7 @@ describe('admin taxonomy: terms', () => {
         method: 'PUT',
         url: `/api/admin/posts/${post.id}/terms`,
         headers: adminHeaders(),
-        payload: { categoryIds: [category.id, category.id], tagIds: [] },
+        payload: { baseVersion: post.version, categoryIds: [category.id, category.id], tagIds: [] },
       });
 
       expect(response.statusCode).toBe(400);
@@ -427,7 +466,7 @@ describe('admin taxonomy: terms', () => {
         method: 'PUT',
         url: '/api/admin/posts/11111111-1111-4111-8111-111111111111/terms',
         headers: adminHeaders(),
-        payload: { categoryIds: [], tagIds: [] },
+        payload: { baseVersion: 1, categoryIds: [], tagIds: [] },
       });
 
       expect(response.statusCode).toBe(404);
@@ -443,7 +482,7 @@ describe('admin taxonomy: terms', () => {
         method: 'PUT',
         url: `/api/admin/posts/${post.id}/terms`,
         headers: adminHeaders(),
-        payload: { categoryIds: [term.id], tagIds: [] },
+        payload: { baseVersion: post.version, categoryIds: [term.id], tagIds: [] },
       });
 
       const response = await app.inject({

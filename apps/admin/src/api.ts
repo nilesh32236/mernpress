@@ -1,26 +1,122 @@
+export type UserRole = 'administrator' | 'editor' | 'author' | 'contributor' | 'subscriber';
+export type ContentType = 'post' | 'page';
+export type PostStatus = 'DRAFT' | 'PUBLISHED' | 'TRASHED';
+export type TransitionAction = 'publish' | 'unpublish' | 'trash' | 'restore';
+export type TaxonomyType = 'category' | 'tag';
+
 export interface AuthUser {
   id: string;
   username: string;
-  role: 'administrator';
+  role: UserRole;
   status: 'active' | 'disabled';
+}
+
+export interface AdminTermSummary {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export interface AdminPost {
+  id: string;
+  type: ContentType;
+  status: PostStatus;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  content: string;
+  contentFormat: string;
+  contentVersion: number;
+  authorId: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  canonicalUrl: string | null;
+  robots: string | null;
+  ogTitle: string | null;
+  ogDescription: string | null;
+  publishedAt: string | null;
+  trashedAt: string | null;
+  previousStatus: PostStatus | null;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+  terms: { categories: AdminTermSummary[]; tags: AdminTermSummary[] };
+}
+
+export interface AdminTerm {
+  id: string;
+  taxonomy: TaxonomyType;
+  name: string;
+  slug: string;
+  description: string | null;
+  parentId: string | null;
+  postCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Pagination {
+  page: number;
+  perPage: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface Paged<T> {
+  items: T[];
+  pagination: Pagination;
+}
+
+export interface PostListParams {
+  type?: ContentType;
+  status?: PostStatus;
+  search?: string;
+  page?: number;
+  perPage?: number;
+  sort?: 'updatedAt' | 'createdAt' | 'publishedAt' | 'title';
+  order?: 'asc' | 'desc';
+}
+
+export interface CreatePostPayload {
+  type: ContentType;
+  title: string;
+  slug?: string;
+  excerpt?: string | null;
+  content?: string;
+}
+
+export interface UpdatePostPayload {
+  baseVersion: number;
+  title?: string;
+  slug?: string;
+  excerpt?: string | null;
+  content?: string;
 }
 
 interface ErrorBody {
   error?: {
     code?: string;
     message?: string;
+    details?: Array<{ path?: string; message?: string }>;
   };
 }
 
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string;
+  readonly details: Array<{ path: string; message: string }>;
 
-  constructor(status: number, code: string, message: string) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    details: Array<{ path: string; message: string }> = [],
+  ) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
+    this.details = details;
   }
 }
 
@@ -50,11 +146,58 @@ async function toApiError(response: Response): Promise<ApiError> {
     // A non-JSON error is still surfaced as a generic API failure.
   }
 
+  const details = (body.error?.details ?? [])
+    .filter((detail) => typeof detail.message === 'string')
+    .map((detail) => ({
+      path: typeof detail.path === 'string' ? detail.path : '',
+      message: detail.message ?? 'Invalid value',
+    }));
+
   return new ApiError(
     response.status,
     body.error?.code ?? 'REQUEST_FAILED',
     body.error?.message ?? 'The request failed.',
+    details,
   );
+}
+
+function csrfHeader(): Record<string, string> {
+  const token = getCookie('mernpress_csrf');
+  if (!token) {
+    throw new ApiError(
+      0,
+      'CSRF_MISSING',
+      'Your security token is missing. Reload the page and sign in again.',
+    );
+  }
+  return { 'x-csrf-token': token };
+}
+
+let unauthorizedHandler: (() => void) | undefined;
+
+export function setUnauthorizedHandler(handler: (() => void) | undefined): void {
+  unauthorizedHandler = handler;
+}
+
+async function readJson<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    if (response.status === 401) {
+      unauthorizedHandler?.();
+    }
+    throw await toApiError(response);
+  }
+  return (await response.json()) as T;
+}
+
+function queryString(params: Record<string, string | number | undefined>): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== '') {
+      search.set(key, String(value));
+    }
+  }
+  const text = search.toString();
+  return text ? `?${text}` : '';
 }
 
 export async function fetchSession(): Promise<AuthUser | null> {
@@ -140,6 +283,136 @@ export async function logout(): Promise<void> {
   }
 }
 
+export async function fetchPosts(params: PostListParams = {}): Promise<Paged<AdminPost>> {
+  const response = await fetch(
+    `/api/admin/posts${queryString({
+      type: params.type,
+      status: params.status,
+      search: params.search,
+      page: params.page,
+      perPage: params.perPage,
+      sort: params.sort,
+      order: params.order,
+    })}`,
+    {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { accept: 'application/json' },
+    },
+  );
+
+  return readJson<Paged<AdminPost>>(response);
+}
+
+export async function fetchPost(id: string): Promise<AdminPost> {
+  const response = await fetch(`/api/admin/posts/${encodeURIComponent(id)}`, {
+    method: 'GET',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+
+  return readJson<AdminPost>(response);
+}
+
+export async function createPost(payload: CreatePostPayload): Promise<AdminPost> {
+  const response = await fetch('/api/admin/posts', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return readJson<AdminPost>(response);
+}
+
+export async function updatePost(id: string, payload: UpdatePostPayload): Promise<AdminPost> {
+  const response = await fetch(`/api/admin/posts/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return readJson<AdminPost>(response);
+}
+
+export async function transitionPost(
+  id: string,
+  action: TransitionAction,
+  baseVersion: number,
+): Promise<AdminPost> {
+  const response = await fetch(
+    `/api/admin/posts/${encodeURIComponent(id)}/${encodeURIComponent(action)}`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        ...csrfHeader(),
+      },
+      body: JSON.stringify({ baseVersion }),
+    },
+  );
+
+  return readJson<AdminPost>(response);
+}
+
+export async function assignTerms(
+  id: string,
+  categoryIds: string[],
+  tagIds: string[],
+  baseVersion: number,
+): Promise<AdminPost> {
+  const response = await fetch(`/api/admin/posts/${encodeURIComponent(id)}/terms`, {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ baseVersion, categoryIds, tagIds }),
+  });
+
+  return readJson<AdminPost>(response);
+}
+
+export async function fetchTerms(
+  params: { taxonomy?: TaxonomyType; search?: string; page?: number; perPage?: number } = {},
+): Promise<Paged<AdminTerm>> {
+  const response = await fetch(
+    `/api/admin/terms${queryString({
+      taxonomy: params.taxonomy,
+      search: params.search,
+      page: params.page,
+      perPage: params.perPage,
+    })}`,
+    {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { accept: 'application/json' },
+    },
+  );
+
+  return readJson<Paged<AdminTerm>>(response);
+}
+
 export function loginErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
     switch (error.code) {
@@ -159,4 +432,27 @@ export function loginErrorMessage(error: unknown): string {
   }
 
   return 'Cannot reach the API. Check that it is running.';
+}
+
+export function actionErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    switch (error.status) {
+      case 400:
+        return error.message;
+      case 401:
+        return 'Your session expired. Sign in again.';
+      case 403:
+        return 'You do not have permission to do that.';
+      case 404:
+        return 'That content no longer exists. It may have been deleted or moved out of your visibility.';
+      case 409:
+        return error.code === 'VERSION_CONFLICT'
+          ? 'This content changed since you loaded it. Reload the latest version before saving.'
+          : error.message;
+      default:
+        return error.message;
+    }
+  }
+
+  return 'Cannot reach the API. Check your connection and try again.';
 }

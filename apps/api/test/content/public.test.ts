@@ -153,13 +153,14 @@ describe('GET /api/public/posts/:slug', () => {
     const category = await createTerm({ taxonomy: 'category', name: 'Public Cat' });
     const tag = await createTerm({ taxonomy: 'tag', name: 'Public Tag' });
     const post = await createPost({ type: 'post', title: 'With Terms' });
-    await app.inject({
+    const assigned = await app.inject({
       method: 'PUT',
       url: `/api/admin/posts/${post.id}/terms`,
       headers,
-      payload: { categoryIds: [category.id], tagIds: [tag.id] },
+      payload: { baseVersion: post.version, categoryIds: [category.id], tagIds: [tag.id] },
     });
-    const published = await publish(post);
+    expect(assigned.statusCode).toBe(200);
+    const published = await publish(assigned.json() as AdminPost);
 
     const response = await app.inject({
       method: 'GET',

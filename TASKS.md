@@ -113,14 +113,21 @@ created directly in tests or by the development-only CLI.
 
 ## Phase 4 — Admin content UX
 
+**Status: implementation complete and verified locally; owner review pending.**
+Goal and measurable acceptance criteria are recorded in
+[the Phase 4 implementation plan](docs/phase-4-implementation-plan.md). Phase 4
+uses only the existing Phase 3 API; media, Gutenberg, author reassignment and
+scheduled dates remain out of scope. The Phase 4 working tree is uncommitted and
+not CI-verified.
+
 | ID | Task | Status | Depends on | Acceptance criteria |
 | --- | --- | --- | --- | --- |
-| P4-01 | Admin shell | planned | P2, P3 | WordPress-inspired layout/nav, skip link, responsive, keyboard navigable, active states |
-| P4-02 | Content list tables | planned | P3 | Posts/pages lists, type/status filters, search, pagination, empty/loading/error states. Bulk actions deferred until the API exposes bulk operations |
-| P4-03 | Create/edit forms | planned | P3 | API-supported fields only: title, slug, excerpt, status, terms; validation messages; unsaved-changes guard. Author is read-only (API assigns the creator; no reassignment endpoint), publication date is lifecycle-managed/read-only (no scheduled date), and media is deferred to Phase 6 |
-| P4-04 | Notices and feedback | planned | P4-03 | Success/error notices, inline validation, retry on save failure; no silent failures |
-| P4-05 | Accessibility pass | planned | P4-01..P4-06 | Keyboard-only walkthrough, focus visible, labels, dialogs, error announcements; axe check |
-| P4-06 | Dashboard real counts | planned | P3 | Read-only dashboard using the existing list/taxonomy endpoints: posts/pages by status, terms by taxonomy. No controls for unsupported fields or workflows |
+| P4-01 | Admin shell | done | P2, P3 | WordPress-inspired layout/nav, skip link, responsive, keyboard navigable, active states, session loading/error, sign-out |
+| P4-02 | Content list tables | done | P3 | Posts/pages lists, type/status filters, search, pagination, empty/loading/error states, role-aware per-row actions. Bulk actions deferred until the API exposes bulk operations |
+| P4-03 | Create/edit forms | done | P3 | API-supported fields only: title, slug, excerpt, content, status transitions, terms with `baseVersion` optimistic concurrency; validation messages; unsaved-changes guard. Author is read-only (API assigns the creator; no reassignment endpoint), publication date is lifecycle-managed/read-only (no scheduled date), and media is deferred to Phase 6 |
+| P4-04 | Notices and feedback | done | P4-03 | Success/error notices, inline validation, retry on save failure; no silent failures |
+| P4-05 | Accessibility pass | done | P4-01..P4-06 | Keyboard-only walkthrough, focus visible, labels, dialogs, error announcements; automated checks where supported |
+| P4-06 | Dashboard real counts | done | P3 | Read-only dashboard using the existing list endpoint: posts/pages by status with server visibility. No controls for unsupported fields or workflows |
 
 ## Phase 5 — Gutenberg foundation
 

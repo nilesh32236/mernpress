@@ -5,6 +5,118 @@ and results, decisions, limitations and the next step. Do not record secrets.
 
 ---
 
+## 2026-10-27 — Phase 4 admin content UX (P4-01…P4-06) implemented locally
+
+**Status:** implementation complete and verified locally; **uncommitted and not
+CI-verified**; owner review pending. Phase 3 baseline `46bd5c1` is published and
+CI-green (run `40507958602`). Phase 5 was not started.
+
+### Scope delivered
+
+- **P4-01 shell:** responsive application frame, header, Dashboard/Posts/Pages
+  navigation for implemented destinations only, active `aria-current` state,
+  skip link, signed-in identity/role, sign-out, session loading/error/retry,
+  subscriber no-content state, route focus management.
+- **P4-02 lists:** separate posts/pages routes, search, status filters, server
+  pagination and totals, status badges, timestamps, per-row lifecycle actions,
+  empty/loading/error/retry states, role-aware controls. Bulk multi-item actions
+  remain deferred until the API exposes bulk endpoints; no fake bulk control is
+  shown.
+- **P4-03 forms:** create/edit title, slug, excerpt and content; status and
+  lifecycle actions; category/tag assignment with `baseVersion` optimistic
+  concurrency; server field errors; optimistic
+  `baseVersion`; double-submit guard; unsaved-change guard (in-app links, browser
+  Back and beforeunload); stale-version conflict with explicit reload; read-only
+  views for non-editable content. Author and publication date are read-only;
+  media and scheduling are absent because the Phase 3 API does not support them.
+- **P4-04 feedback:** success/error/warning notices with `role=status`/`alert`,
+  field-level errors, retry actions, disabled/aria-busy controls, distinct
+  validation/permission/not-found/network/conflict messages, and session-expiry
+  reset to the login form on a 401.
+- **P4-05 accessibility:** landmarks, heading hierarchy, labels,
+  `aria-invalid`/`aria-describedby`, visible focus, skip link, keyboard-only
+  workflows, responsive table/form/header layouts, reduced-motion support and a
+  documented keyboard/viewport browser walkthrough.
+- **P4-06 dashboard:** real counts for posts/pages by status from six
+  `perPage=1` list requests; server visibility respected; loading/error/retry;
+  no fabricated metrics or false zeros for subscribers.
+
+### Files changed
+
+- `apps/admin/src/App.tsx`, `api.ts`, `roles.ts`, `router.ts`,
+  `navigation-guard.tsx`, `components.tsx`, `Dashboard.tsx`, `ContentList.tsx`,
+  `ContentEditor.tsx`, `format.ts`, `LoginForm.tsx`, `styles.css`.
+- Admin tests: `App.test.tsx`, `api.test.ts`, `roles.test.ts`, `router.test.ts`,
+  `Dashboard.test.tsx`, `ContentList.test.tsx`, `ContentEditor.test.tsx`,
+  `navigation-guard.test.tsx`.
+- `tests/e2e/content.spec.ts`.
+- `TASKS.md`, `README.md`, `AGENTS.md`, `docs/roadmap/roadmap.md`,
+  `docs/architecture/system-overview.md`, `docs/phase-4-implementation-plan.md`,
+  this log.
+
+### Independent reviews and disposition
+
+- `opencode/glm-5.3-flash-free#high` — PASS WITH ISSUES. Fixed: term selections
+  were discarded after a partial term-assignment failure (now retained for
+  retry); browser Back bypassed the unsaved guard (now handled with a
+  capture-phase popstate guard + `history.forward()`); removed dead
+  `canManageTaxonomy`; added session-expiry 401 reset; added E2E test-DB cleanup.
+  Documented: terms list is capped at the first 100 per taxonomy.
+- `opencode/nemotron-3.5-super-vl-free#high` — PASS WITH ISSUES. Fixed: popstate
+  duplicate history entries (replaced with forward guard); missing unit coverage
+  for the guard and 401 reset (added); dismissible terms warning; aligned confirm
+  wording; expanded keyboard E2E to create a post. The reported duplicate `<h1>`
+  on the login page was not reproduced (only `LoginForm` renders it after the
+  session probe resolves).
+- `opencode/beam-free#high` — PASS WITH ISSUES. Fixed the remaining transient
+  route flash during a cancelled Back by moving the guard to the capture phase
+  and stopping the router listener. The idle-session limitation (expiry is
+  detected on the next API request, not proactively) is documented.
+- `opencode/glm-5.3-flash-free#high` — final focused re-review after the term
+  concurrency fix: **PASS**. Verified authorization-before-version, atomic
+  version bump/rollback, admin payload, tests, counts and docs; no blocking,
+  high or medium findings.
+
+A final review found one inherited Phase 3 data-integrity gap: term assignment had
+last-write-wins semantics. It is fixed by requiring `baseVersion` on
+`PUT /api/admin/posts/:id/terms`, returning 409 on a stale version and bumping the
+post version on success (D-035). API coverage includes stale and missing-version
+cases. No unresolved critical/high/medium findings remain. Phase 7/10 and Phase 9
+work were not started; no dependency was added.
+
+### Verification
+
+| Command | Result |
+| --- | --- |
+| `pnpm install --frozen-lockfile` | PASS |
+| `pnpm lint` | PASS |
+| `pnpm format:check` | PASS |
+| `pnpm typecheck` | PASS (7 tasks) |
+| `pnpm test` | PASS — **216 API + 47 admin + 1 web = 264 tests** |
+| `pnpm build` | PASS (5 tasks) |
+| `pnpm test:e2e` | PASS — **12 Playwright tests** (auth, content lifecycle, conflict, subscriber gate, pagination, keyboard/viewport, placeholders) |
+| `pnpm audit --audit-level=high` | PASS |
+| `git diff --check` | PASS |
+| Migration status / drift | 4 migrations; dev/test up to date; no difference |
+
+### Limits and deferred work
+
+- Phase 4 changes are uncommitted and not CI-verified; do not claim GitHub CI for
+  them.
+- Bulk multi-item actions, media, Gutenberg, scheduled publishing, previews and
+  user administration remain deferred to their phases.
+- Idle session expiry is surfaced on the next content API request; no polling.
+- Categories/tags display at most 100 per taxonomy in the form.
+- Fresh destructive database reset was not run; migrations/status/drift were
+  verified without resetting the dev database.
+
+### Next step
+
+Owner review of the Phase 4 working tree. Do not commit/push or start Phase 5
+without explicit owner authorization.
+
+---
+
 ## 2026-10-27 — Post-acceptance Phase 3 security correction before publication
 
 **Status:** Phase 3 remains owner-accepted (2026-10-27). Two independent review

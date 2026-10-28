@@ -1,13 +1,15 @@
 # System overview
 
 Status: Phase 1 foundation, the Phase 2 authentication first slice, the Phase 3
-core content/taxonomy API and the P2-04 roles/capabilities are implemented.
-Phase 3 was accepted by the owner on 2026-10-27; Phase 1 is approved and Phase 2
-remains pending owner acceptance. `apps/api`, `apps/admin`, `apps/web`,
-`packages/database` and `packages/cms-core` exist. There is no admin content
-dashboard/editor yet (Phase 4), and media, public rendering, scheduled publishing
-and the plugin runtime remain later phases. This document describes the target
-architecture; implemented scope is tracked in `TASKS.md`.
+core content/taxonomy API, the P2-04 roles/capabilities and the Phase 4 admin
+content UX are implemented. Phase 3 was accepted by the owner on 2026-10-27 and
+published as `46bd5c1`; Phase 1 is approved and Phase 2 remains pending owner
+acceptance. Phase 4 is implemented locally and is uncommitted/not CI-verified.
+`apps/api`, `apps/admin`, `apps/web`, `packages/database` and
+`packages/cms-core` exist. Media (Phase 6), public rendering/themes (Phase 7/10),
+scheduled publishing/revisions (Phase 8) and the plugin runtime (Phase 9) remain
+later phases. This document describes the target architecture; implemented scope
+is tracked in `TASKS.md`.
 
 ## 1. Goals and constraints
 
@@ -59,9 +61,9 @@ flowchart LR
 ```
 
 The table below describes the target responsibilities. Implemented today: auth,
-roles/capabilities, the content/taxonomy API, the internal hook registry and the
-minimum admin login shell. Dashboard, content lists, editor, media, users,
-settings, public rendering and plugins are later phases.
+roles/capabilities, the content/taxonomy API, the internal hook registry, the
+admin shell, dashboard, posts/pages lists and the API-backed create/edit forms.
+Media, users, settings, public rendering, revisions and plugins are later phases.
 
 | Component | Responsibility | Must not |
 | --- | --- | --- |

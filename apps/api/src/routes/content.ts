@@ -137,7 +137,13 @@ export function registerContentRoutes(app: FastifyInstance, options: ContentRout
     try {
       const { id } = idParamSchema.parse(request.params);
       const body = assignTermsSchema.parse(request.body);
-      return await content.assignTerms(ctx.principal, id, body.categoryIds, body.tagIds);
+      return await content.assignTerms(
+        ctx.principal,
+        id,
+        body.categoryIds,
+        body.tagIds,
+        body.baseVersion,
+      );
     } catch (error) {
       return sendError(reply, request, error);
     }

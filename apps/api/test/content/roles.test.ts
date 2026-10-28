@@ -278,7 +278,7 @@ describe('role × capability matrix (ADR 0004)', () => {
       method: 'PUT',
       url: `/api/admin/posts/${post.id}/terms`,
       headers: headers(author),
-      payload: { categoryIds: [termId], tagIds: [] },
+      payload: { baseVersion: post.version, categoryIds: [termId], tagIds: [] },
     });
     expect(assign.statusCode).toBe(200);
     expect((assign.json() as PostShape).terms.categories).toHaveLength(1);

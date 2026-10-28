@@ -56,6 +56,7 @@ export interface ContentService {
     id: string,
     categoryIds: string[],
     tagIds: string[],
+    baseVersion: number,
   ): Promise<AdminPost>;
   listPublic(query: PublicListQuery): Promise<Paged<PublicPost>>;
   getPublicBySlug(type: ContentType, slug: string): Promise<PublicPost>;
@@ -710,19 +711,23 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     id: string,
     categoryIds: string[],
     tagIds: string[],
+    baseVersion: number,
   ): Promise<AdminPost> {
     requireCapability(principal, 'taxonomy.assign');
 
     const row = await prisma.$transaction(async (tx) => {
       const existing = await tx.post.findUnique({
         where: { id },
-        select: { id: true, type: true, authorId: true, status: true },
+        select: { id: true, type: true, authorId: true, status: true, version: true },
       });
       if (!existing) {
         throw new ContentError('NOT_FOUND', 'Not found', 404);
       }
       // Assigning terms edits the post, so the caller must also be allowed to edit it.
       canEditPost(principal, existing.authorId, existing.status);
+      if (existing.version !== baseVersion) {
+        throw new ContentError('VERSION_CONFLICT', 'Version conflict', 409);
+      }
 
       const allIds = [...categoryIds, ...tagIds];
       const terms =
@@ -743,6 +748,14 @@ export function createContentService(options: ContentServiceOptions): ContentSer
         if (byId.get(termId)?.taxonomy !== 'tag') {
           throw new ContentError('TERM_TAXONOMY_MISMATCH', 'Term taxonomy mismatch', 400);
         }
+      }
+
+      const updated = await tx.post.updateMany({
+        where: { id, version: baseVersion },
+        data: { version: { increment: 1 } },
+      });
+      if (updated.count === 0) {
+        throw new ContentError('VERSION_CONFLICT', 'Version conflict', 409);
       }
 
       await tx.postTerm.deleteMany({ where: { postId: id } });

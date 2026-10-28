@@ -153,6 +153,10 @@ restore the DB backup and revert code.
 
 ## Phase 4 — Admin content UX
 
+**Status: implementation complete and verified locally; uncommitted, not
+CI-verified; owner review pending.** See the
+[Phase 4 implementation plan](../phase-4-implementation-plan.md).
+
 **Goal:** an editor can manage content comfortably in a WordPress-inspired admin.
 
 Scope:
