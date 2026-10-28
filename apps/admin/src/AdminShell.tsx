@@ -34,13 +34,7 @@ function topBarTitle(route: Route): string {
 export function AdminShell({ user, route, onSignedOut, children }: AdminShellProps) {
   const { confirmNavigation } = useNavigationGuard();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(() => {
-    try {
-      return window.localStorage.getItem('mernpress:sidebar-collapsed') === '1';
-    } catch {
-      return false;
-    }
-  });
+  const [collapsed, setCollapsed] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -48,13 +42,6 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
   const mainRef = useRef<HTMLElement>(null);
   const wasOpen = useRef(false);
 
-  useEffect(() => {
-    try {
-      window.localStorage.setItem('mernpress:sidebar-collapsed', collapsed ? '1' : '0');
-    } catch {
-      // ignore storage errors
-    }
-  }, [collapsed]);
   const previousPath = useRef(
     typeof window === 'undefined' ? '' : window.location.pathname + window.location.search,
   );
@@ -291,7 +278,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
                 </svg>
               )}
             </button>
-            <h1 className="top-bar-title">{topBarTitle(route)}</h1>
+            <span className="top-bar-title">{topBarTitle(route)}</span>
           </div>
           <div className="top-bar-right">
             <div className="user-panel">

@@ -140,6 +140,9 @@ describe('admin application shell', () => {
         pagination: { page: 1, perPage: 10, total: 0, totalPages: 0 },
       }),
     );
+    for (let i = 0; i < 4; i += 1) {
+      fetchMock.mockResolvedValueOnce(countPage(0));
+    }
     vi.stubGlobal('fetch', fetchMock);
 
     render(<App />);
@@ -159,7 +162,7 @@ describe('session expiry', () => {
     fetchMock.mockResolvedValueOnce(
       response({ error: { code: 'UNAUTHENTICATED', message: 'Not authenticated' } }, 401),
     );
-    for (let i = 0; i < 5; i += 1) {
+    for (let i = 0; i < 4; i += 1) {
       fetchMock.mockResolvedValueOnce(countPage(0));
     }
     vi.stubGlobal('fetch', fetchMock);

@@ -21,15 +21,43 @@ import {
 } from './components.js';
 import { formatDateTime } from './format.js';
 import { availableTransitions, canCreateContent, canEditPost, canReadContent } from './roles.js';
-import { editContentPath, listPath, navigate, newContentPath, replace } from './router.js';
+import {
+  editContentPath,
+  listPath,
+  navigate,
+  newContentPath,
+  replace,
+  useLocation,
+} from './router.js';
 
 const PER_PAGE = 10;
+const MAX_SEARCH_LENGTH = 200;
+const TABS: Array<{ value: PostStatus | ''; label: string }> = [
+  { value: '', label: 'All' },
+  { value: 'DRAFT', label: 'Drafts' },
+  { value: 'PUBLISHED', label: 'Published' },
+  { value: 'TRASHED', label: 'Trashed' },
+];
 const STATUS_OPTIONS: Array<{ value: PostStatus | ''; label: string }> = [
   { value: '', label: 'All statuses' },
   { value: 'DRAFT', label: 'Drafts' },
   { value: 'PUBLISHED', label: 'Published' },
   { value: 'TRASHED', label: 'Trashed' },
 ];
+
+function sanitizeStatus(value: string | null): PostStatus | '' {
+  return value === 'DRAFT' || value === 'PUBLISHED' || value === 'TRASHED' ? value : '';
+}
+
+function sanitizeSearch(value: string | null): string {
+  if (!value) return '';
+  return value.trim().slice(0, MAX_SEARCH_LENGTH);
+}
+
+function sanitizePage(value: string | null): number {
+  const number = Number(value);
+  return Number.isInteger(number) && number > 0 ? number : 1;
+}
 
 const ACTION_LABELS: Record<TransitionAction, string> = {
   publish: 'Publish',
@@ -45,34 +73,39 @@ const ACTION_SUCCESS: Record<TransitionAction, string> = {
   restore: 'Content restored.',
 };
 
-function initialSearch(): string {
-  return new URLSearchParams(window.location.search).get('search') ?? '';
-}
-
-function initialStatus(): PostStatus | '' {
-  const value = new URLSearchParams(window.location.search).get('status');
-  return value === 'DRAFT' || value === 'PUBLISHED' || value === 'TRASHED' ? value : '';
-}
-
-function initialPage(): number {
-  const value = Number(new URLSearchParams(window.location.search).get('page') ?? '1');
-  return Number.isInteger(value) && value > 0 ? value : 1;
-}
-
 export function ContentList({ user, type }: { user: AuthUser; type: ContentType }) {
-  const [status, setStatus] = useState<PostStatus | ''>(initialStatus);
-  const [searchInput, setSearchInput] = useState(initialSearch);
-  const [search, setSearch] = useState(initialSearch);
-  const [page, setPage] = useState(initialPage);
+  const location = useLocation();
+  const [status, setStatus] = useState<PostStatus | ''>('');
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
   const [data, setData] = useState<Paged<AdminPost> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [counts, setCounts] = useState<Record<PostStatus | '', number>>({
+    '': 0,
+    DRAFT: 0,
+    PUBLISHED: 0,
+    TRASHED: 0,
+  });
 
   const label = type === 'post' ? 'Posts' : 'Pages';
   const allowed = canReadContent(user);
+
+  // Sync filters from the URL (initial load, refresh, Back/Forward).
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const nextStatus = sanitizeStatus(params.get('status'));
+    const nextSearch = sanitizeSearch(params.get('search'));
+    const nextPage = sanitizePage(params.get('page'));
+    setStatus(nextStatus);
+    setSearch(nextSearch);
+    setSearchInput(nextSearch);
+    setPage(nextPage);
+  }, [location.search]);
 
   useEffect(() => {
     if (!allowed) {
@@ -107,6 +140,45 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
       active = false;
     };
   }, [allowed, type, status, search, page, reloadKey]);
+
+  // Real server-computed status counts for the current type + search term.
+  useEffect(() => {
+    if (!allowed) return;
+    let active = true;
+    const statuses: Array<PostStatus | ''> = ['', 'DRAFT', 'PUBLISHED', 'TRASHED'];
+    Promise.all(
+      statuses.map((statusFilter) =>
+        fetchPosts({
+          type,
+          ...(statusFilter ? { status: statusFilter } : {}),
+          ...(search ? { search } : {}),
+          page: 1,
+          perPage: 1,
+        }),
+      ),
+    )
+      .then((results) => {
+        if (!active) return;
+        const next: Record<PostStatus | '', number> = {
+          '': 0,
+          DRAFT: 0,
+          PUBLISHED: 0,
+          TRASHED: 0,
+        };
+        statuses.forEach((statusFilter, index) => {
+          const result = results[index];
+          next[statusFilter] = result ? result.pagination.total : 0;
+        });
+        setCounts(next);
+      })
+      .catch(() => {
+        if (!active) return;
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [allowed, type, search, reloadKey]);
 
   function applyFilters(nextStatus = status, nextSearch = search, nextPage = 1) {
     setStatus(nextStatus);
@@ -183,6 +255,21 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
       />
 
       {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
+
+      <div className="status-tabs" role="tablist" aria-label={`${label} status`}>
+        {TABS.map((tab) => (
+          <button
+            key={tab.value || 'all'}
+            type="button"
+            role="tab"
+            aria-selected={status === tab.value}
+            className={`button small-button ${status === tab.value ? 'primary-button' : 'secondary-button'}`}
+            onClick={() => applyFilters(tab.value, search, 1)}
+          >
+            {tab.label} ({counts[tab.value] ?? 0})
+          </button>
+        ))}
+      </div>
 
       <form className="list-filters" onSubmit={handleSearch} role="search">
         <div className="field">

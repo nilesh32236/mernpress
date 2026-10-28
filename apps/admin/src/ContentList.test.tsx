@@ -67,7 +67,11 @@ describe('content lists', () => {
   it('renders rows, status badges, timestamps and pagination from the API', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn<typeof fetch>().mockResolvedValueOnce(response(paged([makePost()], 11))),
+      vi.fn<typeof fetch>().mockImplementation(async (input) => {
+        const url = String(input);
+        if (/perPage=1(&|$)/.test(url)) return response(paged([], 0));
+        return response(paged([makePost()], 11));
+      }),
     );
 
     render(<ContentList user={admin} type="post" />);
@@ -87,8 +91,10 @@ describe('content lists', () => {
   it('shows role-aware view/edit and lifecycle controls', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn<typeof fetch>().mockResolvedValueOnce(
-        response(
+      vi.fn<typeof fetch>().mockImplementation(async (input) => {
+        const url = String(input);
+        if (/perPage=1(&|$)/.test(url)) return response(paged([], 0));
+        return response(
           paged([
             makePost({ id: 'draft-a', title: 'A draft', authorId: 'a1', status: 'DRAFT' }),
             makePost({
@@ -99,8 +105,8 @@ describe('content lists', () => {
               publishedAt: '2026-10-27T11:00:00.000Z',
             }),
           ]),
-        ),
-      ),
+        );
+      }),
     );
 
     render(<ContentList user={authorB} type="post" />);
@@ -112,15 +118,17 @@ describe('content lists', () => {
   });
 
   it('publishes a draft and refreshes the list', async () => {
-    const fetchMock = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(response(paged([makePost({ authorId: 'a1' })])))
-      .mockResolvedValueOnce(
-        response(makePost({ authorId: 'a1', status: 'PUBLISHED', version: 2 })),
-      )
-      .mockResolvedValueOnce(
-        response(paged([makePost({ authorId: 'a1', status: 'PUBLISHED', version: 2 })])),
-      );
+    let listCalls = 0;
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input, _init) => {
+      const url = String(input);
+      if (url.includes('/publish')) {
+        return response(makePost({ authorId: 'a1', status: 'PUBLISHED', version: 2 }));
+      }
+      if (/perPage=1(&|$)/.test(url)) return response(paged([], 0));
+      listCalls += 1;
+      if (listCalls <= 1) return response(paged([makePost({ authorId: 'a1' })]));
+      return response(paged([makePost({ authorId: 'a1', status: 'PUBLISHED', version: 2 })]));
+    });
     vi.stubGlobal('fetch', fetchMock);
 
     render(<ContentList user={authorA} type="post" />);
@@ -128,13 +136,17 @@ describe('content lists', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Publish' }));
 
     expect(await screen.findByText('Content published.')).toBeDefined();
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
-    expect(fetchMock.mock.calls[1]?.[0]).toBe('/api/admin/posts/post-1/publish');
-    expect(JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body))).toEqual({ baseVersion: 1 });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(11));
+    const publishCall = fetchMock.mock.calls.find(([url]) => String(url).includes('/publish'));
+    expect(publishCall?.[0]).toBe('/api/admin/posts/post-1/publish');
+    expect(JSON.parse(String(publishCall?.[1]?.body))).toEqual({ baseVersion: 1 });
   });
 
   it('shows an empty state and a create action', async () => {
-    vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockResolvedValueOnce(response(paged([], 0))));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockImplementation(async () => response(paged([], 0))),
+    );
 
     render(<ContentList user={admin} type="page" />);
 
@@ -143,10 +155,16 @@ describe('content lists', () => {
   });
 
   it('shows an error with retry', async () => {
-    const fetchMock = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(response({ error: { code: 'INTERNAL_ERROR', message: 'Boom' } }, 500))
-      .mockResolvedValueOnce(response(paged([makePost()])));
+    let listCalls = 0;
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input) => {
+      const url = String(input);
+      if (/perPage=1(&|$)/.test(url)) return response(paged([], 0));
+      listCalls += 1;
+      if (listCalls === 1) {
+        return response({ error: { code: 'INTERNAL_ERROR', message: 'Boom' } }, 500);
+      }
+      return response(paged([makePost()]));
+    });
     vi.stubGlobal('fetch', fetchMock);
 
     render(<ContentList user={admin} type="post" />);
@@ -166,11 +184,82 @@ describe('content lists', () => {
     fireEvent.change(screen.getByLabelText('Search posts'), { target: { value: 'hello' } });
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
-    expect(String(fetchMock.mock.calls[1]?.[0])).toContain('search=hello');
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(10));
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes('search=hello'))).toBe(true);
 
     fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'TRASHED' } });
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
-    expect(String(fetchMock.mock.calls[2]?.[0])).toContain('status=TRASHED');
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(11));
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes('status=TRASHED'))).toBe(true);
+  });
+
+  it('shows real tab counts from server totals', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockImplementation(async (input) => {
+        const url = String(input);
+        if (url.includes('status=DRAFT')) return response(paged([], 3));
+        if (url.includes('status=PUBLISHED')) return response(paged([], 5));
+        if (url.includes('status=TRASHED')) return response(paged([], 1));
+        if (/perPage=1(&|$)/.test(url)) return response(paged([], 9));
+        return response(paged([], 0));
+      }),
+    );
+
+    render(<ContentList user={admin} type="post" />);
+
+    expect(await screen.findByRole('tab', { name: /All \(9\)/ })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Drafts \(3\)/ })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Published \(5\)/ })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Trashed \(1\)/ })).toBeDefined();
+  });
+
+  it('sanitizes invalid URL parameters on load', async () => {
+    window.history.replaceState(null, '', '/posts?status=NOPE&search=   &page=abc');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockImplementation(async () => response(paged([], 0))),
+    );
+
+    render(<ContentList user={admin} type="post" />);
+
+    await screen.findByText('No posts yet');
+    expect(screen.getByRole('tab', { name: /All/ }).getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('reproduces the view on Back and Forward', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockImplementation(async () => response(paged([], 0))),
+    );
+
+    render(<ContentList user={admin} type="post" />);
+    await screen.findByText('No posts yet');
+
+    // navigate to a filtered URL
+    window.history.pushState(null, '', '/posts?status=TRASHED&page=2');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    await waitFor(() =>
+      expect(screen.getByRole('tab', { name: /Trashed/ }).getAttribute('aria-selected')).toBe(
+        'true',
+      ),
+    );
+
+    window.history.back();
+    await waitFor(() => expect(window.location.search).toBe(''));
+  });
+
+  it('tab click resets to page 1 and updates the URL', async () => {
+    window.history.replaceState(null, '', '/posts?page=3');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockImplementation(async () => response(paged([], 0))),
+    );
+
+    render(<ContentList user={admin} type="post" />);
+    await screen.findByText('No posts yet');
+
+    fireEvent.click(screen.getByRole('tab', { name: /Drafts/ }));
+    await waitFor(() => expect(window.location.search).toContain('status=DRAFT'));
+    expect(window.location.search).not.toContain('page=');
   });
 });

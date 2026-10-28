@@ -1323,3 +1323,68 @@ skeletons, tests/CI, clean-clone setup. Then stop for testing. The first
 user-facing product feature is Phase 2 authentication.
 
 **Phase 0: planning only; product feature code not started.**
+
+### D-038 — Status tabs and shareable URL state for content lists (2026-10-28)
+
+**Summary:** ContentList now renders All/Drafts/Published/Trashed status tabs with
+real server-computed counts (four `perPage=1` list requests honoring the current
+type + search term), and synchronizes search/status/page with the URL via
+`useLocation()`. Invalid parameters sanitize to defaults; Back/Forward and refresh
+reproduce the same view.
+
+**Changed files:** apps/admin/src/ContentList.tsx, apps/admin/src/ContentList.test.tsx,
+apps/admin/src/App.test.tsx, TASKS.md.
+
+**Validation commands/results:**
+- `pnpm --filter @mernpress/admin typecheck` — passed.
+- `pnpm --filter @mernpress/admin test` — 60/60 passed.
+- (full suite and remaining validation to be run by owner per slice protocol.)
+
+**Manual test steps:**
+1. Open /posts and /pages; verify four status tabs with counts.
+2. Click a tab; URL updates with `?status=...`, list filters, page resets to 1.
+3. Search; URL updates with `?search=...`; refresh reproduces view.
+4. Use browser Back/Forward; view and URL stay in sync.
+5. Open a URL with invalid params (e.g. `?status=NOPE&page=abc`); defaults apply.
+
+**Known limitations:** `pnpm test:e2e` not run in this environment (production owns
+port 4000); spec discovery checked via `npx playwright test --list`.
+
+### D-038 completion + CI failure fixes (2026-10-28)
+
+**CI run analysed:** 40648146991 (browser smoke tests). Three failures:
+
+1. `auth.spec.ts` "browser token storage is empty": localStorage contained
+   `mernpress:sidebar-collapsed` (admin sidebar collapse preference). Root cause
+   was `AdminShell` persisting UI state in localStorage, tripping the no-token-
+   storage assertion. Fix: keep sidebar collapse state in React component state
+   only (no localStorage read/write). Preference no longer survives a full
+   reload, but no browser storage is used. (apps/admin/src/AdminShell.tsx)
+2. `content.spec.ts` "New post" heading: strict-mode violation because the
+   top bar rendered `<h1 className="top-bar-title">` AND PageHeader rendered
+   `<h1>` in main content. Fix: top-bar title is now a `<span>` (CSS class
+   retained), leaving exactly one h1 per view (the PageHeader heading).
+   (apps/admin/src/AdminShell.tsx)
+3. `terms.spec.ts` "Categories & Tags" heading: same duplicate-h1 cause as #2.
+   Resolved by the same top-bar change.
+
+**Validation commands/results:**
+- `pnpm lint` — passed (no output).
+- `pnpm format:check` — passed (all files formatted).
+- `pnpm typecheck` — passed (7 tasks).
+- `pnpm test` — passed: API 216/216 (25 files), admin 60/60 (11 files),
+  web 1/1 (1 file).
+- `pnpm build` — passed (admin bundle built).
+- `pnpm audit --audit-level=high` — no known vulnerabilities.
+- `git diff --check` — no whitespace errors.
+- Secret scan of diff — no secret values present (presence/absence only).
+- `npx playwright test --list` — 14 tests in 4 files discovered.
+- `pnpm test:e2e` — NOT RUN (blocked: production owns :4000; per owner gate).
+
+**Manual test steps:**
+1. Start dev servers; sign in; confirm no localStorage/sessionStorage keys.
+2. Open New post and Terms; confirm exactly one h1 per view (page heading).
+3. Exercise content list tabs/search/pagination/Back-Forward as in D-038.
+
+**Known limitations:** sidebar collapse preference not persisted across reloads.
+No Phase 5 or further work started.
