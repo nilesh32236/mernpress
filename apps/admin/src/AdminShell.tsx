@@ -184,7 +184,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
           </a>
           <span className="phase-badge">Phase 4 · Content</span>
         </div>
-        <nav className="sidebar-nav" aria-label="Content">
+        <nav className="sidebar-nav" aria-label="Primary">
           <p className="nav-group-label">Content</p>
           <ul>
             {navItems

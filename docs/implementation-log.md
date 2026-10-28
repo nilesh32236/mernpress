@@ -86,6 +86,37 @@ alongside this slice; no changes made to those files.
 
 # Implementation log
 
+## 2026-10-28 — CI e2e failure fixes (duplicate headings) + D-038 publish
+
+**Status:** implemented and verified locally; committed and pushed. Phase 5 not started.
+
+CI run `40648146991` (commit `43b57f6`) failed in Browser smoke tests with 2
+failures, both genuine shell regressions from D-037 — not flaky tests:
+
+1. `content.spec.ts:90` — strict-mode violation: `getByLabel('Content')`
+   matched 2 elements (sidebar `<nav aria-label="Content">` + Content
+   textarea). Fix: nav landmark renamed to `aria-label="Primary"`
+   (`apps/admin/src/AdminShell.tsx`). No test references the old name.
+2. `terms.spec.ts:72` — rename timed out: the spec clicked the first Rename
+   button on the page, but `content.spec.ts` runs earlier in the same shared
+   test DB and leaves other terms behind, so the click opened the wrong row and
+   the term's own row never entered edit mode. Fix: scope the click to the
+   term's own row (`tests/e2e/terms.spec.ts`). Assertion strength unchanged.
+
+Validation (actual, this tree): `pnpm lint` PASS; `pnpm format:check` PASS;
+`pnpm typecheck` PASS (7 tasks); `pnpm test` PASS — 216 API + 60 admin + 1 web
+= 277; `pnpm build` PASS; `pnpm audit` clean; `git diff --check` clean; secret
+scan 0; `playwright --list` 14 tests. `pnpm test:e2e` not run locally
+(production owns :4000); CI exercises it.
+
+Manual test: sign in, open Terms, rename via the term's own row; open the
+editor and confirm `Content` resolves to the field; inspect one h1 per view.
+
+Known limitation: production still serves the pre-D-038 build; cutover needs
+separate explicit authorization.
+
+---
+
 Append-only. Newest entries at the top. Record what was actually done, commands
 and results, decisions, limitations and the next step. Do not record secrets.
 
