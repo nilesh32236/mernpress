@@ -115,6 +115,30 @@ editor and confirm `Content` resolves to the field; inspect one h1 per view.
 Known limitation: production still serves the pre-D-038 build; cutover needs
 separate explicit authorization.
 
+## 2026-10-28 — CI failure round 2: breadcrumb duplication + stale rename locator
+
+Run `40650677826` (commit `87b5aaf`) still failed 2 browser tests. Root causes,
+both genuine D-037-shell interactions, found in the CI artifacts:
+
+1. `content.spec.ts:90` — strict-mode violation on `getByRole('link', {name:
+   'Posts'})`: the new breadcrumb trail renders a "Posts" parent link on
+   new/edit pages, duplicating the sidebar nav link (2 elements). Fix: scope
+   nav-link clicks to the Primary navigation landmark via a `primaryNav(page)`
+   helper in `content.spec.ts`. Kept the breadcrumb links (correct UX); made
+   the tests precise instead of weakening them.
+2. `terms.spec.ts:72` — rename fill timed out although the screenshot shows
+   edit mode open: the row was located by `hasText: termName`, but opening
+   edit mode replaces the name text with the input, so the lazily re-resolved
+   locator matched nothing. Fix: locate the row by its slug cell (stable
+   across edit mode). Added a `Breadcrumbs` unit test locking the contract
+   (parents are links, current page is a span with `aria-current`).
+
+Validation: lint, format, typecheck, `pnpm test` PASS — 216 API + 61 admin + 1
+web = 278; `pnpm build` PASS; audit clean; `git diff --check` clean; secret
+scan 0; e2e not run locally (production owns :4000), validated via CI.
+
+---
+
 ---
 
 Append-only. Newest entries at the top. Record what was actually done, commands

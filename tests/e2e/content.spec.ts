@@ -61,6 +61,10 @@ test.afterAll(() => {
   });
 });
 
+function primaryNav(page: Page) {
+  return page.getByRole('navigation', { name: 'Primary' });
+}
+
 async function login(page: Page, username: string) {
   await page.goto(ADMIN_URL);
   await page.getByLabel('Username').fill(username);
@@ -70,7 +74,7 @@ async function login(page: Page, username: string) {
 }
 
 async function openNewPost(page: Page) {
-  await page.getByRole('link', { name: 'Posts', exact: true }).click();
+  await primaryNav(page).getByRole('link', { name: 'Posts', exact: true }).click();
   await page.getByRole('link', { name: 'New post' }).first().click();
   await expect(page.getByRole('heading', { level: 1, name: 'New post' })).toBeVisible();
 }
@@ -120,7 +124,7 @@ test('editor can create, edit, publish, unpublish, trash and restore content', a
   expect(publicResponse.status).toBe(200);
   expect(publicResponse.body.title).toBe(`E2E Acceptance Post ${suffix}`);
 
-  await page.getByRole('link', { name: 'Posts', exact: true }).click();
+  await primaryNav(page).getByRole('link', { name: 'Posts', exact: true }).click();
   await page.getByLabel('Search posts').fill(`E2E Acceptance Post ${suffix}`);
   await page.getByRole('button', { name: 'Search' }).click();
   await expect(page.getByRole('link', { name: `E2E Acceptance Post ${suffix}` })).toBeVisible();
@@ -191,7 +195,7 @@ test('subscribers cannot see content navigation or content counts', async ({ pag
 
 test('list pagination uses server totals', async ({ page }) => {
   await login(page, editorUsername);
-  await page.getByRole('link', { name: 'Posts', exact: true }).click();
+  await primaryNav(page).getByRole('link', { name: 'Posts', exact: true }).click();
 
   const csrf = await csrfFromBrowser(page);
   await page.evaluate(
@@ -238,7 +242,7 @@ test('keyboard navigation, skip link and narrow viewport work', async ({ page })
   await page.keyboard.press('Enter');
   await expect(page.locator('#main-content')).toBeFocused();
 
-  await page.getByRole('link', { name: 'Posts', exact: true }).click();
+  await primaryNav(page).getByRole('link', { name: 'Posts', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Posts' })).toBeVisible();
 
   await page.getByRole('link', { name: 'New post' }).first().click();
@@ -256,7 +260,7 @@ test('keyboard navigation, skip link and narrow viewport work', async ({ page })
   await expect(page.getByRole('heading', { level: 1, name: 'Edit post' })).toBeVisible();
   await expect(page.getByText('Content created.')).toBeVisible();
 
-  await page.getByRole('link', { name: 'Posts', exact: true }).click();
+  await primaryNav(page).getByRole('link', { name: 'Posts', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Posts' })).toBeVisible();
 
   await page.setViewportSize({ width: 375, height: 812 });

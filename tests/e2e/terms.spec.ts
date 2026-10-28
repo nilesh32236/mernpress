@@ -81,7 +81,8 @@ test('editor can create, rename and delete a category', async ({ page }) => {
   await expect(page.getByText('Category created.')).toBeVisible();
   await expect(page.getByText(termName)).toBeVisible();
 
-  const row = page.locator('tr', { hasText: termName });
+  const termSlug = termName.toLowerCase().replace(/ /g, '-');
+  const row = page.locator('tr', { hasText: termSlug });
   await row.getByRole('button', { name: 'Rename' }).click();
   await row.getByRole('textbox').fill(renamedTermName);
   await row.getByRole('button', { name: 'Save' }).click();
