@@ -38,12 +38,6 @@ const TABS: Array<{ value: PostStatus | ''; label: string }> = [
   { value: 'PUBLISHED', label: 'Published' },
   { value: 'TRASHED', label: 'Trashed' },
 ];
-const STATUS_OPTIONS: Array<{ value: PostStatus | ''; label: string }> = [
-  { value: '', label: 'All statuses' },
-  { value: 'DRAFT', label: 'Drafts' },
-  { value: 'PUBLISHED', label: 'Published' },
-  { value: 'TRASHED', label: 'Trashed' },
-];
 
 function sanitizeStatus(value: string | null): PostStatus | '' {
   return value === 'DRAFT' || value === 'PUBLISHED' || value === 'TRASHED' ? value : '';
@@ -281,23 +275,6 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
             onChange={(event) => setSearchInput(event.target.value)}
             placeholder="Title or excerpt"
           />
-        </div>
-        <div className="field">
-          <label htmlFor={`${type}-status`}>Status</label>
-          <select
-            id={`${type}-status`}
-            value={status}
-            onChange={(event) => {
-              const next = event.target.value as PostStatus | '';
-              applyFilters(next, search, 1);
-            }}
-          >
-            {STATUS_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
         </div>
         <button type="submit" className="button secondary-button">
           Search

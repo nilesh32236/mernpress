@@ -1,3 +1,19 @@
+## 2026-10-28 — CI failure round 3: tablist/select label collision
+
+Run `40651714460` (commit `496b734`) failed 1 browser test (terms specs now
+pass). `content.spec.ts` failed on `getByLabel('Status')`: the new D-038
+status tablist (`role=tablist`, `aria-label="Posts status"`) collides with the
+label of the pre-existing Status `<select>`, which does the same filtering job
+— a genuine UI duplication, not just a test collision. Fix: removed the
+redundant Status `<select>` (and the now-unused `STATUS_OPTIONS`); the tabs are
+the single status filter. E2E drives the Published tab instead of
+`selectOption`; the unit test clicks the Trashed tab. No API or behavior change
+beyond removing the duplicate control.
+
+Validation: lint, format, typecheck, `pnpm test` PASS — 216 API + 61 admin + 1
+web = 278; `pnpm build` PASS; audit clean; `git diff --check` clean; secret
+scan 0; e2e not run locally (production owns :4000), validated via CI.
+
 ## 2026-10-28 — Admin shell (D-037) implemented locally
 
 **Status:** implementation complete and verified locally; **uncommitted**; owner

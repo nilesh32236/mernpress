@@ -128,7 +128,7 @@ test('editor can create, edit, publish, unpublish, trash and restore content', a
   await page.getByLabel('Search posts').fill(`E2E Acceptance Post ${suffix}`);
   await page.getByRole('button', { name: 'Search' }).click();
   await expect(page.getByRole('link', { name: `E2E Acceptance Post ${suffix}` })).toBeVisible();
-  await page.getByLabel('Status').selectOption('PUBLISHED');
+  await page.getByRole('tab', { name: /Published/ }).click();
   await expect(page.getByRole('link', { name: `E2E Acceptance Post ${suffix}` })).toBeVisible();
 
   await page.getByRole('link', { name: `E2E Acceptance Post ${suffix}` }).click();

@@ -187,7 +187,7 @@ describe('content lists', () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(10));
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes('search=hello'))).toBe(true);
 
-    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'TRASHED' } });
+    fireEvent.click(screen.getByRole('tab', { name: /Trashed/ }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(11));
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes('status=TRASHED'))).toBe(true);
   });
