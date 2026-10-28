@@ -1,0 +1,39 @@
+{
+  "name": "@mernpress/block-system",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/contracts.d.ts",
+      "development": "./src/contracts.ts",
+      "default": "./dist/contracts.js"
+    },
+    "./parser": {
+      "types": "./dist/parser.d.ts",
+      "development": "./src/parser.ts",
+      "default": "./dist/parser.js"
+    },
+    "./validate": {
+      "types": "./dist/validate.d.ts",
+      "development": "./src/validate.ts",
+      "default": "./dist/validate.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@wordpress/block-serialization-default-parser": "6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "5.9.3",
+    "vitest": "5.0.5"
+  }
+}

@@ -120,6 +120,9 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
   }, [mobileOpen]);
 
   const breadcrumbItems: BreadcrumbItem[] = breadcrumbs(route);
+  // The editor is a focused workspace with its own header; a shell breadcrumb
+  // would duplicate navigation and sit behind the editor toolbar.
+  const isEditorRoute = route.name === 'new' || route.name === 'edit';
 
   const navItems: Array<{ to: string; label: string; active: boolean; show: boolean }> = [
     { to: '/', label: 'Dashboard', active: route.name === 'dashboard', show: true },
@@ -182,7 +185,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
             <span className="brand-mark">M</span>
             <span className="brand-text">MERNPress</span>
           </a>
-          <span className="phase-badge">Phase 4 · Content</span>
+          <span className="phase-badge">Phase 5 · Editor</span>
         </div>
         <nav className="sidebar-nav" aria-label="Primary">
           <p className="nav-group-label">Content</p>
@@ -304,20 +307,27 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
           </div>
         </header>
 
-        <main id="main-content" className="main-content" tabIndex={-1} ref={mainRef}>
-          <Breadcrumbs
-            items={breadcrumbItems}
-            onNavigate={(to) => {
-              if (confirmNavigation()) {
-                navigate(to);
-              }
-            }}
-          />
+        <main
+          id="main-content"
+          className={`main-content${isEditorRoute ? ' main-content-editor' : ''}`}
+          tabIndex={-1}
+          ref={mainRef}
+        >
+          {isEditorRoute ? null : (
+            <Breadcrumbs
+              items={breadcrumbItems}
+              onNavigate={(to) => {
+                if (confirmNavigation()) {
+                  navigate(to);
+                }
+              }}
+            />
+          )}
           {children}
         </main>
 
         <footer className="app-footer">
-          <p>MERNPress Phase 4 · Content administration</p>
+          <p>MERNPress Phase 5 · Content administration</p>
         </footer>
       </div>
     </div>

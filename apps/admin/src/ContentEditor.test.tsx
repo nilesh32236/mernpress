@@ -4,6 +4,14 @@ import type { AdminPost, AdminTerm, AuthUser, Paged } from './api.js';
 import { ContentEditor } from './ContentEditor.js';
 import { NavigationGuardProvider } from './navigation-guard.js';
 
+// The Gutenberg canvas is a 6 MB lazy chunk; unit tests replace it with a
+// textarea so document-workflow behaviour stays fast and deterministic. The
+// real canvas is exercised by tests/e2e/content.spec.ts in a browser.
+vi.mock('./editor/BlockCanvas.js', async () => {
+  const { BlockCanvasMock } = await import('./editor/BlockCanvasMock.js');
+  return { default: BlockCanvasMock };
+});
+
 beforeEach(() => {
   window.history.replaceState(null, '', '/posts/new');
   document.cookie = 'mernpress_csrf=test-csrf; path=/';
@@ -88,7 +96,7 @@ describe('content editor', () => {
     fireEvent.change(screen.getByLabelText('Slug'), { target: { value: 'new-title' } });
     fireEvent.change(screen.getByLabelText('Excerpt'), { target: { value: 'Short excerpt' } });
     fireEvent.change(screen.getByLabelText('Content'), { target: { value: 'Hello content' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Create draft' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
     expect(fetchMock.mock.calls[2]?.[0]).toBe('/api/admin/posts');
@@ -110,7 +118,7 @@ describe('content editor', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     renderEditor(authorA);
-    fireEvent.click(await screen.findByRole('button', { name: 'Create draft' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Save draft' }));
 
     expect(await screen.findByText('Title is required.')).toBeDefined();
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -137,7 +145,7 @@ describe('content editor', () => {
 
     renderEditor(authorA);
     fireEvent.change(await screen.findByLabelText('Title'), { target: { value: 'Valid title' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Create draft' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
 
     expect(await screen.findByText('Invalid slug')).toBeDefined();
     expect(
@@ -160,7 +168,7 @@ describe('content editor', () => {
     renderEditor(authorA, post.id);
     const title = await screen.findByLabelText('Title');
     fireEvent.change(title, { target: { value: 'Changed title' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
 
     expect(
       await screen.findByText(
@@ -247,7 +255,7 @@ describe('content editor term assignment resilience', () => {
     renderEditor(authorA, post.id);
     fireEvent.click(await screen.findByRole('checkbox', { name: 'News' }));
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Term post updated' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
 
     expect(
       await screen.findByText(/Content saved, but category\/tag assignment failed/),

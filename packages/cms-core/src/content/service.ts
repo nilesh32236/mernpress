@@ -1,4 +1,5 @@
 import type { DatabaseClient, PostStatus, Prisma } from '@mernpress/database';
+import { validateBlockMarkup } from '@mernpress/block-system/validate';
 import type { HookRegistry } from '../hooks/types.js';
 import { HookRejectedError } from '../hooks/types.js';
 import {
@@ -124,6 +125,17 @@ function validateDraft(draft: PostFilterDraft): void {
   }
   if (draft.content.length > CONTENT_MAX_CHARS) {
     throw new ContentError('VALIDATION_ERROR', 'Content too large', 400);
+  }
+  // Structural validation only: freeform HTML and unknown blocks are valid and
+  // must be preserved. This rejects hostile size/depth/count shapes before they
+  // reach the parser or a renderer (Phase 5, docs/architecture/gutenberg-and-rendering.md).
+  const blockCheck = validateBlockMarkup(draft.content);
+  if (!blockCheck.ok) {
+    throw new ContentError(
+      blockCheck.code ?? 'INVALID_BLOCK_MARKUP',
+      blockCheck.message ?? 'Invalid block markup',
+      400,
+    );
   }
   if (draft.excerpt !== null && draft.excerpt.length > 2000) {
     throw new ContentError('VALIDATION_ERROR', 'Invalid excerpt', 400);

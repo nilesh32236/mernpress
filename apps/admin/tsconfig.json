@@ -7,7 +7,11 @@
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
     "noEmit": true,
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "paths": {
+      "@wordpress/block-editor": ["./node_modules/@wordpress/block-editor/build-types/index.d.ts"],
+      "@wordpress/block-library": ["./node_modules/@wordpress/block-library/build-types/index.d.ts"]
+    }
   },
   "include": ["src", "vite.config.ts", "vitest.config.ts"],
   "exclude": ["dist", "node_modules"]

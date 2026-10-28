@@ -54,7 +54,7 @@ export function App() {
           <a className="brand" href="/" aria-label="MERNPress admin home">
             MERNPress
           </a>
-          <span className="phase-badge">Phase 4 · Content</span>
+          <span className="phase-badge">Phase 5 · Editor</span>
         </header>
         <main id="main-content" className="main-content" tabIndex={-1} aria-busy="true">
           <div className="content-card">
@@ -82,7 +82,7 @@ export function App() {
           <a className="brand" href="/" aria-label="MERNPress admin home">
             MERNPress
           </a>
-          <span className="phase-badge">Phase 4 · Content</span>
+          <span className="phase-badge">Phase 5 · Editor</span>
         </header>
         <main id="main-content" className="main-content" tabIndex={-1}>
           {sessionError ? (

@@ -1,0 +1,264 @@
+/* Gutenberg canvas styling. Loaded only with the lazy editor chunk. */
+
+.block-canvas-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  color-scheme: light;
+  color: #1e1e1e;
+  background: #f0f0f1;
+  border: 1px solid #dcdcde;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.block-canvas-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+  padding: 4px 6px;
+  background: #1e1e1e;
+  color: #fff;
+  min-height: 44px;
+}
+
+.block-canvas-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+.block-canvas-tool:hover:not(:disabled) {
+  background: #2c3338;
+}
+
+.block-canvas-tool.is-active {
+  background: #3858e9;
+}
+
+.block-canvas-tool:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.block-canvas-tool:focus-visible {
+  outline: 2px solid #7b90ff;
+  outline-offset: -2px;
+}
+
+.block-canvas-tool-primary {
+  background: #3858e9;
+}
+
+.block-canvas-tool-primary:hover:not(:disabled) {
+  background: #2a45c9;
+}
+
+.block-canvas-tool-divider {
+  width: 1px;
+  height: 24px;
+  margin: 0 4px;
+  background: #3c434a;
+}
+
+.block-canvas-body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.block-canvas-scroll {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 24px 16px 48px;
+  background: #f0f0f1;
+}
+
+.block-canvas-sheet {
+  width: 100%;
+  max-width: 860px;
+  min-height: 460px;
+  margin: 0 auto;
+  padding: 40px 48px 64px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.block-canvas-sheet .block-editor-block-list__layout {
+  margin: 0;
+}
+
+.block-canvas-sheet .block-editor-writing-flow {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell,
+    'Helvetica Neue', sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #1e1e1e;
+}
+
+.block-canvas-sheet .editor-post-title__input,
+.block-canvas-sheet .wp-block-post-title {
+  font-size: 2rem;
+}
+
+.block-canvas-help {
+  margin: 0;
+  padding: 8px 16px;
+  background: #f0f0f1;
+  border-top: 1px solid #dcdcde;
+  color: #646970;
+  font-size: 12px;
+  text-align: center;
+}
+
+.block-canvas-help kbd {
+  padding: 1px 5px;
+  border: 1px solid #c3c4c7;
+  border-radius: 2px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.block-canvas-listview,
+.block-canvas-inspector {
+  flex: 0 0 300px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #fff;
+  border-right: 1px solid #dcdcde;
+}
+
+.block-canvas-inspector {
+  border-right: 0;
+  border-left: 1px solid #dcdcde;
+}
+
+.block-canvas-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #dcdcde;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.block-canvas-panel-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: #646970;
+  cursor: pointer;
+}
+
+.block-canvas-panel-close:hover {
+  background: #f0f0f1;
+  color: #1e1e1e;
+}
+
+.block-canvas-listview-scroll,
+.block-canvas-inspector-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px;
+}
+
+.block-canvas-hint {
+  margin: 0;
+  padding: 12px;
+  color: #646970;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.block-canvas-notices {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 100000;
+}
+
+/* The canonical editor title field, rendered inside the white sheet. */
+.editor-title-input {
+  display: block;
+  width: 100%;
+  margin: 0 0 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #1e1e1e;
+  font-family: inherit;
+  font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.editor-title-input::placeholder {
+  color: #8c8f94;
+}
+
+.editor-title-input:focus {
+  outline: none;
+}
+
+.editor-title-input:focus-visible {
+  outline: 2px solid #3858e9;
+  outline-offset: 4px;
+}
+
+/* WordPress portals (inserter, link popover, block toolbar) render into body;
+   raise them above the admin shell without touching global admin styles. */
+.block-editor-inserter__popover,
+.block-editor-block-toolbar,
+.components-popover {
+  z-index: 100000;
+}
+
+@media (max-width: 782px) {
+  .block-canvas-scroll {
+    padding: 12px 8px 32px;
+  }
+
+  .block-canvas-sheet {
+    padding: 24px 20px 40px;
+    min-height: 360px;
+  }
+
+  .block-canvas-listview,
+  .block-canvas-inspector {
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 20;
+    width: min(320px, 88%);
+    flex-basis: auto;
+    box-shadow: 0 0 24px rgba(0, 0, 0, 0.2);
+  }
+
+  .block-canvas-inspector {
+    inset: 0 0 0 auto;
+  }
+}

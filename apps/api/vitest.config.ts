@@ -7,6 +7,15 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   resolve: {
     alias: {
+      '@mernpress/block-system/parser': path.resolve(
+        here,
+        '../../packages/block-system/src/parser.ts',
+      ),
+      '@mernpress/block-system/validate': path.resolve(
+        here,
+        '../../packages/block-system/src/validate.ts',
+      ),
+      '@mernpress/block-system': path.resolve(here, '../../packages/block-system/src/index.ts'),
       '@mernpress/cms-core': path.resolve(here, '../../packages/cms-core/src/index.ts'),
       '@mernpress/database': path.resolve(here, '../../packages/database/src/index.ts'),
     },

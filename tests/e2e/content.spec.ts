@@ -79,6 +79,14 @@ async function openNewPost(page: Page) {
   await expect(page.getByRole('heading', { level: 1, name: 'New post' })).toBeVisible();
 }
 
+async function typeInBlockCanvas(page: Page, text: string) {
+  const sheet = page.locator('.block-canvas-sheet');
+  await expect(sheet).toBeVisible();
+  const editable = sheet.locator('[contenteditable="true"]').first();
+  await editable.click();
+  await page.keyboard.type(text);
+}
+
 async function csrfFromBrowser(page: Page): Promise<string> {
   const token = await page.evaluate(() => {
     const entry = document.cookie
@@ -105,17 +113,29 @@ test('editor can create, edit, publish, unpublish, trash and restore content', a
   await page.getByLabel('Title').fill(`E2E Acceptance Post ${suffix}`);
   await page.getByLabel('Slug').fill(createdPostSlug);
   await page.getByLabel('Excerpt').fill('Created by the Phase 4 browser workflow.');
-  await page.getByLabel('Content').fill('Hello from the Phase 4 admin content form.');
-  await page.getByRole('button', { name: 'Create draft' }).click();
+  await typeInBlockCanvas(page, 'Hello from the Phase 5 block editor.');
+  await page.getByRole('button', { name: 'Save draft' }).click();
 
   await expect(page.getByRole('heading', { level: 1, name: 'Edit post' })).toBeVisible();
   await expect(page.getByText('Content created.')).toBeVisible();
+  await expect(page.locator('.block-canvas-sheet')).toContainText(
+    'Hello from the Phase 5 block editor.',
+  );
+
   createdPostId = new URL(page.url()).pathname.split('/')[2] ?? '';
   expect(createdPostId).toMatch(/^[0-9a-f-]{36}$/);
 
+  // Content is persisted as canonical WordPress block markup, not plain text.
+  const stored = await page.evaluate(async (postId) => {
+    const response = await fetch(`/api/admin/posts/${postId}`, { credentials: 'include' });
+    return (await response.json()) as { content: string };
+  }, createdPostId);
+  expect(stored.content).toContain('<!-- wp:paragraph');
+  expect(stored.content).toContain('Hello from the Phase 5 block editor.');
+
   await page.getByRole('button', { name: 'Publish' }).click();
   await expect(page.getByText('Content published.')).toBeVisible();
-  await expect(page.locator('.status-badge')).toHaveText('Published');
+  await expect(page.locator('.editor-topbar .status-badge')).toHaveText('Published');
 
   const publicResponse = await page.evaluate(async (slug) => {
     const response = await fetch(`/api/public/posts/${slug}?type=post`);
@@ -133,21 +153,21 @@ test('editor can create, edit, publish, unpublish, trash and restore content', a
 
   await page.getByRole('link', { name: `E2E Acceptance Post ${suffix}` }).click();
   await page.getByLabel('Title').fill(`E2E Acceptance Post edited ${suffix}`);
-  await page.getByRole('button', { name: 'Save changes' }).click();
+  await page.getByRole('button', { name: 'Update' }).click();
   await expect(page.getByText('Changes saved.')).toBeVisible();
 
   await page.getByRole('button', { name: 'Unpublish' }).click();
   await expect(page.getByText('Content returned to draft.')).toBeVisible();
-  await expect(page.locator('.status-badge')).toHaveText('Draft');
+  await expect(page.locator('.editor-topbar .status-badge')).toHaveText('Draft');
 
   page.once('dialog', (dialog) => void dialog.accept());
   await page.getByRole('button', { name: 'Trash' }).click();
   await expect(page.getByText('Content moved to trash.')).toBeVisible();
-  await expect(page.locator('.status-badge')).toHaveText('Trashed');
+  await expect(page.locator('.editor-topbar .status-badge')).toHaveText('Trashed');
 
   await page.getByRole('button', { name: 'Restore' }).click();
   await expect(page.getByText('Content restored.')).toBeVisible();
-  await expect(page.locator('.status-badge')).toHaveText('Draft');
+  await expect(page.locator('.editor-topbar .status-badge')).toHaveText('Draft');
 
   // The anonymous session probe is expected to return 401; it is not a UI error.
   const unexpectedErrors = consoleErrors.filter(
@@ -170,11 +190,11 @@ test('stale edits show a recoverable conflict instead of overwriting', async ({
   await page.goto(`${ADMIN_URL}/posts/${createdPostId}/edit`);
   await expect(page.getByRole('heading', { level: 1, name: 'Edit post' })).toBeVisible();
   await page.getByLabel('Title').fill(`E2E Conflict Winner ${suffix}`);
-  await page.getByRole('button', { name: 'Save changes' }).click();
+  await page.getByRole('button', { name: 'Save draft' }).click();
   await expect(page.getByText('Changes saved.')).toBeVisible();
 
   await secondPage.getByLabel('Title').fill(`E2E Conflict Loser ${suffix}`);
-  await secondPage.getByRole('button', { name: 'Save changes' }).click();
+  await secondPage.getByRole('button', { name: 'Save draft' }).click();
   await expect(
     secondPage.getByText('A newer version exists on the server. Reload it before editing again.'),
   ).toBeVisible();
@@ -249,13 +269,9 @@ test('keyboard navigation, skip link and narrow viewport work', async ({ page })
   await expect(page.getByRole('heading', { level: 1, name: 'New post' })).toBeVisible();
   await page.getByLabel('Title').focus();
   await page.keyboard.type(`Keyboard post ${suffix}`);
-  await page.keyboard.press('Tab');
-  await page.keyboard.type(`keyboard-post-${suffix}`);
-  await page.keyboard.press('Tab');
-  await page.keyboard.type('Keyboard excerpt');
-  await page.keyboard.press('Tab');
+  await page.locator('.block-canvas-sheet [contenteditable="true"]').first().click();
   await page.keyboard.type('Keyboard content');
-  await page.getByRole('button', { name: 'Create draft' }).focus();
+  await page.getByRole('button', { name: 'Save draft' }).focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('heading', { level: 1, name: 'Edit post' })).toBeVisible();
   await expect(page.getByText('Content created.')).toBeVisible();
