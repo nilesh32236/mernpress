@@ -125,6 +125,52 @@ no DuckDNS token is stored in the Caddyfile.
   `mernpress-api`, and leave the production database intact. The rollback was
   not destructively tested.
 
+## Pending cutover to `b3fc337` (NOT EXECUTED — needs separate authorization)
+
+Target: commit `b3fc337f2dfd660b5ee24c3ca0523faa5a72d662` (D-036 Terms, D-037
+shell, D-038 status tabs), CI run `40652450339` = success, working tree clean.
+Owner accepted D-036/D-037/D-038 as implementation-complete on 2026-10-28.
+Delta vs the live release (`20261027T140348Z-46bd5c1`): admin SPA only, plus
+the D-035 `PUT /api/admin/posts/:id/terms` `baseVersion` contract (no
+migration; uses the existing `posts.version` column). No Prisma/schema/env
+changes. Compatible: admin and API deploy together, so no mixed-version window.
+
+Preconditions (verify, do not change anything yet):
+1. `git rev-parse HEAD` == `git rev-parse origin/master` == `b3fc337...`; `git
+   status --porcelain` empty.
+2. CI run `40652450339` conclusion is `success` on that exact SHA.
+3. Current release dir retained at `/opt/mernpress/releases/20261027T140348Z-46bd5c1`
+   for rollback; never delete it during cutover.
+
+Release build (execute in order):
+1. `REL=20261028Txxxxxx-b3fc337; sudo mkdir -p /opt/mernpress/releases/$REL`
+2. Exclude-filtered copy of the exact commit (same exclude list as the previous
+   release: `.git`, `.turbo`, dotenv files, `playwright-report`, `test-results`,
+   `_tmp_*`; keep `.env.example`). Verify: no `.env*` secret files, no
+   `playwright-report`, no `.git` under the new dir; admin `dist/index.html`
+   references the new hashed bundle.
+3. Write `BUILD-INFO` (timestamp, HEAD SHA, `git diff`/`status` SHAs — expect
+   all-clean, test counts 216+61+1, Playwright 14 via CI, lint/format/typecheck/
+   build/audit results).
+4. `sudo chown -R root:root` the release dir (match existing releases); confirm
+   `mernpress` can read `apps/admin/dist` and `caddy` can read the same path.
+5. `sudo ln -sfn /opt/mernpress/releases/$REL /opt/mernpress/current`.
+6. `sudo systemctl restart mernpress-api && sleep 2 && curl --fail http://127.0.0.1:4000/api/health && curl --fail http://127.0.0.1:4000/api/ready`.
+7. `sudo caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy` (config unchanged; reload only to pick up the new static files — optional but harmless).
+
+Post-deployment health + dashboard smoke checks:
+1. `curl -sS https://mernpress.duckdns.org/api/health` → 200 `{"status":"ok"}`; `/api/ready` → 200 `{"checks":{"database":"ok"}}`.
+2. Anonymous `GET /api/auth/session` → 401 `UNAUTHENTICATED` JSON (not HTML).
+3. `GET /` → 200 admin HTML referencing the new bundle hash; unknown path (e.g. `/no-such-page`) → 200 SPA fallback.
+4. Browser: sign in as admin → sidebar (Dashboard/Posts/Pages/Terms), Dashboard counts, Posts tab counts + status filter + pagination, create/edit/publish/trash/restore a post, create/rename/delete a term, sign out. Expect no console errors; 375px viewport without horizontal overflow.
+5. `https://nilesh-opencode.duckdns.org/` still 200.
+6. Direct public ports 3000/4000/5173/5432 remain closed.
+
+Rollback (code-only; no DB change involved):
+1. `sudo ln -sfn /opt/mernpress/releases/20261027T140348Z-46bd5c1 /opt/mernpress/current`.
+2. `sudo systemctl restart mernpress-api && sudo systemctl reload caddy`.
+3. Re-run the health checks above; confirm the old bundle hash is served.
+
 ## Not implemented
 
 Media, Gutenberg editor, revisions, scheduled publishing, preview, plugin

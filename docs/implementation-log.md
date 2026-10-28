@@ -1,3 +1,23 @@
+## 2026-10-28 — D-036/D-037/D-038 accepted; deployment plan prepared (not executed)
+
+Owner accepted D-036 (Terms), D-037 (WordPress-style shell) and D-038 (status
+tabs + shareable URLs) as implementation-complete and published at commit
+`b3fc337` (CI run `40652450339`, success). Per-owner instruction: no production
+deployment in this slice.
+
+Changed in this slice: AGENTS.md §1 + TASKS.md Phase 4 status now record the
+acceptance; docs/operations/production-hosting.md gains a "Pending cutover to
+`b3fc337`" plan (target verification, timestamped release build, BUILD-INFO,
+symlink switch, api restart + Caddy reload, health/dashboard smoke checks,
+code-only rollback to `20261027T140348Z-46bd5c1`). Not executed — production
+still serves the older release; cutover needs separate explicit authorization.
+
+API delta since the live release: only the D-035 terms `baseVersion` contract
+(no migration; existing `version` column). No Prisma/schema/env changes, so
+rollback is code-only.
+
+---
+
 ## 2026-10-28 — CI failure round 3: tablist/select label collision
 
 Run `40651714460` (commit `496b734`) failed 1 browser test (terms specs now

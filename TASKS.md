@@ -113,7 +113,8 @@ created directly in tests or by the development-only CLI.
 
 ## Phase 4 — Admin content UX
 
-**Status: implementation complete and verified locally; owner review pending.**
+**Status: accepted by the owner on 2026-10-28 as implementation-complete and
+published at commit `b3fc337` (CI run `40652450339`, success).**
 Goal and measurable acceptance criteria are recorded in
 [the Phase 4 implementation plan](docs/phase-4-implementation-plan.md). Phase 4
 uses only the existing Phase 3 API; media, Gutenberg, author reassignment and

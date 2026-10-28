@@ -12,9 +12,12 @@ ask rather than silently weakening a boundary.
   explicitly accepted by the owner on 2026-10-27.** The accepted baseline is the
   current local working tree and is not yet published to GitHub. Phase 2 and
   Phase 3 remain separate owner gates; Phase 3 acceptance does not accept Phase 2.
-- Phase 4 (admin content UX) is implemented locally and awaits owner review. Its
-  changes are uncommitted and not CI-verified. Do not commit, push or start Phase 5
-  without explicit owner authorization. P2-05 user administration remains
+- Phase 4 (admin content UX: P4-01…P4-06 dashboard, plus D-036 Terms management,
+  D-037 WordPress-style shell, D-038 status tabs) was accepted by the owner on
+  2026-10-28 as implementation-complete and published at commit `b3fc337`
+  (CI run `40652450339`, success). Do not commit, push or start Phase 5
+  without explicit owner authorization. Production still serves the older
+  release; cutover needs separate explicit authorization. P2-05 user administration remains
   deferred and requires separate owner approval; editor (Phase 5), media (Phase 6),
   rendering/themes (Phase 7/10) and plugin (Phase 9) work follow their own phase
   gates.
