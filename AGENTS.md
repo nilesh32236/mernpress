@@ -15,12 +15,15 @@ ask rather than silently weakening a boundary.
 - Phase 4 (admin content UX: P4-01…P4-06 dashboard, plus D-036 Terms management,
   D-037 WordPress-style shell, D-038 status tabs) was accepted by the owner on
   2026-10-28 as implementation-complete and published at commit `b3fc337`
-  (CI run `40652450339`, success). Do not commit, push or start Phase 5
-  without explicit owner authorization. Production still serves the older
-  release; cutover needs separate explicit authorization. P2-05 user administration remains
-  deferred and requires separate owner approval; editor (Phase 5), media (Phase 6),
-  rendering/themes (Phase 7/10) and plugin (Phase 9) work follow their own phase
-  gates.
+  (CI run `40652450339`, success). Production still serves the older
+  release; cutover needs separate explicit authorization.
+- Phase 5 (Gutenberg block editor MVP, ADR 0006) is **implemented locally on
+  branch `feat/gutenberg-editor` and awaiting owner review**. It is not
+  published, not deployed and not accepted. P5-06 (server renderer) and golden/
+  XSS render tests remain unimplemented; do not expose a public preview that
+  trusts stored markup. P2-05 user administration remains deferred; media
+  (Phase 6), rendering/themes (Phase 7/10) and plugin (Phase 9) work follow
+  their own phase gates.
 - After approval, implement **one feature/slice at a time**. At the end of each
   slice: report changed files, exact commands, test results, manual test steps,
   limitations, and **stop**. Do not start the next slice without explicit

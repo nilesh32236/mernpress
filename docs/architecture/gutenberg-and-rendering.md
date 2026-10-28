@@ -1,6 +1,8 @@
 # Gutenberg and rendering
 
-Status: Phase 0 design baseline. No editor or API code exists yet.
+Status: Phase 0 design baseline, updated after the Phase 5 MVP implementation
+(ADR 0006). The editor and structural validation exist; the server renderer
+(P5-06) does not.
 
 ## 1. Goal
 
@@ -479,7 +481,36 @@ Observed: strict peers passed; CSS paths existed; Vite build succeeded; parser
 v6 nested correctly; `@wordpress/blocks` native Node import failed with
 `ERR_IMPORT_ATTRIBUTE_MISSING`. The spike is not part of the repository.
 
-## 11. Risks and open decisions
+## 11. Phase 5 implementation notes (2026-10-28)
+
+Actual code, as opposed to the design above:
+
+| Area | Implementation |
+| --- | --- |
+| Package set | Pinned exact versions from §7 in `apps/admin/package.json`; React 19.3.1 single copy; Vite pre-bundles the five heavyweight entries and dedupes the direct store owners |
+| Bootstrap | `apps/admin/src/editor/BlockCanvas.tsx` (lazy chunk) + `blocks.ts`; `registerCoreBlocks()` once; `window.wp` namespace shim only if absent |
+| Canvas | `ShortcutProvider` → `SlotFillProvider` → `BlockEditorProvider` → custom toolbar (`Inserter`, undo/redo, list view, inspector) + `BlockTools/WritingFlow/ObserveTyping/BlockList` + `Popover.Slot` + `SnackbarList` |
+| Blocks | Allowlist in `SUPPORTED_BLOCKS`; full library registered, inserter/settings filtered. No custom block types yet |
+| Serialization | `apps/admin/src/editor/content.ts`: official `parse`/`serialize`; blank document normalises to `''`; external-change guard keyed on the last emitted string |
+| Undo | 50-entry serialized snapshot stack in `BlockCanvas`; typing bursts coalesced at 250 ms; pre-change snapshot pushed before structural edits; Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z, Ctrl/Cmd+Y |
+| Save/publish | `ContentEditor.tsx`: one primary action per state (Publish / Update / Save draft), flush-before-save, unchanged-draft publish skips the write, 409 conflict UI preserved |
+| Media | `settings.mediaUpload` reports "Phase 6"; image blocks accept Insert from URL. No vips initialisation |
+| Validation | `packages/block-system` parser adapter + `validateBlockMarkup` (2 MB / 5,000 blocks / depth 20), called in `validateDraft` before persistence |
+| Tests | 15 block-system parser/limit tests, 8 admin serializer tests, 6 API validation tests, 5 editor Playwright tests; existing 14 E2E still pass |
+
+Deviations from the design text:
+
+- `BlockEditorKeyboardShortcuts` is not available in this release line; undo/redo
+  keys are registered on the canvas root instead (see ADR 0006).
+- CSS is imported from the exact `build-style/*` paths, but it is **not**
+  iframe-isolated. Popovers portal to `body`; scoping is by class prefix and
+  visual review, not a hard boundary.
+- `@wordpress/blocks` remains admin-only. The API uses the pure parser; this was
+  re-verified on Node 24 (native import still fails on JSON import attributes).
+- The editor route is lazy, so the 5.98 MB chunk is not part of the dashboard,
+  lists or login bundle.
+
+## 12. Risks and open decisions
 
 | Risk | Impact | Mitigation | Gate |
 | --- | --- | --- | --- |

@@ -1,3 +1,100 @@
+# Implementation log
+
+## 2026-10-28 — Phase 5 MVP: real Gutenberg block editor
+
+**Status:** implemented, browser-tested and committed locally on branch
+`feat/gutenberg-editor`; **not pushed, not deployed, not owner-accepted**.
+Baseline `b3fc337` (accepted D-036/D-037/D-038). Commits: `0fe0077` (acceptance
+records + cutover plan preserved), `e915fbf` (editor slice). Documentation is a
+follow-up commit on the same branch.
+
+### What changed
+
+- **New package `packages/block-system`** (isomorphic): contracts/limits,
+  official `@wordpress/block-serialization-default-parser` adapter, iterative
+  depth/count measurement, `validateBlockMarkup`. 15 tests.
+- **API content guard**: `validateDraft` rejects block markup above 2 MB /
+  5,000 blocks / depth 20 with stable 400 codes before persistence. Freeform
+  HTML and unknown blocks stay valid and are never rewritten. 6 API tests.
+- **Admin editor** (`apps/admin/src/editor/`): lazy-loaded standalone Gutenberg
+  canvas (`@wordpress/block-editor` 19.0.0 set), core block allowlist,
+  searchable inserter, contextual toolbar, formatting, block inspector drawer,
+  list view, image URL insertion, notice snackbars, 50-entry snapshot
+  undo/redo, flush-before-save and external-content guard.
+- **ContentEditor rewrite**: WordPress-like document workflow with one h1,
+  top-bar Publish/Update/Save draft (one primary action per state), document
+  sidebar (slug, excerpt, categories/tags, status metadata, unpublish/trash/
+  restore), editor breadcrumbs hidden in the shell, mobile off-canvas settings.
+- **Shell/stage labels** updated to Phase 5; dashboard, lists, auth, terms and
+  status tabs unchanged in behaviour.
+- **E2E**: content spec now drives the canvas; new `editor.spec.ts` (5 tests);
+  `E2E_API_PORT` lets Playwright start the API on an isolated port while the
+  test database is reset normally. Production was never contacted.
+
+### Verified commands and results (this tree)
+
+```text
+pnpm install --frozen-lockfile                        PASS
+pnpm lint                                              PASS
+pnpm format:check                                      PASS
+pnpm typecheck                                         PASS (9 tasks)
+pnpm test                                              PASS — 222 API + 69 admin
+                                                       + 15 block-system + 1 web
+                                                       = 307
+pnpm build                                             PASS (6 tasks)
+pnpm audit --audit-level=high                          PASS; one low advisory
+                                                       (deepmerge, no patched
+                                                       version; not user-input
+                                                       reachable)
+git diff --check                                       clean
+E2E_API_PORT=4100 pnpm test:e2e                        19/19 PASS
+```
+
+Build sizes (admin): main 276.43 kB (83.09 kB gzip), lazy editor chunk
+5,976.24 kB (1,341.98 kB gzip), editor CSS 477.90 kB (64.27 kB gzip). The vips
+and video-conversion workers are emitted (13.4 MB / 406 kB) but not fetched
+during editing. Build completes in ~4–11 s with the default Node heap.
+
+Browser-tested (Playwright, isolated API on :4100): sign-in, paragraph typing,
+heading via searchable inserter, list with two items, save/reload, canonical
+`wp:paragraph`/`wp:heading`/`wp:list`/`wp:list-item` persistence, publish and
+public API read, undo/redo of a structural insert preserving typed text,
+unknown `acme/widget` block preserved byte-for-byte, 375 px layout with
+off-canvas settings, no unexpected console/page errors.
+
+### Decisions and records
+
+- ADR 0006 records the integration approach, package pins, bundle evidence,
+  undo model, media deferral and residual risks.
+- D-039 (editor integration), D-040 (structural validation), D-041 (E2E port
+  override); U-001/U-003 resolved, U-002 deferred.
+- Three-model microbenchmark (beam-free, deepseek-v4.1-flash,
+  muse-spark-1.3-contributor): [research note](research/editor-model-benchmark-2026-10-28.md).
+
+### Manual verification still needed (owner)
+
+1. Open Posts → New post; type a paragraph, insert Heading/List/Quote/Separator
+   from the inserter; check the block toolbar and the Settings (block inspector).
+2. Save draft, reload, confirm content and hierarchy persist.
+3. Publish; confirm the public endpoint returns the post; unpublish/trash/restore.
+4. Trigger a second-tab edit to confirm the 409 conflict panel still works.
+5. Check 375 px: hamburger, canvas, Settings drawer, no horizontal scroll.
+6. Confirm the image block's Insert from URL path; upload is intentionally
+   disabled until Phase 6.
+
+### Limitations
+
+- No server renderer, sanitizer, golden HTML or XSS suite yet (P5-06/P5-07);
+  stored markup must not be rendered publicly until Phase 7.
+- No preview action (no public post renderer yet) and no media upload (Phase 6).
+- Undo is burst-level snapshot history, not WordPress per-keystroke parity.
+- WordPress CSS is global; popovers portal to `body`. No iframe isolation.
+- `deepmerge` low advisory is transitive through WordPress packages.
+- Production still serves the pre-D-038 release; cutover remains separately
+  authorized and the hosting plan still targets `b3fc337`, not this branch.
+
+---
+
 ## 2026-10-28 — D-036/D-037/D-038 accepted; deployment plan prepared (not executed)
 
 Owner accepted D-036 (Terms), D-037 (WordPress-style shell) and D-038 (status

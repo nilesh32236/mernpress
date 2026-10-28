@@ -5,8 +5,8 @@ core content/taxonomy API, the P2-04 roles/capabilities and the Phase 4 admin
 content UX are implemented. Phase 3 was accepted by the owner on 2026-10-27 and
 published as `46bd5c1`; Phase 1 is approved and Phase 2 remains pending owner
 acceptance. Phase 4 is implemented locally and is uncommitted/not CI-verified.
-`apps/api`, `apps/admin`, `apps/web`, `packages/database` and
-`packages/cms-core` exist. Media (Phase 6), public rendering/themes (Phase 7/10),
+`apps/api`, `apps/admin`, `apps/web`, `packages/database`,
+`packages/cms-core` and `packages/block-system` exist. Media (Phase 6), public rendering/themes (Phase 7/10),
 scheduled publishing/revisions (Phase 8) and the plugin runtime (Phase 9) remain
 later phases. This document describes the target architecture; implemented scope
 is tracked in `TASKS.md`.

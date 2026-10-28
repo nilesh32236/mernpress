@@ -133,19 +133,21 @@ not CI-verified.
 | P4-08 | Admin shell (sidebar/top bar/breadcrumbs/skeleton) | done | P4-01..P4-07 | Responsive sidebar with MERNPress identity, Content nav group gated by role helpers, collapsible desktop sidebar (in-memory state; localStorage preference removed so the no-browser-storage guarantee holds), mobile off-canvas drawer with focus handling, top bar with page title/user/role/logout, breadcrumbs driven by router, skeleton loading states, consistent empty/error/permission states. Single h1 per view (top-bar title is a span). No new API/schema/migration; no new nav items (D-037) |
 | P4-09 | Status tabs + shareable URL state for content lists | done | P4-02, P4-06 | Posts/Pages lists gain WordPress-style status tabs with real server-computed counts plus URL-synchronized search/status/page state; invalid parameters sanitize to defaults; Back/Forward and refresh reproduce the same view; no fabricated counts or client-only page filtering (D-038). Verified: admin tests 60/60 pass |
 
-## Phase 5 — Gutenberg foundation
+## Phase 5 — Gutenberg editor
 
-| ID | Task | Status | Depends on | Acceptance criteria |
+**Status: MVP implemented on branch `feat/gutenberg-editor` (ADR 0006); owner
+acceptance pending. Server rendering (P5-06) is not started; production is
+unchanged.**
 | --- | --- | --- | --- | --- |
-| P5-01 | Pin and verify editor package set | planned | P1 | Exact versions, one copy of store-owning packages, strict peer resolution, production build |
-| P5-02 | Standalone editor bootstrap | planned | P5-01 | `BlockEditorProvider`, toolbar, inspector, inserter, list view, keyboard shortcuts, scoped CSS; no duplicate data stores |
-| P5-03 | Block registry + shared schemas | planned | P5-01 | Single source for names/attributes/defaults; editor and renderer import the same contract; no duplicate defaults |
-| P5-04 | Initial block set | planned | P5-02..P5-03 | paragraph, heading, list, quote, image, buttons, columns, group, cover, separator, spacer; each tested |
-| P5-05 | Save/load contract | planned | P5-03 | WordPress-compatible block markup persisted; official parser v6 or documented port; unknown blocks preserved |
-| P5-06 | Server renderer | planned | P5-05 | Core block renderers, sanitizer, URL validation, deterministic output; no browser-only imports |
-| P5-07 | Round-trip/golden tests | planned | P5-05..P5-06 | Fixtures for nested/unknown/malformed blocks; byte/struct round trip; golden HTML; XSS payloads |
-| P5-08 | Editor browser smoke test | planned | P5-02..P5-05 | Playwright: load, insert, edit, save, reload, persisted content; no console errors |
-| P5-09 | Performance gate | planned | P5-08 | Bundle report; lazy-loaded editor route; documented acceptable size; no 4 GB heap requirement |
+| P5-01 | Pin and verify editor package set | done | P1 | Exact versions in `apps/admin/package.json`; single `@wordpress/data`/`element`/`notices` via pnpm; production build + lazy chunk verified. See ADR 0006 |
+| P5-02 | Standalone editor bootstrap | done | P5-01 | `BlockEditorProvider` + `SlotFillProvider` + `ShortcutProvider`, custom toolbar (inserter/undo/redo/list view/settings), block inspector drawer, notice snackbars, canvas CSS scoped to `.block-canvas-*`; no duplicate-store console errors in E2E |
+| P5-03 | Block registry + shared schemas | partial | P5-01 | `SUPPORTED_BLOCKS` is the single allowlist for provider settings and the inserter; `packages/block-system` owns parser/limits contracts. Attribute schemas remain the official core block definitions; the renderer registry does not exist yet (P5-06) |
+| P5-04 | Initial block set | partial | P5-02..P5-03 | Allowed: paragraph, heading, list/list-item, quote, image (URL), separator, spacer, buttons/button, columns/column, group, code, preformatted. Browser-tested: paragraph, heading, list, separator, unknown-block placeholder. Image URL path verified manually; buttons/columns/group are registered but not covered by a renderer (P5-06). Cover excluded (media Phase 6) |
+| P5-05 | Save/load contract | done | P5-03 | Official parser/serializer in the admin; API validates structure via `@mernpress/block-system`; unknown blocks preserved byte-for-byte (E2E); blank-document normalization; no second format |
+| P5-06 | Server renderer | planned | P5-05 | Not started. Blocks are stored and structurally validated only; the public renderer must not trust saved HTML until this task lands |
+| P5-07 | Round-trip/golden tests | partial | P5-05..P5-06 | Parser/limit tests (15) and admin serializer round-trip tests (8), plus unknown-block byte equality E2E. Golden HTML and XSS suites wait for the renderer |
+| P5-08 | Editor browser smoke test | done | P5-02..P5-05 | 5 Playwright tests: create paragraph/heading/list + reload, publish + public API, undo/redo structural edit, unknown-block byte equality, 375 px off-canvas settings. Existing content spec updated for the canvas |
+| P5-09 | Performance gate | done | P5-08 | Editor route lazy-loaded: main 276 kB, editor 5.98 MB (1.34 MB gzip) + 478 kB CSS; vips worker emitted but not fetched; production build ~4–11 s with default heap. Documented in ADR 0006 |
 
 ## Phase 6 — Media library
 

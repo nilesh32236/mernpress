@@ -202,14 +202,15 @@ documented a tested `eslint-plugin-jsx-a11y` peer override for ESLint 10.
 apps/api        Fastify API, auth routes, env validation, health/readiness, DB client
 apps/admin      React + Vite login/logout/session shell
 apps/web        Next.js App Router public placeholder
-packages/cms-core  Framework-agnostic auth, capabilities, content/taxonomy and hooks
-packages/database  Prisma schema/config/client, migrations, DB/seed/test scripts
+packages/cms-core    Framework-agnostic auth, capabilities, content/taxonomy and hooks
+packages/database    Prisma schema/config/client, migrations, DB/seed/test scripts
+packages/block-system Block contracts, official parser adapter, structural validation
 scripts         setup and optional local PostgreSQL helper
 tests/e2e       Playwright smoke tests
 docs            research, architecture, ADR, operations, testing, security
 ```
 
-`packages/cms-core` and `packages/database` now exist. `contracts`,
+`packages/cms-core`, `packages/database` and `packages/block-system` now exist. `contracts`,
 `block-system`, `plugin-sdk` and `theme-sdk` remain future packages until their
 first real consumer exists, per the system overview.
 
@@ -272,6 +273,7 @@ Start here, then follow the links.
 | [docs/research/wordpress-core-audit.md](docs/research/wordpress-core-audit.md) | WordPress 7.1.3 mechanisms worth emulating, adapting or avoiding |
 | [docs/research/stack-comparison.md](docs/research/stack-comparison.md) | Versions, compatibility evidence, alternatives and trade-offs |
 | [docs/research/opencode-tooling.md](docs/research/opencode-tooling.md) | OpenCode tooling history from Phase 0 |
+| [docs/research/editor-model-benchmark-2026-10-28.md](docs/research/editor-model-benchmark-2026-10-28.md) | Three-model microbenchmark run during Phase 5 |
 | [docs/architecture/system-overview.md](docs/architecture/system-overview.md) | Components, boundaries, request/content flow and local runtime |
 | [docs/architecture/code-standards.md](docs/architecture/code-standards.md) | Module boundaries, SOLID/DRY rules, error/logging, testing and scalability conventions |
 | [docs/architecture/authentication.md](docs/architecture/authentication.md) | Phase 2 auth scope, schema, flows, CSRF, sessions, rate limiting and config |
@@ -283,6 +285,7 @@ Start here, then follow the links.
 | [docs/adr/0003-phase-3-content-and-taxonomy.md](docs/adr/0003-phase-3-content-and-taxonomy.md) | Phase 3 content model, slug/taxonomy scope, hooks and deferred fields |
 | [docs/adr/0004-roles-and-capabilities.md](docs/adr/0004-roles-and-capabilities.md) | Five roles, code capability map and object-level content authorization |
 | [docs/adr/0005-content-visibility-policy.md](docs/adr/0005-content-visibility-policy.md) | Admin content read visibility and the 403/404 mutation residual |
+| [docs/adr/0006-gutenberg-editor-integration.md](docs/adr/0006-gutenberg-editor-integration.md) | Phase 5 block editor integration, package set, bundling, undo and validation |
 | [docs/roadmap/roadmap.md](docs/roadmap/roadmap.md) | Phase-by-phase implementation order, gates and acceptance criteria |
 | [docs/roadmap/mvp-definition.md](docs/roadmap/mvp-definition.md) | MVP scope, non-goals and definition of done |
 | [docs/testing/strategy.md](docs/testing/strategy.md) | Unit, integration, E2E, migration, serialization, security and a11y testing |
