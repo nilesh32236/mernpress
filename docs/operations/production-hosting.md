@@ -45,11 +45,14 @@ no DuckDNS token is stored in the Caddyfile.
 
 ## Release
 
-- Current release: `/opt/mernpress/releases/20261027T140348Z-46bd5c1`
-  symlinked as `/opt/mernpress/current`.
+- Current release: `/opt/mernpress/releases/20261028T060614Z-dd6e16b`
+  symlinked as `/opt/mernpress/current` (switched 2026-10-28; previous release
+  `/opt/mernpress/releases/20261027T140348Z-46bd5c1` retained for rollback).
 - Build identity: `BUILD-INFO` in the release. Deployed source identity is Git
-  HEAD `46bd5c160b78ae5ed6ae560cc1414928c5632b16` plus **36 uncommitted Phase 4
-  paths** (locally verified: 264 tests, 12 Playwright tests; not CI-verified).
+  HEAD `dd6e16bdb79be9bd6bd6b99948bec029ac104af6` plus **20 uncommitted
+  dashboard paths** (D-036 Terms management + D-037 admin shell; unit gates
+  green: 273 tests, lint/format/typecheck/build/audit clean; Playwright e2e
+  not run against production — port 4000 owned by the live API).
 - Node runtime: `/opt/node24/bin/node` (v24.22.1), independent of unrelated
   system Node packages.
 - API start: `/opt/node24/bin/node dist/server.js` from

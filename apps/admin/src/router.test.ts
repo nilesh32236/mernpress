@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { editContentPath, listPath, newContentPath, parseRoute } from './router.js';
+import { breadcrumbs, editContentPath, listPath, newContentPath, parseRoute } from './router.js';
 
 describe('admin router', () => {
   it('maps implemented routes', () => {
@@ -31,5 +31,19 @@ describe('admin router', () => {
     expect(newContentPath('post')).toBe('/posts/new');
     expect(newContentPath('page')).toBe('/pages/new');
     expect(editContentPath('post', 'id with space')).toBe('/posts/id%20with%20space/edit');
+  });
+
+  it('builds breadcrumbs per route', () => {
+    expect(breadcrumbs(parseRoute('/'))).toEqual([{ label: 'Dashboard' }]);
+    expect(breadcrumbs(parseRoute('/posts'))).toEqual([
+      { label: 'Dashboard', to: '/' },
+      { label: 'Posts' },
+    ]);
+    expect(breadcrumbs(parseRoute('/posts/new'))[2]).toEqual({ label: 'New post' });
+    expect(breadcrumbs(parseRoute('/terms'))).toEqual([
+      { label: 'Dashboard', to: '/' },
+      { label: 'Categories & Tags' },
+    ]);
+    expect(breadcrumbs(parseRoute('/posts/abc/edit'))[2]).toEqual({ label: 'Edit' });
   });
 });

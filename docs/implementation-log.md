@@ -1,3 +1,89 @@
+## 2026-10-28 — Admin shell (D-037) implemented locally
+
+**Status:** implementation complete and verified locally; **uncommitted**; owner
+review pending. Builds on the uncommitted D-036 Terms slice (preserved). Phase 5
+was not started.
+
+### Scope delivered
+
+- **Shell layout:** responsive `AdminShell` with a sticky sidebar (MERNPress
+  identity, single Content nav group: Dashboard/Posts/Pages/Terms) and a top
+  bar (page title, current user + role, logout). Sidebar collapses on desktop
+  with an optional `localStorage` preference; mobile uses an off-canvas drawer
+  that closes on Escape, backdrop tap and navigation, with focus handling and a
+  focus trap.
+- **Navigation gating:** nav items shown only via existing role helpers
+  (`canReadContent`, `canManageTerms`); no new nav items and no dead controls.
+- **Breadcrumbs:** derived from `breadcrumbs(route)` in the History-API router
+  and rendered for list/new/edit/terms routes; URL and rendered state stay
+  synchronized via the existing `useLocation`/`ROUTE_EVENT` flow; the popstate
+  unsaved-changes guard is preserved.
+- **Loading states:** `Skeleton` component replaces text-only `LoadingState` in
+  Dashboard, ContentList, ContentEditor and TermsPage.
+- **Consistent states:** permission-denied and empty states reuse
+  `EmptyState`/`ErrorState` from `components.tsx`.
+- **No API/schema/migration/dependency changes.**
+
+### Commands and results
+
+| Command | Result |
+| --- | --- |
+| `pnpm lint` | PASS (0 errors) |
+| `pnpm format:check` | PASS |
+| `pnpm typecheck` | PASS (7 tasks) |
+| `pnpm test` | PASS — API 216, admin 56, web 1 (273 total) |
+| `pnpm build` | PASS — admin Vite bundle 269.48 kB (80.67 kB gzip) |
+| `pnpm audit --audit-level=high` | PASS — no known vulnerabilities |
+| `git diff --check` | PASS |
+| `pnpm exec playwright test --list` | PASS — 14 tests in 4 files |
+
+### Manual test steps
+
+1. `pnpm dev` (API 4000, admin 5173, web 3000) with a migrated test/dev DB.
+2. Sign in as administrator; verify sidebar identity, nav group, active state,
+   top-bar title/user/role, logout.
+3. Collapse the sidebar (desktop) and reload to confirm the preference persists;
+   expand again.
+4. Resize to 375 px; open the drawer via the hamburger, close via Escape,
+   backdrop tap and by clicking a nav link; verify focus returns to the toggle.
+5. Visit `/posts`, `/posts/new`, `/posts/:id/edit`, `/terms` directly and via
+   Back/Forward; verify breadcrumbs and active nav update with the URL.
+6. Sign in as subscriber/contributor/editor and verify nav gating and
+   no-access states.
+7. Observe skeleton placeholders during slow loads (throttle network) on
+   dashboard/lists/editor/terms.
+
+### Limitations
+
+- E2E was not executed (`pnpm test:e2e` requires ports 4000/5173/3000 and a
+  migrated test DB; production owns :4000 in this environment). Spec count
+  validated with `playwright --list` (14). CI plan: run the full Playwright
+  suite on a clean runner with `TEST_DATABASE_URL` set.
+- Sidebar collapse preference is stored in `localStorage` and may be unavailable
+  in locked-down browsers (fails open to expanded).
+- No mobile focus trap beyond the drawer's Tab wrapping; screen-reader
+  announcement of drawer open/close is not yet assertive.
+
+### Next step
+
+Owner review of this slice. If approved, next slice is Phase 5 (Gutenberg
+foundation) per TASKS.md. Do not start Phase 5 without explicit approval.
+
+---
+
+## 2026-10-28 — Phase 4 Terms management (D-036) preserved (uncommitted)
+
+**Status:** implemented locally in the baseline working tree and preserved
+alongside this slice; no changes made to those files.
+
+### Scope delivered (D-036)
+
+- `apps/admin/src/TermsPage.tsx`, `/terms` route and gated Terms nav entry
+  for categories/tags management (list/search/paginate, create, rename, delete
+  with detach count), administrator/editor only.
+
+---
+
 # Implementation log
 
 Append-only. Newest entries at the top. Record what was actually done, commands

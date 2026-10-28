@@ -55,6 +55,21 @@ export interface AdminTerm {
   updatedAt: string;
 }
 
+export interface CreateTermPayload {
+  taxonomy: TaxonomyType;
+  name: string;
+  slug?: string;
+  description?: string | null;
+  parentId?: string | null;
+}
+
+export interface UpdateTermPayload {
+  name?: string;
+  slug?: string;
+  description?: string | null;
+  parentId?: string | null;
+}
+
 export interface Pagination {
   page: number;
   perPage: number;
@@ -411,6 +426,52 @@ export async function fetchTerms(
   );
 
   return readJson<Paged<AdminTerm>>(response);
+}
+
+export async function createTerm(payload: CreateTermPayload): Promise<AdminTerm> {
+  const response = await fetch('/api/admin/terms', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return readJson<AdminTerm>(response);
+}
+
+export async function updateTerm(id: string, payload: UpdateTermPayload): Promise<AdminTerm> {
+  const response = await fetch(`/api/admin/terms/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return readJson<AdminTerm>(response);
+}
+
+export async function deleteTerm(id: string): Promise<{ detachedPostCount: number }> {
+  const response = await fetch(`/api/admin/terms/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      ...csrfHeader(),
+    },
+  });
+
+  return readJson<{ detachedPostCount: number }>(response);
 }
 
 export function loginErrorMessage(error: unknown): string {

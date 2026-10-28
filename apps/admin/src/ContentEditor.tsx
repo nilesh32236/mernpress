@@ -15,10 +15,11 @@ import {
   type TransitionAction,
 } from './api.js';
 import {
+  EmptyState,
   ErrorState,
   FieldError,
-  LoadingState,
   Notice,
+  Skeleton,
   PageHeader,
   StatusBadge,
   type NoticeMessage,
@@ -366,7 +367,7 @@ export function ContentEditor({
   }
 
   if (loading) {
-    return <LoadingState label="Loading content…" />;
+    return <Skeleton label="Loading content…" lines={8} />;
   }
 
   if (loadError) {
@@ -385,7 +386,7 @@ export function ContentEditor({
 
   if (!editable && isNew) {
     return (
-      <ErrorState
+      <EmptyState
         title="No permission"
         message="Your role cannot create content. Ask an administrator if you need an editorial role."
       />

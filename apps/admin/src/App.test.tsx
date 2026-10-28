@@ -82,6 +82,25 @@ describe('admin application shell', () => {
     expect(screen.getByRole('link', { name: 'Dashboard' })).toBeDefined();
     expect(screen.queryByRole('link', { name: 'Posts' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Pages' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Terms' })).toBeNull();
+  });
+
+  it('shows the terms link only for editors and administrators', async () => {
+    vi.stubGlobal('fetch', authenticatedFetch('editor'));
+
+    render(<App />);
+
+    expect(await screen.findByRole('link', { name: 'Terms' })).toBeDefined();
+    expect(screen.getByRole('link', { name: 'Posts' })).toBeDefined();
+  });
+
+  it('hides the terms link from contributors', async () => {
+    vi.stubGlobal('fetch', authenticatedFetch('contributor'));
+
+    render(<App />);
+
+    expect(await screen.findByText('Content overview')).toBeDefined();
+    expect(screen.queryByRole('link', { name: 'Terms' })).toBeNull();
   });
 
   it('shows a retryable session error and the login form', async () => {

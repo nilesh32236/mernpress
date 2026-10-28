@@ -128,6 +128,8 @@ not CI-verified.
 | P4-04 | Notices and feedback | done | P4-03 | Success/error notices, inline validation, retry on save failure; no silent failures |
 | P4-05 | Accessibility pass | done | P4-01..P4-06 | Keyboard-only walkthrough, focus visible, labels, dialogs, error announcements; automated checks where supported |
 | P4-06 | Dashboard real counts | done | P3 | Read-only dashboard using the existing list endpoint: posts/pages by status with server visibility. No controls for unsupported fields or workflows |
+| P4-07 | Categories & Tags management | done | P3 | Admin page for categories/tags: list/search/paginate, create, inline rename, delete with post-detach count; administrator/editor only; no new API or migration (D-036) |
+| P4-08 | Admin shell (sidebar/top bar/breadcrumbs/skeleton) | done | P4-01..P4-07 | Responsive sidebar with MERNPress identity, Content nav group gated by role helpers, collapsible desktop sidebar with localStorage preference, mobile off-canvas drawer with focus handling, top bar with page title/user/role/logout, breadcrumbs driven by router, skeleton loading states, consistent empty/error/permission states. No new API/schema/migration; no new nav items (D-037) |
 
 ## Phase 5 — Gutenberg foundation
 

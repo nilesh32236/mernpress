@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchPosts, type AuthUser, type ContentType, type PostStatus } from './api.js';
-import { ErrorState, LoadingState, PageHeader } from './components.js';
+import { EmptyState, ErrorState, PageHeader, Skeleton } from './components.js';
 import { canReadContent } from './roles.js';
 import { listPath, navigate } from './router.js';
 
@@ -77,13 +77,10 @@ export function Dashboard({ user }: { user: AuthUser }) {
           title="Content overview"
           description="Your account does not have access to the content administration API."
         />
-        <div className="empty-state">
-          <h2>No content access</h2>
-          <p>
-            Subscribers cannot read or manage content. Ask an administrator if you need an editorial
-            role.
-          </p>
-        </div>
+        <EmptyState
+          title="No content access"
+          message="Subscribers cannot read or manage content. Ask an administrator if you need an editorial role."
+        />
       </>
     );
   }
@@ -103,7 +100,7 @@ export function Dashboard({ user }: { user: AuthUser }) {
           onRetry={() => setReloadKey((key) => key + 1)}
         />
       ) : loading ? (
-        <LoadingState label="Loading content counts…" />
+        <Skeleton label="Loading content counts…" lines={6} />
       ) : (
         <div className="dashboard-sections">
           {(['post', 'page'] as ContentType[]).map((type) => (

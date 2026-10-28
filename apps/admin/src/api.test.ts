@@ -245,6 +245,52 @@ describe('admin content API client', () => {
     expectSameOriginApiCalls(fetchMock.mock.calls);
   });
 
+  it('creates, updates and deletes terms on the relative terms endpoint', async () => {
+    document.cookie = 'mernpress_csrf=session-token; path=/';
+    const term = {
+      id: 'term-1',
+      taxonomy: 'category',
+      name: 'News',
+      slug: 'news',
+      description: null,
+      parentId: null,
+      postCount: 0,
+      createdAt: '2026-10-28T00:00:00.000Z',
+      updatedAt: '2026-10-28T00:00:00.000Z',
+    };
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse(201, term))
+      .mockResolvedValueOnce(
+        jsonResponse(200, { ...term, name: 'News updated', slug: 'news-updated' }),
+      )
+      .mockResolvedValueOnce(jsonResponse(200, { detachedPostCount: 2 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const api = await import('./api.js');
+    await expect(api.createTerm({ taxonomy: 'category', name: 'News' })).resolves.toEqual(term);
+    await expect(api.updateTerm('term-1', { name: 'News updated' })).resolves.toMatchObject({
+      name: 'News updated',
+    });
+    await expect(api.deleteTerm('term-1')).resolves.toEqual({ detachedPostCount: 2 });
+
+    const calls = fetchMock.mock.calls;
+    expect(calls[0]?.[0]).toBe('/api/admin/terms');
+    expect(calls[0]?.[1]?.method).toBe('POST');
+    expect(calls[1]?.[0]).toBe('/api/admin/terms/term-1');
+    expect(calls[1]?.[1]?.method).toBe('PATCH');
+    expect(calls[2]?.[0]).toBe('/api/admin/terms/term-1');
+    expect(calls[2]?.[1]?.method).toBe('DELETE');
+    for (const [, init] of calls) {
+      expect(init?.headers).toMatchObject({ 'x-csrf-token': 'session-token' });
+      expect(init?.credentials).toBe('include');
+      expect(init?.cache).toBe('no-store');
+    }
+    expect(JSON.parse(String(calls[0]?.[1]?.body))).toEqual({ taxonomy: 'category', name: 'News' });
+    expect(JSON.parse(String(calls[1]?.[1]?.body))).toEqual({ name: 'News updated' });
+    expectSameOriginApiCalls(calls);
+  });
+
   it('maps API failures to actionable messages', async () => {
     const api = await import('./api.js');
     expect(api.actionErrorMessage(new api.ApiError(403, 'FORBIDDEN', 'Forbidden'))).toContain(

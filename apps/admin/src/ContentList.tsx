@@ -13,8 +13,8 @@ import {
 import {
   EmptyState,
   ErrorState,
-  LoadingState,
   Notice,
+  Skeleton,
   PageHeader,
   StatusBadge,
   type NoticeMessage,
@@ -224,7 +224,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
           onRetry={() => setReloadKey((value) => value + 1)}
         />
       ) : loading ? (
-        <LoadingState label={`Loading ${label.toLowerCase()}…`} />
+        <Skeleton label={`Loading ${label.toLowerCase()}…`} lines={5} />
       ) : !data || data.items.length === 0 ? (
         <EmptyState
           title={search || status ? 'No matching content' : `No ${label.toLowerCase()} yet`}

@@ -6,6 +6,7 @@ export type Route =
   | { name: 'list'; type: ContentType }
   | { name: 'new'; type: ContentType }
   | { name: 'edit'; type: ContentType; id: string }
+  | { name: 'terms' }
   | { name: 'notFound' };
 
 export interface LocationState {
@@ -24,6 +25,9 @@ export function parseRoute(pathname: string): Route {
     return { name: 'dashboard' };
   }
   const [typeSegment, second, third] = parts;
+  if (typeSegment === 'terms' && parts.length === 1) {
+    return { name: 'terms' };
+  }
   if (typeSegment !== 'posts' && typeSegment !== 'pages') {
     return { name: 'notFound' };
   }
@@ -90,6 +94,34 @@ export function listPath(
   }
   const text = search.toString();
   return text ? `${base}?${text}` : base;
+}
+
+export function breadcrumbs(route: Route): Array<{ label: string; to?: string }> {
+  switch (route.name) {
+    case 'dashboard':
+      return [{ label: 'Dashboard' }];
+    case 'list':
+      return [
+        { label: 'Dashboard', to: '/' },
+        { label: route.type === 'post' ? 'Posts' : 'Pages' },
+      ];
+    case 'new':
+      return [
+        { label: 'Dashboard', to: '/' },
+        { label: route.type === 'post' ? 'Posts' : 'Pages', to: listPath(route.type) },
+        { label: `New ${route.type}` },
+      ];
+    case 'edit':
+      return [
+        { label: 'Dashboard', to: '/' },
+        { label: route.type === 'post' ? 'Posts' : 'Pages', to: listPath(route.type) },
+        { label: 'Edit' },
+      ];
+    case 'terms':
+      return [{ label: 'Dashboard', to: '/' }, { label: 'Categories & Tags' }];
+    case 'notFound':
+      return [{ label: 'Not found' }];
+  }
 }
 
 export function newContentPath(type: ContentType): string {

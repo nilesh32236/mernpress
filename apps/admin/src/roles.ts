@@ -12,6 +12,14 @@ export function canAssignTerms(user: AuthUser): boolean {
   return user.role !== 'subscriber';
 }
 
+/**
+ * Mirrors the server's `taxonomy.manage` capability for UI affordances only.
+ * The API remains authoritative and rejects unauthorized writes.
+ */
+export function canManageTerms(user: AuthUser): boolean {
+  return user.role === 'administrator' || user.role === 'editor';
+}
+
 export function ownsPost(user: AuthUser, post: Pick<AdminPost, 'authorId'>): boolean {
   return post.authorId !== null && post.authorId === user.id;
 }

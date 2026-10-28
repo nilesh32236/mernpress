@@ -35,7 +35,20 @@ export function Notice({ notice, onDismiss }: { notice: NoticeMessage; onDismiss
           onClick={onDismiss}
           aria-label="Dismiss message"
         >
-          ×
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
         </button>
       ) : null}
     </div>
@@ -53,6 +66,65 @@ export function LoadingState({ label }: { label: string }) {
     <p className="loading-state" role="status" aria-live="polite">
       {label}
     </p>
+  );
+}
+
+export function Skeleton({ label = 'Loading…', lines = 4 }: { label?: string; lines?: number }) {
+  return (
+    <div className="skeleton" role="status" aria-live="polite" aria-busy="true" aria-label={label}>
+      <span className="visually-hidden">{label}</span>
+      {Array.from({ length: lines }, (_, index) => (
+        <div key={index} className="skeleton-line" aria-hidden="true" />
+      ))}
+    </div>
+  );
+}
+
+export interface BreadcrumbItem {
+  label: string;
+  to?: string;
+}
+
+export function Breadcrumbs({
+  items,
+  onNavigate,
+}: {
+  items: BreadcrumbItem[];
+  onNavigate?: (to: string) => void;
+}) {
+  if (items.length === 0) {
+    return null;
+  }
+  return (
+    <nav className="breadcrumbs" aria-label="Breadcrumb">
+      <ol>
+        {items.map((item, index) => {
+          const isLast = index === items.length - 1;
+          return (
+            <li key={`${item.label}-${index}`}>
+              {isLast || !item.to ? (
+                <span aria-current={isLast ? 'page' : undefined}>{item.label}</span>
+              ) : (
+                <a
+                  href={item.to}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    if (onNavigate) {
+                      onNavigate(item.to as string);
+                    } else {
+                      window.history.pushState(null, '', item.to as string);
+                      window.dispatchEvent(new Event('mernpress:navigate'));
+                    }
+                  }}
+                >
+                  {item.label}
+                </a>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
   );
 }
 

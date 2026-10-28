@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
-import { fetchSession, logout, setUnauthorizedHandler, type AuthUser } from './api.js';
+import { useEffect, useState } from 'react';
+import { fetchSession, setUnauthorizedHandler, type AuthUser } from './api.js';
 import { ContentEditor } from './ContentEditor.js';
 import { ContentList } from './ContentList.js';
+import { TermsPage } from './TermsPage.js';
 import { Dashboard } from './Dashboard.js';
 import { LoginForm } from './LoginForm.js';
-import { NavigationGuardProvider, useNavigationGuard } from './navigation-guard.js';
-import { canReadContent, roleLabel } from './roles.js';
+import { AdminShell } from './AdminShell.js';
+import { NavigationGuardProvider } from './navigation-guard.js';
 import { navigate, parseRoute, useLocation, type Route } from './router.js';
 
 export function App() {
@@ -120,34 +121,15 @@ export function App() {
 function SignedInApp({ user, onSignedOut }: { user: AuthUser; onSignedOut: () => void }) {
   const location = useLocation();
   const route = parseRoute(location.pathname);
-  const mainRef = useRef<HTMLElement>(null);
-  const previousPath = useRef(location.pathname + location.search);
-
-  useEffect(() => {
-    const current = location.pathname + location.search;
-    if (previousPath.current !== current) {
-      previousPath.current = current;
-      mainRef.current?.focus();
-    }
-  }, [location.pathname, location.search]);
 
   useEffect(() => {
     document.title = pageTitle(route);
   }, [route]);
 
   return (
-    <div className="app-frame">
-      <a className="skip-link" href="#main-content">
-        Skip to content
-      </a>
-      <AppHeader user={user} route={route} onSignedOut={onSignedOut} />
-      <main id="main-content" className="main-content" tabIndex={-1} ref={mainRef}>
-        <RouteView user={user} route={route} />
-      </main>
-      <footer className="app-footer">
-        <p>MERNPress Phase 4 · Content administration</p>
-      </footer>
-    </div>
+    <AdminShell user={user} route={route} onSignedOut={onSignedOut}>
+      <RouteView user={user} route={route} />
+    </AdminShell>
   );
 }
 
@@ -161,6 +143,8 @@ function pageTitle(route: Route): string {
       return `MERNPress admin · New ${route.type}`;
     case 'edit':
       return `MERNPress admin · Edit ${route.type}`;
+    case 'terms':
+      return 'MERNPress admin · Categories & Tags';
     case 'notFound':
       return 'MERNPress admin · Not found';
   }
@@ -176,6 +160,8 @@ function RouteView({ user, route }: { user: AuthUser; route: Route }) {
       return <ContentEditor user={user} type={route.type} />;
     case 'edit':
       return <ContentEditor user={user} type={route.type} id={route.id} />;
+    case 'terms':
+      return <TermsPage user={user} />;
     case 'notFound':
       return (
         <div className="content-card">
@@ -195,106 +181,4 @@ function RouteView({ user, route }: { user: AuthUser; route: Route }) {
         </div>
       );
   }
-}
-
-function AppHeader({
-  user,
-  route,
-  onSignedOut,
-}: {
-  user: AuthUser;
-  route: Route;
-  onSignedOut: () => void;
-}) {
-  const [signingOut, setSigningOut] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { confirmNavigation } = useNavigationGuard();
-
-  async function handleSignOut() {
-    if (!confirmNavigation()) {
-      return;
-    }
-    setSigningOut(true);
-    setError(null);
-    try {
-      await logout();
-      onSignedOut();
-    } catch {
-      setError('Could not sign out. Check the API connection and try again.');
-    } finally {
-      setSigningOut(false);
-    }
-  }
-
-  return (
-    <header className="app-header">
-      <div className="header-top">
-        <a className="brand" href="/" aria-label="MERNPress admin home">
-          MERNPress
-        </a>
-        <span className="phase-badge">Phase 4 · Content</span>
-      </div>
-      <nav className="primary-nav" aria-label="Primary">
-        <NavLink to="/" label="Dashboard" active={route.name === 'dashboard'} />
-        {canReadContent(user) ? (
-          <>
-            <NavLink
-              to="/posts"
-              label="Posts"
-              active={
-                route.name !== 'dashboard' && route.name !== 'notFound' && route.type === 'post'
-              }
-            />
-            <NavLink
-              to="/pages"
-              label="Pages"
-              active={
-                route.name !== 'dashboard' && route.name !== 'notFound' && route.type === 'page'
-              }
-            />
-          </>
-        ) : null}
-      </nav>
-      <div className="user-panel">
-        <p className="user-identity">
-          Signed in as <strong>{user.username}</strong>
-          <span className="role-label">{roleLabel(user.role)}</span>
-        </p>
-        <button
-          type="button"
-          className="button secondary-button"
-          onClick={() => void handleSignOut()}
-          disabled={signingOut}
-          aria-busy={signingOut}
-        >
-          {signingOut ? 'Signing out…' : 'Sign out'}
-        </button>
-      </div>
-      {error ? (
-        <p className="form-error" role="alert">
-          {error}
-        </p>
-      ) : null}
-    </header>
-  );
-}
-
-function NavLink({ to, label, active }: { to: string; label: string; active: boolean }) {
-  const { confirmNavigation } = useNavigationGuard();
-  return (
-    <a
-      className={`nav-link${active ? ' nav-link-active' : ''}`}
-      href={to}
-      aria-current={active ? 'page' : undefined}
-      onClick={(event) => {
-        event.preventDefault();
-        if (!confirmNavigation()) {
-          return;
-        }
-        navigate(to);
-      }}
-    >
-      {label}
-    </a>
-  );
 }
