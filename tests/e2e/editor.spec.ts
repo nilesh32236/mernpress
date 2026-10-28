@@ -233,6 +233,30 @@ test('inserts a quote and shows real block settings in the inspector', async ({ 
   expect(content).toContain('A line worth quoting.');
 });
 
+test('inserts an image from a URL and persists canonical image markup', async ({ page }) => {
+  await login(page);
+  await openNewPost(page);
+  await page.getByLabel('Title').fill(`Image post ${suffix}`);
+
+  await insertBlock(page, 'image', /^Image/);
+  await page.getByText('Insert from URL').click();
+  const url = page.getByPlaceholder('Paste or type URL');
+  await url.fill('https://images.example.com/photo.jpg');
+  await url.press('Enter');
+
+  await expect(page.locator('.block-canvas-sheet img')).toHaveAttribute(
+    'src',
+    'https://images.example.com/photo.jpg',
+  );
+  await page.getByRole('button', { name: 'Save draft' }).click();
+  await expect(page.getByText('Content created.')).toBeVisible();
+
+  const id = new URL(page.url()).pathname.split('/')[2] ?? '';
+  const content = await storedContent(page, id);
+  expect(content).toContain('<!-- wp:image');
+  expect(content).toContain('src="https://images.example.com/photo.jpg"');
+});
+
 test('unknown blocks are preserved byte-for-byte through load and save', async ({ page }) => {
   await login(page);
   const unknownContent =

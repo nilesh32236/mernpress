@@ -47,7 +47,7 @@ pnpm audit --audit-level=high                          PASS; one low advisory
                                                        version; not user-input
                                                        reachable)
 git diff --check                                       clean
-E2E_API_PORT=4100 pnpm test:e2e                        20/20 PASS
+E2E_API_PORT=4100 pnpm test:e2e                        21/21 PASS
 ```
 
 Build sizes (admin): main 271.2 kB (83 kB gzip), lazy editor chunk 5,836.3 kB

@@ -496,7 +496,7 @@ Actual code, as opposed to the design above:
 | Save/publish | `ContentEditor.tsx`: one primary action per state (Publish / Update / Save draft), flush-before-save, unchanged-draft publish skips the write, 409 conflict UI preserved |
 | Media | `settings.mediaUpload` reports "Phase 6"; image blocks accept Insert from URL. No vips initialisation |
 | Validation | `packages/block-system` parser adapter + `validateBlockMarkup` (2 MB / 5,000 blocks / depth 20), called in `validateDraft` before persistence |
-| Tests | 15 block-system parser/limit tests, 8 admin serializer tests, 6 API validation tests, 6 editor Playwright tests; 20 E2E total |
+| Tests | 15 block-system parser/limit tests, 8 admin serializer tests, 6 API validation tests, 7 editor Playwright tests; 21 E2E total |
 
 Deviations from the design text:
 

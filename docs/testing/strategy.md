@@ -159,7 +159,7 @@ Minimum MVP suite:
 
 Phase 5 status: login/logout, editor create/reload/publish, unknown-block
 preservation, conflict, status tabs, terms and 375 px editor layout are covered
-by 20 Playwright tests (`tests/e2e/`). Media, public render, nested columns and
+by 21 Playwright tests (`tests/e2e/`). Media, public render, nested columns and
 axe-core remain pending with their phases.
 
 1. **Login:** valid login, invalid login, logout, protected route redirect.

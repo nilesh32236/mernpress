@@ -162,7 +162,7 @@ copy ("Undo (Ctrl/Cmd+Z)") and in the limitations.
   `vips-worker` 13.4 MB emitted, not fetched. `pnpm check:bundle` enforces the
   budgets in CI.
 - Tests: 222 API + 73 admin + 15 block-system + 1 web = 311 unit/integration;
-  20/20 Playwright (auth 4, content 5, editor 6, placeholders 3, terms 2).
+  21/21 Playwright (auth 4, content 5, editor 7, placeholders 3, terms 2).
 - Browser scenarios proven: paragraph typing, heading via searchable inserter,
   list with two items, save/reload, canonical `wp:paragraph`/`wp:heading`/
   `wp:list`/`wp:list-item` markup, publish + public API, undo/redo of a
