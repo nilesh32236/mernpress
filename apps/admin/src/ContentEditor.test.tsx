@@ -263,3 +263,139 @@ describe('content editor term assignment resilience', () => {
     expect((screen.getByRole('checkbox', { name: 'News' }) as HTMLInputElement).checked).toBe(true);
   });
 });
+
+describe('editor publish workflow', () => {
+  it('saves pending edits before publishing a draft', async () => {
+    const post = makePost({
+      status: 'DRAFT',
+      version: 1,
+      content: '<!-- wp:paragraph --><p>Old</p><!-- /wp:paragraph -->',
+    });
+    const saved = makePost({
+      status: 'DRAFT',
+      version: 2,
+      title: 'Publish after edit',
+      content: '<!-- wp:paragraph --><p>New</p><!-- /wp:paragraph -->',
+    });
+    const published = makePost({
+      status: 'PUBLISHED',
+      version: 3,
+      title: 'Publish after edit',
+      content: saved.content,
+      publishedAt: '2026-10-28T12:00:00.000Z',
+    });
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(response(post))
+      .mockResolvedValueOnce(response(termsPage()))
+      .mockResolvedValueOnce(response(termsPage()))
+      .mockResolvedValueOnce(response(saved))
+      .mockResolvedValueOnce(response(published));
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA, post.id);
+    fireEvent.change(await screen.findByLabelText('Title'), {
+      target: { value: 'Publish after edit' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
+
+    expect(await screen.findByText('Content published.')).toBeDefined();
+    expect(fetchMock.mock.calls[3]?.[0]).toBe('/api/admin/posts/post-1');
+    expect(JSON.parse(String(fetchMock.mock.calls[3]?.[1]?.body))).toMatchObject({
+      baseVersion: 1,
+      title: 'Publish after edit',
+    });
+    expect(fetchMock.mock.calls[4]?.[0]).toBe('/api/admin/posts/post-1/publish');
+    expect(JSON.parse(String(fetchMock.mock.calls[4]?.[1]?.body))).toEqual({ baseVersion: 2 });
+    expect(screen.getAllByText('Published').length).toBeGreaterThan(0);
+  });
+
+  it('does not offer Publish to a contributor', async () => {
+    const contributor: AuthUser = {
+      id: 'c1',
+      username: 'contributor',
+      role: 'contributor',
+      status: 'active',
+    };
+    const post = makePost({ authorId: 'c1', status: 'DRAFT' });
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(response(post))
+      .mockResolvedValueOnce(response(termsPage()))
+      .mockResolvedValueOnce(response(termsPage()));
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(contributor, post.id);
+    await screen.findByLabelText('Title');
+
+    expect(screen.queryByRole('button', { name: 'Publish' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Save draft' })).toBeDefined();
+  });
+});
+
+describe('editor publish failure recovery', () => {
+  it('keeps a newly created draft recoverable when publishing fails', async () => {
+    const created = makePost({
+      id: 'created-fail',
+      status: 'DRAFT',
+      version: 1,
+      title: 'New post',
+    });
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(response(termsPage()))
+      .mockResolvedValueOnce(response(termsPage()))
+      .mockResolvedValueOnce(response(created, 201))
+      .mockResolvedValueOnce(
+        response({ error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } }, 500),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA);
+    fireEvent.change(await screen.findByLabelText('Title'), { target: { value: 'New post' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
+
+    expect(await screen.findByText(/Draft created, but publishing failed/)).toBeDefined();
+    expect(screen.getByRole('link', { name: 'Open draft' })).toBeDefined();
+    // The create form is replaced, so a retry cannot create a duplicate post.
+    expect(screen.queryByRole('button', { name: 'Publish' })).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+
+  it('retries publishing with the saved version after a failed transition', async () => {
+    const post = makePost({ status: 'DRAFT', version: 1 });
+    const saved = makePost({ status: 'DRAFT', version: 2, title: 'Retry publish' });
+    const published = makePost({
+      status: 'PUBLISHED',
+      version: 3,
+      title: 'Retry publish',
+      publishedAt: '2026-10-28T12:00:00.000Z',
+    });
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(response(post))
+      .mockResolvedValueOnce(response(termsPage()))
+      .mockResolvedValueOnce(response(termsPage()))
+      .mockResolvedValueOnce(response(saved))
+      .mockResolvedValueOnce(
+        response({ error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } }, 500),
+      )
+      .mockResolvedValueOnce(response(published));
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA, post.id);
+    fireEvent.change(await screen.findByLabelText('Title'), {
+      target: { value: 'Retry publish' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    expect(await screen.findByText('Internal server error')).toBeDefined();
+
+    // The failed transition must not leave a stale version behind: the retry
+    // transitions at version 2, without another content write.
+    fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    expect(await screen.findByText('Content published.')).toBeDefined();
+    expect(fetchMock.mock.calls[5]?.[0]).toBe('/api/admin/posts/post-1/publish');
+    expect(JSON.parse(String(fetchMock.mock.calls[5]?.[1]?.body))).toEqual({ baseVersion: 2 });
+    expect(fetchMock).toHaveBeenCalledTimes(6);
+  });
+});

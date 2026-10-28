@@ -109,7 +109,7 @@ Boundaries:
 | T-04 | Session fixation | Account takeover | Low | New token on login, rotation, no token in URL | — |
 | T-05 | IDOR / missing object authorization | Data leak/modification | High | Capability service + object checks on every operation; tests for wrong-object | Logic bug in a new route |
 | T-06 | Privilege escalation via mass assignment | Admin takeover | Medium | Allowlist DTO fields; never bind `role`, `authorId`, `status` from arbitrary input | A new field added carelessly |
-| T-07 | Stored XSS in block content | Admin/site compromise | High | Allowlist sanitizer, escape text/attrs, URL protocol allowlist, CSP, tests | Sanitizer bypass/0-day |
+| T-07 | Stored XSS in block content | Admin/site compromise | High | Structural parser limits now reject size/depth/count abuse; **render-time allowlist sanitizer is still Phase 7**, so stored markup must not be rendered publicly. Escape text/attrs, URL protocol allowlist, CSP, XSS tests when the renderer lands | Sanitizer bypass/0-day; unrendered markup is inert today |
 | T-08 | XSS in media metadata/SEO/settings | Same | Medium | Escape on output, validate/sanitize, no raw HTML in settings | Same |
 | T-09 | Upload MIME spoofing/executable upload | RCE/host compromise | High | Magic-byte check, extension allowlist, re-encode images, random names, no executable formats, serve with safe headers | Image codec 0-day |
 | T-10 | Path traversal in media serving | File disclosure | Medium | Canonicalize + confine to storage root; reject `..`/absolute; tests | OS/path edge case |
@@ -127,7 +127,7 @@ Boundaries:
 | T-22 | Backup theft/unencrypted backup | Full data breach | Medium | Encrypt backups, restrict access, test restore, separate credentials | Operator storage compromise |
 | T-23 | Log injection/PII in logs | Privacy/incident | Medium | Structured logs, redact, truncate, no raw bodies/secrets | Unknown field logged |
 | T-24 | Dependency/runtime EOL | Unpatched RCE | Medium | Node 24 LTS, PostgreSQL 18, update policy, advisory monitoring | Zero-day |
-| T-25 | DoS via large content/expensive render | Outage | Medium | Body/content size caps, parser depth/block caps, rate limit, timeouts | Resource exhaustion |
+| T-25 | DoS via large content/expensive render | Outage | Medium | Body/content size caps (2 MB), parser depth 20 / 5,000-block caps in `@mernpress/block-system`, rate limit, timeouts | Resource exhaustion |
 | T-26 | Preview token leakage | Draft disclosure | Medium | Signed, short-lived, draft-only, noindex/no-store, revocable | Link sharing |
 | T-27 | Cache poisoning/stale draft | Data leak | Medium | Cache only published content; preview no-store; tag invalidation; secret webhook | Cache bug |
 | T-28 | Open redirect | Phishing | Low | Validate redirect destinations; allow only relative/internal or allowlisted hosts | — |

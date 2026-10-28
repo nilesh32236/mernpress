@@ -157,10 +157,11 @@ copy ("Undo (Ctrl/Cmd+Z)") and in the limitations.
 
 ## Evidence
 
-- Build: `pnpm --filter @mernpress/admin build` → 6 222 modules, main 276.43 kB
-  (83.05 kB gzip), editor 5 976.04 kB (1 341.91 kB gzip), CSS 477.90 kB
-  (64.27 kB gzip); `vips-worker` 13.4 MB emitted, not fetched.
-- Tests: 222 API + 69 admin + 15 block-system + 1 web = 307 unit/integration;
+- Build: `pnpm --filter @mernpress/admin build` → 6 222 modules, main 271.2 kB
+  (83 kB gzip), editor 5 836.3 kB (1.34 MB gzip), CSS 467.1 kB (64 kB gzip);
+  `vips-worker` 13.4 MB emitted, not fetched. `pnpm check:bundle` enforces the
+  budgets in CI.
+- Tests: 222 API + 73 admin + 15 block-system + 1 web = 311 unit/integration;
   19/19 Playwright (auth 4, content 5, editor 5, placeholders 3, terms 2).
 - Browser scenarios proven: paragraph typing, heading via searchable inserter,
   list with two items, save/reload, canonical `wp:paragraph`/`wp:heading`/

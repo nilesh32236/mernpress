@@ -72,7 +72,8 @@ troubleshooting: [local setup](docs/operations/local-setup.md).
 | `pnpm format` / `pnpm format:check` | Prettier write/check for code and config |
 | `pnpm typecheck` | Strict TypeScript across all packages/apps |
 | `pnpm test` | Vitest unit/integration tests (needs the dedicated test PostgreSQL database) |
-| `pnpm test:e2e` | Playwright login/logout and placeholder smoke tests (test DB) |
+| `pnpm test:e2e` | Playwright auth, content, editor, terms and placeholder tests (test DB; `E2E_API_PORT` for an isolated API port) |
+| `pnpm check:bundle` | Budget guard for the main admin bundle and the lazy editor chunk (run after `pnpm build`) |
 | `pnpm auth:bootstrap` | Creates the first administrator; refuses if one exists |
 | `pnpm dev:create-test-account` | Development-only, opt-in role account for manual acceptance (never administrator) |
 | `pnpm db:generate` | Generates the Prisma client |
@@ -266,6 +267,7 @@ Start here, then follow the links.
 | [docs/testing/phase-1-manual-test.md](docs/testing/phase-1-manual-test.md) | Owner's step-by-step Phase 1 acceptance checklist (approved) |
 | [docs/testing/phase-2-manual-test.md](docs/testing/phase-2-manual-test.md) | Owner's step-by-step auth-slice acceptance checklist |
 | [docs/testing/phase-3-manual-acceptance.md](docs/testing/phase-3-manual-acceptance.md) | Phase 3 acceptance evidence and reproducible checklist |
+| [docs/testing/phase-5-manual-acceptance.md](docs/testing/phase-5-manual-acceptance.md) | Phase 5 editor acceptance checklist (canvas, save/publish, responsive, a11y) |
 | [docs/phase-4-implementation-plan.md](docs/phase-4-implementation-plan.md) | Phase 4 goal, acceptance criteria, risks and completion checklist |
 | [docs/implementation-log.md](docs/implementation-log.md) | Dated record of what was actually done and verified |
 | [docs/research/reference-codebase-audit.md](docs/research/reference-codebase-audit.md) | What was inspected in WordPress and the reference archives |

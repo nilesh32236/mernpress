@@ -15,7 +15,7 @@ does not have to infer them from the code.
 | Open/closed | Add a new auth flow/module beside existing ones; do not grow a shared function with mode flags. Extend `AuthService` deliberately with an ADR-worthy decision. |
 | DRY, but rule of three | Extract on the third real duplication, not the first resemblance. One source of truth for: env schema, cookie options, identifier hashing, error envelope, audit metadata. |
 | KISS | Prefer a straight function and explicit data flow. No scheduler, queue, event bus or plugin framework until a phase needs it. |
-| YAGNI | No speculative package, adapter, configuration knob or abstraction. `packages/contracts`, `block-system`, `plugin-sdk` and `theme-sdk` wait for a real consumer. |
+| YAGNI | No speculative package, adapter, configuration knob or abstraction. `packages/contracts`, `plugin-sdk` and `theme-sdk` wait for a real consumer (`block-system` now has the API validator and the admin editor as consumers). |
 | Fail closed | Missing production config, unknown origin, missing CSRF, invalid session and unknown role/status all reject. Never "default allow" because a value is absent. |
 | Least privilege | The admin DTO exposes only `id/username/role/status`; passwords, hashes, session tokens and CSRF tokens never cross the API boundary. |
 | Explicit over implicit | Typed error codes, named event types, named cookie constants. No stringly-typed behavior spread across files. |
@@ -29,8 +29,10 @@ with a clear contract and one reason to change is the target.
 apps/api            HTTP adapters: routes, cookies, env, request IDs, error mapping
 apps/admin          browser UI and API client; relative /api URLs only
 apps/web            public Next.js site (Phase 1 placeholder)
-packages/cms-core   framework-agnostic domain: auth now, content later
+packages/cms-core   framework-agnostic domain: auth, content, taxonomy, hooks
 packages/database   Prisma schema, migrations, client, DB scripts
+packages/block-system  isomorphic block contracts + official parser adapter + structural validation
+                       (server renderer and editor helpers are separate entrypoints)
 ```
 
 Rules:

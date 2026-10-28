@@ -193,6 +193,10 @@ Acceptance criteria:
 
 ## Phase 5 — Gutenberg foundation
 
+**Status (2026-10-28):** editor MVP implemented on branch `feat/gutenberg-editor`
+(ADR 0006); owner acceptance pending. Server rendering and golden/XSS tests
+remain.
+
 **Goal:** a real block editor that loads, edits and saves a scoped block set with
 round-trip fidelity.
 

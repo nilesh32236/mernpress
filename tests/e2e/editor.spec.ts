@@ -141,6 +141,14 @@ test('creates content with paragraph, heading and list blocks and reloads it', a
   await expect(page.locator('.block-canvas-sheet')).toContainText('Second list item');
   await expect(page.locator('.block-canvas-sheet h2')).toHaveText('A section heading');
 
+  // The admin still keeps no auth or token state in browser storage, even
+  // after loading the WordPress packages.
+  const storage = await page.evaluate(() => ({
+    local: Object.keys(localStorage),
+    session: Object.keys(sessionStorage),
+  }));
+  expect(storage).toEqual({ local: [], session: [] });
+
   expect(errors).toEqual([]);
 });
 
@@ -189,8 +197,9 @@ test('undo and redo restore structural changes without losing typed text', async
   await page.getByRole('button', { name: 'Redo' }).click();
   await expect(page.locator('.block-canvas-sheet .wp-block-separator')).toHaveCount(1);
 
-  // Persist the restored state and verify it server-side.
-  await page.getByRole('button', { name: 'Save draft' }).click();
+  // Persist the restored state with the keyboard shortcut, then verify it
+  // server-side.
+  await page.keyboard.press('Control+s');
   await expect(page.getByText('Content created.')).toBeVisible();
   const id = new URL(page.url()).pathname.split('/')[2] ?? '';
   const content = await storedContent(page, id);

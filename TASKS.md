@@ -147,7 +147,7 @@ unchanged.**
 | P5-06 | Server renderer | planned | P5-05 | Not started. Blocks are stored and structurally validated only; the public renderer must not trust saved HTML until this task lands |
 | P5-07 | Round-trip/golden tests | partial | P5-05..P5-06 | Parser/limit tests (15) and admin serializer round-trip tests (8), plus unknown-block byte equality E2E. Golden HTML and XSS suites wait for the renderer |
 | P5-08 | Editor browser smoke test | done | P5-02..P5-05 | 5 Playwright tests: create paragraph/heading/list + reload, publish + public API, undo/redo structural edit, unknown-block byte equality, 375 px off-canvas settings. Existing content spec updated for the canvas |
-| P5-09 | Performance gate | done | P5-08 | Editor route lazy-loaded: main 276 kB, editor 5.98 MB (1.34 MB gzip) + 478 kB CSS; vips worker emitted but not fetched; production build ~4–11 s with default heap. Documented in ADR 0006 |
+| P5-09 | Performance gate | done | P5-08 | Editor route lazy-loaded: main 276 kB, editor 5.98 MB (1.34 MB gzip) + 478 kB CSS; vips worker emitted but not fetched; production build ~4–11 s with default heap; `pnpm check:bundle` (CI) guards 400 kB main / 6.5 MB editor / 600 kB CSS. Documented in ADR 0006 |
 
 ## Phase 6 — Media library
 

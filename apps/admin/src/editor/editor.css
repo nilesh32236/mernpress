@@ -8,33 +8,36 @@
   color: #1e1e1e;
   background: #f0f0f1;
   border: 1px solid #dcdcde;
-  border-radius: 4px;
+  border-radius: 6px;
   overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .block-canvas-toolbar {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   flex-wrap: wrap;
-  padding: 4px 6px;
+  padding: 6px 8px;
   background: #1e1e1e;
   color: #fff;
-  min-height: 44px;
+  min-height: 48px;
+  border-bottom: 1px solid #3c434a;
 }
 
 .block-canvas-tool {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   padding: 0;
   border: 0;
-  border-radius: 2px;
+  border-radius: 4px;
   background: transparent;
   color: #fff;
   cursor: pointer;
+  transition: background 120ms ease;
 }
 
 .block-canvas-tool:hover:not(:disabled) {
@@ -65,7 +68,7 @@
 
 .block-canvas-tool-divider {
   width: 1px;
-  height: 24px;
+  height: 22px;
   margin: 0 4px;
   background: #3c434a;
 }
@@ -81,20 +84,20 @@
   flex: 1;
   min-width: 0;
   overflow: auto;
-  padding: 24px 16px 48px;
+  padding: 32px 20px 48px;
   background: #f0f0f1;
 }
 
 .block-canvas-sheet {
   width: 100%;
-  max-width: 860px;
-  min-height: 460px;
+  max-width: 760px;
+  min-height: auto;
   margin: 0 auto;
-  padding: 40px 48px 64px;
+  padding: 48px 56px 64px;
   background: #fff;
   border: 1px solid #e0e0e0;
-  border-radius: 2px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .block-canvas-sheet .block-editor-block-list__layout {
@@ -106,7 +109,7 @@
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell,
     'Helvetica Neue', sans-serif;
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.65;
   color: #1e1e1e;
 }
 
@@ -117,12 +120,13 @@
 
 .block-canvas-help {
   margin: 0;
-  padding: 8px 16px;
-  background: #f0f0f1;
+  padding: 6px 16px;
+  background: #f6f7f7;
   border-top: 1px solid #dcdcde;
   color: #646970;
-  font-size: 12px;
+  font-size: 11px;
   text-align: center;
+  opacity: 0.85;
 }
 
 .block-canvas-help kbd {
@@ -136,7 +140,7 @@
 
 .block-canvas-listview,
 .block-canvas-inspector {
-  flex: 0 0 300px;
+  flex: 0 0 280px;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -154,10 +158,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border-bottom: 1px solid #dcdcde;
   font-size: 13px;
   font-weight: 600;
+  color: #1e1e1e;
 }
 
 .block-canvas-panel-close {
@@ -168,10 +173,13 @@
   height: 28px;
   padding: 0;
   border: 0;
-  border-radius: 2px;
+  border-radius: 4px;
   background: transparent;
   color: #646970;
   cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
 }
 
 .block-canvas-panel-close:hover {
@@ -184,7 +192,7 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 8px;
+  padding: 10px 12px;
 }
 
 .block-canvas-hint {
@@ -206,19 +214,28 @@
 .editor-title-input {
   display: block;
   width: 100%;
-  margin: 0 0 24px;
+  margin: 0 0 28px;
   padding: 0;
   border: 0;
   background: transparent;
   color: #1e1e1e;
   font-family: inherit;
-  font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.5rem);
+  font-size: clamp(1.9rem, 1.5rem + 1.4vw, 2.6rem);
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
 }
 
 .editor-title-input::placeholder {
   color: #8c8f94;
+  font-weight: 400;
+}
+
+.editor-title-textarea {
+  resize: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  min-height: 1.2em;
 }
 
 .editor-title-input:focus {
@@ -240,12 +257,11 @@
 
 @media (max-width: 782px) {
   .block-canvas-scroll {
-    padding: 12px 8px 32px;
+    padding: 16px 10px 32px;
   }
 
   .block-canvas-sheet {
-    padding: 24px 20px 40px;
-    min-height: 360px;
+    padding: 28px 20px 40px;
   }
 
   .block-canvas-listview,
@@ -260,5 +276,14 @@
 
   .block-canvas-inspector {
     inset: 0 0 0 auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .block-canvas-sheet {
+    padding: 20px 16px 32px;
+  }
+  .editor-title-input {
+    font-size: 1.6rem;
   }
 }

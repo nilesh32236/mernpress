@@ -19,7 +19,6 @@ import {
   Inserter,
   ObserveTyping,
   WritingFlow,
-  store as blockEditorStore,
 } from '@wordpress/block-editor';
 import { Popover, SlotFillProvider, SnackbarList } from '@wordpress/components';
 import { useDispatch, useSelect } from '@wordpress/data';
@@ -108,6 +107,7 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
   }));
   const historyRef = useRef<HistoryState>(history);
   const [listViewOpen, setListViewOpen] = useState(false);
+  const [hasSelection, setHasSelection] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const [inspectorOpen, setInspectorOpen] = useState(false);
 
@@ -124,7 +124,14 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
   }, []);
 
   const emit = useCallback((next: Array<Block<Record<string, unknown>>>) => {
-    const serialized = serializeBlocks(next);
+    let serialized: string;
+    try {
+      serialized = serializeBlocks(next);
+    } catch {
+      // Never hand an empty document to the parent (and then to the API) when
+      // the serializer fails; keep the last known-good content instead.
+      return lastEmitted.current;
+    }
     lastEmitted.current = serialized;
     onChangeRef.current(serialized);
     return serialized;
@@ -264,16 +271,6 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
   const { removeNotice } = useDispatch(noticesStore) as {
     removeNotice: (id: string) => void;
   };
-  const hasSelection = useSelect(
-    (select) =>
-      Boolean(
-        (
-          select(blockEditorStore) as { getSelectedBlockClientId: () => string | null }
-        ).getSelectedBlockClientId(),
-      ),
-    [],
-  );
-
   function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
     if (!(event.ctrlKey || event.metaKey)) return;
     const key = event.key.toLowerCase();
@@ -296,6 +293,10 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
             onInput={handleInput as never}
             onChange={handleChange as never}
             settings={settings as never}
+            onChangeSelection={(selection: unknown) => {
+              const next = selection as { selectionStart?: { clientId?: string } } | undefined;
+              setHasSelection(Boolean(next?.selectionStart?.clientId));
+            }}
           >
             <div className="block-canvas-toolbar" role="toolbar" aria-label="Editor tools">
               <InserterControl

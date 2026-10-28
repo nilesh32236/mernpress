@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   actionErrorMessage,
   assignTerms,
@@ -130,6 +130,8 @@ export function ContentEditor({
     typeof window === 'undefined' ? true : window.innerWidth >= 1080,
   );
   const canvasRef = useRef<BlockCanvasHandle>(null);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+  const saveShortcutRef = useRef<() => void>(() => {});
 
   const editable = isNew ? canCreateContent(user) : post ? canEditPost(user, post) : false;
   const canAssign = editable && canAssignTerms(user);
@@ -159,6 +161,51 @@ export function ContentEditor({
   }, [baseline, categoryIds, contentTouched, createdPost, editable, form, isNew, tagIds]);
 
   useUnsavedChanges(dirty, 'You have unsaved changes. Leave this page without saving?');
+
+  // The title behaves like WordPress's: it wraps and grows with long titles
+  // instead of scrolling inside a single-line input.
+  useLayoutEffect(() => {
+    const element = titleRef.current;
+    if (!element) return;
+    element.style.height = 'auto';
+    element.style.height = `${element.scrollHeight}px`;
+  }, [form.title]);
+
+  useEffect(() => {
+    function resizeTitle() {
+      const element = titleRef.current;
+      if (!element) return;
+      element.style.height = 'auto';
+      element.style.height = `${element.scrollHeight}px`;
+    }
+    window.addEventListener('resize', resizeTitle);
+    return () => window.removeEventListener('resize', resizeTitle);
+  }, []);
+
+  // Escape closes the settings drawer, matching the shell's mobile navigation.
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setSidebarOpen(false);
+      }
+    }
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [sidebarOpen]);
+
+  // Ctrl/Cmd+S saves without triggering the browser's page-save dialog. The
+  // latest render's handler is kept in a ref so the listener registers once.
+  useEffect(() => {
+    function handleShortcut(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
+        event.preventDefault();
+        saveShortcutRef.current();
+      }
+    }
+    document.addEventListener('keydown', handleShortcut);
+    return () => document.removeEventListener('keydown', handleShortcut);
+  }, []);
 
   useEffect(() => {
     if (isNew) {
@@ -266,7 +313,7 @@ export function ContentEditor({
   }
 
   async function handleSave(intent: SaveIntent) {
-    if (saving || !editable) return;
+    if (saving || !editable || createdPost) return;
 
     const nextFieldErrors: Record<string, string> = {};
     if (!form.title.trim()) {
@@ -321,7 +368,18 @@ export function ContentEditor({
         }
         let finalPost = termsResult.post ?? created;
         if (intent === 'publish') {
-          finalPost = await transitionPost(finalPost.id, 'publish', finalPost.version);
+          try {
+            finalPost = await transitionPost(finalPost.id, 'publish', finalPost.version);
+          } catch (publishError) {
+            // The draft exists; keep the form replaced by the "Draft created"
+            // panel so a retry cannot create a duplicate post.
+            setCreatedPost(finalPost);
+            setNotice({
+              tone: 'warning',
+              text: `Draft created, but publishing failed: ${actionErrorMessage(publishError)}. Open the draft to retry.`,
+            });
+            return;
+          }
         }
         setNotice({
           tone: 'success',
@@ -355,14 +413,15 @@ export function ContentEditor({
       }
 
       let finalPost = termsResult.post ?? updated;
+      // Persist the new content/version in local state before the transition:
+      // if publishing fails, a retry must not reuse a stale baseVersion.
+      commitBaseline(finalPost);
       let message = 'Changes saved.';
-      if (intent === 'publish') {
-        if (finalPost.status !== 'PUBLISHED') {
-          finalPost = await transitionPost(finalPost.id, 'publish', finalPost.version);
-        }
+      if (intent === 'publish' && finalPost.status !== 'PUBLISHED') {
+        finalPost = await transitionPost(finalPost.id, 'publish', finalPost.version);
+        commitBaseline(finalPost);
         message = 'Content published.';
       }
-      commitBaseline(finalPost);
       setNotice({ tone: 'success', text: message });
     } catch (caught) {
       if (caught instanceof ApiError && caught.code === 'VERSION_CONFLICT') {
@@ -386,6 +445,11 @@ export function ContentEditor({
       setSaving(false);
     }
   }
+
+  saveShortcutRef.current = () => {
+    if (saving || conflict || !editable) return;
+    void handleSave('save');
+  };
 
   async function runTransition(action: TransitionAction) {
     if (!post || dirty) return;
@@ -516,7 +580,11 @@ export function ContentEditor({
   const primaryAction: { label: string; intent: SaveIntent } =
     draftCanPublish && (isNew || post?.status === 'DRAFT')
       ? { label: 'Publish', intent: 'publish' }
-      : { label: isNew ? 'Save draft' : 'Update', intent: 'save' };
+      : {
+          label:
+            post?.status === 'PUBLISHED' || post?.status === 'TRASHED' ? 'Update' : 'Save draft',
+          intent: 'save',
+        };
   const secondarySave = primaryAction.intent === 'publish' ? 'Save draft' : null;
 
   return (
@@ -561,29 +629,43 @@ export function ContentEditor({
               role="status"
               aria-live="polite"
             >
-              {saving ? 'Saving…' : dirty ? 'Unsaved changes' : 'Saved'}
+              {saving
+                ? 'Saving…'
+                : isNew && !dirty
+                  ? 'Not saved yet'
+                  : dirty
+                    ? 'Unsaved changes'
+                    : 'Saved'}
             </span>
             <StatusBadge status={post?.status ?? 'DRAFT'} />
-            {secondarySave ? (
-              <button
-                type="button"
-                className="button secondary-button editor-save-button"
-                onClick={() => void handleSave('save')}
-                disabled={saving || Boolean(conflict)}
-                aria-busy={saving}
-              >
-                {saving ? 'Saving…' : secondarySave}
-              </button>
-            ) : null}
-            <button
-              type="button"
-              className="button primary-button editor-publish-button"
-              onClick={() => void handleSave(primaryAction.intent)}
-              disabled={saving || Boolean(conflict)}
-              aria-busy={saving}
-            >
-              {saving ? 'Saving…' : primaryAction.label}
-            </button>
+            {createdPost ? null : (
+              <>
+                {secondarySave ? (
+                  <button
+                    type="button"
+                    className="button secondary-button editor-save-button"
+                    onClick={() => void handleSave('save')}
+                    disabled={saving || Boolean(conflict)}
+                    aria-busy={saving}
+                    aria-keyshortcuts="Control+S Meta+S"
+                    title="Save draft (Ctrl/Cmd+S)"
+                  >
+                    {saving ? 'Saving…' : secondarySave}
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className="button primary-button editor-publish-button"
+                  onClick={() => void handleSave(primaryAction.intent)}
+                  disabled={saving || Boolean(conflict)}
+                  aria-busy={saving}
+                  aria-keyshortcuts="Control+S Meta+S"
+                  title={`${primaryAction.label} (Ctrl/Cmd+S)`}
+                >
+                  {saving ? 'Saving…' : primaryAction.label}
+                </button>
+              </>
+            )}
             <button
               type="button"
               className="button secondary-button editor-sidebar-toggle"
@@ -616,8 +698,8 @@ export function ContentEditor({
           <div className="content-card">
             <h2>Draft created</h2>
             <p>
-              “{createdPost.title}” was created, but assigning categories or tags failed. Open the
-              draft to retry the assignment.
+              “{createdPost.title}” was created as a draft, but a follow-up step failed. Open the
+              draft to retry.
             </p>
             <a
               className="button primary-button"
@@ -641,11 +723,12 @@ export function ContentEditor({
                   onDirty={() => setContentTouched(true)}
                   titleSlot={
                     <>
-                      <input
-                        className="editor-title-input"
+                      <textarea
+                        ref={titleRef}
+                        className="editor-title-input editor-title-textarea"
                         id="content-title"
                         name="title"
-                        type="text"
+                        rows={1}
                         maxLength={300}
                         placeholder="Add title"
                         aria-label="Title"

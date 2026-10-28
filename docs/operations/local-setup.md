@@ -186,9 +186,23 @@ pnpm exec playwright install chromium
 never point it at development data. It covers bootstrap, Argon2id, generic login
 failures, sessions, cookies, CSRF/Origin, pre-auth vs session CSRF separation,
 rate limits with bounded retention and coalesced audit, oversized bodies,
-request IDs and log redaction. `pnpm test:e2e` also uses the test database,
-resets it, and starts fresh servers on ports 4000/5173/3000; stop `pnpm dev`
-first because the E2E web servers do not reuse existing processes.
+request IDs and log redaction. The Phase 5 suite adds block-parser/limit tests
+(`packages/block-system`), API block-content validation tests and admin
+serializer tests. `pnpm test:e2e` also uses the test database, resets it, and
+starts fresh servers on ports 4000/5173/3000; stop `pnpm dev` first because the
+E2E web servers do not reuse existing processes.
+
+When another service owns API port 4000 (for example the production service),
+run the browser suite against an isolated API port:
+
+```bash
+E2E_API_PORT=4100 pnpm test:e2e
+```
+
+Playwright starts the API on 4100, points the Vite proxy at it, and still resets
+only `TEST_DATABASE_URL`. Never stop a production service to free a port, and
+never point E2E at the production database. The editor spec also runs at
+375×812 and asserts no horizontal overflow.
 
 ## 7. CI
 
@@ -244,10 +258,12 @@ PostgreSQL must be reachable before `pnpm test`, `pnpm db:migrate` or
 
 ### Port already in use
 
-The apps use strict ports: API `4000`, admin `5173`, web `3000`. Stop the old
-process (for example `lsof -i :4000`) instead of changing the documented ports.
-`pnpm test:e2e` deliberately refuses to reuse an existing server so it cannot
-accidentally test the development database.
+The apps use strict ports: API `4000`, admin `5173`, web `3000`. Stop your own
+stale dev process (for example `lsof -i :4000`) instead of changing the
+documented ports. If the port is owned by a production service you must not
+touch, use `E2E_API_PORT=4100` as described above. `pnpm test:e2e` deliberately
+refuses to reuse an existing server so it cannot accidentally test the
+development database.
 
 ### Playwright says the browser is missing
 

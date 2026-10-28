@@ -64,16 +64,16 @@ export function isBlankBlocks(blocks: Array<Block<Record<string, unknown>>>): bo
   });
 }
 
-/** Serialize editor blocks to canonical content. Blank documents become ''. */
+/**
+ * Serialize editor blocks to canonical content. Blank documents become ''.
+ * Serializer failures propagate: callers must not replace stored content with
+ * an empty document just because serialization failed.
+ */
 export function serializeBlocks(blocks: Array<Block<Record<string, unknown>>>): string {
   if (isBlankBlocks(blocks)) {
     return '';
   }
-  try {
-    return serialize(blocks);
-  } catch {
-    return '';
-  }
+  return serialize(blocks);
 }
 
 /**
@@ -81,5 +81,9 @@ export function serializeBlocks(blocks: Array<Block<Record<string, unknown>>>): 
  * no-op edit does not create a spurious history entry.
  */
 export function historySeed(content: string): string {
-  return serializeBlocks(blocksFromContent(content));
+  try {
+    return serializeBlocks(blocksFromContent(content));
+  } catch {
+    return content;
+  }
 }

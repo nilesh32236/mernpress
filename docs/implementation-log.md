@@ -38,9 +38,9 @@ pnpm install --frozen-lockfile                        PASS
 pnpm lint                                              PASS
 pnpm format:check                                      PASS
 pnpm typecheck                                         PASS (9 tasks)
-pnpm test                                              PASS — 222 API + 69 admin
+pnpm test                                              PASS — 222 API + 73 admin
                                                        + 15 block-system + 1 web
-                                                       = 307
+                                                       = 311
 pnpm build                                             PASS (6 tasks)
 pnpm audit --audit-level=high                          PASS; one low advisory
                                                        (deepmerge, no patched
@@ -50,8 +50,9 @@ git diff --check                                       clean
 E2E_API_PORT=4100 pnpm test:e2e                        19/19 PASS
 ```
 
-Build sizes (admin): main 276.43 kB (83.09 kB gzip), lazy editor chunk
-5,976.24 kB (1,341.98 kB gzip), editor CSS 477.90 kB (64.27 kB gzip). The vips
+Build sizes (admin): main 271.2 kB (83 kB gzip), lazy editor chunk 5,836.3 kB
+(1.34 MB gzip), editor CSS 467.1 kB (64 kB gzip). `pnpm check:bundle` enforces
+400 kB / 6,500 kB / 600 kB budgets in CI. The vips
 and video-conversion workers are emitted (13.4 MB / 406 kB) but not fetched
 during editing. Build completes in ~4–11 s with the default Node heap.
 
@@ -61,6 +62,28 @@ heading via searchable inserter, list with two items, save/reload, canonical
 public API read, undo/redo of a structural insert preserving typed text,
 unknown `acme/widget` block preserved byte-for-byte, 375 px layout with
 off-canvas settings, no unexpected console/page errors.
+
+### Finishing work after the first checkpoint
+
+- Block inspector selection now comes from the provider's
+  `onChangeSelection` (the global selector does not see the provider's
+  sub-registry); the inspector shows real block settings instead of a hint.
+- Ctrl/Cmd+S saves (preventDefault, latest-handler ref), with
+  `aria-keyshortcuts` on both save buttons.
+- The title is an auto-growing `<textarea>` so long titles wrap like WordPress
+  instead of scrolling out of view.
+- Escape closes the document drawer; the shell breadcrumb, top-bar title and
+  desktop collapse control are hidden on editor routes to avoid duplicate
+  navigation.
+- Publish failure recovery: a failed publish after creating a new post keeps the
+  "Draft created" panel (no duplicate-create path); a failed transition after a
+  content save commits the saved version first, so a retry does not reuse a
+  stale `baseVersion`.
+- Serializer failure no longer emits `''`; the last known-good content is kept.
+- Visual polish pass (CSS only, designer lane): calmer toolbar, sheet
+  proportions, panel rhythm, mobile drawer, dark-shell/light-canvas behaviour.
+- `scripts/check-admin-bundle.mjs` + CI step guard the main/editor/critical CSS
+  budgets.
 
 ### Decisions and records
 
