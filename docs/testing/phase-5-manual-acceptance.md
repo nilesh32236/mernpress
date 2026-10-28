@@ -1,7 +1,7 @@
 # Phase 5 manual acceptance — Gutenberg editor MVP
 
 Status: awaiting owner manual acceptance. Automated evidence: 307
-unit/integration tests and 19/19 Playwright tests on branch
+unit/integration tests and 20/20 Playwright tests on branch
 `feat/gutenberg-editor` (not pushed, not deployed). Use a development database
 and `pnpm dev`; do not point this at production.
 

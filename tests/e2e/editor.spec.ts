@@ -207,6 +207,32 @@ test('undo and redo restore structural changes without losing typed text', async
   expect(content).toContain('<!-- wp:separator');
 });
 
+test('inserts a quote and shows real block settings in the inspector', async ({ page }) => {
+  await login(page);
+  await openNewPost(page);
+  await page.getByLabel('Title').fill(`Quote post ${suffix}`);
+
+  await insertBlock(page, 'quote', /^Quote/);
+  await page.keyboard.type('A line worth quoting.');
+
+  // The inspector must show the selected block's settings, not the empty hint.
+  await page.getByRole('button', { name: 'Block settings' }).click();
+  const inspector = page.locator('.block-canvas-inspector');
+  // Typing focuses the quote's inner paragraph, so the inspector shows that
+  // block's real settings rather than the empty-selection hint.
+  await expect(inspector).toContainText('Typography');
+  await expect(inspector).not.toContainText('Select a block to edit its settings');
+  await page.getByRole('button', { name: 'Close block settings' }).click();
+
+  await page.getByRole('button', { name: 'Save draft' }).click();
+  await expect(page.getByText('Content created.')).toBeVisible();
+
+  const id = new URL(page.url()).pathname.split('/')[2] ?? '';
+  const content = await storedContent(page, id);
+  expect(content).toContain('<!-- wp:quote');
+  expect(content).toContain('A line worth quoting.');
+});
+
 test('unknown blocks are preserved byte-for-byte through load and save', async ({ page }) => {
   await login(page);
   const unknownContent =
