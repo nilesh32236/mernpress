@@ -98,8 +98,13 @@ describe('post preview tokens (P8-03)', () => {
     const post = await createPost({ type: 'post', title: 'Preview URL' });
     await app.database.option.upsert({
       where: { key: 'site_url' },
-      create: { key: 'site_url', value: 'https://mernpress.example/', group: 'general' },
-      update: { value: 'https://mernpress.example/' },
+      // Option values are JSON-encoded at rest (options service contract).
+      create: {
+        key: 'site_url',
+        value: JSON.stringify('https://mernpress.example/'),
+        group: 'general',
+      },
+      update: { value: JSON.stringify('https://mernpress.example/') },
     });
 
     const result = await rotateToken(post.id);

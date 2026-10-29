@@ -179,7 +179,7 @@ export async function rotatePreviewToken(postId: string): Promise<PreviewLinkRes
     method: 'POST',
     credentials: 'include',
     cache: 'no-store',
-    headers: { accept: 'application/json', 'content-type': 'application/json', ...csrfHeader() },
+    headers: { accept: 'application/json', ...csrfHeader() },
   });
   return readJson<PreviewLinkResult>(response);
 }

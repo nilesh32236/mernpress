@@ -970,11 +970,22 @@ export function createContentService(options: ContentServiceOptions): ContentSer
   /**
    * Preferred preview URL: the web app's /preview/<token> route, absolute
    * when the site_url option is configured. The API JSON preview endpoint
-   * remains the machine-readable contract.
+   * remains the machine-readable contract. Option values are JSON-encoded at
+   * rest (options service contract), so the raw column needs decoding.
    */
   async function previewUrlFor(token: string): Promise<string> {
     const option = await prisma.option.findUnique({ where: { key: 'site_url' } });
-    const base = option?.value?.trim().replace(/\/+$/, '');
+    let base = '';
+    if (option?.value) {
+      try {
+        const decoded: unknown = JSON.parse(option.value);
+        if (typeof decoded === 'string') {
+          base = decoded.trim().replace(/\/+$/, '');
+        }
+      } catch {
+        base = '';
+      }
+    }
     return base ? `${base}/preview/${token}` : `/preview/${token}`;
   }
 
