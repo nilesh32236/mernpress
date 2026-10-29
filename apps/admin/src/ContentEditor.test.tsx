@@ -108,6 +108,12 @@ describe('content editor', () => {
       slug: 'new-title',
       excerpt: 'Short excerpt',
       content: 'Hello content',
+      seoTitle: null,
+      seoDescription: null,
+      canonicalUrl: null,
+      robots: null,
+      ogTitle: null,
+      ogDescription: null,
     });
     await waitFor(() => expect(window.location.pathname).toBe('/posts/created-1/edit'));
   });
@@ -335,6 +341,144 @@ describe('editor publish workflow', () => {
   });
 });
 
+describe('editor SEO fields', () => {
+  it('renders SEO fields after switching to the SEO tab', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(response(termsPage()))
+      .mockResolvedValueOnce(response(termsPage()));
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA);
+    await screen.findByLabelText('Title');
+    fireEvent.click(screen.getByRole('tab', { name: 'SEO' }));
+
+    expect(screen.getByLabelText('SEO title')).toBeDefined();
+    expect(screen.getByLabelText('SEO description')).toBeDefined();
+    expect(screen.getByLabelText('Canonical URL')).toBeDefined();
+    expect(screen.getByLabelText('Robots')).toBeDefined();
+    expect(screen.getByLabelText('Social title')).toBeDefined();
+    expect(screen.getByLabelText('Social description')).toBeDefined();
+    expect((screen.getByLabelText('Robots') as HTMLSelectElement).value).toBe('');
+  });
+
+  it('submits typed SEO values when creating a post', async () => {
+    const created = makePost({ id: 'created-seo', title: 'SEO post' });
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(response(termsPage()))
+      .mockResolvedValueOnce(response(termsPage()))
+      .mockResolvedValueOnce(response(created, 201));
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA);
+    fireEvent.change(await screen.findByLabelText('Title'), { target: { value: 'SEO post' } });
+    fireEvent.click(screen.getByRole('tab', { name: 'SEO' }));
+    fireEvent.change(screen.getByLabelText('SEO title'), { target: { value: 'Custom SEO title' } });
+    fireEvent.change(screen.getByLabelText('SEO description'), {
+      target: { value: 'Custom SEO description' },
+    });
+    fireEvent.change(screen.getByLabelText('Canonical URL'), {
+      target: { value: 'https://example.com/canonical' },
+    });
+    fireEvent.change(screen.getByLabelText('Robots'), { target: { value: 'noindex, follow' } });
+    fireEvent.change(screen.getByLabelText('Social title'), { target: { value: 'Social!' } });
+    fireEvent.change(screen.getByLabelText('Social description'), {
+      target: { value: 'Social blurb' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    expect(JSON.parse(String(fetchMock.mock.calls[2]?.[1]?.body))).toMatchObject({
+      title: 'SEO post',
+      seoTitle: 'Custom SEO title',
+      seoDescription: 'Custom SEO description',
+      canonicalUrl: 'https://example.com/canonical',
+      robots: 'noindex, follow',
+      ogTitle: 'Social!',
+      ogDescription: 'Social blurb',
+    });
+  });
+
+  it('submits empty SEO values as null', async () => {
+    const created = makePost({ id: 'created-seo-null', title: 'Plain post' });
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(response(termsPage()))
+      .mockResolvedValueOnce(response(termsPage()))
+      .mockResolvedValueOnce(response(created, 201));
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA);
+    fireEvent.change(await screen.findByLabelText('Title'), { target: { value: 'Plain post' } });
+    fireEvent.click(screen.getByRole('tab', { name: 'SEO' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    expect(JSON.parse(String(fetchMock.mock.calls[2]?.[1]?.body))).toMatchObject({
+      title: 'Plain post',
+      seoTitle: null,
+      seoDescription: null,
+      canonicalUrl: null,
+      robots: null,
+      ogTitle: null,
+      ogDescription: null,
+    });
+  });
+
+  it('blocks submit and shows a field error for an invalid canonical URL', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(response(termsPage()))
+      .mockResolvedValueOnce(response(termsPage()));
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA);
+    fireEvent.change(await screen.findByLabelText('Title'), { target: { value: 'Bad URL post' } });
+    fireEvent.click(screen.getByRole('tab', { name: 'SEO' }));
+    fireEvent.change(screen.getByLabelText('Canonical URL'), { target: { value: 'not-a-url' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+
+    expect(await screen.findByText('Canonical URL must be a valid http(s) URL.')).toBeDefined();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('loads existing SEO values into the fields when editing', async () => {
+    const post = makePost({
+      seoTitle: 'Stored SEO title',
+      seoDescription: 'Stored SEO description',
+      canonicalUrl: 'https://example.com/stored',
+      robots: 'noindex, nofollow',
+      ogTitle: 'Stored social title',
+      ogDescription: 'Stored social description',
+    });
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(response(post))
+      .mockResolvedValueOnce(response(termsPage()))
+      .mockResolvedValueOnce(response(termsPage()));
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA, post.id);
+    await screen.findByLabelText('Title');
+    fireEvent.click(screen.getByRole('tab', { name: 'SEO' }));
+
+    expect((screen.getByLabelText('SEO title') as HTMLInputElement).value).toBe('Stored SEO title');
+    expect((screen.getByLabelText('SEO description') as HTMLTextAreaElement).value).toBe(
+      'Stored SEO description',
+    );
+    expect((screen.getByLabelText('Canonical URL') as HTMLInputElement).value).toBe(
+      'https://example.com/stored',
+    );
+    expect((screen.getByLabelText('Robots') as HTMLSelectElement).value).toBe('noindex, nofollow');
+    expect((screen.getByLabelText('Social title') as HTMLInputElement).value).toBe(
+      'Stored social title',
+    );
+    expect((screen.getByLabelText('Social description') as HTMLTextAreaElement).value).toBe(
+      'Stored social description',
+    );
+  });
+});
 describe('editor publish failure recovery', () => {
   it('keeps a newly created draft recoverable when publishing fails', async () => {
     const created = makePost({

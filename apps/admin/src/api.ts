@@ -98,6 +98,12 @@ export interface CreatePostPayload {
   slug?: string;
   excerpt?: string | null;
   content?: string;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  canonicalUrl?: string | null;
+  robots?: string | null;
+  ogTitle?: string | null;
+  ogDescription?: string | null;
 }
 
 export interface UpdatePostPayload {
@@ -106,6 +112,12 @@ export interface UpdatePostPayload {
   slug?: string;
   excerpt?: string | null;
   content?: string;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  canonicalUrl?: string | null;
+  robots?: string | null;
+  ogTitle?: string | null;
+  ogDescription?: string | null;
 }
 
 interface ErrorBody {

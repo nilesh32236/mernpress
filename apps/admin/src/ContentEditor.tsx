@@ -38,6 +38,12 @@ interface FormState {
   slug: string;
   excerpt: string;
   content: string;
+  seoTitle: string;
+  seoDescription: string;
+  canonicalUrl: string;
+  robots: string;
+  ogTitle: string;
+  ogDescription: string;
 }
 
 interface Baseline {
@@ -46,7 +52,18 @@ interface Baseline {
   tagIds: string[];
 }
 
-const EMPTY_FORM: FormState = { title: '', slug: '', excerpt: '', content: '' };
+const EMPTY_FORM: FormState = {
+  title: '',
+  slug: '',
+  excerpt: '',
+  content: '',
+  seoTitle: '',
+  seoDescription: '',
+  canonicalUrl: '',
+  robots: '',
+  ogTitle: '',
+  ogDescription: '',
+};
 const ACTION_SUCCESS: Record<TransitionAction, string> = {
   publish: 'Content published.',
   unpublish: 'Content returned to draft.',
@@ -60,6 +77,23 @@ function formFromPost(post: AdminPost): FormState {
     slug: post.slug,
     excerpt: post.excerpt ?? '',
     content: post.content,
+    seoTitle: post.seoTitle ?? '',
+    seoDescription: post.seoDescription ?? '',
+    canonicalUrl: post.canonicalUrl ?? '',
+    robots: post.robots ?? '',
+    ogTitle: post.ogTitle ?? '',
+    ogDescription: post.ogDescription ?? '',
+  };
+}
+
+function seoPayload(form: FormState) {
+  return {
+    seoTitle: form.seoTitle.trim() ? form.seoTitle : null,
+    seoDescription: form.seoDescription.trim() ? form.seoDescription : null,
+    canonicalUrl: form.canonicalUrl.trim() ? form.canonicalUrl.trim() : null,
+    robots: form.robots.trim() ? form.robots : null,
+    ogTitle: form.ogTitle.trim() ? form.ogTitle : null,
+    ogDescription: form.ogDescription.trim() ? form.ogDescription : null,
   };
 }
 
@@ -140,6 +174,12 @@ export function ContentEditor({
         form.slug.trim() !== '' ||
         form.excerpt.trim() !== '' ||
         form.content.trim() !== '' ||
+        form.seoTitle.trim() !== '' ||
+        form.seoDescription.trim() !== '' ||
+        form.canonicalUrl.trim() !== '' ||
+        form.robots.trim() !== '' ||
+        form.ogTitle.trim() !== '' ||
+        form.ogDescription.trim() !== '' ||
         categoryIds.length > 0 ||
         tagIds.length > 0
       );
@@ -150,6 +190,12 @@ export function ContentEditor({
       form.title !== baseline.form.title ||
       form.slug !== baseline.form.slug ||
       form.excerpt !== baseline.form.excerpt ||
+      form.seoTitle !== baseline.form.seoTitle ||
+      form.seoDescription !== baseline.form.seoDescription ||
+      form.canonicalUrl !== baseline.form.canonicalUrl ||
+      form.robots !== baseline.form.robots ||
+      form.ogTitle !== baseline.form.ogTitle ||
+      form.ogDescription !== baseline.form.ogDescription ||
       !sameIds(categoryIds, baseline.categoryIds) ||
       !sameIds(tagIds, baseline.tagIds)
     );
@@ -320,6 +366,36 @@ export function ContentEditor({
     if (form.excerpt.length > 2000) {
       nextFieldErrors['excerpt'] = 'Excerpt must be 2,000 characters or fewer.';
     }
+    if (form.seoTitle.length > 300) {
+      nextFieldErrors['seoTitle'] = 'SEO title must be 300 characters or fewer.';
+    }
+    if (form.seoDescription.length > 500) {
+      nextFieldErrors['seoDescription'] = 'SEO description must be 500 characters or fewer.';
+    }
+    if (form.ogTitle.length > 300) {
+      nextFieldErrors['ogTitle'] = 'Social title must be 300 characters or fewer.';
+    }
+    if (form.ogDescription.length > 500) {
+      nextFieldErrors['ogDescription'] = 'Social description must be 500 characters or fewer.';
+    }
+    if (form.robots.length > 100) {
+      nextFieldErrors['robots'] = 'Robots must be 100 characters or fewer.';
+    }
+    const canonical = form.canonicalUrl.trim();
+    if (canonical.length > 2048) {
+      nextFieldErrors['canonicalUrl'] = 'Canonical URL must be 2,048 characters or fewer.';
+    } else if (canonical) {
+      let valid = false;
+      try {
+        const parsed = new URL(canonical);
+        valid = parsed.protocol === 'http:' || parsed.protocol === 'https:';
+      } catch {
+        valid = false;
+      }
+      if (!valid) {
+        nextFieldErrors['canonicalUrl'] = 'Canonical URL must be a valid http(s) URL.';
+      }
+    }
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors);
       setNotice({ tone: 'error', text: 'Check the highlighted fields and try again.' });
@@ -351,6 +427,7 @@ export function ContentEditor({
           ...(form.slug.trim() ? { slug: form.slug.trim() } : {}),
           excerpt: form.excerpt.trim() ? form.excerpt : null,
           content,
+          ...seoPayload(form),
         });
         const termsResult = await saveTerms(created.id, created);
         if (!termsResult.ok) {
@@ -391,6 +468,7 @@ export function ContentEditor({
         ...(form.slug.trim() ? { slug: form.slug.trim() } : {}),
         excerpt: form.excerpt.trim() ? form.excerpt : null,
         content,
+        ...seoPayload(form),
       });
       const termsResult = await saveTerms(updated.id, updated);
       const serverTerms = termsFromPost(updated);
@@ -990,6 +1068,131 @@ export function ContentEditor({
                       Shown as the meta description in search results.
                     </p>
                     <FieldError id="content-excerpt-error" message={fieldErrors['excerpt']} />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="content-seo-title">SEO title</label>
+                    <input
+                      id="content-seo-title"
+                      name="seoTitle"
+                      type="text"
+                      maxLength={300}
+                      value={form.seoTitle}
+                      onChange={(event) => updateForm('seoTitle', event.target.value)}
+                      aria-invalid={Boolean(fieldErrors['seoTitle'])}
+                      aria-describedby={
+                        fieldErrors['seoTitle']
+                          ? 'content-seo-title-help content-seo-title-error'
+                          : 'content-seo-title-help'
+                      }
+                    />
+                    <p id="content-seo-title-help" className="field-help">
+                      Defaults to the post title when empty.
+                    </p>
+                    <FieldError id="content-seo-title-error" message={fieldErrors['seoTitle']} />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="content-seo-description">SEO description</label>
+                    <textarea
+                      id="content-seo-description"
+                      name="seoDescription"
+                      rows={3}
+                      maxLength={500}
+                      value={form.seoDescription}
+                      onChange={(event) => updateForm('seoDescription', event.target.value)}
+                      aria-invalid={Boolean(fieldErrors['seoDescription'])}
+                      aria-describedby={
+                        fieldErrors['seoDescription']
+                          ? 'content-seo-description-help content-seo-description-error'
+                          : 'content-seo-description-help'
+                      }
+                    />
+                    <p id="content-seo-description-help" className="field-help">
+                      Defaults to the excerpt when empty.
+                    </p>
+                    <FieldError
+                      id="content-seo-description-error"
+                      message={fieldErrors['seoDescription']}
+                    />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="content-canonical-url">Canonical URL</label>
+                    <input
+                      id="content-canonical-url"
+                      name="canonicalUrl"
+                      type="url"
+                      value={form.canonicalUrl}
+                      onChange={(event) => updateForm('canonicalUrl', event.target.value)}
+                      aria-invalid={Boolean(fieldErrors['canonicalUrl'])}
+                      aria-describedby={
+                        fieldErrors['canonicalUrl']
+                          ? 'content-canonical-url-help content-canonical-url-error'
+                          : 'content-canonical-url-help'
+                      }
+                    />
+                    <p id="content-canonical-url-help" className="field-help">
+                      Optional. Overrides the default public URL.
+                    </p>
+                    <FieldError
+                      id="content-canonical-url-error"
+                      message={fieldErrors['canonicalUrl']}
+                    />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="content-robots">Robots</label>
+                    <select
+                      id="content-robots"
+                      name="robots"
+                      value={form.robots}
+                      onChange={(event) => updateForm('robots', event.target.value)}
+                      aria-invalid={Boolean(fieldErrors['robots'])}
+                      aria-describedby={fieldErrors['robots'] ? 'content-robots-error' : undefined}
+                    >
+                      <option value="">Site default (index, follow)</option>
+                      <option value="noindex, follow">noindex, follow</option>
+                      <option value="index, nofollow">index, nofollow</option>
+                      <option value="noindex, nofollow">noindex, nofollow</option>
+                    </select>
+                    <FieldError id="content-robots-error" message={fieldErrors['robots']} />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="content-og-title">Social title</label>
+                    <input
+                      id="content-og-title"
+                      name="ogTitle"
+                      type="text"
+                      maxLength={300}
+                      value={form.ogTitle}
+                      onChange={(event) => updateForm('ogTitle', event.target.value)}
+                      aria-invalid={Boolean(fieldErrors['ogTitle'])}
+                      aria-describedby={
+                        fieldErrors['ogTitle']
+                          ? 'content-og-title-help content-og-title-error'
+                          : 'content-og-title-help'
+                      }
+                    />
+                    <p id="content-og-title-help" className="field-help">
+                      Defaults to the SEO title when empty.
+                    </p>
+                    <FieldError id="content-og-title-error" message={fieldErrors['ogTitle']} />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="content-og-description">Social description</label>
+                    <textarea
+                      id="content-og-description"
+                      name="ogDescription"
+                      rows={2}
+                      maxLength={500}
+                      value={form.ogDescription}
+                      onChange={(event) => updateForm('ogDescription', event.target.value)}
+                      aria-invalid={Boolean(fieldErrors['ogDescription'])}
+                      aria-describedby={
+                        fieldErrors['ogDescription'] ? 'content-og-description-error' : undefined
+                      }
+                    />
+                    <FieldError
+                      id="content-og-description-error"
+                      message={fieldErrors['ogDescription']}
+                    />
                   </div>
                 </section>
               </div>
