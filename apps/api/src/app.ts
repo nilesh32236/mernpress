@@ -12,6 +12,7 @@ import {
   createOptionService,
   createScheduleService,
   createBulkService,
+  createMediaService,
   type AuthConfig,
 } from '@mernpress/cms-core';
 import { checkDatabase, createDatabaseClient } from '@mernpress/database';
@@ -26,8 +27,10 @@ import { registerProfileRoutes } from './routes/profile.js';
 import { registerOptionRoutes } from './routes/options.js';
 import { registerScheduleRoutes } from './routes/schedule.js';
 import { registerContentBulkRoutes } from './routes/content-bulk.js';
+import { registerMediaRoutes } from './routes/media.js';
 import { startPublishScheduler } from './scheduler.js';
 import { resolveRequestId } from './http/request-id.js';
+import { mkdirSync } from 'node:fs';
 
 export interface BuildAppOptions {
   env?: Env;
@@ -129,6 +132,17 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const bulk = createBulkService({ prisma: database, content });
   app.decorate('bulk', bulk);
 
+  const media = createMediaService({
+    prisma: database,
+    storageRoot: env.MEDIA_STORAGE_DIR,
+    logger: {
+      warn: (message, meta) => app.log.warn({ ...meta }, message),
+    },
+    ...(options.now === undefined ? {} : { now: options.now }),
+  });
+  app.decorate('media', media);
+  mkdirSync(env.MEDIA_STORAGE_DIR, { recursive: true });
+
   app.addHook('onRequest', async (request, reply) => {
     if (!MUTATING_METHODS.has(request.method)) {
       return;
@@ -163,6 +177,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerOptionRoutes(app, { env, auth, options: optionService });
   registerScheduleRoutes(app, { env, auth, schedule });
   registerContentBulkRoutes(app, { env, auth, bulk });
+  registerMediaRoutes(app, { env, auth, media, storageRoot: env.MEDIA_STORAGE_DIR });
   registerPublicContentRoutes(app, { content });
 
   if (env.SCHEDULER_ENABLED) {

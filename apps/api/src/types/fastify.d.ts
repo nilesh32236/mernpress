@@ -3,6 +3,7 @@ import type {
   BulkService,
   ContentService,
   HookRegistry,
+  MediaService,
   ScheduleService,
   TaxonomyService,
   UserAdminService,
@@ -19,5 +20,6 @@ declare module 'fastify' {
     users: UserAdminService;
     schedule: ScheduleService;
     bulk: BulkService;
+    media: MediaService;
   }
 }
