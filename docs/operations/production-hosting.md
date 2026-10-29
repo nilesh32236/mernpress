@@ -131,6 +131,23 @@ Branch `feat/gutenberg-editor` (Phase 5) is **not** part of this cutover. It has
 no published revision, CI run or owner acceptance yet; a Phase 5 release needs
 its own reviewed plan and explicit deploy authorization.
 
+### Caddy routing for the new admin base path
+
+The WordPress-style admin branch serves the admin SPA under `/admin/` (Vite
+`base: '/admin/'`). The production Caddyfile at `/etc/caddy/Caddyfile` has been
+updated (but not reloaded) to:
+
+- Serve `/admin` and `/admin/*` from `/opt/mernpress/current/apps/admin/dist`
+  with `uri strip_prefix /admin` and `try_files {path} /index.html`.
+- Redirect `/` to `/admin/` (302).
+- Keep `/api` and `/api/*` routed to Fastify on :4000.
+
+To apply: `sudo caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy`.
+
+Branch `feat/gutenberg-editor` (Phase 5) is **not** part of this cutover. It has
+no published revision, CI run or owner acceptance yet; a Phase 5 release needs
+its own reviewed plan and explicit deploy authorization.
+
 Target: commit `b3fc337f2dfd660b5ee24c3ca0523faa5a72d662` (D-036 Terms, D-037
 shell, D-038 status tabs), CI run `40652450339` = success, working tree clean.
 Owner accepted D-036/D-037/D-038 as implementation-complete on 2026-10-28.
