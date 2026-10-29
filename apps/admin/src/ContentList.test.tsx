@@ -270,4 +270,111 @@ describe('content lists', () => {
     await waitFor(() => expect(window.location.search).toContain('status=DRAFT'));
     expect(window.location.search).not.toContain('page=');
   });
+
+  it('runs a bulk action on selected rows and reports per-item failures', async () => {
+    const first = makePost({ id: 'post-1', title: 'First post', authorId: 'a1', version: 3 });
+    const second = makePost({ id: 'post-2', title: 'Second post', authorId: 'a1', version: 7 });
+    let bulkBody: unknown = null;
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.includes('/api/admin/posts/bulk')) {
+        bulkBody = JSON.parse(String(init?.body ?? '{}'));
+        return response({
+          action: 'publish',
+          succeeded: ['post-1'],
+          failed: [
+            {
+              id: 'post-2',
+              ok: false,
+              error: { code: 'VERSION_CONFLICT', message: 'Version conflict' },
+            },
+          ],
+        });
+      }
+      if (/perPage=1(&|$)/.test(url)) return response(paged([], 0));
+      return response(paged([first, second]));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<ContentList user={admin} type="post" />);
+    await screen.findByRole('link', { name: 'First post' });
+
+    fireEvent.click(screen.getByLabelText('Select First post'));
+    fireEvent.click(screen.getByLabelText('Select Second post'));
+    fireEvent.change(screen.getByLabelText('Bulk actions'), { target: { value: 'publish' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+
+    await waitFor(() => expect(bulkBody).not.toBeNull());
+    expect(bulkBody).toEqual({
+      action: 'publish',
+      items: [
+        { id: 'post-1', baseVersion: 3 },
+        { id: 'post-2', baseVersion: 7 },
+      ],
+    });
+    expect(
+      await screen.findByText(/1 item\(s\) updated; 1 failed: Version conflict/),
+    ).toBeDefined();
+  });
+
+  it('select-all only picks rows the user can edit and disables the rest', async () => {
+    const own = makePost({ id: 'post-own', title: 'Own post', authorId: 'a2' });
+    const foreign = makePost({
+      id: 'post-foreign',
+      title: 'Foreign post',
+      authorId: 'someone-else',
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockImplementation(async (input) => {
+        const url = String(input);
+        if (/perPage=1(&|$)/.test(url)) return response(paged([], 0));
+        return response(paged([own, foreign]));
+      }),
+    );
+
+    render(<ContentList user={authorB} type="post" />);
+    await screen.findByRole('link', { name: 'Own post' });
+
+    const foreignCheckbox = screen.getByLabelText('Select Foreign post') as HTMLInputElement;
+    expect(foreignCheckbox.disabled).toBe(true);
+
+    fireEvent.click(screen.getByLabelText('Select all'));
+    expect((screen.getByLabelText('Select Own post') as HTMLInputElement).checked).toBe(true);
+    expect(foreignCheckbox.checked).toBe(false);
+  });
+
+  it('offers Restore/Delete permanently on the Trashed tab and confirms delete', async () => {
+    const trashed = makePost({
+      id: 'post-t',
+      title: 'Trashed post',
+      authorId: 'a1',
+      status: 'TRASHED',
+      version: 4,
+    });
+    window.history.replaceState(null, '', '/posts?status=TRASHED');
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockImplementation(async (input) => {
+        const url = String(input);
+        if (/perPage=1(&|$)/.test(url)) return response(paged([], 0));
+        return response(paged([trashed]));
+      }),
+    );
+
+    render(<ContentList user={admin} type="post" />);
+    await screen.findByRole('link', { name: 'Trashed post' });
+
+    const select = screen.getByLabelText('Bulk actions') as HTMLSelectElement;
+    const options = Array.from(select.options).map((option) => option.value);
+    expect(options).toContain('restore');
+    expect(options).toContain('delete');
+    expect(options).not.toContain('publish');
+
+    fireEvent.click(screen.getByLabelText('Select Trashed post'));
+    fireEvent.change(select, { target: { value: 'delete' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    expect(confirmSpy).toHaveBeenCalled();
+  });
 });
