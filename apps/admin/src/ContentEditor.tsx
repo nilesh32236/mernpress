@@ -4,11 +4,17 @@ import {
   assignTerms,
   createPost,
   fetchPost,
+  fetchRevision,
+  fetchRevisions,
   fetchTerms,
+  restoreRevision,
+  rotatePreviewToken,
   transitionPost,
   updatePost,
   ApiError,
   type AdminPost,
+  type AdminRevision,
+  type AdminRevisionDetail,
   type AdminTerm,
   type AuthUser,
   type ContentType,
@@ -158,6 +164,11 @@ export function ContentEditor({
     typeof window === 'undefined' ? true : window.innerWidth >= 1080,
   );
   const [sideTab, setSideTab] = useState<'post' | 'seo' | 'block'>('post');
+  const [revisions, setRevisions] = useState<AdminRevision[] | null>(null);
+  const [revisionsError, setRevisionsError] = useState<string | null>(null);
+  const [viewingRevision, setViewingRevision] = useState<AdminRevisionDetail | null>(null);
+  const [revisionBusy, setRevisionBusy] = useState(false);
+  const [previewBusy, setPreviewBusy] = useState(false);
   const canvasRef = useRef<BlockCanvasHandle>(null);
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const saveShortcutRef = useRef<() => void>(() => {});
@@ -314,6 +325,99 @@ export function ContentEditor({
       delete next[field];
       return next;
     });
+  }
+
+  // The revision list loads on demand (the panel is collapsed by default), so
+  // opening the editor never costs an extra request.
+  const [revisionsOpen, setRevisionsOpen] = useState(false);
+  useEffect(() => {
+    if (!revisionsOpen || !post || createdPost) {
+      return;
+    }
+    let active = true;
+    setRevisionsError(null);
+    fetchRevisions(post.id)
+      .then((result) => {
+        if (active) {
+          setRevisions(result);
+        }
+      })
+      .catch((caught) => {
+        if (active) {
+          setRevisionsError(actionErrorMessage(caught));
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [revisionsOpen, post?.id, post?.version, createdPost]);
+
+  async function handleViewRevision(revision: AdminRevision): Promise<void> {
+    if (!post) {
+      return;
+    }
+    setRevisionBusy(true);
+    try {
+      const detail = await fetchRevision(post.id, revision.id);
+      setViewingRevision(detail);
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setRevisionBusy(false);
+    }
+  }
+
+  async function handleRestoreRevision(): Promise<void> {
+    if (!post || !viewingRevision) {
+      return;
+    }
+    if (
+      !window.confirm(
+        `Restore revision #${viewingRevision.revisionNumber}? The current content is snapshotted first, so the restore can be undone.`,
+      )
+    ) {
+      return;
+    }
+    setRevisionBusy(true);
+    setNotice(null);
+    try {
+      const updated = await restoreRevision(post.id, viewingRevision.id, post.version);
+      setViewingRevision(null);
+      setNotice({
+        tone: 'success',
+        text: `Revision #${viewingRevision.revisionNumber} restored.`,
+      });
+      setReloadKey((value) => value + 1);
+      void updated;
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setRevisionBusy(false);
+    }
+  }
+
+  async function handlePreview(): Promise<void> {
+    if (!post) {
+      return;
+    }
+    if (dirty && !window.confirm('Preview shows the last saved version. Continue?')) {
+      return;
+    }
+    setPreviewBusy(true);
+    try {
+      let path = post.previewToken ? `/api/public/preview/${post.previewToken}` : null;
+      if (!path) {
+        const rotated = await rotatePreviewToken(post.id);
+        path = rotated.previewPath;
+      }
+      if (path) {
+        window.open(path, '_blank', 'noopener');
+      }
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setPreviewBusy(false);
+    }
   }
 
   function updateContent(value: string) {
@@ -708,6 +812,17 @@ export function ContentEditor({
                     : 'Saved'}
             </span>
             <StatusBadge status={post?.status ?? 'DRAFT'} />
+            {post && !createdPost && post.status !== 'TRASHED' ? (
+              <button
+                type="button"
+                className="button secondary-button editor-preview-button"
+                onClick={() => void handlePreview()}
+                disabled={previewBusy || saving}
+                aria-busy={previewBusy}
+              >
+                {previewBusy ? 'Opening…' : 'Preview'}
+              </button>
+            ) : null}
             {createdPost ? null : (
               <>
                 {secondarySave ? (
@@ -1045,6 +1160,47 @@ export function ContentEditor({
                     </>
                   )}
                 </section>
+
+                {post && !createdPost ? (
+                  <section className="editor-panel" aria-labelledby="revisions-heading">
+                    <div className="revisions-panel-head">
+                      <h3 id="revisions-heading">Revisions</h3>
+                      <button
+                        type="button"
+                        className="button secondary-button revisions-toggle"
+                        aria-expanded={revisionsOpen}
+                        onClick={() => setRevisionsOpen((open) => !open)}
+                      >
+                        {revisionsOpen ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
+                    {!revisionsOpen ? null : revisionsError ? (
+                      <p className="field-help">Revisions are unavailable.</p>
+                    ) : revisions === null ? (
+                      <p className="field-help">Loading revisions…</p>
+                    ) : revisions.length === 0 ? (
+                      <p className="field-help">Revisions appear after you save changes.</p>
+                    ) : (
+                      <ul className="revision-list">
+                        {revisions.map((revision) => (
+                          <li key={revision.id}>
+                            <button
+                              type="button"
+                              className="revision-link"
+                              disabled={revisionBusy}
+                              onClick={() => void handleViewRevision(revision)}
+                            >
+                              <span className="revision-number">#{revision.revisionNumber}</span>
+                              <span className="revision-date">
+                                {formatDateTime(revision.createdAt)}
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                ) : null}
               </div>
 
               <div hidden={sideTab !== 'seo'}>
@@ -1207,6 +1363,64 @@ export function ContentEditor({
           </div>
         )}
       </div>
+
+      {viewingRevision ? (
+        <div
+          className="revision-modal-backdrop"
+          role="presentation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setViewingRevision(null);
+            }
+          }}
+        >
+          <div
+            className="revision-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="revision-modal-title"
+          >
+            <div className="revision-modal-head">
+              <h2 id="revision-modal-title">
+                Revision #{viewingRevision.revisionNumber} —{' '}
+                {formatDateTime(viewingRevision.createdAt)}
+              </h2>
+              <button
+                type="button"
+                className="button secondary-button"
+                onClick={() => setViewingRevision(null)}
+              >
+                Close
+              </button>
+            </div>
+            <div className="revision-modal-body">
+              <p className="revision-field-label">Title</p>
+              <p className="revision-field-value">{viewingRevision.title}</p>
+              {viewingRevision.excerpt ? (
+                <>
+                  <p className="revision-field-label">Excerpt</p>
+                  <p className="revision-field-value">{viewingRevision.excerpt}</p>
+                </>
+              ) : null}
+              <p className="revision-field-label">Content (raw block markup)</p>
+              <pre className="revision-content" tabIndex={0}>
+                {viewingRevision.content}
+              </pre>
+            </div>
+            <div className="revision-modal-actions">
+              <button
+                type="button"
+                className="button primary-button"
+                disabled={revisionBusy}
+                aria-busy={revisionBusy}
+                onClick={() => void handleRestoreRevision()}
+              >
+                {revisionBusy ? 'Restoring…' : 'Restore this revision'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

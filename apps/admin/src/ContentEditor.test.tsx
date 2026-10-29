@@ -545,3 +545,153 @@ describe('editor publish failure recovery', () => {
     expect(fetchMock).toHaveBeenCalledTimes(6);
   });
 });
+
+describe('editor revisions panel', () => {
+  it('loads revisions on demand, views one, and restores it', async () => {
+    const post = makePost();
+    const revisionList = [
+      {
+        id: 'rev-1',
+        postId: post.id,
+        title: 'Earlier title',
+        excerpt: null,
+        authorId: 'a1',
+        createdAt: '2026-10-26T09:00:00.000Z',
+        revisionNumber: 1,
+      },
+    ];
+    const revisionDetail = {
+      ...revisionList[0],
+      content: '<!-- wp:paragraph -->\n<p>Old content</p>\n<!-- /wp:paragraph -->',
+      seoTitle: null,
+      seoDescription: null,
+      canonicalUrl: null,
+      robots: null,
+      ogTitle: null,
+      ogDescription: null,
+    };
+    const urls: string[] = [];
+    let restoreBody: unknown = null;
+    let restored = false;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockImplementation(async (input, init) => {
+        const url = String(input);
+        urls.push(url);
+        if (url.endsWith(`/api/admin/posts/${post.id}/revisions/rev-1/restore`)) {
+          restoreBody = JSON.parse(String(init?.body ?? '{}'));
+          restored = true;
+          return response(makePost({ version: 3 }));
+        }
+        if (url.endsWith(`/api/admin/posts/${post.id}/revisions/rev-1`)) {
+          return response(revisionDetail);
+        }
+        if (url.endsWith(`/api/admin/posts/${post.id}/revisions`)) {
+          return response(revisionList);
+        }
+        if (url.includes('/api/admin/terms')) {
+          return response(termsPage());
+        }
+        if (url.endsWith(`/api/admin/posts/${post.id}`)) {
+          return response(restored ? makePost({ version: 3 }) : post);
+        }
+        return response(post);
+      }),
+    );
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    renderEditor(authorA, post.id);
+    await screen.findByLabelText('Title');
+
+    // Collapsed by default: no revisions request until the user expands.
+    expect(urls.some((url) => url.includes('/revisions'))).toBe(false);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    const revisionButton = await screen.findByRole('button', { name: /#1/ });
+    fireEvent.click(revisionButton);
+
+    expect(await screen.findByRole('dialog')).toBeDefined();
+    expect(screen.getByText(/Old content/)).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restore this revision' }));
+    expect(await screen.findByText('Revision #1 restored.')).toBeDefined();
+    expect(urls.some((url) => url.endsWith('/revisions/rev-1/restore'))).toBe(true);
+    expect(restoreBody).toEqual({ baseVersion: 1 });
+  });
+
+  it('shows the empty state when no revisions exist', async () => {
+    const post = makePost();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockImplementation(async (input) => {
+        const url = String(input);
+        if (url.includes('/revisions')) {
+          return response([]);
+        }
+        if (url.includes('/api/admin/terms')) {
+          return response(termsPage());
+        }
+        return response(post);
+      }),
+    );
+
+    renderEditor(authorA, post.id);
+    await screen.findByLabelText('Title');
+    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    expect(await screen.findByText('Revisions appear after you save changes.')).toBeDefined();
+  });
+});
+
+describe('editor preview', () => {
+  it('opens the existing token URL without rotating', async () => {
+    const post = makePost({ previewToken: 'a'.repeat(64) });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockImplementation(async (input) => {
+        const url = String(input);
+        if (url.includes('/api/admin/terms')) {
+          return response(termsPage());
+        }
+        return response(post);
+      }),
+    );
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+    renderEditor(authorA, post.id);
+    await screen.findByLabelText('Title');
+    fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+    await waitFor(() =>
+      expect(openSpy).toHaveBeenCalledWith(
+        `/api/public/preview/${'a'.repeat(64)}`,
+        '_blank',
+        'noopener',
+      ),
+    );
+  });
+
+  it('rotates a token first when none exists, then opens the returned path', async () => {
+    const post = makePost({ previewToken: null });
+    const token = 'b'.repeat(64);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockImplementation(async (input) => {
+        const url = String(input);
+        if (url.endsWith('/preview-token')) {
+          return response({ previewToken: token, previewPath: `/api/public/preview/${token}` });
+        }
+        if (url.includes('/api/admin/terms')) {
+          return response(termsPage());
+        }
+        return response(post);
+      }),
+    );
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+    renderEditor(authorA, post.id);
+    await screen.findByLabelText('Title');
+    fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+    await waitFor(() =>
+      expect(openSpy).toHaveBeenCalledWith(`/api/public/preview/${token}`, '_blank', 'noopener'),
+    );
+  });
+});
