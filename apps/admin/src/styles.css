@@ -3572,3 +3572,72 @@ a.glance-chip:hover {
   display: flex;
   gap: 8px;
 }
+
+/* Featured image panel (editor) */
+.featured-current {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.featured-current img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.featured-current:focus-visible {
+  outline: 2px solid var(--wp-blue, #2271b1);
+  outline-offset: 2px;
+}
+
+.featured-picker {
+  margin-top: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 8px;
+  background: #f6f7f7;
+}
+
+.featured-picker-search input {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.featured-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.featured-picker-item {
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+}
+
+.featured-picker-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.featured-picker-item:hover {
+  border-color: #c3c4c7;
+}
+
+.featured-picker-item[aria-selected="true"] {
+  border-color: var(--wp-blue, #2271b1);
+}

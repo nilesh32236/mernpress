@@ -20,6 +20,7 @@ const samplePost = {
   contentFormat: 'wp_block_html',
   renderedContent: '<p>Body <strong>bold</strong></p>',
   toc: [{ level: 2, id: 'section', text: 'Section' }],
+  featuredImage: null,
   seoTitle: 'SEO Title',
   seoDescription: 'SEO Desc',
   canonicalUrl: 'https://example.com/posts/hello-world',
@@ -64,6 +65,46 @@ describe('post page', () => {
     const params = Promise.resolve({ slug: 'hello-world' });
     const html = renderToStaticMarkup(await PostPage({ params }));
     expect(html).toContain('On this page');
+  });
+
+  it('renders the featured image with the 1200 derivative and its alt text', async () => {
+    const post = {
+      ...samplePost,
+      featuredImage: {
+        id: 'm1',
+        url: '/api/media/m1/abc.webp',
+        width: 1600,
+        height: 900,
+        altText: 'Hero image',
+        derivatives: { '1200': '/api/media/m1/abc-1200.webp' },
+      },
+    };
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(jsonResponse(post));
+    const params = Promise.resolve({ slug: 'hello-world' });
+    const html = renderToStaticMarkup(await PostPage({ params }));
+    expect(html).toContain('abc-1200.webp');
+    expect(html).toContain('Hero image');
+  });
+
+  it('generateMetadata emits an absolute og:image from the featured image', async () => {
+    const post = {
+      ...samplePost,
+      featuredImage: {
+        id: 'm1',
+        url: '/api/media/m1/abc.webp',
+        width: 1600,
+        height: 900,
+        altText: 'Hero image',
+        derivatives: {},
+      },
+    };
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(jsonResponse(post));
+    const params = Promise.resolve({ slug: 'hello-world' });
+    const meta = await generateMetadata({ params });
+    const images = meta.openGraph?.images as Array<{ url: string; alt?: string }> | undefined;
+    expect(images?.[0]?.url).toMatch(/^http/);
+    expect(images?.[0]?.url).toContain('/api/media/m1/abc.webp');
+    expect(images?.[0]?.alt).toBe('Hero image');
   });
 
   it('throws on 404', async () => {

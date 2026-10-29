@@ -17,6 +17,15 @@ export interface AdminTermSummary {
   slug: string;
 }
 
+export interface FeaturedImage {
+  id: string;
+  url: string;
+  width: number | null;
+  height: number | null;
+  altText: string;
+  derivatives: Record<string, string>;
+}
+
 export interface AdminPost {
   id: string;
   type: ContentType;
@@ -41,6 +50,7 @@ export interface AdminPost {
   createdAt: string;
   updatedAt: string;
   terms: { categories: AdminTermSummary[]; tags: AdminTermSummary[] };
+  featuredMedia: FeaturedImage | null;
   /** Present only on the single-post admin view; never in list responses. */
   previewToken?: string | null;
 }
@@ -269,6 +279,7 @@ export interface UpdatePostPayload {
   robots?: string | null;
   ogTitle?: string | null;
   ogDescription?: string | null;
+  featuredMediaId?: string | null;
 }
 
 interface ErrorBody {

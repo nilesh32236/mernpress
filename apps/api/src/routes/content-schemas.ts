@@ -42,6 +42,7 @@ export const updatePostSchema = z
     robots: robots.optional(),
     ogTitle: seoTitle.optional(),
     ogDescription: seoDescription.optional(),
+    featuredMediaId: z.string().uuid().nullable().optional(),
   })
   .strict();
 

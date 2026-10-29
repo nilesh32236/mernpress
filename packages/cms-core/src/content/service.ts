@@ -202,8 +202,41 @@ function toSummary(term: { id: string; name: string; slug: string }): AdminTermS
 }
 
 type PostWithTerms = Prisma.PostGetPayload<{
-  include: { terms: { include: { term: true } } };
+  include: { terms: { include: { term: true } }; featuredMedia: true };
 }>;
+
+/** URL of a media file (public serving route, relative path). */
+function mediaUrl(item: { id: string; fileName: string }): string {
+  return `/api/media/${item.id}/${item.fileName}`;
+}
+
+function mediaDerivatives(
+  item: NonNullable<PostWithTerms['featuredMedia']>,
+): Record<string, string> {
+  const raw = item.derivatives;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return {};
+  }
+  const out: Record<string, string> = {};
+  for (const [width, path] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof path === 'string') {
+      const fileName = path.split('/').pop() ?? path;
+      out[width] = `/api/media/${item.id}/${fileName}`;
+    }
+  }
+  return out;
+}
+
+function toFeaturedImage(item: NonNullable<PostWithTerms['featuredMedia']>) {
+  return {
+    id: item.id,
+    url: mediaUrl(item),
+    width: item.width,
+    height: item.height,
+    altText: item.altText,
+    derivatives: mediaDerivatives(item),
+  };
+}
 
 function splitTerms(row: PostWithTerms): AdminPost['terms'] {
   const categories: AdminTermSummary[] = [];
@@ -243,6 +276,7 @@ function toAdmin(row: PostWithTerms, options: { includePreviewToken?: boolean } 
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     terms: splitTerms(row),
+    featuredMedia: row.featuredMedia ? toFeaturedImage(row.featuredMedia) : null,
   };
   // The preview token is admin-only single-post data; list responses must not
   // carry it (P8-03).
@@ -299,6 +333,7 @@ function toPublic(row: PostWithTerms, logger?: ContentServiceOptions['logger']):
     contentFormat: row.contentFormat,
     renderedContent: rendered.html,
     toc: rendered.toc,
+    featuredImage: row.featuredMedia ? toFeaturedImage(row.featuredMedia) : null,
     seoTitle: row.seoTitle,
     seoDescription: row.seoDescription,
     canonicalUrl: row.canonicalUrl,
@@ -311,7 +346,10 @@ function toPublic(row: PostWithTerms, logger?: ContentServiceOptions['logger']):
   };
 }
 
-const WITH_TERMS = { terms: { include: { term: true }, orderBy: { position: 'asc' as const } } };
+const WITH_TERMS = {
+  terms: { include: { term: true }, orderBy: { position: 'asc' as const } },
+  featuredMedia: true,
+};
 
 async function loadWithTerms(tx: Tx, id: string): Promise<PostWithTerms | null> {
   return tx.post.findUnique({ where: { id }, include: WITH_TERMS });
@@ -518,6 +556,23 @@ export function createContentService(options: ContentServiceOptions): ContentSer
       // Revisions snapshot only content-bearing edits. Terms-only, status and
       // slug-only operations must not create a revision (P8-01).
       const snapshotFieldsChanged = revisionFieldsChanged(draft, existing);
+
+      // Featured image: validate existence when set (null clears, undefined keeps).
+      let featuredMediaIdUpdate: string | null | undefined;
+      if (input.featuredMediaId !== undefined) {
+        if (input.featuredMediaId === null) {
+          featuredMediaIdUpdate = null;
+        } else {
+          const media = await tx.mediaItem.findUnique({
+            where: { id: input.featuredMediaId },
+            select: { id: true },
+          });
+          if (!media) {
+            throw new ContentError('NOT_FOUND', 'Media item not found', 404);
+          }
+          featuredMediaIdUpdate = input.featuredMediaId;
+        }
+      }
       // Lock old + new slug keys in deterministic order to avoid deadlock.
       const lockTargets = slugChanged ? [existing.slug, draft.slug].sort() : [existing.slug];
       for (const slug of lockTargets) {
@@ -551,6 +606,9 @@ export function createContentService(options: ContentServiceOptions): ContentSer
             ogDescription: draft.ogDescription,
             version: { increment: 1 },
             ...(snapshotFieldsChanged ? { revisionCount: { increment: 1 } } : {}),
+            ...(featuredMediaIdUpdate === undefined
+              ? {}
+              : { featuredMediaId: featuredMediaIdUpdate }),
           },
         });
       } catch (error) {

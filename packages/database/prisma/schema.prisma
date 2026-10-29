@@ -93,40 +93,43 @@ enum PostStatus {
 }
 
 model Post {
-  id             String      @id @default(uuid(7)) @db.Uuid
-  type           String      @db.VarChar(32)
-  status         PostStatus  @default(DRAFT)
-  title          String      @db.VarChar(300)
-  slug           String      @db.VarChar(200)
-  excerpt        String?
-  content        String      @default("")
-  contentFormat  String      @default("wp_block_html") @map("content_format") @db.VarChar(32)
-  contentVersion Int         @default(1) @map("content_version")
-  authorId       String?     @map("author_id") @db.Uuid
-  seoTitle       String?     @map("seo_title") @db.VarChar(300)
-  seoDescription String?     @map("seo_description") @db.VarChar(500)
-  canonicalUrl   String?     @map("canonical_url") @db.VarChar(2048)
-  robots         String?     @db.VarChar(100)
-  ogTitle        String?     @map("og_title") @db.VarChar(300)
-  ogDescription  String?     @map("og_description") @db.VarChar(500)
-  publishedAt    DateTime?   @map("published_at") @db.Timestamptz(6)
-  trashedAt      DateTime?   @map("trashed_at") @db.Timestamptz(6)
-  previousStatus PostStatus? @map("previous_status")
-  version        Int         @default(1)
-  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id              String      @id @default(uuid(7)) @db.Uuid
+  type            String      @db.VarChar(32)
+  status          PostStatus  @default(DRAFT)
+  title           String      @db.VarChar(300)
+  slug            String      @db.VarChar(200)
+  excerpt         String?
+  content         String      @default("")
+  contentFormat   String      @default("wp_block_html") @map("content_format") @db.VarChar(32)
+  contentVersion  Int         @default(1) @map("content_version")
+  authorId        String?     @map("author_id") @db.Uuid
+  seoTitle        String?     @map("seo_title") @db.VarChar(300)
+  seoDescription  String?     @map("seo_description") @db.VarChar(500)
+  canonicalUrl    String?     @map("canonical_url") @db.VarChar(2048)
+  robots          String?     @db.VarChar(100)
+  ogTitle         String?     @map("og_title") @db.VarChar(300)
+  ogDescription   String?     @map("og_description") @db.VarChar(500)
+  publishedAt     DateTime?   @map("published_at") @db.Timestamptz(6)
+  trashedAt       DateTime?   @map("trashed_at") @db.Timestamptz(6)
+  previousStatus  PostStatus? @map("previous_status")
+  version         Int         @default(1)
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
   /// 64-hex revocable preview token (P8-03). Null = preview disabled.
-  previewToken   String?     @unique @map("preview_token") @db.VarChar(64)
+  previewToken    String?     @unique @map("preview_token") @db.VarChar(64)
   /// First-publish scheduling (P8-04): a DRAFT with a past scheduledAt is
   /// promoted to PUBLISHED by the sweeper. Null = not scheduled.
-  scheduledAt    DateTime?   @map("scheduled_at") @db.Timestamptz(6)
+  scheduledAt     DateTime?   @map("scheduled_at") @db.Timestamptz(6)
   /// Cumulative revision count (P8-01); pruning keeps the newest 50 rows.
-  revisionCount  Int         @default(0) @map("revision_count")
+  revisionCount   Int         @default(0) @map("revision_count")
+  /// Featured image (Phase 6 follow-up); SetNull when the media item is deleted.
+  featuredMediaId String?     @map("featured_media_id") @db.Uuid
 
-  author      User?             @relation(fields: [authorId], references: [id], onDelete: SetNull)
-  terms       PostTerm[]
-  slugHistory PostSlugHistory[]
-  revisions   PostRevision[]
+  author        User?             @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  terms         PostTerm[]
+  slugHistory   PostSlugHistory[]
+  revisions     PostRevision[]
+  featuredMedia MediaItem?        @relation(fields: [featuredMediaId], references: [id], onDelete: SetNull)
 
   @@unique([type, slug])
   @@index([type, status, publishedAt])
@@ -187,7 +190,8 @@ model MediaItem {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  uploadedBy User? @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  uploadedBy User?  @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  featuredOn Post[]
 
   @@index([createdAt])
   @@index([mimeType])

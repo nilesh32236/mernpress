@@ -53,6 +53,7 @@ function makePost(overrides: Partial<AdminPost> = {}): AdminPost {
     createdAt: '2026-10-27T10:00:00.000Z',
     updatedAt: '2026-10-27T11:00:00.000Z',
     terms: { categories: [], tags: [] },
+    featuredMedia: null,
     ...overrides,
   };
 }
@@ -753,6 +754,71 @@ describe('editor preview', () => {
         'noopener',
       ),
     );
+  });
+});
+
+describe('editor featured image', () => {
+  it('selects an image from the picker and includes it in the save payload', async () => {
+    const post = makePost();
+    const mediaItem = {
+      id: 'media-1',
+      fileName: 'abc.webp',
+      originalName: 'hero.png',
+      mimeType: 'image/webp',
+      sizeBytes: 1000,
+      width: 800,
+      height: 600,
+      altText: 'Hero',
+      caption: '',
+      description: '',
+      url: '/api/media/media-1/abc.webp',
+      derivatives: { '300': '/api/media/media-1/abc-300.webp' },
+      uploadedById: 'a1',
+      createdAt: '2026-10-27T10:00:00.000Z',
+      updatedAt: '2026-10-27T10:00:00.000Z',
+    };
+    const calls: Array<{ url: string; method: string; body?: unknown }> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockImplementation(async (input, init) => {
+        const url = String(input);
+        const method = init?.method ?? 'GET';
+        if (url.endsWith('/autosave')) {
+          return response({ autosave: null, postUpdatedAt: post.updatedAt });
+        }
+        if (url.includes('/api/admin/media')) {
+          return response({
+            items: [mediaItem],
+            pagination: { page: 1, perPage: 12, total: 1, totalPages: 1 },
+          });
+        }
+        if (url.includes('/api/admin/terms')) {
+          return response(termsPage());
+        }
+        if (url.endsWith(`/api/admin/posts/${post.id}`) && method === 'PATCH') {
+          calls.push({ url, method, body: JSON.parse(String(init?.body ?? '{}')) });
+          return response({
+            ...post,
+            featuredMedia: { ...mediaItem, derivatives: mediaItem.derivatives },
+            version: 2,
+          });
+        }
+        return response(post);
+      }),
+    );
+
+    renderEditor(authorA, post.id);
+    await screen.findByLabelText('Title');
+
+    // Open the picker and choose the image.
+    fireEvent.click(screen.getByRole('button', { name: 'Select image' }));
+    const option = await screen.findByRole('option');
+    fireEvent.click(option);
+
+    // Save and assert the payload carries the media id.
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    await waitFor(() => expect(calls.length).toBe(1));
+    expect(calls[0]?.body).toMatchObject({ featuredMediaId: 'media-1' });
   });
 });
 

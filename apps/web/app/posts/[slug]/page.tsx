@@ -61,6 +61,20 @@ export async function generateMetadata({
     openGraph: {
       title: post.ogTitle ?? title,
       description: post.ogDescription ?? (description || undefined),
+      ...(post.featuredImage
+        ? {
+            images: [
+              {
+                url: post.featuredImage.url.startsWith('http')
+                  ? post.featuredImage.url
+                  : `${(process.env.MERNPRESS_API_URL || 'http://127.0.0.1:4000').replace(/\/+$/, '')}${post.featuredImage.url}`,
+                ...(post.featuredImage.width ? { width: post.featuredImage.width } : {}),
+                ...(post.featuredImage.height ? { height: post.featuredImage.height } : {}),
+                alt: post.featuredImage.altText,
+              },
+            ],
+          }
+        : {}),
     },
   };
 }

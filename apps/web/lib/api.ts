@@ -6,6 +6,15 @@ export interface PublicTerm {
   slug: string;
 }
 
+export interface FeaturedImage {
+  id: string;
+  url: string;
+  width: number | null;
+  height: number | null;
+  altText: string;
+  derivatives: Record<string, string>;
+}
+
 export interface PublicPost {
   id: string;
   type: ContentType;
@@ -16,6 +25,7 @@ export interface PublicPost {
   contentFormat: string;
   renderedContent: string;
   toc: Array<{ level: number; id: string; text: string }>;
+  featuredImage: FeaturedImage | null;
   seoTitle: string | null;
   seoDescription: string | null;
   canonicalUrl: string | null;

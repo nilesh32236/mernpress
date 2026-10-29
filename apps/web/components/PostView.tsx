@@ -9,11 +9,30 @@ function formatDateUtc(iso: string | null): string | null {
   });
 }
 
+/** Media files are served by the API; page HTML is served by the web app. */
+function absoluteMediaUrl(path: string): string {
+  const base = (process.env.MERNPRESS_API_URL || 'http://127.0.0.1:4000').replace(/\/+$/, '');
+  return path.startsWith('http://') || path.startsWith('https://') ? path : `${base}${path}`;
+}
+
 export default function PostView({ post }: { post: PublicPost }) {
   const date = formatDateUtc(post.publishedAt);
   return (
     <main id="main-content" className="container py-12">
       <article>
+        {post.featuredImage ? (
+          <figure className="mb-8">
+            <img
+              src={absoluteMediaUrl(
+                post.featuredImage.derivatives['1200'] ?? post.featuredImage.url,
+              )}
+              alt={post.featuredImage.altText}
+              width={post.featuredImage.width ?? undefined}
+              height={post.featuredImage.height ?? undefined}
+              className="w-full rounded-xl"
+            />
+          </figure>
+        ) : null}
         <header className="mb-8">
           <h1 className="text-3xl font-semibold tracking-tight">{post.title}</h1>
           {date ? (

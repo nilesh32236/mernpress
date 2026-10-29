@@ -43,6 +43,7 @@ const post = (authorId: string, status: AdminPost['status'] = 'DRAFT'): AdminPos
   createdAt: '2026-10-27T00:00:00.000Z',
   updatedAt: '2026-10-27T00:00:00.000Z',
   terms: { categories: [], tags: [] },
+  featuredMedia: null,
 });
 
 describe('admin capability helpers', () => {

@@ -23,7 +23,10 @@ import {
   type AutosaveSnapshot,
   type AutosaveState,
   type ContentType,
+  type FeaturedImage,
+  type MediaItem,
   type TransitionAction,
+  listMedia,
 } from './api.js';
 import {
   EmptyState,
@@ -61,6 +64,7 @@ interface Baseline {
   form: FormState;
   categoryIds: string[];
   tagIds: string[];
+  featuredMediaId: string | null;
 }
 
 const EMPTY_FORM: FormState = {
@@ -154,6 +158,10 @@ export function ContentEditor({
   const [tags, setTags] = useState<AdminTerm[]>([]);
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [tagIds, setTagIds] = useState<string[]>([]);
+  const [featuredMedia, setFeaturedMedia] = useState<FeaturedImage | null>(null);
+  const [featuredPickerOpen, setFeaturedPickerOpen] = useState(false);
+  const [featuredPickerItems, setFeaturedPickerItems] = useState<MediaItem[] | null>(null);
+  const [featuredPickerSearch, setFeaturedPickerSearch] = useState('');
   const [termsError, setTermsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(!isNew);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -214,9 +222,20 @@ export function ContentEditor({
       form.ogTitle !== baseline.form.ogTitle ||
       form.ogDescription !== baseline.form.ogDescription ||
       !sameIds(categoryIds, baseline.categoryIds) ||
-      !sameIds(tagIds, baseline.tagIds)
+      !sameIds(tagIds, baseline.tagIds) ||
+      (featuredMedia?.id ?? null) !== baseline.featuredMediaId
     );
-  }, [baseline, categoryIds, contentTouched, createdPost, editable, form, isNew, tagIds]);
+  }, [
+    baseline,
+    categoryIds,
+    contentTouched,
+    createdPost,
+    editable,
+    featuredMedia,
+    form,
+    isNew,
+    tagIds,
+  ]);
 
   useUnsavedChanges(dirty, 'You have unsaved changes. Leave this page without saving?');
 
@@ -286,7 +305,12 @@ export function ContentEditor({
         setForm(nextForm);
         setCategoryIds(nextTerms.categoryIds);
         setTagIds(nextTerms.tagIds);
-        setBaseline({ form: nextForm, ...nextTerms });
+        setFeaturedMedia(loaded.featuredMedia ?? null);
+        setBaseline({
+          form: nextForm,
+          ...nextTerms,
+          featuredMediaId: loaded.featuredMedia?.id ?? null,
+        });
         setContentTouched(false);
         setLoading(false);
       })
@@ -401,6 +425,29 @@ export function ContentEditor({
       setRevisionBusy(false);
     }
   }
+
+  // Load picker items when the featured-image picker opens.
+  useEffect(() => {
+    if (!featuredPickerOpen) {
+      return;
+    }
+    let active = true;
+    setFeaturedPickerItems(null);
+    listMedia({ perPage: 12 })
+      .then((result) => {
+        if (active) {
+          setFeaturedPickerItems(result.items);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setFeaturedPickerItems([]);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [featuredPickerOpen]);
 
   // --- Autosave (P8-02) ---
   // One autosave per post, stored server-side as a special revision row. The
@@ -561,7 +608,12 @@ export function ContentEditor({
     setForm(nextForm);
     setCategoryIds(nextTerms.categoryIds);
     setTagIds(nextTerms.tagIds);
-    setBaseline({ form: nextForm, ...nextTerms });
+    setFeaturedMedia(nextPost.featuredMedia ?? null);
+    setBaseline({
+      form: nextForm,
+      ...nextTerms,
+      featuredMediaId: nextPost.featuredMedia?.id ?? null,
+    });
     setContentTouched(false);
   }
 
@@ -681,6 +733,10 @@ export function ContentEditor({
         excerpt: form.excerpt.trim() ? form.excerpt : null,
         content,
         ...seoPayload(form),
+        // Only send when changed; undefined keeps the server-side value.
+        ...((featuredMedia?.id ?? null) !== (baseline?.featuredMediaId ?? null)
+          ? { featuredMediaId: featuredMedia?.id ?? null }
+          : {}),
       });
       const termsResult = await saveTerms(updated.id, updated);
       const serverTerms = termsFromPost(updated);
@@ -688,7 +744,12 @@ export function ContentEditor({
       if (!termsResult.ok) {
         setPost(updated);
         setForm(formFromPost(updated));
-        setBaseline({ form: formFromPost(updated), ...serverTerms });
+        setFeaturedMedia(updated.featuredMedia ?? null);
+        setBaseline({
+          form: formFromPost(updated),
+          ...serverTerms,
+          featuredMediaId: updated.featuredMedia?.id ?? null,
+        });
         setContentTouched(false);
         setNotice({
           tone: 'warning',
@@ -1240,6 +1301,113 @@ export function ContentEditor({
                     </p>
                     <FieldError id="content-slug-error" message={fieldErrors['slug']} />
                   </div>
+                </section>
+
+                <section className="editor-panel" aria-labelledby="featured-heading">
+                  <div className="revisions-panel-head">
+                    <h3 id="featured-heading">Featured image</h3>
+                    {featuredMedia ? (
+                      <button
+                        type="button"
+                        className="button secondary-button revisions-toggle"
+                        onClick={() => setFeaturedMedia(null)}
+                      >
+                        Remove
+                      </button>
+                    ) : null}
+                  </div>
+                  {featuredMedia ? (
+                    <button
+                      type="button"
+                      className="featured-current"
+                      onClick={() => setFeaturedPickerOpen((open) => !open)}
+                      aria-label="Replace featured image"
+                    >
+                      <img
+                        src={featuredMedia.derivatives['300'] ?? featuredMedia.url}
+                        alt={featuredMedia.altText}
+                      />
+                    </button>
+                  ) : (
+                    <>
+                      <p className="field-help">Shown in social previews and the public page.</p>
+                      <button
+                        type="button"
+                        className="button secondary-button"
+                        aria-expanded={featuredPickerOpen}
+                        onClick={() => setFeaturedPickerOpen((open) => !open)}
+                      >
+                        {featuredPickerOpen ? 'Close media picker' : 'Select image'}
+                      </button>
+                    </>
+                  )}
+                  {featuredPickerOpen ? (
+                    <div className="featured-picker">
+                      <div className="featured-picker-search">
+                        <label htmlFor="featured-picker-search" className="screen-reader-text">
+                          Search media
+                        </label>
+                        <input
+                          id="featured-picker-search"
+                          type="search"
+                          placeholder="Search media…"
+                          value={featuredPickerSearch}
+                          onChange={(event) => {
+                            const value = event.target.value;
+                            setFeaturedPickerSearch(value);
+                            setFeaturedPickerItems(null);
+                            listMedia({
+                              ...(value.trim() ? { search: value.trim() } : {}),
+                              perPage: 12,
+                            })
+                              .then((result) => setFeaturedPickerItems(result.items))
+                              .catch(() => setFeaturedPickerItems([]));
+                          }}
+                        />
+                      </div>
+                      {featuredPickerItems === null ? (
+                        <p className="field-help">Loading media…</p>
+                      ) : featuredPickerItems.length === 0 ? (
+                        <p className="field-help">
+                          No media found. Upload images in the Media Library first.
+                        </p>
+                      ) : (
+                        <div
+                          className="featured-picker-grid"
+                          role="listbox"
+                          aria-label="Media items"
+                        >
+                          {featuredPickerItems.map((item) => (
+                            <button
+                              key={item.id}
+                              type="button"
+                              role="option"
+                              aria-selected={featuredMedia?.id === item.id}
+                              className="featured-picker-item"
+                              title={item.originalName}
+                              onClick={() => {
+                                setFeaturedMedia({
+                                  id: item.id,
+                                  url: item.url,
+                                  width: item.width,
+                                  height: item.height,
+                                  altText: item.altText,
+                                  derivatives: item.derivatives,
+                                });
+                                setFeaturedPickerOpen(false);
+                              }}
+                            >
+                              <img
+                                src={item.derivatives['300'] ?? item.url}
+                                alt={item.altText}
+                                loading="lazy"
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
                 </section>
 
                 <section className="editor-panel" aria-labelledby="terms-heading">

@@ -44,6 +44,16 @@ export interface PostTermsActionPayload {
 }
 
 /** Admin-facing post DTO. */
+/** Featured image summary (media DTO subset used by content consumers). */
+export interface FeaturedImage {
+  id: string;
+  url: string;
+  width: number | null;
+  height: number | null;
+  altText: string;
+  derivatives: Record<string, string>;
+}
+
 export interface AdminPost {
   id: string;
   type: ContentType;
@@ -68,6 +78,7 @@ export interface AdminPost {
   createdAt: string;
   updatedAt: string;
   terms: { categories: AdminTermSummary[]; tags: AdminTermSummary[] };
+  featuredMedia: FeaturedImage | null;
   /**
    * Admin-only draft-preview bearer token (P8-03). Present only on the single
    * post view (`getPost`); never emitted by list responses.
@@ -133,6 +144,7 @@ export interface PublicPost {
   renderedContent: string;
   /** Heading anchor entries derived during rendering, for tables of contents. */
   toc: Array<{ level: number; id: string; text: string }>;
+  featuredImage: FeaturedImage | null;
   seoTitle: string | null;
   seoDescription: string | null;
   canonicalUrl: string | null;
@@ -170,6 +182,7 @@ export interface UpdatePostInput {
   robots?: string | null | undefined;
   ogTitle?: string | null | undefined;
   ogDescription?: string | null | undefined;
+  featuredMediaId?: string | null | undefined;
 }
 
 export type AdminPostSort = 'updatedAt' | 'createdAt' | 'publishedAt' | 'title';
