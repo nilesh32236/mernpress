@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { fetchPosts, type AuthUser, type ContentType, type PostStatus } from './api.js';
-import { EmptyState, ErrorState, PageHeader, Skeleton } from './components.js';
-import { canReadContent } from './roles.js';
-import { listPath, navigate } from './router.js';
+import { EmptyState, ErrorState, Skeleton } from './components.js';
+import { canCreateContent, canManageTerms, canReadContent } from './roles.js';
+import { listPath, navigate, newContentPath } from './router.js';
 
 type Counts = Record<ContentType, Record<PostStatus, number>>;
 
@@ -13,6 +13,64 @@ const EMPTY_COUNTS: Counts = {
 
 const STATUSES: PostStatus[] = ['PUBLISHED', 'DRAFT', 'TRASHED'];
 
+function ChipIcon({ kind }: { kind: string }) {
+  const props = {
+    width: 14,
+    height: 14,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    'aria-hidden': true,
+  } as const;
+  switch (kind) {
+    case 'published':
+      return (
+        <svg {...props}>
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+          <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+      );
+    case 'draft':
+      return (
+        <svg {...props}>
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+        </svg>
+      );
+    case 'trash':
+      return (
+        <svg {...props}>
+          <polyline points="3 6 5 6 21 6" />
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+        </svg>
+      );
+    case 'pages':
+      return (
+        <svg {...props}>
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+        </svg>
+      );
+    case 'clock':
+      return (
+        <svg {...props}>
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+      );
+    default:
+      return (
+        <svg {...props}>
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+        </svg>
+      );
+  }
+}
+
 export function Dashboard({ user }: { user: AuthUser }) {
   const [counts, setCounts] = useState<Counts>(EMPTY_COUNTS);
   const [loading, setLoading] = useState(true);
@@ -20,6 +78,8 @@ export function Dashboard({ user }: { user: AuthUser }) {
   const [reloadKey, setReloadKey] = useState(0);
 
   const allowed = canReadContent(user);
+  const creator = canCreateContent(user);
+  const termer = canManageTerms(user);
 
   useEffect(() => {
     if (!allowed) {
@@ -67,11 +127,26 @@ export function Dashboard({ user }: { user: AuthUser }) {
   if (!allowed) {
     return (
       <>
-        <PageHeader
-          eyebrow="Dashboard"
-          title="Dashboard"
-          description="Your account does not have access to the content administration API."
-        />
+        <div className="dash-title-row">
+          <span className="title-badge" aria-hidden="true">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="3" width="7" height="9" />
+              <rect x="14" y="3" width="7" height="5" />
+              <rect x="14" y="12" width="7" height="9" />
+              <rect x="3" y="16" width="7" height="5" />
+            </svg>
+          </span>
+          <h1>Dashboard</h1>
+        </div>
         <EmptyState
           title="No content access"
           message="Subscribers cannot read or manage content. Ask an administrator if you need an editorial role."
@@ -80,13 +155,103 @@ export function Dashboard({ user }: { user: AuthUser }) {
     );
   }
 
+  const postTotal = counts.post.DRAFT + counts.post.PUBLISHED + counts.post.TRASHED;
+  const pageTotal = counts.page.DRAFT + counts.page.PUBLISHED + counts.page.TRASHED;
+
   return (
     <>
-      <PageHeader
-        eyebrow="Dashboard"
-        title="Dashboard"
-        description="At a glance summary of your content, straight from the content API."
-      />
+      <div className="dash-title-row">
+        <span className="title-badge" aria-hidden="true">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x="3" y="3" width="7" height="9" />
+            <rect x="14" y="3" width="7" height="5" />
+            <rect x="14" y="12" width="7" height="9" />
+            <rect x="3" y="16" width="7" height="5" />
+          </svg>
+        </span>
+        <h1>Dashboard</h1>
+      </div>
+
+      <section className="welcome-banner" aria-labelledby="welcome-heading">
+        <h2 id="welcome-heading">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 3l1.9 5.8 5.8 1.9-5.8 1.9L12 18.4l-1.9-5.8L4.3 10.7l5.8-1.9z" />
+            <path d="M19 15l.9 2.6 2.6.9-2.6.9L19 22l-.9-2.6-2.6-.9 2.6-.9z" />
+          </svg>
+          Welcome to MERNPress!
+        </h2>
+        <p>
+          We&apos;ve assembled some links to get you started — write your first post with the block
+          editor.
+        </p>
+        <div className="welcome-ctas">
+          {creator ? (
+            <>
+              <a
+                className="button primary-button"
+                href={newContentPath('post')}
+                onClick={(event) => {
+                  event.preventDefault();
+                  navigate(newContentPath('post'));
+                }}
+              >
+                <span aria-hidden="true">+</span> Add New Post
+              </a>
+              <a
+                className="button primary-button"
+                href={newContentPath('page')}
+                onClick={(event) => {
+                  event.preventDefault();
+                  navigate(newContentPath('page'));
+                }}
+              >
+                <span aria-hidden="true">+</span> Add New Page
+              </a>
+            </>
+          ) : null}
+          <a
+            className="button secondary-button"
+            href={listPath('post')}
+            onClick={(event) => {
+              event.preventDefault();
+              navigate(listPath('post'));
+            }}
+          >
+            Manage Posts
+          </a>
+          {termer ? (
+            <a
+              className="button secondary-button"
+              href="/terms"
+              onClick={(event) => {
+                event.preventDefault();
+                navigate('/terms');
+              }}
+            >
+              Categories &amp; Tags
+            </a>
+          ) : null}
+        </div>
+      </section>
 
       {error ? (
         <ErrorState
@@ -97,86 +262,115 @@ export function Dashboard({ user }: { user: AuthUser }) {
       ) : loading ? (
         <Skeleton label="Loading dashboard…" lines={6} />
       ) : (
-        <>
-          <section className="welcome-panel" aria-labelledby="welcome-heading">
-            <h2 id="welcome-heading">Welcome to MERNPress</h2>
-            <p>
-              This is your content home base. The At a Glance card below shows where every post and
-              page stands, and the Add New buttons get you writing in one click.
+        <div className="dash-grid">
+          <section className="dash-card" aria-labelledby="at-a-glance-heading">
+            <div className="dash-card-head">
+              <h2 id="at-a-glance-heading">
+                <ChipIcon kind="post" />
+                At a Glance
+              </h2>
+            </div>
+            <div className="dash-card-body glance-chips">
+              <a
+                className="glance-chip"
+                href={listPath('post')}
+                onClick={(event) => {
+                  event.preventDefault();
+                  navigate(listPath('post'));
+                }}
+              >
+                <ChipIcon kind="post" />
+                <strong>{postTotal}</strong> Posts
+              </a>
+              <span className="glance-chip">
+                <span className="chip-published" aria-hidden="true">
+                  <ChipIcon kind="published" />
+                </span>
+                <strong>{counts.post.PUBLISHED}</strong> Published
+              </span>
+              <span className="glance-chip">
+                <span className="chip-draft" aria-hidden="true">
+                  <ChipIcon kind="draft" />
+                </span>
+                <strong>{counts.post.DRAFT}</strong> Drafts
+              </span>
+              <span className="glance-chip">
+                <span className="chip-trash" aria-hidden="true">
+                  <ChipIcon kind="trash" />
+                </span>
+                <strong>{counts.post.TRASHED}</strong> Trashed
+              </span>
+              <a
+                className="glance-chip"
+                href={listPath('page')}
+                onClick={(event) => {
+                  event.preventDefault();
+                  navigate(listPath('page'));
+                }}
+              >
+                <ChipIcon kind="pages" />
+                <strong>{pageTotal}</strong> Pages
+              </a>
+              <span className="glance-chip">
+                <ChipIcon kind="published" />
+                <strong>{counts.page.PUBLISHED}</strong> Pages Published
+              </span>
+              <span className="glance-chip">
+                <ChipIcon kind="draft" />
+                <strong>{counts.page.DRAFT}</strong> Pages Draft
+              </span>
+              <span className="glance-chip">
+                <span className="chip-trash" aria-hidden="true">
+                  <ChipIcon kind="trash" />
+                </span>
+                <strong>{counts.page.TRASHED}</strong> Pages Trashed
+              </span>
+            </div>
+            <p className="dash-card-note">
+              <ChipIcon kind="clock" />
+              Site-wide totals, updated live.
             </p>
           </section>
 
-          <section className="dashboard-at-a-glance" aria-labelledby="at-a-glance-heading">
-            <h2 id="at-a-glance-heading">At a Glance</h2>
-            <div className="at-a-glance-body">
-              <table className="at-a-glance-table">
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th>Published</th>
-                    <th>Drafts</th>
-                    <th>Trashed</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(['post', 'page'] as ContentType[]).map((type) => {
-                    const label = type === 'post' ? 'Posts' : 'Pages';
-                    return (
-                      <tr key={type}>
-                        <th scope="row">{label}</th>
-                        <td>
-                          <a
-                            className="at-a-glance-count"
-                            href={listPath(type, { status: 'PUBLISHED' })}
-                            onClick={(event) => {
-                              event.preventDefault();
-                              navigate(listPath(type, { status: 'PUBLISHED' }));
-                            }}
-                          >
-                            {counts[type].PUBLISHED}
-                          </a>
-                        </td>
-                        <td>
-                          <a
-                            className="at-a-glance-count"
-                            href={listPath(type, { status: 'DRAFT' })}
-                            onClick={(event) => {
-                              event.preventDefault();
-                              navigate(listPath(type, { status: 'DRAFT' }));
-                            }}
-                          >
-                            {counts[type].DRAFT}
-                          </a>
-                        </td>
-                        <td>
-                          <a
-                            className="at-a-glance-count"
-                            href={listPath(type, { status: 'TRASHED' })}
-                            onClick={(event) => {
-                              event.preventDefault();
-                              navigate(listPath(type, { status: 'TRASHED' }));
-                            }}
-                          >
-                            {counts[type].TRASHED}
-                          </a>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          <section className="dash-card" aria-labelledby="activity-heading">
+            <div className="dash-card-head">
+              <h2 id="activity-heading">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                </svg>
+                Activity
+              </h2>
+              <a
+                className="dash-card-action"
+                href={listPath('post')}
+                onClick={(event) => {
+                  event.preventDefault();
+                  navigate(listPath('post'));
+                }}
+              >
+                All posts <span aria-hidden="true">→</span>
+              </a>
+            </div>
+            <div className="dash-card-body">
+              <h3 className="activity-title">What you can do here</h3>
+              <p className="activity-text">
+                Create posts and pages, edit drafts, publish or unpublish saved content, move
+                content to the trash, restore it, and assign existing categories and tags. The block
+                editor is available for posts and pages.
+              </p>
             </div>
           </section>
-
-          <section className="dashboard-help" aria-labelledby="dashboard-help-heading">
-            <h2 id="dashboard-help-heading">What you can do here</h2>
-            <p>
-              Create posts and pages, edit drafts, publish or unpublish saved content, move content
-              to the trash, restore it, and assign existing categories and tags. The block editor is
-              available for posts and pages.
-            </p>
-          </section>
-        </>
+        </div>
       )}
     </>
   );

@@ -52,8 +52,9 @@ test('signs in with the login form and signs out without browser token storage',
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
 
+  await page.getByRole('button', { name: 'User profile menu' }).click();
   await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
-  await expect(page.getByText(username)).toBeVisible();
+  await expect(page.getByText(username, { exact: true })).toBeVisible();
 
   const storage = await page.evaluate(() => ({
     local: Object.keys(localStorage),
@@ -61,6 +62,7 @@ test('signs in with the login form and signs out without browser token storage',
   }));
   expect(storage).toEqual({ local: [], session: [] });
 
+  // The user menu is still open from the assertion above.
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page.getByLabel('Username')).toBeVisible();
 });
@@ -85,6 +87,7 @@ test('supports keyboard-only sign-in', async ({ page }) => {
   await page.keyboard.type(password);
   await page.keyboard.press('Enter');
 
+  await page.getByRole('button', { name: 'User profile menu' }).click();
   await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
 });
 
@@ -98,8 +101,9 @@ test('refreshing the pre-auth CSRF token preserves logout over the same-origin p
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
 
+  await page.getByRole('button', { name: 'User profile menu' }).click();
   await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
-  await expect(page.getByText(username)).toBeVisible();
+  await expect(page.getByText(username, { exact: true })).toBeVisible();
 
   const readCsrfCookies = async () => {
     const cookies = await page.context().cookies();
@@ -138,6 +142,7 @@ test('refreshing the pre-auth CSRF token preserves logout over the same-origin p
   expect(afterRefresh.preAuth).toBeTruthy();
   expect(afterRefresh.preAuth).not.toBe(beforeRefresh.preAuth);
 
+  // The user menu is still open from the assertion above.
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page.getByLabel('Username')).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);

@@ -580,20 +580,42 @@ export function UsersPage({ user }: { user: AuthUser }) {
 
   return (
     <>
-      <PageHeader
-        eyebrow="Users"
-        title="Users"
-        description="Manage accounts, roles and passwords. Only administrators can see this screen."
-        actions={
-          <button
-            type="button"
-            className="button primary-button"
-            onClick={() => openDialog('add', null)}
+      <div className="list-title-row">
+        <span className="title-badge" aria-hidden="true">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            Add New User
-          </button>
-        }
-      />
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+        </span>
+        <h1>Users</h1>
+        <button
+          type="button"
+          className="button primary-button list-add-new"
+          onClick={() => openDialog('add', null)}
+        >
+          <span aria-hidden="true">+</span> Add New User
+        </button>
+      </div>
+      <div className="users-subheader">
+        <span className="sub-count">All Users ({total})</span>
+        <span className="sub-sep" aria-hidden="true">
+          |
+        </span>
+        <span className="sub-signed">
+          You are signed in as {user.username} ({user.role.toUpperCase()})
+        </span>
+      </div>
 
       {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
 
@@ -669,8 +691,25 @@ export function UsersPage({ user }: { user: AuthUser }) {
                         <input type="checkbox" />
                       </th>
                       <td className="username column-username">
-                        <span className="row-title">{item.username}</span>
-                        {isSelf ? <span className="no-terms"> (You)</span> : null}
+                        <span className="user-cell">
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                          </svg>
+                          <span className="row-title">{item.username}</span>
+                          {isSelf ? <span className="you-badge">you</span> : null}
+                          {isSelf ? <span className="no-terms"> (You)</span> : null}
+                        </span>
                         {item.status === 'disabled' ? (
                           <span className="status-badge status-draft disabled-badge">Disabled</span>
                         ) : null}
@@ -678,39 +717,113 @@ export function UsersPage({ user }: { user: AuthUser }) {
                           {!isSelf ? (
                             <button
                               type="button"
-                              className="edit-link"
+                              className="icon-action"
+                              aria-label="Change role"
+                              title="Change role"
                               onClick={() => openDialog('role', item)}
                             >
-                              Change role
+                              <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                aria-hidden="true"
+                              >
+                                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                              </svg>
                             </button>
                           ) : null}
-                          {!isSelf ? <span aria-hidden="true"> | </span> : null}
                           <button
                             type="button"
-                            className="edit-link"
+                            className="icon-action"
+                            aria-label="Reset password"
+                            title="Reset password"
                             onClick={() => openDialog('password', item)}
                           >
-                            Reset password
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden="true"
+                            >
+                              <circle cx="7.5" cy="15.5" r="4.5" />
+                              <path d="m11 12 10-10" />
+                              <path d="m15 8 3 3" />
+                            </svg>
                           </button>
                           {!isSelf ? (
                             <>
-                              <span aria-hidden="true"> | </span>
                               <button
                                 type="button"
-                                className={item.status === 'active' ? 'delete-link' : 'edit-link'}
+                                className="icon-action"
+                                aria-label={item.status === 'active' ? 'Disable' : 'Enable'}
+                                title={item.status === 'active' ? 'Disable' : 'Enable'}
                                 disabled={pendingAction !== null}
                                 aria-busy={pendingAction === `status:${item.id}`}
                                 onClick={() => void toggleStatus(item)}
                               >
-                                {item.status === 'active' ? 'Disable' : 'Enable'}
+                                {item.status === 'active' ? (
+                                  <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    aria-hidden="true"
+                                  >
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="4.9" y1="4.9" x2="19.1" y2="19.1" />
+                                  </svg>
+                                ) : (
+                                  <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    aria-hidden="true"
+                                  >
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                    <polyline points="22 4 12 14.01 9 11.01" />
+                                  </svg>
+                                )}
                               </button>
-                              <span aria-hidden="true"> | </span>
                               <button
                                 type="button"
-                                className="delete-link"
+                                className="icon-action danger"
+                                aria-label="Delete…"
+                                title="Delete user"
                                 onClick={() => openDialog('delete', item)}
                               >
-                                Delete…
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  aria-hidden="true"
+                                >
+                                  <polyline points="3 6 5 6 21 6" />
+                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                </svg>
                               </button>
                             </>
                           ) : null}
@@ -740,7 +853,9 @@ export function UsersPage({ user }: { user: AuthUser }) {
                 >
                   « Previous
                 </button>
-                <span className="page-numbers current">{page}</span>
+                <span className="page-numbers current">
+                  Page {page} of {totalPages}
+                </span>
                 <button
                   type="button"
                   className="button secondary-button pagination-button next"

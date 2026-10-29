@@ -112,6 +112,7 @@ test('editor can create, edit, publish, unpublish, trash and restore content', a
   await openNewPost(page);
   await page.getByLabel('Title').fill(`E2E Acceptance Post ${suffix}`);
   await page.getByLabel('Slug').fill(createdPostSlug);
+  await page.getByRole('tab', { name: 'SEO' }).click();
   await page.getByLabel('Excerpt').fill('Created by the Phase 4 browser workflow.');
   await typeInBlockCanvas(page, 'Hello from the Phase 5 block editor.');
   await page.getByRole('button', { name: 'Save draft' }).click();
@@ -239,10 +240,10 @@ test('list pagination uses server totals', async ({ page }) => {
   await page.getByLabel('Search posts').fill(`Pagination ${suffix}`);
   await page.getByRole('button', { name: 'Search' }).click();
   await expect(page.getByText('11 Posts')).toBeVisible();
-  await expect(page.locator('.page-numbers.current')).toHaveText('1');
+  await expect(page.locator('.page-numbers.current')).toHaveText('Page 1 of 2');
   await expect(page.getByRole('button', { name: 'Next »' })).toBeEnabled();
   await page.getByRole('button', { name: 'Next »' }).click();
-  await expect(page.locator('.page-numbers.current')).toHaveText('2');
+  await expect(page.locator('.page-numbers.current')).toHaveText('Page 2 of 2');
   await expect(page.getByText('11 Posts')).toBeVisible();
 });
 

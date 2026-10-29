@@ -219,29 +219,21 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
 
   return (
     <>
-      <PageHeader
-        eyebrow="Content"
-        title={label}
-        description={
-          type === 'post'
-            ? 'Create and manage posts. Only content you may read is listed.'
-            : 'Create and manage pages. Only content you may read is listed.'
-        }
-        actions={
-          canCreateContent(user) ? (
-            <a
-              className="button primary-button"
-              href={newContentPath(type)}
-              onClick={(event) => {
-                event.preventDefault();
-                navigate(newContentPath(type));
-              }}
-            >
-              Add New {type === 'post' ? 'Post' : 'Page'}
-            </a>
-          ) : null
-        }
-      />
+      <div className="list-title-row">
+        <h1>{label}</h1>
+        {canCreateContent(user) ? (
+          <a
+            className="button primary-button list-add-new"
+            href={newContentPath(type)}
+            onClick={(event) => {
+              event.preventDefault();
+              navigate(newContentPath(type));
+            }}
+          >
+            <span aria-hidden="true">+</span> Add New {type === 'post' ? 'Post' : 'Page'}
+          </a>
+        ) : null}
+      </div>
 
       {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
 
@@ -262,6 +254,20 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
 
       <div className="tablenav">
         <div className="alignleft">
+          <span className="funnel-icon" aria-hidden="true">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            </svg>
+          </span>
           <div className="status-filter">
             <label htmlFor={`${type}-status-filter`}>Filter by status</label>
             <select
@@ -282,14 +288,44 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
         <div className="alignright">
           <form className="search-form" onSubmit={handleSearch} role="search">
             <label htmlFor={`${type}-search`}>Search {label}</label>
-            <input
-              id={`${type}-search`}
-              type="search"
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              placeholder={`Search ${label}`}
-            />
+            <span className="search-box">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                id={`${type}-search`}
+                type="search"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder={`Search ${label}`}
+              />
+            </span>
             <button type="submit" className="button secondary-button">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
               Search
             </button>
           </form>
@@ -483,7 +519,9 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                 >
                   « Previous
                 </button>
-                <span className="page-numbers current">{page}</span>
+                <span className="page-numbers current">
+                  Page {page} of {totalPages}
+                </span>
                 <button
                   type="button"
                   className="button secondary-button pagination-button next"

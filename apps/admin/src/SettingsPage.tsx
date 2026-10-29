@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import {
   actionErrorMessage,
   fetchOptions,
@@ -8,14 +8,112 @@ import {
   type OptionValues,
 } from './api.js';
 import { ErrorState, Notice, PageHeader, Skeleton, type NoticeMessage } from './components.js';
+import { useLocation } from './router.js';
 
 type SettingsTab = OptionGroup;
 
-const TABS: Array<{ value: SettingsTab; label: string }> = [
-  { value: 'general', label: 'General' },
-  { value: 'reading', label: 'Reading' },
-  { value: 'writing', label: 'Writing' },
+function GeneralIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <line x1="4" y1="21" x2="4" y2="14" />
+      <line x1="4" y1="10" x2="4" y2="3" />
+      <line x1="12" y1="21" x2="12" y2="12" />
+      <line x1="12" y1="8" x2="12" y2="3" />
+      <line x1="20" y1="21" x2="20" y2="16" />
+      <line x1="20" y1="12" x2="20" y2="3" />
+      <line x1="1" y1="14" x2="7" y2="14" />
+      <line x1="9" y1="8" x2="15" y2="8" />
+      <line x1="17" y1="16" x2="23" y2="16" />
+    </svg>
+  );
+}
+
+function ReadingIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+    </svg>
+  );
+}
+
+function WritingIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function FieldLabel({ icon, children }: { icon: ReactNode; children: ReactNode }) {
+  return (
+    <span className="field-label-text">
+      {icon}
+      {children}
+    </span>
+  );
+}
+
+const TABS: Array<{ value: SettingsTab; label: string; icon: ReactNode }> = [
+  { value: 'general', label: 'General', icon: <GeneralIcon /> },
+  { value: 'reading', label: 'Reading', icon: <ReadingIcon /> },
+  { value: 'writing', label: 'Writing', icon: <WritingIcon /> },
 ];
+
+function tabFromHash(hash: string): SettingsTab {
+  if (hash === '#reading') return 'reading';
+  if (hash === '#writing') return 'writing';
+  return 'general';
+}
 
 function textValue(value: unknown): string {
   if (value === null || value === undefined) {
@@ -43,7 +141,10 @@ function toMessage(error: unknown): string {
 }
 
 export function SettingsPage({ user: _user }: { user: AuthUser }) {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('general');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<SettingsTab>(() =>
+    typeof window === 'undefined' ? 'general' : tabFromHash(window.location.hash),
+  );
 
   const [loaded, setLoaded] = useState<Record<OptionGroup, boolean>>({
     general: false,
@@ -114,9 +215,18 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
     }
   }
 
+  // Sidebar submenu links deep-link via #reading / #writing. pushState does
+  // not fire hashchange, so sync from the router location instead. This also
+  // performs the initial load (location is populated on mount).
   useEffect(() => {
-    void loadGroup('general');
-  }, []);
+    if (typeof window === 'undefined') return;
+    const tab = tabFromHash(window.location.hash);
+    setActiveTab(tab);
+    setNotice(null);
+    if (!loaded[tab] && !loading[tab]) {
+      void loadGroup(tab);
+    }
+  }, [location]);
 
   function handleTabChange(tab: SettingsTab) {
     setActiveTab(tab);
@@ -196,7 +306,9 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
         <div className="content-card">
           <form onSubmit={saveGeneral} aria-label="General settings">
             <div className="field">
-              <label htmlFor="site_title">Site Title (site_title)</label>
+              <label htmlFor="site_title">
+                <FieldLabel icon={<GeneralIcon />}>Site Title</FieldLabel>
+              </label>
               <input
                 id="site_title"
                 type="text"
@@ -209,7 +321,9 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
               />
             </div>
             <div className="field">
-              <label htmlFor="site_tagline">Tagline (site_tagline)</label>
+              <label htmlFor="site_tagline">
+                <FieldLabel icon={<ReadingIcon />}>Tagline</FieldLabel>
+              </label>
               <input
                 id="site_tagline"
                 type="text"
@@ -223,7 +337,9 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
               <p className="field-help">In a few words, explain what this site is about.</p>
             </div>
             <div className="field">
-              <label htmlFor="admin_email">Administration Email Address (admin_email)</label>
+              <label htmlFor="admin_email">
+                <FieldLabel icon={<GeneralIcon />}>Administration Email Address</FieldLabel>
+              </label>
               <input
                 id="admin_email"
                 type="email"
@@ -237,7 +353,9 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
               <p className="field-help">This address is used for admin purposes.</p>
             </div>
             <div className="field">
-              <label htmlFor="site_url">Site Address (URL) (site_url)</label>
+              <label htmlFor="site_url">
+                <FieldLabel icon={<GeneralIcon />}>Site Address (URL)</FieldLabel>
+              </label>
               <input
                 id="site_url"
                 type="url"
@@ -256,7 +374,13 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
                 disabled={!generalDirty || saving.general}
                 aria-busy={saving.general}
               >
-                {saving.general ? 'Saving…' : 'Save Changes'}
+                {saving.general ? (
+                  'Saving…'
+                ) : (
+                  <>
+                    <CheckIcon /> Save Changes
+                  </>
+                )}
               </button>
             </div>
           </form>
@@ -358,7 +482,13 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
                 disabled={!readingDirty || saving.reading}
                 aria-busy={saving.reading}
               >
-                {saving.reading ? 'Saving…' : 'Save Changes'}
+                {saving.reading ? (
+                  'Saving…'
+                ) : (
+                  <>
+                    <CheckIcon /> Save Changes
+                  </>
+                )}
               </button>
             </div>
           </form>
@@ -406,7 +536,13 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
               disabled={!writingDirty || saving.writing}
               aria-busy={saving.writing}
             >
-              {saving.writing ? 'Saving…' : 'Save Changes'}
+              {saving.writing ? (
+                'Saving…'
+              ) : (
+                <>
+                  <CheckIcon /> Save Changes
+                </>
+              )}
             </button>
           </div>
         </form>
@@ -422,16 +558,19 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
       <PageHeader eyebrow="Settings" title="Settings" description="Manage site-wide options." />
       {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
 
-      <div className="taxonomy-tabs" role="tablist" aria-label="Settings sections">
+      <div className="settings-tabs" role="tablist" aria-label="Settings sections">
         {TABS.map((tab) => (
           <button
             key={tab.value}
             type="button"
             role="tab"
+            id={`settings-tab-${tab.value}`}
             aria-selected={activeTab === tab.value}
-            className={`button small-button${activeTab === tab.value ? ' nav-link-active' : ''}`}
+            aria-controls={`settings-panel-${tab.value}`}
+            className={`settings-tab${activeTab === tab.value ? ' is-active' : ''}`}
             onClick={() => handleTabChange(tab.value)}
           >
+            {tab.icon}
             {tab.label}
           </button>
         ))}
@@ -446,7 +585,14 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
           onRetry={() => void loadGroup(activeTab)}
         />
       ) : (
-        renderForm()
+        <div
+          className="settings-panel"
+          role="tabpanel"
+          id={`settings-panel-${activeTab}`}
+          aria-labelledby={`settings-tab-${activeTab}`}
+        >
+          {renderForm()}
+        </div>
       )}
     </>
   );

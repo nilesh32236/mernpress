@@ -499,7 +499,9 @@ export function TermsPage({ user }: { user: AuthUser }) {
                     >
                       « Previous
                     </button>
-                    <span className="page-numbers current">{page}</span>
+                    <span className="page-numbers current">
+                      Page {page} of {totalPages}
+                    </span>
                     <button
                       type="button"
                       className="button secondary-button pagination-button next"

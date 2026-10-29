@@ -27,27 +27,47 @@ Typography: system sans stack; body 13px; small 11–12px; card titles 14px;
 page H1 23px **font-normal** (WP style — not bold). Radii 4px inputs/buttons,
 6px cards/modals. Shadows: cards `shadow-sm`, modals `shadow-xl`.
 
-## App shell contract
+## App shell contract (verified against the live reference, 2026-10-29 PM)
 
-- Dark sidebar `#1d2327`, 220px, **always visible on desktop (≥1024px)**; active
-  item = 4px left border `#2271b1` + `#2c3338` bg + white text. Collapse toggle
-  → 52px icon rail. Below 1024px: off-canvas drawer + backdrop + hamburger.
-- Dark admin bar (36px, `#1d2327`) across the top; sidebar footer holds
-  username/role/sign-out.
-- Content: `#f0f0f1`, max width ~1200px, padding 12–20px.
-- Editor routes may break out of the shell (fullscreen Gutenberg with dark
-  60px header) — see reference inventory §3 editor pattern.
+- **Topbar**: dark 36–40px `#1d2327`, full width above sidebar+content.
+  Left: logo box + site-title button, "Visit Site" pill (external icon),
+  "+ New" dropdown (Post/Page). Right: "Hello, {username}" + avatar circle
+  (initials) with dropdown (Profile, Sign Out).
+- **Sidebar**: dark `#1d2327` 220px below the topbar; "Collapse menu" item at
+  the top (toggles 52px icon rail); menu groups with chevrons expand to
+  submenu rows (indented, dot bullets; active submenu = blue dot + `#2c3338`).
+  Active top item = 4px left border `#2271b1` + `#2c3338` + white text.
+  Below 1024px: off-canvas drawer + backdrop + hamburger.
+- **Content**: `#f0f0f1`, max width ~1200px, padding 12–20px.
+- **Editor**: fullscreen, dark 58–60px header (logo box, blue + inserter,
+  undo/redo, list view; right: Save Draft, Publish, Schedule, gear), right
+  sidebar with "Post | SEO | Block" tab strip, sections (STATUS select,
+  PERMALINK, CATEGORIES with search + name/slug rows + inline add, TAGS inline
+  add).
 
-## Screen patterns
+## Screen patterns (from live reference screenshots)
 
-- **List screens**: status filter tabs with `|` separators and counts
-  (All | Published | Drafts | Trash), bulk-actions select + Apply, right-aligned
-  search, white table card, `thead #f6f7f7`, row hover `#f0f6fc`, hover-revealed
-  row actions, pagination footer. Title row = 23px title + "Add New" button.
-- **Dashboard**: welcome banner card + "At a Glance" card, WP widget style.
+- **List screens**: plain 23px title + blue "+ Add New" top-right; status tabs
+  as blue links with `|` separators (active = dark + 2px `#2271b1` underline);
+  toolbar = funnel icon + Bulk actions select + Apply + filter selects;
+  search input with magnifier icon + blue Search button right; white table card
+  (`thead #f6f7f7`, row hover `#f0f6fc`); empty state = centered large icon +
+  title + "Get started…" + blue CTA; footer "N items" left + "Prev | Page X of
+  Y | Next" right.
+- **Dashboard**: welcome banner card with 4 CTA buttons; 2-column widget grid —
+  "At a Glance" (icon+count chips + "Site-wide totals" note), "Activity",
+  "Quick Draft", "Site Health" pills.
+- **Users**: icon-badge + title + adjacent "Add New User"; subheader
+  "All Users (n) | You are signed in as …"; circle-user icon in username cell,
+  light "you" badge, icon-only action buttons.
+- **Settings**: icon nav-tabs sharing an edge with the panel; icon-prefixed
+  field labels; "Save Changes" with check icon.
+- **Media (Phase 6 target)**: icon-badge + adjacent "Add New Media File"
+  outline button; filter selects; search; "N items"; Bulk select; Grid/List
+  toggle; empty state with Upload CTA.
 - **Terms**: two columns — add-form card left, table card right.
 - **Login**: centered card on `#f0f0f1`, brand mark, WP-blue submit.
-- **Settings (future)**: WP nav-tabs sharing an edge with a `#f6f7f7` panel.
+- **Notices**: bottom-right floating toast cards (green success, red error).
 
 ## Feature parity roadmap (from the matrix)
 
