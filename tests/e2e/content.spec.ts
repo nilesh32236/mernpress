@@ -203,7 +203,9 @@ test('stale edits show a recoverable conflict instead of overwriting', async ({
 
   secondPage.once('dialog', (dialog) => void dialog.accept());
   await secondPage.getByRole('button', { name: 'Reload latest version' }).click();
-  await expect(secondPage.getByLabel('Title', { exact: true })).toHaveValue(`E2E Conflict Winner ${suffix}`);
+  await expect(secondPage.getByLabel('Title', { exact: true })).toHaveValue(
+    `E2E Conflict Winner ${suffix}`,
+  );
   await secondPage.close();
 });
 
