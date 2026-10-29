@@ -15,6 +15,14 @@ export default defineConfig({
         here,
         '../../packages/block-system/src/validate.ts',
       ),
+      '@mernpress/block-system/sanitize': path.resolve(
+        here,
+        '../../packages/block-system/src/sanitize.ts',
+      ),
+      '@mernpress/block-system/render': path.resolve(
+        here,
+        '../../packages/block-system/src/render/index.ts',
+      ),
       '@mernpress/block-system': path.resolve(here, '../../packages/block-system/src/index.ts'),
       '@mernpress/cms-core': path.resolve(here, '../../packages/cms-core/src/index.ts'),
       '@mernpress/database': path.resolve(here, '../../packages/database/src/index.ts'),

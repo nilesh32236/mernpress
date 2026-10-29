@@ -97,7 +97,13 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   });
   app.decorate('contentHooks', contentHooks);
 
-  const content = createContentService({ prisma: database, hooks: contentHooks });
+  const content = createContentService({
+    prisma: database,
+    hooks: contentHooks,
+    logger: {
+      warn: (message, meta) => app.log.warn({ ...meta }, message),
+    },
+  });
   app.decorate('content', content);
 
   const taxonomy = createTaxonomyService({ prisma: database, hooks: contentHooks });

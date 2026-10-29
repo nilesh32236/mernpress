@@ -1,5 +1,6 @@
 import type { DatabaseClient, PostStatus, Prisma } from '@mernpress/database';
 import { validateBlockMarkup } from '@mernpress/block-system/validate';
+import { renderBlockMarkup } from '@mernpress/block-system/render';
 import type { HookRegistry } from '../hooks/types.js';
 import { HookRejectedError } from '../hooks/types.js';
 import {
@@ -41,6 +42,8 @@ export interface ContentServiceOptions {
   prisma: DatabaseClient;
   hooks: HookRegistry;
   now?: () => Date;
+  /** Receives render warnings for otherwise-invisible block fallbacks (ADR 0007). */
+  logger?: { warn: (message: string, meta?: Record<string, unknown>) => void };
 }
 
 export interface ContentService {
@@ -213,7 +216,43 @@ function toAdmin(row: PostWithTerms): AdminPost {
   };
 }
 
-function toPublic(row: PostWithTerms): PublicPost {
+/**
+ * Render a stored document for public consumption (ADR 0007). Fails closed:
+ * unrenderable stored content (legacy rows predating write-time validation)
+ * yields empty HTML rather than raw markup. Render warnings are returned so
+ * callers can log them with request context.
+ */
+function renderForPublic(row: PostWithTerms): {
+  html: string;
+  toc: PublicPost['toc'];
+  warnings: string[];
+} {
+  try {
+    const rendered = renderBlockMarkup(row.content);
+    return {
+      html: rendered.html,
+      toc: rendered.toc,
+      warnings: rendered.warnings.map(
+        (warning) => `${warning.blockName ?? 'freeform'}: ${warning.message}`,
+      ),
+    };
+  } catch (error) {
+    return {
+      html: '',
+      toc: [],
+      warnings: [error instanceof Error ? error.message : String(error)],
+    };
+  }
+}
+
+function toPublic(row: PostWithTerms, logger?: ContentServiceOptions['logger']): PublicPost {
+  const rendered = renderForPublic(row);
+  if (rendered.warnings.length > 0) {
+    logger?.warn('content render fell back for one or more blocks', {
+      postId: row.id,
+      warnings: rendered.warnings,
+    });
+  }
   return {
     id: row.id,
     type: row.type as ContentType,
@@ -222,6 +261,8 @@ function toPublic(row: PostWithTerms): PublicPost {
     excerpt: row.excerpt,
     content: row.content,
     contentFormat: row.contentFormat,
+    renderedContent: rendered.html,
+    toc: rendered.toc,
     seoTitle: row.seoTitle,
     seoDescription: row.seoDescription,
     canonicalUrl: row.canonicalUrl,
@@ -819,7 +860,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
       prisma.post.count({ where }),
     ]);
     return {
-      items: rows.map(toPublic),
+      items: rows.map((row) => toPublic(row, options.logger)),
       pagination: {
         page: query.page,
         perPage: query.perPage,
@@ -838,7 +879,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     if (!row) {
       throw new ContentError('NOT_FOUND', 'Not found', 404);
     }
-    return toPublic(row);
+    return toPublic(row, options.logger);
   }
 
   return {

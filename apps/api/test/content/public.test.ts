@@ -230,3 +230,66 @@ describe('GET /api/public/posts/:slug', () => {
     expect(rightType.statusCode).toBe(200);
   });
 });
+
+describe('rendered public content (ADR 0007)', () => {
+  it('returns sanitized renderedContent and a TOC alongside the raw source', async () => {
+    const content =
+      '<!-- wp:heading -->\n<h2>Rendered Section</h2>\n<!-- /wp:heading -->\n' +
+      '<!-- wp:paragraph -->\n<p>Body with <a href="https://example.com">a link</a>.</p>\n<!-- /wp:paragraph -->';
+    const post = await publish(await createPost({ type: 'post', title: 'Rendered', content }));
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/public/posts/${post.slug}?type=post`,
+    });
+    expect(response.statusCode).toBe(200);
+    const body = response.json() as PublicPost;
+    // Raw canonical source is still present for consumers that need it…
+    expect(body.content).toBe(content);
+    // …but the render path is sanitized and anchor-augmented.
+    expect(body.renderedContent).toContain('<h2 id="rendered-section">Rendered Section</h2>');
+    expect(body.renderedContent).toContain('<a href="https://example.com">a link</a>');
+    expect(body.renderedContent).not.toContain('<!--');
+    expect(body.toc).toEqual([{ level: 2, id: 'rendered-section', text: 'Rendered Section' }]);
+  });
+
+  it('strips stored XSS payloads from renderedContent on every public route', async () => {
+    const content =
+      '<!-- wp:paragraph -->\n<p>Text <img src=x onerror=alert(1)> ' +
+      '<a href="javascript:alert(2)">bad</a><script>alert(3)</script></p>\n<!-- /wp:paragraph -->\n' +
+      '<!-- wp:unknown/widget -->\n<div onclick="alert(4)">widget</div>\n<!-- /wp:unknown/widget -->';
+    const post = await publish(await createPost({ type: 'post', title: 'XSS', content }));
+
+    const single = await app.inject({
+      method: 'GET',
+      url: `/api/public/posts/${post.slug}?type=post`,
+    });
+    const singleBody = single.json() as PublicPost;
+    expect(singleBody.renderedContent).not.toMatch(/onerror|onclick|javascript:|<script/);
+    expect(singleBody.renderedContent).toContain('Text');
+
+    const list = await app.inject({ method: 'GET', url: '/api/public/posts' });
+    const listBody = list.json() as Paged<PublicPost>;
+    const listed = listBody.items.find((item) => item.id === post.id);
+    expect(listed?.renderedContent).not.toMatch(/onerror|onclick|javascript:|<script/);
+    // The raw stored source is untouched — preservation, not rewriting.
+    expect(listed?.content).toBe(content);
+  });
+
+  it('fails closed to empty renderedContent for legacy unrenderable rows', async () => {
+    const post = await publish(await createPost({ type: 'post', title: 'Legacy' }));
+    // Simulate a pre-validation row whose stored markup violates depth limits.
+    const deep = `${'<!-- wp:group --><div class="wp-block-group">'.repeat(25)}<p>x</p>${'</div><!-- /wp:group -->'.repeat(25)}`;
+    await app.database.post.update({ where: { id: post.id }, data: { content: deep } });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/public/posts/${post.slug}?type=post`,
+    });
+    expect(response.statusCode).toBe(200);
+    const body = response.json() as PublicPost;
+    expect(body.renderedContent).toBe('');
+    expect(body.toc).toEqual([]);
+    expect(body.content).toBe(deep);
+  });
+});

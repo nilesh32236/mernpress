@@ -85,6 +85,10 @@ export interface PublicPost {
   excerpt: string | null;
   content: string;
   contentFormat: string;
+  /** Sanitized, render-ready HTML (ADR 0007). Safe to inject without re-sanitizing. */
+  renderedContent: string;
+  /** Heading anchor entries derived during rendering, for tables of contents. */
+  toc: Array<{ level: number; id: string; text: string }>;
   seoTitle: string | null;
   seoDescription: string | null;
   canonicalUrl: string | null;
