@@ -79,6 +79,31 @@ export type {
 
 export { createContentService, type ContentService } from './content/service.js';
 export { ContentError, type ContentErrorCode } from './content/errors.js';
+export { MAX_REVISIONS_PER_POST } from './content/revisions.js';
+export {
+  createScheduleService,
+  MIN_SCHEDULE_LEAD_MS,
+  MAX_SCHEDULE_LEAD_MS,
+  SWEEP_BATCH_SIZE,
+  type ScheduleService,
+  type ScheduleState,
+} from './content/schedule.js';
+export {
+  createBulkService,
+  BULK_MAX_IDS,
+  type BulkAction,
+  type BulkItemInput,
+  type BulkItemResult,
+  type BulkResult,
+  type BulkService,
+} from './content/bulk.js';
+export {
+  generatePreviewToken,
+  isPreviewTokenFormat,
+  PREVIEW_TOKEN_PATTERN,
+  previewPathFor,
+  safeEqualPreviewToken,
+} from './content/preview.js';
 export {
   deriveSlugFromTitle,
   fallbackSlug,
@@ -92,6 +117,8 @@ export {
 export type {
   AdminListQuery,
   AdminPost,
+  AdminRevision,
+  AdminRevisionDetail,
   AdminTermSummary,
   ContentType,
   CreatePostInput,
@@ -100,6 +127,7 @@ export type {
   PostFilterDraft,
   PostStatus,
   PostTermsActionPayload,
+  PreviewLinkResult,
   Principal,
   PublicListQuery,
   PublicPost,
@@ -121,3 +149,22 @@ export type {
 export { createOptionService, type OptionService } from './options/service.js';
 export { OptionError, type OptionErrorCode } from './options/errors.js';
 export type { OptionGroup, GetOptionsInput, UpdateOptionsInput } from './options/types.js';
+
+// ---- Phase 6: media library (P6-01/P6-02/P6-03/P6-05) ----
+export { createMediaService, type MediaServiceOptions } from './media/service.js';
+export {
+  MEDIA_ALLOWED_EXTENSIONS,
+  MEDIA_ALLOWED_IMAGE_FORMATS,
+  MEDIA_DERIVATIVE_WIDTHS,
+  MEDIA_MAIN_MAX_DIMENSION,
+  MEDIA_MAX_UPLOAD_BYTES,
+  type MediaDerivativeWidth,
+  type MediaDerivatives,
+  type MediaDto,
+  type MediaExtension,
+  type MediaFile,
+  type MediaListQuery,
+  type MediaService,
+  type UpdateMediaInput,
+  type UploadMediaInput,
+} from './media/types.js';

@@ -12,6 +12,18 @@ import {
 } from '../auth/capabilities.js';
 import { ContentError } from './errors.js';
 import {
+  captureRevision,
+  findPostRevision,
+  listPostRevisions,
+  revisionFieldsChanged,
+} from './revisions.js';
+import {
+  generatePreviewToken,
+  isPreviewTokenFormat,
+  previewPathFor,
+  safeEqualPreviewToken,
+} from './preview.js';
+import {
   deriveSlugFromTitle,
   fallbackSlug,
   isReservedSlug,
@@ -22,12 +34,15 @@ import {
 import type {
   AdminListQuery,
   AdminPost,
+  AdminRevision,
+  AdminRevisionDetail,
   AdminTermSummary,
   ContentType,
   CreatePostInput,
   Paged,
   PostActionPayload,
   PostFilterDraft,
+  PreviewLinkResult,
   Principal,
   PublicListQuery,
   PublicPost,
@@ -62,6 +77,21 @@ export interface ContentService {
     tagIds: string[],
     baseVersion: number,
   ): Promise<AdminPost>;
+  listRevisions(principal: Principal, postId: string): Promise<AdminRevision[]>;
+  getRevision(
+    principal: Principal,
+    postId: string,
+    revisionId: string,
+  ): Promise<AdminRevisionDetail>;
+  restoreRevision(
+    principal: Principal,
+    postId: string,
+    revisionId: string,
+    baseVersion: number,
+  ): Promise<AdminPost>;
+  rotatePreviewToken(principal: Principal, postId: string): Promise<PreviewLinkResult>;
+  revokePreviewToken(principal: Principal, postId: string): Promise<PreviewLinkResult>;
+  getPreviewPost(token: string): Promise<PublicPost>;
   listPublic(query: PublicListQuery): Promise<Paged<PublicPost>>;
   getPublicBySlug(type: ContentType, slug: string): Promise<PublicPost>;
 }
@@ -188,8 +218,8 @@ function splitTerms(row: PostWithTerms): AdminPost['terms'] {
   return { categories, tags };
 }
 
-function toAdmin(row: PostWithTerms): AdminPost {
-  return {
+function toAdmin(row: PostWithTerms, options: { includePreviewToken?: boolean } = {}): AdminPost {
+  const post: AdminPost = {
     id: row.id,
     type: row.type as ContentType,
     status: row.status,
@@ -214,6 +244,12 @@ function toAdmin(row: PostWithTerms): AdminPost {
     updatedAt: row.updatedAt.toISOString(),
     terms: splitTerms(row),
   };
+  // The preview token is admin-only single-post data; list responses must not
+  // carry it (P8-03).
+  if (options.includePreviewToken === true) {
+    post.previewToken = row.previewToken;
+  }
+  return post;
 }
 
 /**
@@ -434,7 +470,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     if (!canReadPost(principal, row.authorId, row.status)) {
       throw new ContentError('NOT_FOUND', 'Not found', 404);
     }
-    return toAdmin(row);
+    return toAdmin(row, { includePreviewToken: true });
   }
 
   async function updatePost(
@@ -479,6 +515,9 @@ export function createContentService(options: ContentServiceOptions): ContentSer
       }
 
       const slugChanged = draft.slug !== existing.slug;
+      // Revisions snapshot only content-bearing edits. Terms-only, status and
+      // slug-only operations must not create a revision (P8-01).
+      const snapshotFieldsChanged = revisionFieldsChanged(draft, existing);
       // Lock old + new slug keys in deterministic order to avoid deadlock.
       const lockTargets = slugChanged ? [existing.slug, draft.slug].sort() : [existing.slug];
       for (const slug of lockTargets) {
@@ -511,6 +550,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
             ogTitle: draft.ogTitle,
             ogDescription: draft.ogDescription,
             version: { increment: 1 },
+            ...(snapshotFieldsChanged ? { revisionCount: { increment: 1 } } : {}),
           },
         });
       } catch (error) {
@@ -528,6 +568,13 @@ export function createContentService(options: ContentServiceOptions): ContentSer
         await tx.postSlugHistory.create({
           data: { postId: id, oldSlug: existing.slug },
         });
+      }
+
+      // Snapshot the PRE-update state inside the same transaction. The
+      // snapshot is written after a successful version-checked update so a
+      // version conflict leaves no revision behind.
+      if (snapshotFieldsChanged) {
+        await captureRevision(tx, existing);
       }
 
       const fresh = await loadWithTerms(tx, id);
@@ -592,7 +639,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     ]);
 
     return {
-      items: rows.map(toAdmin),
+      items: rows.map((row) => toAdmin(row)),
       pagination: {
         page: query.page,
         perPage: query.perPage,
@@ -840,6 +887,137 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     return toAdmin(row);
   }
 
+  /**
+   * Read access to a post for the revision views: `content.read.any` plus the
+   * visibility policy. Hidden objects surface as 404 (never 403), matching
+   * `getPost`.
+   */
+  async function requireReadablePost(
+    principal: Principal,
+    postId: string,
+  ): Promise<{ authorId: string | null; status: PostStatus }> {
+    requireCapability(principal, 'content.read.any');
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { authorId: true, status: true },
+    });
+    if (!post || !canReadPost(principal, post.authorId, post.status)) {
+      throw new ContentError('NOT_FOUND', 'Not found', 404);
+    }
+    return post;
+  }
+
+  async function listRevisions(principal: Principal, postId: string): Promise<AdminRevision[]> {
+    await requireReadablePost(principal, postId);
+    return listPostRevisions(prisma, postId);
+  }
+
+  async function getRevision(
+    principal: Principal,
+    postId: string,
+    revisionId: string,
+  ): Promise<AdminRevisionDetail> {
+    await requireReadablePost(principal, postId);
+    const revision = await findPostRevision(prisma, postId, revisionId);
+    if (!revision) {
+      throw new ContentError('NOT_FOUND', 'Not found', 404);
+    }
+    return revision;
+  }
+
+  async function restoreRevision(
+    principal: Principal,
+    postId: string,
+    revisionId: string,
+    baseVersion: number,
+  ): Promise<AdminPost> {
+    // Authorize against the post BEFORE looking the revision up so an
+    // unauthorized caller cannot probe revision ids. Authorization is the same
+    // canEditPost policy (and error shape) as updatePost.
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { authorId: true, status: true },
+    });
+    if (!post) {
+      throw new ContentError('NOT_FOUND', 'Not found', 404);
+    }
+    canEditPost(principal, post.authorId, post.status);
+
+    const revision = await prisma.postRevision.findFirst({
+      where: { id: revisionId, postId },
+    });
+    if (!revision) {
+      throw new ContentError('NOT_FOUND', 'Not found', 404);
+    }
+
+    // Restore through the normal update path: it re-authorizes, enforces the
+    // version check, snapshots the PRE-restore state and bumps the version, so
+    // a restore is itself undoable.
+    return updatePost(principal, postId, {
+      baseVersion,
+      title: revision.title,
+      excerpt: revision.excerpt,
+      content: revision.content,
+      seoTitle: revision.seoTitle,
+      seoDescription: revision.seoDescription,
+      canonicalUrl: revision.canonicalUrl,
+      robots: revision.robots,
+      ogTitle: revision.ogTitle,
+      ogDescription: revision.ogDescription,
+    });
+  }
+
+  async function rotatePreviewToken(
+    principal: Principal,
+    postId: string,
+  ): Promise<PreviewLinkResult> {
+    const previewToken = generatePreviewToken();
+    await prisma.$transaction(async (tx) => {
+      const existing = await loadWithTerms(tx, postId);
+      if (!existing) {
+        throw new ContentError('NOT_FOUND', 'Not found', 404);
+      }
+      canEditPost(principal, existing.authorId, existing.status);
+      await tx.post.update({ where: { id: postId }, data: { previewToken } });
+    });
+    return { previewToken, previewPath: previewPathFor(previewToken) };
+  }
+
+  async function revokePreviewToken(
+    principal: Principal,
+    postId: string,
+  ): Promise<PreviewLinkResult> {
+    await prisma.$transaction(async (tx) => {
+      const existing = await loadWithTerms(tx, postId);
+      if (!existing) {
+        throw new ContentError('NOT_FOUND', 'Not found', 404);
+      }
+      canEditPost(principal, existing.authorId, existing.status);
+      await tx.post.update({ where: { id: postId }, data: { previewToken: null } });
+    });
+    return { previewToken: null, previewPath: null };
+  }
+
+  /**
+   * Public draft preview (P8-03). Same renderer/DTO as `getPublicBySlug`
+   * (renderedContent is sanitized) but without the published/schedule gate and
+   * for any status except TRASHED. Malformed tokens are a 400; unknown,
+   * revoked and trashed posts share the draft 404 shape.
+   */
+  async function getPreviewPost(token: string): Promise<PublicPost> {
+    if (!isPreviewTokenFormat(token)) {
+      throw new ContentError('VALIDATION_ERROR', 'Invalid preview token', 400);
+    }
+    const row = await prisma.post.findUnique({
+      where: { previewToken: token },
+      include: WITH_TERMS,
+    });
+    if (!row || row.status === 'TRASHED' || !safeEqualPreviewToken(token, row.previewToken)) {
+      throw new ContentError('NOT_FOUND', 'Not found', 404);
+    }
+    return toPublic(row, options.logger);
+  }
+
   async function listPublic(query: PublicListQuery): Promise<Paged<PublicPost>> {
     const current = now();
     const where: Prisma.PostWhereInput = {
@@ -892,6 +1070,12 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     trash,
     restore,
     assignTerms,
+    listRevisions,
+    getRevision,
+    restoreRevision,
+    rotatePreviewToken,
+    revokePreviewToken,
+    getPreviewPost,
     listPublic,
     getPublicBySlug,
   };

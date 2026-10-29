@@ -1,10 +1,13 @@
 import { ContentError, type ContentService } from '@mernpress/cms-core';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { z } from 'zod';
 import {
   publicListQuerySchema,
   publicSlugQuerySchema,
   slugParamSchema,
 } from './content-schemas.js';
+
+const previewTokenParamSchema = z.object({ token: z.string().min(1).max(200) }).strict();
 
 interface PublicRouteOptions {
   content: ContentService;
@@ -66,4 +69,18 @@ export function registerPublicContentRoutes(
       return content.getPublicBySlug(query.data.type, params.data.slug);
     }),
   );
+
+  // Draft/preview sharing (P8-03): token-gated, never cached, never indexed,
+  // and the token is not echoed in the response body.
+  app.get('/api/public/preview/:token', async (request, reply) => {
+    reply.header('Cache-Control', 'no-store');
+    reply.header('X-Robots-Tag', 'noindex, nofollow');
+    return handle(request, reply, async () => {
+      const params = previewTokenParamSchema.safeParse(request.params);
+      if (!params.success) {
+        throw new ContentError('VALIDATION_ERROR', 'Invalid preview token', 400);
+      }
+      return content.getPreviewPost(params.data.token);
+    });
+  });
 }

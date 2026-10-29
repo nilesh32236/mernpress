@@ -15,6 +15,10 @@ import {
 
 const CONTENT_BODY_LIMIT = 2_100_000; // 2 MB content + envelope overhead
 
+const revisionParamsSchema = z
+  .object({ id: z.string().uuid(), revisionId: z.string().uuid() })
+  .strict();
+
 interface ContentRouteOptions {
   env: Env;
   auth: AuthService;
@@ -144,6 +148,64 @@ export function registerContentRoutes(app: FastifyInstance, options: ContentRout
         body.tagIds,
         body.baseVersion,
       );
+    } catch (error) {
+      return sendError(reply, request, error);
+    }
+  });
+
+  // ---- P8-01: post revisions ----
+  app.get('/api/admin/posts/:id/revisions', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const { id } = idParamSchema.parse(request.params);
+      return await content.listRevisions(ctx.principal, id);
+    } catch (error) {
+      return sendError(reply, request, error);
+    }
+  });
+
+  app.get('/api/admin/posts/:id/revisions/:revisionId', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const { id, revisionId } = revisionParamsSchema.parse(request.params);
+      return await content.getRevision(ctx.principal, id, revisionId);
+    } catch (error) {
+      return sendError(reply, request, error);
+    }
+  });
+
+  app.post('/api/admin/posts/:id/revisions/:revisionId/restore', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const { id, revisionId } = revisionParamsSchema.parse(request.params);
+      const { baseVersion } = transitionSchema.parse(request.body);
+      return await content.restoreRevision(ctx.principal, id, revisionId, baseVersion);
+    } catch (error) {
+      return sendError(reply, request, error);
+    }
+  });
+
+  // ---- P8-03: preview tokens ----
+  app.post('/api/admin/posts/:id/preview-token', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const { id } = idParamSchema.parse(request.params);
+      return await content.rotatePreviewToken(ctx.principal, id);
+    } catch (error) {
+      return sendError(reply, request, error);
+    }
+  });
+
+  app.delete('/api/admin/posts/:id/preview-token', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const { id } = idParamSchema.parse(request.params);
+      return await content.revokePreviewToken(ctx.principal, id);
     } catch (error) {
       return sendError(reply, request, error);
     }

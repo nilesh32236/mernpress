@@ -68,6 +68,44 @@ export interface AdminPost {
   createdAt: string;
   updatedAt: string;
   terms: { categories: AdminTermSummary[]; tags: AdminTermSummary[] };
+  /**
+   * Admin-only draft-preview bearer token (P8-03). Present only on the single
+   * post view (`getPost`); never emitted by list responses.
+   */
+  previewToken?: string | null;
+}
+
+/**
+ * Revision list entry (P8-01). Immutable pre-update snapshot metadata; the
+ * body itself is only returned by the single-revision view.
+ */
+export interface AdminRevision {
+  id: string;
+  postId: string;
+  title: string;
+  excerpt: string | null;
+  authorId: string | null;
+  createdAt: string;
+  /** 1-based position oldest-first among the surviving revisions (stable per revision). */
+  revisionNumber: number;
+}
+
+/** Full revision snapshot for the single-revision view (P8-01). */
+export interface AdminRevisionDetail extends AdminRevision {
+  content: string;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  canonicalUrl: string | null;
+  robots: string | null;
+  ogTitle: string | null;
+  ogDescription: string | null;
+}
+
+/** Result of rotating/revoking a post preview token (P8-03). */
+export interface PreviewLinkResult {
+  previewToken: string | null;
+  /** Relative public preview path, or null after revocation. */
+  previewPath: string | null;
 }
 
 export interface AdminTermSummary {
@@ -150,4 +188,10 @@ export interface PublicListQuery {
 export interface Paged<T> {
   items: T[];
   pagination: { page: number; perPage: number; total: number; totalPages: number };
+}
+
+/** Payload for the scheduling lifecycle actions (P8-04, ADR 0008 §4). */
+export interface PostScheduledActionPayload {
+  postId: string;
+  scheduledAt?: string | null | undefined;
 }
