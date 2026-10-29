@@ -21,18 +21,20 @@ enum UserStatus {
 }
 
 model User {
-  id           String   @id @default(uuid(7)) @db.Uuid
-  username     String   @unique @db.VarChar(32)
-  passwordHash String   @map("password_hash") @db.VarChar(255)
-  role         UserRole @default(administrator)
+  id           String     @id @default(uuid(7)) @db.Uuid
+  username     String     @unique @db.VarChar(32)
+  passwordHash String     @map("password_hash") @db.VarChar(255)
+  role         UserRole   @default(administrator)
   status       UserStatus @default(active)
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  sessions             Session[]
-  auditEventsAsActor   AuditEvent[] @relation("AuditActor")
-  auditEventsAsTarget  AuditEvent[] @relation("AuditTarget")
-  posts                Post[]
+  sessions            Session[]
+  auditEventsAsActor  AuditEvent[]   @relation("AuditActor")
+  auditEventsAsTarget AuditEvent[]   @relation("AuditTarget")
+  posts               Post[]
+  postRevisions       PostRevision[]
+  mediaItems          MediaItem[]
 
   @@map("users")
 }
@@ -91,38 +93,102 @@ enum PostStatus {
 }
 
 model Post {
-  id            String      @id @default(uuid(7)) @db.Uuid
-  type          String      @db.VarChar(32)
-  status        PostStatus  @default(DRAFT)
-  title         String      @db.VarChar(300)
-  slug          String      @db.VarChar(200)
-  excerpt       String?
-  content       String      @default("")
-  contentFormat String      @default("wp_block_html") @map("content_format") @db.VarChar(32)
-  contentVersion Int        @default(1) @map("content_version")
-  authorId      String?     @map("author_id") @db.Uuid
-  seoTitle       String?    @map("seo_title") @db.VarChar(300)
-  seoDescription String?    @map("seo_description") @db.VarChar(500)
-  canonicalUrl   String?    @map("canonical_url") @db.VarChar(2048)
-  robots        String?     @db.VarChar(100)
-  ogTitle       String?     @map("og_title") @db.VarChar(300)
-  ogDescription String?     @map("og_description") @db.VarChar(500)
-  publishedAt   DateTime?   @map("published_at") @db.Timestamptz(6)
-  trashedAt     DateTime?   @map("trashed_at") @db.Timestamptz(6)
+  id             String      @id @default(uuid(7)) @db.Uuid
+  type           String      @db.VarChar(32)
+  status         PostStatus  @default(DRAFT)
+  title          String      @db.VarChar(300)
+  slug           String      @db.VarChar(200)
+  excerpt        String?
+  content        String      @default("")
+  contentFormat  String      @default("wp_block_html") @map("content_format") @db.VarChar(32)
+  contentVersion Int         @default(1) @map("content_version")
+  authorId       String?     @map("author_id") @db.Uuid
+  seoTitle       String?     @map("seo_title") @db.VarChar(300)
+  seoDescription String?     @map("seo_description") @db.VarChar(500)
+  canonicalUrl   String?     @map("canonical_url") @db.VarChar(2048)
+  robots         String?     @db.VarChar(100)
+  ogTitle        String?     @map("og_title") @db.VarChar(300)
+  ogDescription  String?     @map("og_description") @db.VarChar(500)
+  publishedAt    DateTime?   @map("published_at") @db.Timestamptz(6)
+  trashedAt      DateTime?   @map("trashed_at") @db.Timestamptz(6)
   previousStatus PostStatus? @map("previous_status")
-  version       Int         @default(1)
-  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version        Int         @default(1)
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+  /// 64-hex revocable preview token (P8-03). Null = preview disabled.
+  previewToken   String?     @unique @map("preview_token") @db.VarChar(64)
+  /// First-publish scheduling (P8-04): a DRAFT with a past scheduledAt is
+  /// promoted to PUBLISHED by the sweeper. Null = not scheduled.
+  scheduledAt    DateTime?   @map("scheduled_at") @db.Timestamptz(6)
+  /// Cumulative revision count (P8-01); pruning keeps the newest 50 rows.
+  revisionCount  Int         @default(0) @map("revision_count")
 
-  author   User?           @relation(fields: [authorId], references: [id], onDelete: SetNull)
-  terms    PostTerm[]
+  author      User?             @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  terms       PostTerm[]
   slugHistory PostSlugHistory[]
+  revisions   PostRevision[]
 
   @@unique([type, slug])
   @@index([type, status, publishedAt])
   @@index([status, updatedAt])
   @@index([authorId])
+  @@index([scheduledAt])
   @@map("posts")
+}
+
+/// Immutable pre-update content snapshots (P8-01). One row per save; the
+/// newest 50 per post are kept. Restores go through the normal update path,
+/// which itself writes a snapshot.
+model PostRevision {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  postId         String   @map("post_id") @db.Uuid
+  title          String   @db.VarChar(300)
+  excerpt        String?
+  content        String
+  seoTitle       String?  @map("seo_title") @db.VarChar(300)
+  seoDescription String?  @map("seo_description") @db.VarChar(500)
+  canonicalUrl   String?  @map("canonical_url") @db.VarChar(2048)
+  robots         String?  @db.VarChar(100)
+  ogTitle        String?  @map("og_title") @db.VarChar(300)
+  ogDescription  String?  @map("og_description") @db.VarChar(500)
+  authorId       String?  @map("author_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  post   Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([postId, createdAt])
+  @@map("post_revisions")
+}
+
+/// Media library items (Phase 6). Files live under MEDIA_STORAGE_DIR with
+/// random names; derivatives (WebP thumbnails) are tracked in `derivatives`.
+/// Raster images only — no SVG (T-12), no video/documents in this slice.
+model MediaItem {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  /// Random stored base name without directories, e.g. "ab12cd34.webp".
+  fileName     String   @map("file_name") @db.VarChar(120)
+  originalName String   @map("original_name") @db.VarChar(255)
+  mimeType     String   @map("mime_type") @db.VarChar(100)
+  sizeBytes    Int      @map("size_bytes")
+  width        Int?
+  height       Int?
+  altText      String   @default("") @map("alt_text") @db.VarChar(500)
+  caption      String   @default("") @db.VarChar(2000)
+  description  String   @default("") @db.Text
+  /// Path relative to the storage root, e.g. "2026/10/ab12cd34.webp".
+  storagePath  String   @map("storage_path") @db.VarChar(300)
+  /// {"300": "2026/10/ab12cd34-300.webp", "600": ..., "1200": ...}
+  derivatives  Json?
+  uploadedById String?  @map("uploaded_by_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  uploadedBy User? @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([mimeType])
+  @@map("media_items")
 }
 
 model PostSlugHistory {
@@ -168,7 +234,6 @@ model PostTerm {
   @@index([termId, postId])
   @@map("post_terms")
 }
-
 
 model Option {
   key       String   @id @db.VarChar(191)
