@@ -1,5 +1,6 @@
 import type {
   AuthService,
+  AutosaveService,
   BulkService,
   ContentService,
   HookRegistry,
@@ -21,5 +22,6 @@ declare module 'fastify' {
     schedule: ScheduleService;
     bulk: BulkService;
     media: MediaService;
+    autosave: AutosaveService;
   }
 }

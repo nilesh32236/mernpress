@@ -142,6 +142,8 @@ model Post {
 model PostRevision {
   id             String   @id @default(uuid(7)) @db.Uuid
   postId         String   @map("post_id") @db.Uuid
+  /// 'revision' (immutable snapshot, retention 50) or 'autosave' (one per post, P8-02).
+  kind           String   @default("revision") @db.VarChar(16)
   title          String   @db.VarChar(300)
   excerpt        String?
   content        String
@@ -158,6 +160,7 @@ model PostRevision {
   author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
   @@index([postId, createdAt])
+  @@index([postId, kind])
   @@map("post_revisions")
 }
 

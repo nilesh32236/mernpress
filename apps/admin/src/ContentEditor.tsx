@@ -3,12 +3,15 @@ import {
   actionErrorMessage,
   assignTerms,
   createPost,
+  discardAutosave,
+  fetchAutosave,
   fetchPost,
   fetchRevision,
   fetchRevisions,
   fetchTerms,
   restoreRevision,
   rotatePreviewToken,
+  saveAutosave,
   transitionPost,
   updatePost,
   ApiError,
@@ -17,6 +20,7 @@ import {
   type AdminRevisionDetail,
   type AdminTerm,
   type AuthUser,
+  type AutosaveState,
   type ContentType,
   type TransitionAction,
 } from './api.js';
@@ -169,6 +173,7 @@ export function ContentEditor({
   const [viewingRevision, setViewingRevision] = useState<AdminRevisionDetail | null>(null);
   const [revisionBusy, setRevisionBusy] = useState(false);
   const [previewBusy, setPreviewBusy] = useState(false);
+  const [recoveryAutosave, setRecoveryAutosave] = useState<AutosaveState | null>(null);
   const canvasRef = useRef<BlockCanvasHandle>(null);
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const saveShortcutRef = useRef<() => void>(() => {});
@@ -396,6 +401,106 @@ export function ContentEditor({
     }
   }
 
+  // --- Autosave (P8-02) ---
+  // One autosave per post, stored server-side as a special revision row. The
+  // posts row is never touched, so autosave cannot clobber newer edits; the
+  // recovery path is an explicit user action (Restore) that goes through the
+  // normal version-checked update.
+
+  // On load, offer recovery when an autosave newer than the post exists.
+  useEffect(() => {
+    if (!post || createdPost) {
+      return;
+    }
+    let active = true;
+    fetchAutosave(post.id)
+      .then(({ autosave, postUpdatedAt }) => {
+        if (!active || !autosave) {
+          return;
+        }
+        if (new Date(autosave.createdAt).getTime() > new Date(postUpdatedAt).getTime()) {
+          setRecoveryAutosave(autosave);
+        }
+      })
+      .catch(() => {
+        // Autosave recovery must never block editing.
+      });
+    return () => {
+      active = false;
+    };
+    // Only on post load, not on every save — a save discards the autosave.
+  }, [post?.id, createdPost]);
+
+  function buildAutosaveSnapshot(): import('./api.js').AutosaveSnapshot {
+    return {
+      title: form.title,
+      excerpt: form.excerpt.trim() ? form.excerpt : null,
+      content: form.content,
+      ...seoPayload(form),
+    };
+  }
+
+  // Debounced autosave: 30 s after the first change, then whenever the user
+  // has been idle for 30 s with unsaved changes. Never while saving, in a
+  // conflict state, or on new posts (no post row to attach to).
+  const autosaveStateRef = useRef<{ dirty: boolean; saving: boolean; conflict: boolean }>({
+    dirty,
+    saving,
+    conflict: Boolean(conflict),
+  });
+  autosaveStateRef.current = { dirty, saving, conflict: Boolean(conflict) };
+  const snapshotRef = useRef(buildAutosaveSnapshot);
+  snapshotRef.current = buildAutosaveSnapshot;
+
+  useEffect(() => {
+    if (!post || createdPost || !dirty || saving || conflict) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      const current = autosaveStateRef.current;
+      if (!current.dirty || current.saving || current.conflict || !post) {
+        return;
+      }
+      saveAutosave(post.id, snapshotRef.current()).catch(() => {
+        // Autosave failures are silent by design; the next tick retries.
+      });
+    }, 30_000);
+    return () => clearTimeout(timer);
+  }, [post?.id, dirty, saving, conflict, createdPost, form, contentTouched]);
+
+  function handleRestoreAutosave(): void {
+    if (!recoveryAutosave || !post) {
+      return;
+    }
+    setForm((current) => ({
+      ...current,
+      title: recoveryAutosave.title,
+      excerpt: recoveryAutosave.excerpt ?? '',
+      content: recoveryAutosave.content,
+      seoTitle: recoveryAutosave.seoTitle ?? '',
+      seoDescription: recoveryAutosave.seoDescription ?? '',
+      canonicalUrl: recoveryAutosave.canonicalUrl ?? '',
+      robots: recoveryAutosave.robots ?? '',
+      ogTitle: recoveryAutosave.ogTitle ?? '',
+      ogDescription: recoveryAutosave.ogDescription ?? '',
+    }));
+    setContentTouched(true);
+    setNotice({
+      tone: 'success',
+      text: 'Autosave restored into the editor. Save to make it permanent.',
+    });
+    setRecoveryAutosave(null);
+  }
+
+  function handleDiscardAutosave(): void {
+    if (!post) {
+      setRecoveryAutosave(null);
+      return;
+    }
+    setRecoveryAutosave(null);
+    discardAutosave(post.id).catch(() => undefined);
+  }
+
   async function handlePreview(): Promise<void> {
     if (!post) {
       return;
@@ -601,6 +706,9 @@ export function ContentEditor({
         commitBaseline(finalPost);
         message = 'Content published.';
       }
+      // A successful save supersedes any autosave held for this post.
+      setRecoveryAutosave(null);
+      discardAutosave(finalPost.id).catch(() => undefined);
       setNotice({ tone: 'success', text: message });
     } catch (caught) {
       if (caught instanceof ApiError && caught.code === 'VERSION_CONFLICT') {
@@ -880,6 +988,30 @@ export function ContentEditor({
         </header>
 
         {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
+        {recoveryAutosave ? (
+          <div className="autosave-recovery" role="alert">
+            <p>
+              A more recent autosave from {formatDateTime(recoveryAutosave.createdAt)} exists for
+              this {type}.
+            </p>
+            <div className="autosave-recovery-actions">
+              <button
+                type="button"
+                className="button primary-button"
+                onClick={handleRestoreAutosave}
+              >
+                Restore autosave
+              </button>
+              <button
+                type="button"
+                className="button secondary-button"
+                onClick={handleDiscardAutosave}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        ) : null}
         {conflict ? (
           <div className="conflict-panel">
             <p>A newer version exists on the server. Reload it before editing again.</p>

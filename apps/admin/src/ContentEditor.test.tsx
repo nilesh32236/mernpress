@@ -163,14 +163,21 @@ describe('content editor', () => {
 
   it('shows a recoverable conflict instead of overwriting a stale version', async () => {
     const post = makePost();
-    const fetchMock = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(response(post))
-      .mockResolvedValueOnce(response(termsPage()))
-      .mockResolvedValueOnce(response(termsPage()))
-      .mockResolvedValueOnce(
-        response({ error: { code: 'VERSION_CONFLICT', message: 'Version conflict' } }, 409),
-      );
+    let saveCalls = 0;
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith('/autosave')) {
+        return response({ autosave: null, postUpdatedAt: post.updatedAt });
+      }
+      if (url.includes('/api/admin/terms')) {
+        return response(termsPage());
+      }
+      if (url.endsWith(`/api/admin/posts/${post.id}`) && init?.method === 'PATCH') {
+        saveCalls += 1;
+        return response({ error: { code: 'VERSION_CONFLICT', message: 'Version conflict' } }, 409);
+      }
+      return response(post);
+    });
     vi.stubGlobal('fetch', fetchMock);
 
     renderEditor(authorA, post.id);
@@ -184,8 +191,12 @@ describe('content editor', () => {
       ),
     ).toBeDefined();
     expect(screen.getByRole('button', { name: 'Reload latest version' })).toBeDefined();
-    expect(fetchMock.mock.calls[3]?.[0]).toBe('/api/admin/posts/post-1');
-    expect(JSON.parse(String(fetchMock.mock.calls[3]?.[1]?.body))).toMatchObject({
+    expect(saveCalls).toBe(1);
+    const patchCall = fetchMock.mock.calls.find(
+      (call) =>
+        String(call[0]).endsWith(`/api/admin/posts/${post.id}`) && call[1]?.method === 'PATCH',
+    );
+    expect(JSON.parse(String(patchCall?.[1]?.body))).toMatchObject({
       baseVersion: 1,
       title: 'Changed title',
     });
@@ -198,12 +209,19 @@ describe('content editor', () => {
       version: 2,
       publishedAt: '2026-10-27T12:00:00.000Z',
     });
-    const fetchMock = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(response(post))
-      .mockResolvedValueOnce(response(termsPage()))
-      .mockResolvedValueOnce(response(termsPage()))
-      .mockResolvedValueOnce(response(published));
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith('/autosave')) {
+        return response({ autosave: null, postUpdatedAt: post.updatedAt });
+      }
+      if (url.includes('/api/admin/terms')) {
+        return response(termsPage());
+      }
+      if (url.endsWith('/publish')) {
+        return response(published);
+      }
+      return response(post);
+    });
     vi.stubGlobal('fetch', fetchMock);
 
     renderEditor(authorA, post.id);
@@ -211,7 +229,8 @@ describe('content editor', () => {
 
     expect(await screen.findByText('Content published.')).toBeDefined();
     expect(screen.getAllByText('Published').length).toBeGreaterThan(0);
-    expect(fetchMock.mock.calls[3]?.[0]).toBe('/api/admin/posts/post-1/publish');
+    const publishCall = fetchMock.mock.calls.find((call) => String(call[0]).endsWith('/publish'));
+    expect(publishCall?.[0]).toBe('/api/admin/posts/post-1/publish');
   });
 
   it('renders a read-only view when the role cannot edit the content', async () => {
@@ -249,15 +268,22 @@ describe('content editor term assignment resilience', () => {
       createdAt: '2026-10-27T00:00:00.000Z',
       updatedAt: '2026-10-27T00:00:00.000Z',
     };
-    const fetchMock = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(response(post))
-      .mockResolvedValueOnce(response(termsPage([category])))
-      .mockResolvedValueOnce(response(termsPage()))
-      .mockResolvedValueOnce(response({ ...post, title: 'Term post updated', version: 2 }))
-      .mockResolvedValueOnce(
-        response({ error: { code: 'TERM_NOT_FOUND', message: 'Term not found' } }, 400),
-      );
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith('/autosave')) {
+        return response({ autosave: null, postUpdatedAt: post.updatedAt });
+      }
+      if (url.includes('/api/admin/terms')) {
+        return response(url.includes('taxonomy=category') ? termsPage([category]) : termsPage());
+      }
+      if (url.endsWith(`/api/admin/posts/${post.id}/terms`)) {
+        return response({ error: { code: 'TERM_NOT_FOUND', message: 'Term not found' } }, 400);
+      }
+      if (url.endsWith(`/api/admin/posts/${post.id}`) && init?.method === 'PATCH') {
+        return response({ ...post, title: 'Term post updated', version: 2 });
+      }
+      return response(post);
+    });
     vi.stubGlobal('fetch', fetchMock);
 
     renderEditor(authorA, post.id);
@@ -292,13 +318,22 @@ describe('editor publish workflow', () => {
       content: saved.content,
       publishedAt: '2026-10-28T12:00:00.000Z',
     });
-    const fetchMock = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(response(post))
-      .mockResolvedValueOnce(response(termsPage()))
-      .mockResolvedValueOnce(response(termsPage()))
-      .mockResolvedValueOnce(response(saved))
-      .mockResolvedValueOnce(response(published));
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith('/autosave')) {
+        return response({ autosave: null, postUpdatedAt: post.updatedAt });
+      }
+      if (url.includes('/api/admin/terms')) {
+        return response(termsPage());
+      }
+      if (url.endsWith('/publish')) {
+        return response(published);
+      }
+      if (url.endsWith(`/api/admin/posts/${post.id}`) && init?.method === 'PATCH') {
+        return response(saved);
+      }
+      return response(post);
+    });
     vi.stubGlobal('fetch', fetchMock);
 
     renderEditor(authorA, post.id);
@@ -308,13 +343,18 @@ describe('editor publish workflow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
 
     expect(await screen.findByText('Content published.')).toBeDefined();
-    expect(fetchMock.mock.calls[3]?.[0]).toBe('/api/admin/posts/post-1');
-    expect(JSON.parse(String(fetchMock.mock.calls[3]?.[1]?.body))).toMatchObject({
+    const patchCall = fetchMock.mock.calls.find(
+      (call) =>
+        String(call[0]).endsWith(`/api/admin/posts/${post.id}`) && call[1]?.method === 'PATCH',
+    );
+    expect(patchCall?.[0]).toBe('/api/admin/posts/post-1');
+    expect(JSON.parse(String(patchCall?.[1]?.body))).toMatchObject({
       baseVersion: 1,
       title: 'Publish after edit',
     });
-    expect(fetchMock.mock.calls[4]?.[0]).toBe('/api/admin/posts/post-1/publish');
-    expect(JSON.parse(String(fetchMock.mock.calls[4]?.[1]?.body))).toEqual({ baseVersion: 2 });
+    const publishCall = fetchMock.mock.calls.find((call) => String(call[0]).endsWith('/publish'));
+    expect(publishCall?.[0]).toBe('/api/admin/posts/post-1/publish');
+    expect(JSON.parse(String(publishCall?.[1]?.body))).toEqual({ baseVersion: 2 });
     expect(screen.getAllByText('Published').length).toBeGreaterThan(0);
   });
 
@@ -517,16 +557,30 @@ describe('editor publish failure recovery', () => {
       title: 'Retry publish',
       publishedAt: '2026-10-28T12:00:00.000Z',
     });
-    const fetchMock = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(response(post))
-      .mockResolvedValueOnce(response(termsPage()))
-      .mockResolvedValueOnce(response(termsPage()))
-      .mockResolvedValueOnce(response(saved))
-      .mockResolvedValueOnce(
-        response({ error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } }, 500),
-      )
-      .mockResolvedValueOnce(response(published));
+    let publishAttempts = 0;
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith('/autosave')) {
+        return response({ autosave: null, postUpdatedAt: post.updatedAt });
+      }
+      if (url.includes('/api/admin/terms')) {
+        return response(termsPage());
+      }
+      if (url.endsWith('/publish')) {
+        publishAttempts += 1;
+        if (publishAttempts === 1) {
+          return response(
+            { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
+            500,
+          );
+        }
+        return response(published);
+      }
+      if (url.endsWith(`/api/admin/posts/${post.id}`) && init?.method === 'PATCH') {
+        return response(saved);
+      }
+      return response(post);
+    });
     vi.stubGlobal('fetch', fetchMock);
 
     renderEditor(authorA, post.id);
@@ -540,9 +594,11 @@ describe('editor publish failure recovery', () => {
     // transitions at version 2, without another content write.
     fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
     expect(await screen.findByText('Content published.')).toBeDefined();
-    expect(fetchMock.mock.calls[5]?.[0]).toBe('/api/admin/posts/post-1/publish');
-    expect(JSON.parse(String(fetchMock.mock.calls[5]?.[1]?.body))).toEqual({ baseVersion: 2 });
-    expect(fetchMock).toHaveBeenCalledTimes(6);
+    expect(publishAttempts).toBe(2);
+    const publishCalls = fetchMock.mock.calls.filter((call) =>
+      String(call[0]).endsWith('/publish'),
+    );
+    expect(JSON.parse(String(publishCalls[1]?.[1]?.body))).toEqual({ baseVersion: 2 });
   });
 });
 
@@ -697,5 +753,156 @@ describe('editor preview', () => {
         'noopener',
       ),
     );
+  });
+});
+
+describe('editor autosave (P8-02)', () => {
+  function autosaveMock(options: { autosave?: unknown; postUpdatedAt?: string; post?: AdminPost }) {
+    const calls: Array<{ url: string; method: string; body?: unknown }> = [];
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input, init) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+      if (url.endsWith('/autosave') && method === 'PUT') {
+        calls.push({ url, method, body: JSON.parse(String(init?.body ?? '{}')) });
+        return response({ id: 'as-1', postId: 'post-1', createdAt: '2026-10-27T12:00:00.000Z' });
+      }
+      if (url.endsWith('/autosave') && method === 'DELETE') {
+        calls.push({ url, method });
+        return response(null, 204);
+      }
+      if (url.endsWith('/autosave')) {
+        return response({
+          autosave: options.autosave ?? null,
+          postUpdatedAt: options.postUpdatedAt ?? '2026-10-27T11:00:00.000Z',
+        });
+      }
+      if (url.includes('/api/admin/terms')) {
+        return response(termsPage());
+      }
+      return response(options.post ?? makePost());
+    });
+    return { fetchMock, calls };
+  }
+
+  it('offers recovery when a newer autosave exists; restore fills the form', async () => {
+    const { fetchMock } = autosaveMock({
+      autosave: {
+        id: 'as-1',
+        postId: 'post-1',
+        title: 'Recovered title',
+        excerpt: 'Recovered excerpt',
+        content: '<p>Recovered content</p>',
+        seoTitle: null,
+        seoDescription: null,
+        canonicalUrl: null,
+        robots: null,
+        ogTitle: null,
+        ogDescription: null,
+        authorId: 'a1',
+        createdAt: '2026-10-27T12:30:00.000Z',
+      },
+      postUpdatedAt: '2026-10-27T11:00:00.000Z',
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA, 'post-1');
+    await screen.findByLabelText('Title');
+
+    expect(await screen.findByText(/A more recent autosave/)).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Restore autosave' }));
+
+    expect((screen.getByLabelText('Title') as HTMLInputElement).value).toBe('Recovered title');
+    expect(
+      await screen.findByText('Autosave restored into the editor. Save to make it permanent.'),
+    ).toBeDefined();
+  });
+
+  it('dismisses recovery without restoring and deletes the server autosave', async () => {
+    const { fetchMock, calls } = autosaveMock({
+      autosave: {
+        id: 'as-1',
+        postId: 'post-1',
+        title: 'Old autosave',
+        excerpt: null,
+        content: 'x',
+        seoTitle: null,
+        seoDescription: null,
+        canonicalUrl: null,
+        robots: null,
+        ogTitle: null,
+        ogDescription: null,
+        authorId: 'a1',
+        createdAt: '2026-10-27T12:30:00.000Z',
+      },
+      postUpdatedAt: '2026-10-27T11:00:00.000Z',
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA, 'post-1');
+    await screen.findByLabelText('Title');
+    expect(await screen.findByText(/A more recent autosave/)).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    await waitFor(() =>
+      expect(calls.some((call) => call.method === 'DELETE' && call.url.endsWith('/autosave'))).toBe(
+        true,
+      ),
+    );
+    expect(screen.queryByText(/A more recent autosave/)).toBeNull();
+    expect((screen.getByLabelText('Title') as HTMLInputElement).value).toBe('Draft title');
+  });
+
+  it('does not offer recovery when the autosave is older than the post', async () => {
+    const { fetchMock } = autosaveMock({
+      autosave: {
+        id: 'as-1',
+        postId: 'post-1',
+        title: 'Stale autosave',
+        excerpt: null,
+        content: 'x',
+        seoTitle: null,
+        seoDescription: null,
+        canonicalUrl: null,
+        robots: null,
+        ogTitle: null,
+        ogDescription: null,
+        authorId: 'a1',
+        createdAt: '2026-10-27T10:00:00.000Z',
+      },
+      postUpdatedAt: '2026-10-27T11:00:00.000Z',
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA, 'post-1');
+    await screen.findByLabelText('Title');
+    // Give the autosave fetch a chance to resolve.
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some((call) => String(call[0]).endsWith('/autosave'))).toBe(true),
+    );
+    expect(screen.queryByText(/A more recent autosave/)).toBeNull();
+  });
+
+  it('autosaves dirty edits after 30 s idle and discards the autosave after a save', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const { fetchMock, calls } = autosaveMock({});
+      vi.stubGlobal('fetch', fetchMock);
+
+      renderEditor(authorA, 'post-1');
+      await screen.findByLabelText('Title');
+
+      fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Edited title' } });
+      await vi.advanceTimersByTimeAsync(31_000);
+
+      await waitFor(() =>
+        expect(calls.some((call) => call.method === 'PUT' && call.url.endsWith('/autosave'))).toBe(
+          true,
+        ),
+      );
+      const autosaveCall = calls.find((call) => call.method === 'PUT');
+      expect(autosaveCall?.body).toMatchObject({ title: 'Edited title' });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

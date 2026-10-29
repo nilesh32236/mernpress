@@ -71,6 +71,71 @@ export interface PreviewLinkResult {
   previewUrl: string | null;
 }
 
+export interface AutosaveState {
+  id: string;
+  postId: string;
+  title: string;
+  excerpt: string | null;
+  content: string;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  canonicalUrl: string | null;
+  robots: string | null;
+  ogTitle: string | null;
+  ogDescription: string | null;
+  authorId: string | null;
+  createdAt: string;
+}
+
+export interface AutosaveSnapshot {
+  title: string;
+  excerpt: string | null;
+  content: string;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  canonicalUrl: string | null;
+  robots: string | null;
+  ogTitle: string | null;
+  ogDescription: string | null;
+}
+
+export async function saveAutosave(
+  postId: string,
+  snapshot: AutosaveSnapshot,
+): Promise<AutosaveState> {
+  const response = await fetch(`/api/admin/posts/${encodeURIComponent(postId)}/autosave`, {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', 'content-type': 'application/json', ...csrfHeader() },
+    body: JSON.stringify(snapshot),
+  });
+  return readJson<AutosaveState>(response);
+}
+
+export async function fetchAutosave(
+  postId: string,
+): Promise<{ autosave: AutosaveState | null; postUpdatedAt: string }> {
+  const response = await fetch(`/api/admin/posts/${encodeURIComponent(postId)}/autosave`, {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<{ autosave: AutosaveState | null; postUpdatedAt: string }>(response);
+}
+
+export async function discardAutosave(postId: string): Promise<void> {
+  const response = await fetch(`/api/admin/posts/${encodeURIComponent(postId)}/autosave`, {
+    method: 'DELETE',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  if (!response.ok) {
+    await readJson(response);
+  }
+}
+
 export async function fetchRevisions(postId: string): Promise<AdminRevision[]> {
   const response = await fetch(`/api/admin/posts/${encodeURIComponent(postId)}/revisions`, {
     credentials: 'include',

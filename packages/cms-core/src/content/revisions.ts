@@ -95,7 +95,7 @@ export async function captureRevision(tx: Tx, post: RevisionSnapshotSource): Pro
 /** Delete all but the newest `MAX_REVISIONS_PER_POST` revisions for a post. */
 export async function pruneRevisions(tx: Tx, postId: string): Promise<void> {
   const keep = await tx.postRevision.findMany({
-    where: { postId },
+    where: { postId, kind: 'revision' },
     orderBy: REVISION_ORDER_DESC,
     take: MAX_REVISIONS_PER_POST,
     select: { id: true },
@@ -104,7 +104,7 @@ export async function pruneRevisions(tx: Tx, postId: string): Promise<void> {
     return;
   }
   await tx.postRevision.deleteMany({
-    where: { postId, id: { notIn: keep.map((row) => row.id) } },
+    where: { postId, kind: 'revision', id: { notIn: keep.map((row) => row.id) } },
   });
 }
 
@@ -166,7 +166,7 @@ export async function listPostRevisions(
   postId: string,
 ): Promise<AdminRevision[]> {
   const rows = await prisma.postRevision.findMany({
-    where: { postId },
+    where: { postId, kind: 'revision' },
     orderBy: REVISION_ORDER_ASC,
     select: {
       id: true,
@@ -187,13 +187,13 @@ export async function findPostRevision(
   revisionId: string,
 ): Promise<AdminRevisionDetail | null> {
   const row = await prisma.postRevision.findFirst({
-    where: { id: revisionId, postId },
+    where: { id: revisionId, postId, kind: 'revision' },
   });
   if (!row) {
     return null;
   }
   const ordered = await prisma.postRevision.findMany({
-    where: { postId },
+    where: { postId, kind: 'revision' },
     orderBy: REVISION_ORDER_ASC,
     select: { id: true },
   });

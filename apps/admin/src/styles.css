@@ -3546,3 +3546,29 @@ a.glance-chip:hover {
   padding: 2px 10px;
   font-size: 12px;
 }
+
+/* Autosave recovery banner (P8-02) */
+.autosave-recovery {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 10px 16px 0;
+  padding: 10px 14px;
+  border: 1px solid #dba617;
+  border-left-width: 4px;
+  border-radius: 4px;
+  background: #fcf9e8;
+  color: #1d2327;
+}
+
+.autosave-recovery p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.autosave-recovery-actions {
+  display: flex;
+  gap: 8px;
+}

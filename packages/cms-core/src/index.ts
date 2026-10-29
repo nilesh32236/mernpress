@@ -98,6 +98,12 @@ export {
   type BulkService,
 } from './content/bulk.js';
 export {
+  createAutosaveService,
+  type AutosaveService,
+  type AutosaveSnapshot,
+  type AutosaveState,
+} from './content/autosave.js';
+export {
   generatePreviewToken,
   isPreviewTokenFormat,
   PREVIEW_TOKEN_PATTERN,

@@ -13,6 +13,7 @@ import {
   createScheduleService,
   createBulkService,
   createMediaService,
+  createAutosaveService,
   type AuthConfig,
 } from '@mernpress/cms-core';
 import { checkDatabase, createDatabaseClient } from '@mernpress/database';
@@ -28,6 +29,7 @@ import { registerOptionRoutes } from './routes/options.js';
 import { registerScheduleRoutes } from './routes/schedule.js';
 import { registerContentBulkRoutes } from './routes/content-bulk.js';
 import { registerMediaRoutes } from './routes/media.js';
+import { registerAutosaveRoutes } from './routes/autosave.js';
 import { startPublishScheduler } from './scheduler.js';
 import { resolveRequestId } from './http/request-id.js';
 import { mkdirSync } from 'node:fs';
@@ -143,6 +145,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   app.decorate('media', media);
   mkdirSync(env.MEDIA_STORAGE_DIR, { recursive: true });
 
+  const autosave = createAutosaveService({ prisma: database });
+  app.decorate('autosave', autosave);
+
   app.addHook('onRequest', async (request, reply) => {
     if (!MUTATING_METHODS.has(request.method)) {
       return;
@@ -178,6 +183,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerScheduleRoutes(app, { env, auth, schedule });
   registerContentBulkRoutes(app, { env, auth, bulk });
   registerMediaRoutes(app, { env, auth, media, storageRoot: env.MEDIA_STORAGE_DIR });
+  registerAutosaveRoutes(app, { env, auth, autosave });
   registerPublicContentRoutes(app, { content });
 
   if (env.SCHEDULER_ENABLED) {
