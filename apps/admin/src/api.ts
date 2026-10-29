@@ -165,14 +165,8 @@ function getCookie(name: string): string | undefined {
   }
 }
 
-async function toApiError(response: Response): Promise<ApiError> {
-  let body: ErrorBody = {};
-  try {
-    body = (await response.json()) as ErrorBody;
-  } catch {
-    // A non-JSON error is still surfaced as a generic API failure.
-  }
-
+/** Single place where the API error envelope becomes an `ApiError`. */
+function apiErrorFromBody(status: number, body: ErrorBody): ApiError {
   const details = (body.error?.details ?? [])
     .filter((detail) => typeof detail.message === 'string')
     .map((detail) => ({
@@ -181,11 +175,37 @@ async function toApiError(response: Response): Promise<ApiError> {
     }));
 
   return new ApiError(
-    response.status,
+    status,
     body.error?.code ?? 'REQUEST_FAILED',
     body.error?.message ?? 'The request failed.',
     details,
   );
+}
+
+async function toApiError(response: Response): Promise<ApiError> {
+  let body: ErrorBody = {};
+  try {
+    body = (await response.json()) as ErrorBody;
+  } catch {
+    // A non-JSON error is still surfaced as a generic API failure.
+  }
+
+  return apiErrorFromBody(response.status, body);
+}
+
+/**
+ * XHR uploads cannot use `Response.json()`, so the same envelope is parsed from
+ * the response text. A non-JSON body degrades to the generic request failure.
+ */
+function apiErrorFromText(status: number, text: string): ApiError {
+  let body: ErrorBody = {};
+  try {
+    body = JSON.parse(text) as ErrorBody;
+  } catch {
+    // Keep the generic message below.
+  }
+
+  return apiErrorFromBody(status, body);
 }
 
 function csrfHeader(): Record<string, string> {
@@ -396,6 +416,39 @@ export async function transitionPost(
   );
 
   return readJson<AdminPost>(response);
+}
+
+export type BulkAction = TransitionAction | 'delete';
+
+export interface BulkItemResult {
+  id: string;
+  ok: boolean;
+  error?: { code: string; message: string };
+}
+
+export interface BulkResult {
+  action: BulkAction;
+  succeeded: string[];
+  failed: BulkItemResult[];
+}
+
+export async function bulkPosts(
+  action: BulkAction,
+  items: Array<{ id: string; baseVersion: number }>,
+): Promise<BulkResult> {
+  const response = await fetch('/api/admin/posts/bulk', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ action, items }),
+  });
+
+  return readJson<BulkResult>(response);
 }
 
 export async function assignTerms(
@@ -692,6 +745,201 @@ export async function updateOptions(
     body: JSON.stringify({ group, values }),
   });
   return readJson<OptionValues>(response);
+}
+
+/* --------------------------------------------------------------------------
+   Media library (Phase 6)
+   -------------------------------------------------------------------------- */
+
+export type MediaDerivativeWidth = '300' | '600' | '1200';
+
+/** Width-keyed public URLs; the server omits a width it could not generate. */
+export type MediaDerivatives = Partial<Record<MediaDerivativeWidth, string>>;
+
+export interface MediaItem {
+  id: string;
+  fileName: string;
+  originalName: string;
+  mimeType: string;
+  sizeBytes: number;
+  width: number | null;
+  height: number | null;
+  altText: string;
+  caption: string;
+  description: string;
+  /** Canonical public URL (`/api/media/<id>/<name>`); served through the same proxy. */
+  url: string;
+  derivatives: MediaDerivatives;
+  uploadedById: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MediaListParams {
+  page?: number;
+  perPage?: number;
+  search?: string;
+  type?: 'image';
+}
+
+export interface UpdateMediaPayload {
+  altText?: string;
+  caption?: string;
+  description?: string;
+}
+
+export interface UploadMediaOptions {
+  /** Optional alt text sent with the multipart body (editable later). */
+  alt?: string;
+  caption?: string;
+  /** Upload progress as an integer percentage (0–100). */
+  onProgress?: (percent: number) => void;
+  /** Abort an in-flight upload (used by the editor's mediaUpload cleanup). */
+  signal?: AbortSignal;
+}
+
+export async function listMedia(params: MediaListParams = {}): Promise<Paged<MediaItem>> {
+  const response = await fetch(
+    `/api/admin/media${queryString({
+      page: params.page,
+      perPage: params.perPage,
+      search: params.search,
+      type: params.type,
+    })}`,
+    {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { accept: 'application/json' },
+    },
+  );
+
+  return readJson<Paged<MediaItem>>(response);
+}
+
+export async function getMedia(id: string): Promise<MediaItem> {
+  const response = await fetch(`/api/admin/media/${encodeURIComponent(id)}`, {
+    method: 'GET',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+
+  return readJson<MediaItem>(response);
+}
+
+/**
+ * Upload one image as `multipart/form-data`.
+ *
+ * `XMLHttpRequest` is used instead of `fetch` because only XHR reports upload
+ * progress events. Cookie + CSRF handling matches the fetch wrapper, and the
+ * `content-type` header is deliberately left unset so the browser adds the
+ * multipart boundary.
+ */
+export function uploadMedia(file: File, options: UploadMediaOptions = {}): Promise<MediaItem> {
+  return new Promise<MediaItem>((resolve, reject) => {
+    let csrf: Record<string, string>;
+    try {
+      csrf = csrfHeader();
+    } catch (error) {
+      reject(error);
+      return;
+    }
+
+    if (options.signal?.aborted) {
+      reject(new ApiError(0, 'UPLOAD_ABORTED', 'Upload cancelled.'));
+      return;
+    }
+
+    const form = new FormData();
+    form.append('file', file, file.name);
+    if (options.alt !== undefined) {
+      form.append('altText', options.alt);
+    }
+    if (options.caption !== undefined) {
+      form.append('caption', options.caption);
+    }
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/admin/media');
+    xhr.withCredentials = true;
+    xhr.responseType = 'text';
+    xhr.setRequestHeader('accept', 'application/json');
+    for (const [header, value] of Object.entries(csrf)) {
+      xhr.setRequestHeader(header, value);
+    }
+
+    if (options.onProgress) {
+      const report = options.onProgress;
+      xhr.upload.onprogress = (event: ProgressEvent) => {
+        if (event.lengthComputable && event.total > 0) {
+          report(Math.min(100, Math.round((event.loaded / event.total) * 100)));
+        }
+      };
+    }
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText) as MediaItem);
+        } catch {
+          reject(
+            new ApiError(xhr.status, 'INVALID_RESPONSE', 'The upload response was not valid JSON.'),
+          );
+        }
+        return;
+      }
+      if (xhr.status === 401) {
+        unauthorizedHandler?.();
+      }
+      reject(apiErrorFromText(xhr.status, xhr.responseText));
+    };
+    xhr.onerror = () => {
+      reject(
+        new ApiError(
+          0,
+          'NETWORK_ERROR',
+          'Cannot reach the API. Check your connection and try again.',
+        ),
+      );
+    };
+    xhr.onabort = () => {
+      reject(new ApiError(0, 'UPLOAD_ABORTED', 'Upload cancelled.'));
+    };
+
+    options.signal?.addEventListener('abort', () => xhr.abort());
+
+    xhr.send(form);
+  });
+}
+
+export async function updateMedia(id: string, payload: UpdateMediaPayload): Promise<MediaItem> {
+  const response = await fetch(`/api/admin/media/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return readJson<MediaItem>(response);
+}
+
+export async function deleteMedia(id: string): Promise<void> {
+  const response = await fetch(`/api/admin/media/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { ...csrfHeader() },
+  });
+
+  if (!response.ok) {
+    throw await toApiError(response);
+  }
 }
 
 export function actionErrorMessage(error: unknown): string {

@@ -1,10 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import {
   actionErrorMessage,
+  bulkPosts,
   fetchPosts,
   transitionPost,
   type AdminPost,
   type AuthUser,
+  type BulkAction,
   type ContentType,
   type Paged,
   type PostStatus,
@@ -71,6 +73,9 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
   const [, setPendingAction] = useState<string | null>(null);
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<BulkAction | ''>('');
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [counts, setCounts] = useState<Record<PostStatus | '', number>>({
     '': 0,
@@ -115,6 +120,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
       .then((result) => {
         if (!active) return;
         setData(result);
+        setSelected(new Set());
         setLoading(false);
       })
       .catch((caught) => {
@@ -200,6 +206,84 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
       setNotice({ tone: 'error', text: actionErrorMessage(caught) });
     } finally {
       setPendingAction(null);
+    }
+  }
+
+  // Bulk actions operate on the same per-object rules as the row actions:
+  // the API reports per-item outcomes, so a partial failure is shown as-is.
+  const bulkOptions: Array<{ value: BulkAction; label: string }> =
+    status === 'TRASHED'
+      ? [
+          { value: 'restore', label: 'Restore' },
+          { value: 'delete', label: 'Delete permanently' },
+        ]
+      : [
+          { value: 'publish', label: 'Publish' },
+          { value: 'unpublish', label: 'Move to Draft' },
+          { value: 'trash', label: 'Move to Trash' },
+        ];
+
+  function toggleSelected(id: string): void {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function toggleSelectAll(): void {
+    setSelected((current) => {
+      if (!data) {
+        return current;
+      }
+      const actionable = data.items.filter((post) => canEditPost(user, post));
+      return actionable.length > 0 && actionable.every((post) => current.has(post.id))
+        ? new Set()
+        : new Set(actionable.map((post) => post.id));
+    });
+  }
+
+  async function runBulkAction(): Promise<void> {
+    if (!data || bulkAction === '' || selected.size === 0) {
+      return;
+    }
+    if (
+      bulkAction === 'delete' &&
+      !window.confirm(`Permanently delete ${selected.size} item(s)? This cannot be undone.`)
+    ) {
+      return;
+    }
+    const items = data.items
+      .filter((post) => selected.has(post.id) && canEditPost(user, post))
+      .map((post) => ({ id: post.id, baseVersion: post.version }));
+    if (items.length === 0) {
+      return;
+    }
+    setBulkBusy(true);
+    setNotice(null);
+    try {
+      const result = await bulkPosts(bulkAction, items);
+      const failedCount = result.failed.length;
+      setNotice({
+        tone: failedCount === 0 ? 'success' : 'error',
+        text:
+          failedCount === 0
+            ? `${result.succeeded.length} item(s) updated.`
+            : `${result.succeeded.length} item(s) updated; ${failedCount} failed: ${result.failed
+                .map((failure) => failure.error?.message ?? 'rejected')
+                .join('; ')}`,
+      });
+      setSelected(new Set());
+      setBulkAction('');
+      setReloadKey((value) => value + 1);
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setBulkBusy(false);
     }
   }
 
@@ -367,13 +451,29 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
         <>
           <div className="bulk-actions">
             <label htmlFor="bulk-action">Bulk actions</label>
-            <select id="bulk-action">
+            <select
+              id="bulk-action"
+              value={bulkAction}
+              onChange={(event) => setBulkAction(event.target.value as BulkAction | '')}
+            >
               <option value="">Bulk actions</option>
-              <option value="trash">Move to Trash</option>
+              {bulkOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
-            <button type="button" className="button secondary-button bulk-apply">
-              Apply
+            <button
+              type="button"
+              className="button secondary-button bulk-apply"
+              disabled={bulkBusy || bulkAction === '' || selected.size === 0}
+              onClick={() => void runBulkAction()}
+            >
+              {bulkBusy ? 'Applying…' : 'Apply'}
             </button>
+            <span className="bulk-selection-count" aria-live="polite">
+              {selected.size > 0 ? `${selected.size} selected` : ''}
+            </span>
           </div>
 
           <div className="table-scroll">
@@ -382,7 +482,17 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
               <thead>
                 <tr>
                   <th scope="col" className="check-column">
-                    <input type="checkbox" />
+                    <input
+                      type="checkbox"
+                      aria-label="Select all"
+                      checked={
+                        data.items.filter((post) => canEditPost(user, post)).length > 0 &&
+                        data.items
+                          .filter((post) => canEditPost(user, post))
+                          .every((post) => selected.has(post.id))
+                      }
+                      onChange={() => toggleSelectAll()}
+                    />
                   </th>
                   <th scope="col">Title</th>
                   <th scope="col">Status</th>
@@ -398,7 +508,13 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                   return (
                     <tr key={post.id}>
                       <th scope="row" className="check-column">
-                        <input type="checkbox" />
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${post.title}`}
+                          checked={selected.has(post.id)}
+                          disabled={!editable}
+                          onChange={() => toggleSelected(post.id)}
+                        />
                       </th>
                       <td className="title column-title">
                         <a
