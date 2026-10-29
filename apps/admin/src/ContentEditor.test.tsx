@@ -209,7 +209,7 @@ describe('content editor', () => {
       version: 2,
       publishedAt: '2026-10-27T12:00:00.000Z',
     });
-    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input, init) => {
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input, _init) => {
       const url = String(input);
       if (url.endsWith('/autosave')) {
         return response({ autosave: null, postUpdatedAt: post.updatedAt });

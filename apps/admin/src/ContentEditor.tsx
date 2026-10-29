@@ -20,6 +20,7 @@ import {
   type AdminRevisionDetail,
   type AdminTerm,
   type AuthUser,
+  type AutosaveSnapshot,
   type AutosaveState,
   type ContentType,
   type TransitionAction,
@@ -431,7 +432,7 @@ export function ContentEditor({
     // Only on post load, not on every save — a save discards the autosave.
   }, [post?.id, createdPost]);
 
-  function buildAutosaveSnapshot(): import('./api.js').AutosaveSnapshot {
+  function buildAutosaveSnapshot(): AutosaveSnapshot {
     return {
       title: form.title,
       excerpt: form.excerpt.trim() ? form.excerpt : null,
@@ -596,14 +597,14 @@ export function ContentEditor({
     if (canonical.length > 2048) {
       nextFieldErrors['canonicalUrl'] = 'Canonical URL must be 2,048 characters or fewer.';
     } else if (canonical) {
-      let valid = false;
-      try {
-        const parsed = new URL(canonical);
-        valid = parsed.protocol === 'http:' || parsed.protocol === 'https:';
-      } catch {
-        valid = false;
-      }
-      if (!valid) {
+      const protocol = (() => {
+        try {
+          return new URL(canonical).protocol;
+        } catch {
+          return null;
+        }
+      })();
+      if (protocol !== 'http:' && protocol !== 'https:') {
         nextFieldErrors['canonicalUrl'] = 'Canonical URL must be a valid http(s) URL.';
       }
     }
@@ -1537,9 +1538,7 @@ export function ContentEditor({
                 </>
               ) : null}
               <p className="revision-field-label">Content (raw block markup)</p>
-              <pre className="revision-content" tabIndex={0}>
-                {viewingRevision.content}
-              </pre>
+              <pre className="revision-content">{viewingRevision.content}</pre>
             </div>
             <div className="revision-modal-actions">
               <button

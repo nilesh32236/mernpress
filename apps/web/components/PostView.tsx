@@ -39,10 +39,7 @@ export default function PostView({ post }: { post: PublicPost }) {
 
         <div className="flex flex-col gap-8 lg:flex-row">
           {post.toc.length > 1 ? (
-            <aside
-              aria-label="Table of contents"
-              className="lg:w-56 lg:shrink-0"
-            >
+            <aside aria-label="Table of contents" className="lg:w-56 lg:shrink-0">
               <nav>
                 <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
                   On this page

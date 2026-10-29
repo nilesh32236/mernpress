@@ -5,7 +5,10 @@ import PostView from '@/components/PostView';
 import type { Metadata } from 'next';
 
 function stripTags(value: string): string {
-  return value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  return value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function fallbackDescription(post: PublicPost): string {
@@ -18,24 +21,19 @@ function fallbackDescription(post: PublicPost): string {
   return '';
 }
 
-export default async function PostPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  let post = null;
   let error = false;
-  try {
-    post = await getPublishedBySlug('post', slug);
-  } catch {
+  const post = await getPublishedBySlug('post', slug).catch(() => {
     error = true;
-  }
+    return null;
+  });
   if (error) {
     return (
       <main id="main-content" className="container py-12">
         <p role="status" className="text-slate-600 dark:text-slate-300">
-          We couldn\u2019t load content right now. Content is temporarily unavailable. Please try again later.
+          We couldn\u2019t load content right now. Content is temporarily unavailable. Please try
+          again later.
         </p>
       </main>
     );
@@ -50,12 +48,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  let post = null;
-  try {
-    post = await getPublishedBySlug('post', slug);
-  } catch {
-    post = null;
-  }
+  const post = await getPublishedBySlug('post', slug).catch(() => null);
   if (!post) return { title: 'Not found' };
 
   const title = post.seoTitle ?? post.title;

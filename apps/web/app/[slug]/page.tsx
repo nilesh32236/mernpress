@@ -7,7 +7,10 @@ import type { PublicPost } from '@/lib/api';
 export const dynamicParams = true;
 
 function stripTags(value: string): string {
-  return value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  return value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function fallbackDescription(post: PublicPost): string {
@@ -20,11 +23,7 @@ function fallbackDescription(post: PublicPost): string {
   return '';
 }
 
-export default async function PageBySlug({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function PageBySlug({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   let post = null;
   let error = false;
@@ -37,7 +36,8 @@ export default async function PageBySlug({
     return (
       <main id="main-content" className="container py-12">
         <p role="status" className="text-slate-600 dark:text-slate-300">
-          We couldn\u2019t load content right now. Content is temporarily unavailable. Please try again later.
+          We couldn\u2019t load content right now. Content is temporarily unavailable. Please try
+          again later.
         </p>
       </main>
     );
@@ -52,12 +52,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  let post = null;
-  try {
-    post = await getPublishedBySlug('page', slug);
-  } catch {
-    post = null;
-  }
+  const post = await getPublishedBySlug('page', slug).catch(() => null);
   if (!post) return { title: 'Not found' };
 
   const title = post.seoTitle ?? post.title;

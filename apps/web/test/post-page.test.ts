@@ -28,7 +28,10 @@ const samplePost = {
   ogDescription: 'OG Desc',
   publishedAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-02T00:00:00.000Z',
-  terms: { categories: [{ id: 'c1', name: 'Cat', slug: 'cat' }], tags: [{ id: 't1', name: 'Tag', slug: 'tag' }] },
+  terms: {
+    categories: [{ id: 'c1', name: 'Cat', slug: 'cat' }],
+    tags: [{ id: 't1', name: 'Tag', slug: 'tag' }],
+  },
 };
 
 describe('post page', () => {
@@ -50,7 +53,13 @@ describe('post page', () => {
   });
 
   it('renders toc aside when more than one entry', async () => {
-    const post = { ...samplePost, toc: [{ level: 2, id: 'a', text: 'A' }, { level: 3, id: 'b', text: 'B' }] };
+    const post = {
+      ...samplePost,
+      toc: [
+        { level: 2, id: 'a', text: 'A' },
+        { level: 3, id: 'b', text: 'B' },
+      ],
+    };
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(jsonResponse(post));
     const params = Promise.resolve({ slug: 'hello-world' });
     const html = renderToStaticMarkup(await PostPage({ params }));
@@ -58,7 +67,9 @@ describe('post page', () => {
   });
 
   it('throws on 404', async () => {
-    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(jsonResponse({ error: { code: 'NOT_FOUND' } }, 404));
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      jsonResponse({ error: { code: 'NOT_FOUND' } }, 404),
+    );
     const params = Promise.resolve({ slug: 'missing' });
     await expect(PostPage({ params })).rejects.toThrow();
   });
@@ -76,7 +87,15 @@ describe('post page', () => {
   });
 
   it('generateMetadata falls back to title when seoTitle absent', async () => {
-    const post = { ...samplePost, seoTitle: null, seoDescription: null, ogTitle: null, ogDescription: null, canonicalUrl: null, robots: null };
+    const post = {
+      ...samplePost,
+      seoTitle: null,
+      seoDescription: null,
+      ogTitle: null,
+      ogDescription: null,
+      canonicalUrl: null,
+      robots: null,
+    };
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(jsonResponse(post));
     const params = Promise.resolve({ slug: 'hello-world' });
     const meta = await generateMetadata({ params });

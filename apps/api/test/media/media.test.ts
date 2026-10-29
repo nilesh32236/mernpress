@@ -304,6 +304,28 @@ describe('admin media library', () => {
       expect(metadata.pages ?? 1).toBe(1);
     });
 
+    it('strips EXIF metadata on re-encode', async () => {
+      const withExif = await sharp({
+        create: { width: 64, height: 48, channels: 3, background: { r: 5, g: 6, b: 7 } },
+      })
+        .jpeg()
+        .withMetadata({ orientation: 6 })
+        .toBuffer();
+
+      const media = await createMedia({
+        filename: 'rotated.jpg',
+        contentType: 'image/jpeg',
+        data: withExif,
+      });
+      const storedPath = await findStoredFile(storageRoot, media.fileName);
+      const metadata = await sharp(await readFile(storedPath)).metadata();
+      expect(metadata.format).toBe('webp');
+      // Re-encoding drops the EXIF block entirely; nothing (GPS, camera, owner)
+      // survives the upload.
+      expect(metadata.exif).toBeUndefined();
+      expect(metadata.orientation).toBeUndefined();
+    });
+
     it('rejects an SVG renamed to .png', async () => {
       const response = await uploadAsAdmin({
         filename: 'logo.png',

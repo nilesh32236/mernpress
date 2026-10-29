@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { listPublishedPosts } from '@/lib/api';
 import type { PublicPost } from '@/lib/api';
 
-const FRIENDLY_ERROR = 'We couldn\u2019t load content right now. Content is temporarily unavailable. Please try again later.';
+const FRIENDLY_ERROR =
+  'We couldn\u2019t load content right now. Content is temporarily unavailable. Please try again later.';
 
 export default async function HomePage() {
   let items: PublicPost[] = [];
@@ -21,9 +22,7 @@ export default async function HomePage() {
           Public site
         </p>
         <h1 className="mt-2 text-4xl font-semibold tracking-tight">MERNPress</h1>
-        <p className="mt-3 max-w-2xl text-slate-600 dark:text-slate-300">
-          Latest published posts.
-        </p>
+        <p className="mt-3 max-w-2xl text-slate-600 dark:text-slate-300">Latest published posts.</p>
       </header>
 
       {error ? (
@@ -39,7 +38,10 @@ export default async function HomePage() {
           {items.map((post) => (
             <li key={post.id} className="border-b border-slate-200 pb-6 dark:border-slate-700">
               <h2 className="text-xl font-semibold">
-                <Link href={`/posts/${post.slug}`} className="hover:underline focus-visible:underline">
+                <Link
+                  href={`/posts/${post.slug}`}
+                  className="hover:underline focus-visible:underline"
+                >
                   {post.title}
                 </Link>
               </h2>

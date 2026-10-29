@@ -176,12 +176,7 @@ function MediaDrawer({ item, onClose, onSaved, onDeleted }: MediaDrawerProps) {
       >
         <header className="media-drawer-head">
           <h2 id={titleId}>{item.originalName}</h2>
-          <button
-            type="button"
-            className="media-drawer-close"
-            onClick={onClose}
-            aria-label="Close"
-          >
+          <button type="button" className="media-drawer-close" onClick={onClose} aria-label="Close">
             <svg
               width="16"
               height="16"

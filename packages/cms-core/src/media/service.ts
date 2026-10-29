@@ -222,6 +222,9 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
   }
 
   function validateDeclaredType(originalName: string, mimeType: string): void {
+    if (originalName.length === 0 || originalName.length > 255) {
+      throw new ContentError('VALIDATION_ERROR', 'Invalid file name', 400);
+    }
     const extension = extensionOf(originalName);
     if (extension === null || !isAllowedExtension(extension)) {
       throw new ContentError('VALIDATION_ERROR', 'Unsupported file type', 400);

@@ -36,6 +36,11 @@ export default tseslint.config(
   },
   {
     files: ['apps/admin/**/*.{ts,tsx}', 'apps/web/**/*.{ts,tsx}'],
+    ignores: [
+      'apps/web/vitest.config.ts',
+      'apps/admin/vitest.config.ts',
+      'apps/web/next.config.ts',
+    ],
     ...jsxA11y.flatConfigs.recommended,
     languageOptions: {
       ...jsxA11y.flatConfigs.recommended.languageOptions,

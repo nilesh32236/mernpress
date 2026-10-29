@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { listPublishedPosts } from '@/lib/api';
 import type { PublicPost } from '@/lib/api';
 
-const FRIENDLY_ERROR = 'We couldn\u2019t load content right now. Content is temporarily unavailable. Please try again later.';
+const FRIENDLY_ERROR =
+  'We couldn\u2019t load content right now. Content is temporarily unavailable. Please try again later.';
 
 export default async function PostsPage({
   searchParams,
@@ -52,7 +53,10 @@ export default async function PostsPage({
           {items.map((post) => (
             <li key={post.id} className="border-b border-slate-200 pb-6 dark:border-slate-700">
               <h2 className="text-xl font-semibold">
-                <Link href={`/posts/${post.slug}`} className="hover:underline focus-visible:underline">
+                <Link
+                  href={`/posts/${post.slug}`}
+                  className="hover:underline focus-visible:underline"
+                >
                   {post.title}
                 </Link>
               </h2>
