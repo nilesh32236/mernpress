@@ -84,12 +84,26 @@ describe('post preview tokens (P8-03)', () => {
     const result = await rotateToken(post.id);
     expect(result.previewToken).toMatch(TOKEN_PATTERN);
     expect(result.previewPath).toBe(`/api/public/preview/${result.previewToken}`);
+    // Without a configured site_url, previewUrl is the relative web path.
+    expect(result.previewUrl).toBe(`/preview/${result.previewToken}`);
 
     const stored = await app.database.post.findUnique({
       where: { id: post.id },
       select: { previewToken: true },
     });
     expect(stored?.previewToken).toBe(result.previewToken);
+  });
+
+  it('derives an absolute previewUrl from the site_url option when configured', async () => {
+    const post = await createPost({ type: 'post', title: 'Preview URL' });
+    await app.database.option.upsert({
+      where: { key: 'site_url' },
+      create: { key: 'site_url', value: 'https://mernpress.example/', group: 'general' },
+      update: { value: 'https://mernpress.example/' },
+    });
+
+    const result = await rotateToken(post.id);
+    expect(result.previewUrl).toBe(`https://mernpress.example/preview/${result.previewToken}`);
   });
 
   it('returns the token on the single-post admin view but never in the list', async () => {

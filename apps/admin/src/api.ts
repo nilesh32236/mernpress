@@ -68,6 +68,7 @@ export interface AdminRevisionDetail extends AdminRevision {
 export interface PreviewLinkResult {
   previewToken: string | null;
   previewPath: string | null;
+  previewUrl: string | null;
 }
 
 export async function fetchRevisions(postId: string): Promise<AdminRevision[]> {

@@ -106,6 +106,12 @@ export interface PreviewLinkResult {
   previewToken: string | null;
   /** Relative public preview path, or null after revocation. */
   previewPath: string | null;
+  /**
+   * Preferred URL for opening the rendered preview in the web app:
+   * `<site_url>/preview/<token>` when the site_url option is configured,
+   * otherwise the relative web path. Null after revocation.
+   */
+  previewUrl: string | null;
 }
 
 export interface AdminTermSummary {

@@ -967,6 +967,17 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     });
   }
 
+  /**
+   * Preferred preview URL: the web app's /preview/<token> route, absolute
+   * when the site_url option is configured. The API JSON preview endpoint
+   * remains the machine-readable contract.
+   */
+  async function previewUrlFor(token: string): Promise<string> {
+    const option = await prisma.option.findUnique({ where: { key: 'site_url' } });
+    const base = option?.value?.trim().replace(/\/+$/, '');
+    return base ? `${base}/preview/${token}` : `/preview/${token}`;
+  }
+
   async function rotatePreviewToken(
     principal: Principal,
     postId: string,
@@ -980,7 +991,11 @@ export function createContentService(options: ContentServiceOptions): ContentSer
       canEditPost(principal, existing.authorId, existing.status);
       await tx.post.update({ where: { id: postId }, data: { previewToken } });
     });
-    return { previewToken, previewPath: previewPathFor(previewToken) };
+    return {
+      previewToken,
+      previewPath: previewPathFor(previewToken),
+      previewUrl: await previewUrlFor(previewToken),
+    };
   }
 
   async function revokePreviewToken(
@@ -995,7 +1010,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
       canEditPost(principal, existing.authorId, existing.status);
       await tx.post.update({ where: { id: postId }, data: { previewToken: null } });
     });
-    return { previewToken: null, previewPath: null };
+    return { previewToken: null, previewPath: null, previewUrl: null };
   }
 
   /**

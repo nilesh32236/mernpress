@@ -405,13 +405,15 @@ export function ContentEditor({
     }
     setPreviewBusy(true);
     try {
-      let path = post.previewToken ? `/api/public/preview/${post.previewToken}` : null;
-      if (!path) {
+      // Prefer the rendered web preview; the API JSON endpoint is the
+      // machine-readable fallback (no site_url configured clients).
+      let url = post.previewToken ? `/preview/${post.previewToken}` : null;
+      if (!url) {
         const rotated = await rotatePreviewToken(post.id);
-        path = rotated.previewPath;
+        url = rotated.previewUrl ?? rotated.previewPath;
       }
-      if (path) {
-        window.open(path, '_blank', 'noopener');
+      if (url) {
+        window.open(url, '_blank', 'noopener');
       }
     } catch (caught) {
       setNotice({ tone: 'error', text: actionErrorMessage(caught) });

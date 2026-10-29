@@ -661,11 +661,7 @@ describe('editor preview', () => {
     await screen.findByLabelText('Title');
     fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
     await waitFor(() =>
-      expect(openSpy).toHaveBeenCalledWith(
-        `/api/public/preview/${'a'.repeat(64)}`,
-        '_blank',
-        'noopener',
-      ),
+      expect(openSpy).toHaveBeenCalledWith(`/preview/${'a'.repeat(64)}`, '_blank', 'noopener'),
     );
   });
 
@@ -677,7 +673,11 @@ describe('editor preview', () => {
       vi.fn<typeof fetch>().mockImplementation(async (input) => {
         const url = String(input);
         if (url.endsWith('/preview-token')) {
-          return response({ previewToken: token, previewPath: `/api/public/preview/${token}` });
+          return response({
+            previewToken: token,
+            previewPath: `/api/public/preview/${token}`,
+            previewUrl: `https://site.example/preview/${token}`,
+          });
         }
         if (url.includes('/api/admin/terms')) {
           return response(termsPage());
@@ -691,7 +691,11 @@ describe('editor preview', () => {
     await screen.findByLabelText('Title');
     fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
     await waitFor(() =>
-      expect(openSpy).toHaveBeenCalledWith(`/api/public/preview/${token}`, '_blank', 'noopener'),
+      expect(openSpy).toHaveBeenCalledWith(
+        `https://site.example/preview/${token}`,
+        '_blank',
+        'noopener',
+      ),
     );
   });
 });
