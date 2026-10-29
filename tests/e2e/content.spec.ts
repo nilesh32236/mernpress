@@ -110,7 +110,7 @@ test('editor can create, edit, publish, unpublish, trash and restore content', a
   await expect(page.getByRole('heading', { name: 'At a Glance' })).toBeVisible();
 
   await openNewPost(page);
-  await page.getByLabel('Title').fill(`E2E Acceptance Post ${suffix}`);
+  await page.getByLabel('Title', { exact: true }).fill(`E2E Acceptance Post ${suffix}`);
   await page.getByLabel('Slug').fill(createdPostSlug);
   await page.getByRole('tab', { name: 'SEO' }).click();
   await page.getByLabel('Excerpt').fill('Created by the Phase 4 browser workflow.');
@@ -153,7 +153,7 @@ test('editor can create, edit, publish, unpublish, trash and restore content', a
   await expect(page.getByRole('link', { name: `E2E Acceptance Post ${suffix}` })).toBeVisible();
 
   await page.getByRole('link', { name: `E2E Acceptance Post ${suffix}` }).click();
-  await page.getByLabel('Title').fill(`E2E Acceptance Post edited ${suffix}`);
+  await page.getByLabel('Title', { exact: true }).fill(`E2E Acceptance Post edited ${suffix}`);
   await page.getByRole('button', { name: 'Update' }).click();
   await expect(page.getByText('Changes saved.')).toBeVisible();
 
@@ -190,11 +190,11 @@ test('stale edits show a recoverable conflict instead of overwriting', async ({
 
   await page.goto(`${ADMIN_URL}posts/${createdPostId}/edit`);
   await expect(page.getByRole('heading', { level: 1, name: 'Edit post' })).toBeVisible();
-  await page.getByLabel('Title').fill(`E2E Conflict Winner ${suffix}`);
+  await page.getByLabel('Title', { exact: true }).fill(`E2E Conflict Winner ${suffix}`);
   await page.getByRole('button', { name: 'Save draft' }).click();
   await expect(page.getByText('Changes saved.')).toBeVisible();
 
-  await secondPage.getByLabel('Title').fill(`E2E Conflict Loser ${suffix}`);
+  await secondPage.getByLabel('Title', { exact: true }).fill(`E2E Conflict Loser ${suffix}`);
   await secondPage.getByRole('button', { name: 'Save draft' }).click();
   await expect(
     secondPage.getByText('A newer version exists on the server. Reload it before editing again.'),
@@ -203,7 +203,7 @@ test('stale edits show a recoverable conflict instead of overwriting', async ({
 
   secondPage.once('dialog', (dialog) => void dialog.accept());
   await secondPage.getByRole('button', { name: 'Reload latest version' }).click();
-  await expect(secondPage.getByLabel('Title')).toHaveValue(`E2E Conflict Winner ${suffix}`);
+  await expect(secondPage.getByLabel('Title', { exact: true })).toHaveValue(`E2E Conflict Winner ${suffix}`);
   await secondPage.close();
 });
 
@@ -270,7 +270,7 @@ test('keyboard navigation, skip link and narrow viewport work', async ({ page })
 
   await page.getByRole('link', { name: 'New post' }).first().click();
   await expect(page.getByRole('heading', { level: 1, name: 'New post' })).toBeVisible();
-  await page.getByLabel('Title').focus();
+  await page.getByLabel('Title', { exact: true }).focus();
   await page.keyboard.type(`Keyboard post ${suffix}`);
   await page.locator('.block-canvas-sheet [contenteditable="true"]').first().click();
   await page.keyboard.type('Keyboard content');

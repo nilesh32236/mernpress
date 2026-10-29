@@ -49,12 +49,17 @@ test('admin login page boots without console or asset errors', async ({ page }) 
   expect(errors.failedRequests).toEqual([]);
 });
 
-test('public placeholder boots without console or asset errors', async ({ page }) => {
+test('public site boots without console or asset errors', async ({ page }) => {
   const errors = trackBrowserErrors(page);
 
   await page.goto(WEB_URL);
   await expect(page.getByRole('heading', { level: 1, name: 'MERNPress' })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Open the admin placeholder/ })).toBeVisible();
+  // The site renders real content now: either the latest posts or the empty state.
+  await expect(
+    page
+      .getByText('Latest published posts.')
+      .or(page.getByText('No posts published yet. Nothing to read yet.')),
+  ).toBeVisible();
 
   expect(errors.consoleErrors).toEqual([]);
   expect(errors.failedRequests).toEqual([]);

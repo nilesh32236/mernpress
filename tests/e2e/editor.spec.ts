@@ -101,7 +101,7 @@ test('creates content with paragraph, heading and list blocks and reloads it', a
   await login(page);
   await openNewPost(page);
 
-  await page.getByLabel('Title').fill(`Block editor post ${suffix}`);
+  await page.getByLabel('Title', { exact: true }).fill(`Block editor post ${suffix}`);
   await page.locator('.block-canvas-sheet [contenteditable="true"]').first().click();
   await page.keyboard.type('Opening paragraph from the block editor.');
 
@@ -183,7 +183,7 @@ test('publishes from the editor and exposes the post publicly', async ({ page })
 test('undo and redo restore structural changes without losing typed text', async ({ page }) => {
   await login(page);
   await openNewPost(page);
-  await page.getByLabel('Title').fill(`Undo post ${suffix}`);
+  await page.getByLabel('Title', { exact: true }).fill(`Undo post ${suffix}`);
   await page.locator('.block-canvas-sheet [contenteditable="true"]').first().click();
   await page.keyboard.type('Keep this paragraph.');
 
@@ -210,7 +210,7 @@ test('undo and redo restore structural changes without losing typed text', async
 test('inserts a quote and shows real block settings in the inspector', async ({ page }) => {
   await login(page);
   await openNewPost(page);
-  await page.getByLabel('Title').fill(`Quote post ${suffix}`);
+  await page.getByLabel('Title', { exact: true }).fill(`Quote post ${suffix}`);
 
   await insertBlock(page, 'quote', /^Quote/);
   await page.keyboard.type('A line worth quoting.');
@@ -236,7 +236,7 @@ test('inserts a quote and shows real block settings in the inspector', async ({ 
 test('inserts an image from a URL and persists canonical image markup', async ({ page }) => {
   await login(page);
   await openNewPost(page);
-  await page.getByLabel('Title').fill(`Image post ${suffix}`);
+  await page.getByLabel('Title', { exact: true }).fill(`Image post ${suffix}`);
 
   await insertBlock(page, 'image', /^Image/);
   await page.getByText('Insert from URL').click();
@@ -292,7 +292,7 @@ test('the editor stays usable at 375px with an off-canvas settings panel', async
   await login(page);
   await openNewPost(page);
 
-  await expect(page.getByLabel('Title')).toBeVisible();
+  await expect(page.getByLabel('Title', { exact: true })).toBeVisible();
   await expect(page.locator('.block-canvas-sheet')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Add block' })).toBeVisible();
 
