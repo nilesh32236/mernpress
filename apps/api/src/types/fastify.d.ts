@@ -1,5 +1,6 @@
 import type {
   AuthService,
+  BulkService,
   ContentService,
   HookRegistry,
   ScheduleService,
@@ -17,5 +18,6 @@ declare module 'fastify' {
     contentHooks: HookRegistry;
     users: UserAdminService;
     schedule: ScheduleService;
+    bulk: BulkService;
   }
 }

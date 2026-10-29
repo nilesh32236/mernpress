@@ -11,6 +11,7 @@ import {
   createUserAdminService,
   createOptionService,
   createScheduleService,
+  createBulkService,
   type AuthConfig,
 } from '@mernpress/cms-core';
 import { checkDatabase, createDatabaseClient } from '@mernpress/database';
@@ -24,6 +25,7 @@ import { registerUserRoutes } from './routes/users.js';
 import { registerProfileRoutes } from './routes/profile.js';
 import { registerOptionRoutes } from './routes/options.js';
 import { registerScheduleRoutes } from './routes/schedule.js';
+import { registerContentBulkRoutes } from './routes/content-bulk.js';
 import { startPublishScheduler } from './scheduler.js';
 import { resolveRequestId } from './http/request-id.js';
 
@@ -124,6 +126,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   });
   app.decorate('schedule', schedule);
 
+  const bulk = createBulkService({ prisma: database, content });
+  app.decorate('bulk', bulk);
+
   app.addHook('onRequest', async (request, reply) => {
     if (!MUTATING_METHODS.has(request.method)) {
       return;
@@ -157,6 +162,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerProfileRoutes(app, { env, auth, users });
   registerOptionRoutes(app, { env, auth, options: optionService });
   registerScheduleRoutes(app, { env, auth, schedule });
+  registerContentBulkRoutes(app, { env, auth, bulk });
   registerPublicContentRoutes(app, { content });
 
   if (env.SCHEDULER_ENABLED) {
