@@ -1,5 +1,48 @@
 # Implementation log
 
+## 2026-10-29 (PM) — Admin design matched to the reference CMS
+
+**Status:** implemented, fully verified, pushed to `master` (`7dd1a1d`) and
+deployed (release `20261029T103000Z-7dd1a1d`). The reference CMS
+(qrolichealth-cms) was run locally and screenshotted screen-by-screen; MERNPress
+was restyled to match it (owner feedback: the first WordPress approximation was
+too plain).
+
+### What changed
+
+- **Topbar**: dark 36px admin bar — M logo + MERNPress brand, "Visit Site" pill,
+  "+ New" dropdown (Post/Page/User, role-gated), right "Hello, {user}" + avatar
+  initials dropdown (Profile, Sign out).
+- **Sidebar**: "Collapse menu" top item, chevron groups with dot-bullet
+  submenus (Dashboard→Home; Posts→All Posts/Add New/Categories & Tags;
+  Pages→All Pages/Add New; Users→All Users/Profile; Settings→General/Reading/
+  Writing), 52px rail with hover flyouts, mobile drawer.
+- **Dashboard**: welcome banner with 4 CTAs; "At a Glance" icon+count chips +
+  "Site-wide totals" note; "Activity" card.
+- **Lists**: funnel icon, magnifier-inside search + blue Search, exact-reference
+  status tabs, centered-icon empty states, "Page X of Y" pagination.
+- **Users**: icon-badge + adjacent Add New User, "All Users (n) | You are
+  signed in as …" subheader, circle-user icon + "you" badge.
+- **Settings**: icon nav-tabs sharing panel edge, icon-prefixed labels, "Save
+  Changes" with check icon.
+- **Editor**: Post | SEO | Block tab strip (Excerpt on SEO tab), gear Settings
+  toggle, category/tag rows name-left/slug-right.
+
+### Bugs found and fixed during verification (all design regressions)
+
+1. Admin-bar dropdown unusable: `.menu-backdrop` (z-55) covered the topbar
+   (z-50) — raised `.admin-bar` to z-60.
+2. Editor SEO/Block panels nested inside the Post panel's `hidden` container —
+   moved out as siblings; tab switching now reveals Excerpt (E2E covers it).
+3. Mobile off-canvas settings drawer unclickable (topbar z-60 above drawer
+   z-51) — drawer raised to z-70.
+
+### Verification
+
+- lint/format/typecheck clean; 356 unit/integration tests; 21/21 E2E; build 6/6.
+- Side-by-side screenshots: dashboard, posts, users, settings, editor, terms
+  match the reference (shots in /tmp/opencode/shots-v3 + shots-reference).
+
 ## 2026-10-29 — WordPress-style admin redesign + Users/Settings parity slice
 
 **Status:** implemented and fully verified locally; pushed to `master`; deployed to

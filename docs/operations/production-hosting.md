@@ -45,8 +45,18 @@ no DuckDNS token is stored in the Caddyfile.
 
 ## Release
 
-- Current release: `/opt/mernpress/releases/20261029T091500Z-274a28c`
+- Current release: `/opt/mernpress/releases/20261029T103000Z-7dd1a1d`
   symlinked as `/opt/mernpress/current` (switched 2026-10-29; previous release
+  `/opt/mernpress/releases/20261029T091500Z-274a28c` retained for rollback).
+  Deployed: reference-CMS-matched admin design at Git HEAD `7dd1a1d` (master,
+  pushed) — dark admin bar (brand/Visit Site/+ New/user dropdown), sidebar
+  collapse + chevron submenus, dashboard widgets, tabbed editor sidebar; three
+  z-index/structure fixes (topbar dropdown, editor tab panels, mobile drawer).
+  Code-only release (no migration). Verified: `/admin/` 200, assets correct
+  MIME, API health ok. Earlier same day: release `20261029T091500Z-274a28c`
+  (WordPress redesign + users/settings) — superseded.
+- Previous release record: `/opt/mernpress/releases/20261029T091500Z-274a28c`
+  (switched 2026-10-29; previous release
   `/opt/mernpress/releases/20261028T060614Z-dd6e16b` retained for rollback).
   Deployed: WordPress-style admin redesign + users/profile/settings parity
   slice at Git HEAD `274a28c` (master, pushed). Additive migration
