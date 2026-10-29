@@ -45,9 +45,17 @@ no DuckDNS token is stored in the Caddyfile.
 
 ## Release
 
-- Current release: `/opt/mernpress/releases/20261028T060614Z-dd6e16b`
-  symlinked as `/opt/mernpress/current` (switched 2026-10-28; previous release
-  `/opt/mernpress/releases/20261027T140348Z-46bd5c1` retained for rollback).
+- Current release: `/opt/mernpress/releases/20261029T091500Z-274a28c`
+  symlinked as `/opt/mernpress/current` (switched 2026-10-29; previous release
+  `/opt/mernpress/releases/20261028T060614Z-dd6e16b` retained for rollback).
+  Deployed: WordPress-style admin redesign + users/profile/settings parity
+  slice at Git HEAD `274a28c` (master, pushed). Additive migration
+  `20261029090000_add_options` applied to the production database. Verified:
+  `/admin/` 200 with correct asset MIME types, `/` → 302 `/admin/`,
+  `/api/health` ok, `/api/options` + `/api/users` 401 unauthenticated.
+  Earlier 2026-10-29 morning: release `20261029T080000Z-06e46a6` (admin at
+  `/admin` base path) — superseded the same day.
+- Build identity: `BUILD-INFO` in the release.
 - Build identity: `BUILD-INFO` in the release. Deployed source identity is Git
   HEAD `dd6e16bdb79be9bd6bd6b99948bec029ac104af6` plus **20 uncommitted
   dashboard paths** (D-036 Terms management + D-037 admin shell; unit gates
