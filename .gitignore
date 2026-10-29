@@ -28,3 +28,4 @@ apps/web/next-env.d.ts
 .turbo/
 .DS_Store
 var/media
+apps/api/var/
