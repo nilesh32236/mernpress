@@ -41,6 +41,91 @@ export interface AdminPost {
   createdAt: string;
   updatedAt: string;
   terms: { categories: AdminTermSummary[]; tags: AdminTermSummary[] };
+  /** Present only on the single-post admin view; never in list responses. */
+  previewToken?: string | null;
+}
+
+export interface AdminRevision {
+  id: string;
+  postId: string;
+  title: string;
+  excerpt: string | null;
+  authorId: string | null;
+  createdAt: string;
+  revisionNumber: number;
+}
+
+export interface AdminRevisionDetail extends AdminRevision {
+  content: string;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  canonicalUrl: string | null;
+  robots: string | null;
+  ogTitle: string | null;
+  ogDescription: string | null;
+}
+
+export interface PreviewLinkResult {
+  previewToken: string | null;
+  previewPath: string | null;
+}
+
+export async function fetchRevisions(postId: string): Promise<AdminRevision[]> {
+  const response = await fetch(`/api/admin/posts/${encodeURIComponent(postId)}/revisions`, {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<AdminRevision[]>(response);
+}
+
+export async function fetchRevision(
+  postId: string,
+  revisionId: string,
+): Promise<AdminRevisionDetail> {
+  const response = await fetch(
+    `/api/admin/posts/${encodeURIComponent(postId)}/revisions/${encodeURIComponent(revisionId)}`,
+    { credentials: 'include', cache: 'no-store', headers: { accept: 'application/json' } },
+  );
+  return readJson<AdminRevisionDetail>(response);
+}
+
+export async function restoreRevision(
+  postId: string,
+  revisionId: string,
+  baseVersion: number,
+): Promise<AdminPost> {
+  const response = await fetch(
+    `/api/admin/posts/${encodeURIComponent(postId)}/revisions/${encodeURIComponent(revisionId)}/restore`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { accept: 'application/json', 'content-type': 'application/json', ...csrfHeader() },
+      body: JSON.stringify({ baseVersion }),
+    },
+  );
+  return readJson<AdminPost>(response);
+}
+
+export async function rotatePreviewToken(postId: string): Promise<PreviewLinkResult> {
+  const response = await fetch(`/api/admin/posts/${encodeURIComponent(postId)}/preview-token`, {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', 'content-type': 'application/json', ...csrfHeader() },
+  });
+  return readJson<PreviewLinkResult>(response);
+}
+
+export async function revokePreviewToken(postId: string): Promise<PreviewLinkResult> {
+  const response = await fetch(`/api/admin/posts/${encodeURIComponent(postId)}/preview-token`, {
+    method: 'DELETE',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  return readJson<PreviewLinkResult>(response);
 }
 
 export interface AdminTerm {

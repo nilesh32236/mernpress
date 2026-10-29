@@ -8,6 +8,7 @@ import * as wpElement from '@wordpress/element';
 import * as wpFormatLibrary from '@wordpress/format-library';
 import * as wpHooks from '@wordpress/hooks';
 import * as wpI18n from '@wordpress/i18n';
+import { actionErrorMessage, uploadMedia } from '../api.js';
 
 /**
  * Browser-only editor bootstrap. This module is imported exclusively from the
@@ -37,10 +38,6 @@ export const SUPPORTED_BLOCKS = [
   'core/code',
   'core/preformatted',
 ] as const;
-
-/** Media upload is Phase 6; the image block still accepts a URL. */
-export const MEDIA_UPLOAD_MESSAGE =
-  'The media library arrives in Phase 6. Use “Insert from URL” to add an image for now.';
 
 let bootstrapped = false;
 
@@ -75,9 +72,94 @@ export function ensureEditorBootstrap(): void {
   }
 }
 
+/** The subset of Gutenberg's media object the image block reads back. */
+export interface EditorUploadedMedia {
+  id: string;
+  url: string;
+  alt: string;
+  caption: string;
+}
+
+/**
+ * The exact shape Gutenberg hands to `settings.mediaUpload` (see
+ * `MediaPlaceholder.onFilesUpload` in @wordpress/block-editor). `filesList`
+ * may contain `File` objects from the picker/drop zone or bare `Blob`s when a
+ * block is dropped with an HTML image source, hence the `Blob` union.
+ */
 export interface EditorMediaUploadArgs {
-  filesList?: FileList | File[] | null;
+  filesList?: FileList | Array<File | Blob> | null;
+  onFileChange?: (media: EditorUploadedMedia[]) => void;
   onError?: (message: string) => void;
+  allowedTypes?: string[];
+  multiple?: boolean;
+  additionalData?: Record<string, unknown>;
+}
+
+/**
+ * Give the API a real `File` for every entry. Dropped HTML images arrive as a
+ * bare `Blob`; the server sniffs the bytes, so the synthesised name only needs
+ * a sane extension and the blob's own MIME type.
+ */
+function asUploadFile(value: File | Blob, index: number): File {
+  if (typeof File !== 'undefined' && value instanceof File) {
+    return value;
+  }
+  const type = value.type || 'image/webp';
+  const extension = type.split('/')[1]?.replace('jpeg', 'jpg') ?? 'webp';
+  return new File([value], `upload-${index + 1}.${extension}`, { type });
+}
+
+/**
+ * Implementation of Gutenberg's `settings.mediaUpload` contract.
+ *
+ * Each file is uploaded through the media API; per-file results are reported
+ * with `onFileChange([{ id, url, alt, caption }])` because the standalone
+ * `BlockEditorProvider` has no `@wordpress/media-utils` layer. Errors are
+ * reported through `onError` so the block surfaces a notice. The returned
+ * function aborts in-flight uploads (Gutenberg calls it on unmount/cleanup).
+ */
+export function mediaUpload({
+  filesList,
+  onFileChange,
+  onError,
+}: EditorMediaUploadArgs): () => void {
+  const files = filesList ? Array.from(filesList) : [];
+  const controller = new AbortController();
+  let cancelled = false;
+
+  void (async () => {
+    for (const [index, value] of files.entries()) {
+      if (cancelled) {
+        return;
+      }
+      try {
+        const item = await uploadMedia(asUploadFile(value, index), {
+          signal: controller.signal,
+        });
+        if (cancelled) {
+          return;
+        }
+        onFileChange?.([
+          {
+            id: item.id,
+            url: item.url,
+            alt: item.altText,
+            caption: item.caption,
+          },
+        ]);
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        onError?.(actionErrorMessage(error));
+      }
+    }
+  })();
+
+  return () => {
+    cancelled = true;
+    controller.abort();
+  };
 }
 
 /**
@@ -88,9 +170,9 @@ export function editorSettings() {
   return {
     allowedBlockTypes: [...SUPPORTED_BLOCKS],
     hasFixedToolbar: false,
-    mediaUpload: ({ onError }: EditorMediaUploadArgs) => {
-      onError?.(MEDIA_UPLOAD_MESSAGE);
-    },
+    // The image block's native "Upload" button and drag/drop both land here.
+    // URL insertion stays available; the media-library modal is a follow-up.
+    mediaUpload,
     __experimentalBlockPatterns: [],
     __experimentalBlockPatternCategories: [],
     supportsLayout: true,

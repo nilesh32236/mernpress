@@ -3095,3 +3095,454 @@ a.glance-chip:hover {
   font-size: 12px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
+
+/* ==========================================================================
+   Media library (P6-04) — thumbnail grid, upload jobs, detail drawer.
+   Appended so the shared design-system rules above stay untouched; the grid
+   mirrors wp-admin's attachment grid and the drawer reuses the editor
+   sidebar's right-hand panel geometry as an overlay.
+   ========================================================================== */
+
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.media-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0;
+  border: 1px solid var(--wp-border);
+  border-radius: 4px;
+  background: var(--wp-card);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.media-card:hover,
+.media-card:focus-visible {
+  border-color: var(--wp-blue);
+  box-shadow: 0 0 0 1px var(--wp-blue);
+}
+
+.media-thumb {
+  display: block;
+  aspect-ratio: 1 / 1;
+  background: var(--wp-alt-row);
+  overflow: hidden;
+}
+
+.media-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.media-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px 8px;
+  min-width: 0;
+}
+
+.media-name {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--wp-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.media-meta {
+  display: block;
+  font-size: 11px;
+  color: var(--wp-muted);
+}
+
+/* ---------- Upload jobs ---------- */
+
+.media-uploads {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.media-upload-job {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 1px solid var(--wp-border);
+  border-radius: 4px;
+  background: var(--wp-card);
+  font-size: 12px;
+}
+
+.media-upload-job.is-error {
+  border-color: var(--wp-danger);
+}
+
+.media-upload-name {
+  min-width: 0;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.media-upload-track {
+  flex: 1 1 auto;
+  min-width: 80px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--wp-alt-row);
+  overflow: hidden;
+}
+
+.media-upload-fill {
+  display: block;
+  height: 100%;
+  background: var(--wp-blue);
+  transition: width 120ms linear;
+}
+
+.media-upload-percent,
+.media-upload-status {
+  flex: 0 0 auto;
+  color: var(--wp-muted);
+}
+
+.media-upload-status.is-error {
+  color: var(--wp-danger);
+}
+
+.media-upload-dismiss {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--wp-muted);
+  cursor: pointer;
+}
+
+.media-upload-dismiss:hover {
+  background: var(--wp-alt-row);
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+/* ---------- Detail drawer ---------- */
+
+.media-drawer-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.media-drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+
+.media-drawer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(380px, 100%);
+  height: 100%;
+  padding: 16px;
+  overflow-y: auto;
+  background: var(--wp-card);
+  border-left: 1px solid var(--wp-border);
+  box-shadow: -4px 0 18px rgba(0, 0, 0, 0.18);
+}
+
+.media-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--wp-border);
+}
+
+.media-drawer-head h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--wp-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.media-drawer-close {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--wp-muted);
+  cursor: pointer;
+}
+
+.media-drawer-close:hover {
+  background: var(--wp-alt-row);
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+.media-drawer-preview {
+  border: 1px solid var(--wp-border);
+  border-radius: 4px;
+  background: var(--wp-alt-row);
+  overflow: hidden;
+}
+
+.media-drawer-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.media-drawer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.media-meta-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--wp-border);
+  border-radius: 4px;
+  background: var(--wp-alt-row);
+  font-size: 12px;
+}
+
+.media-meta-list > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.media-meta-list dt {
+  color: var(--wp-muted);
+}
+
+.media-meta-list dd {
+  margin: 0;
+  min-width: 0;
+  color: var(--wp-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.media-drawer-danger {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--wp-border);
+}
+
+.media-delete-button {
+  color: var(--wp-danger);
+  border-color: var(--wp-danger);
+}
+
+.media-delete-button:hover:not(:disabled) {
+  background: var(--wp-danger);
+  border-color: var(--wp-danger);
+  color: #ffffff;
+}
+
+@media (max-width: 640px) {
+  .media-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+
+  .media-drawer {
+    width: 100%;
+  }
+}
+
+/* ==========================================================================
+   Revisions panel + modal (P8-01)
+   ========================================================================== */
+
+.revision-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.revision-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.revision-link:hover:not(:disabled) {
+  background: #f0f0f1;
+}
+
+.revision-link:focus-visible {
+  outline: 2px solid var(--wp-blue, #2271b1);
+  outline-offset: 1px;
+}
+
+.revision-number {
+  font-weight: 600;
+  min-width: 32px;
+}
+
+.revision-date {
+  color: #646970;
+}
+
+.revision-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.revision-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(720px, 100%);
+  max-height: min(85vh, 800px);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+}
+
+.revision-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.revision-modal-head h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.revision-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.revision-field-label {
+  margin: 12px 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #646970;
+}
+
+.revision-field-value {
+  margin: 0;
+  font-size: 14px;
+}
+
+.revision-content {
+  margin: 0;
+  padding: 12px;
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #f6f7f7;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.revision-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.revisions-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.revisions-panel-head h3 {
+  margin: 0;
+}
+
+.revisions-toggle {
+  padding: 2px 10px;
+  font-size: 12px;
+}

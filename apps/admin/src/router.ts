@@ -9,6 +9,7 @@ export type Route =
   | { name: 'new'; type: ContentType }
   | { name: 'edit'; type: ContentType; id: string }
   | { name: 'terms' }
+  | { name: 'media' }
   | { name: 'users' }
   | { name: 'profile' }
   | { name: 'settings' }
@@ -49,6 +50,9 @@ export function parseRoute(pathname: string): Route {
   const [typeSegment, second, third] = parts;
   if (typeSegment === 'terms' && parts.length === 1) {
     return { name: 'terms' };
+  }
+  if (typeSegment === 'media' && parts.length === 1) {
+    return { name: 'media' };
   }
   if (typeSegment === 'users' && parts.length === 1) {
     return { name: 'users' };
@@ -152,6 +156,8 @@ export function breadcrumbs(route: Route): Array<{ label: string; to?: string }>
       ];
     case 'terms':
       return [{ label: 'Dashboard', to: '/' }, { label: 'Categories & Tags' }];
+    case 'media':
+      return [{ label: 'Dashboard', to: '/' }, { label: 'Media' }];
     case 'users':
       return [{ label: 'Dashboard', to: '/' }, { label: 'Users' }];
     case 'profile':

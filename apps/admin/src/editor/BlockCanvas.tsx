@@ -262,6 +262,10 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
     [clearTimer, emit],
   );
 
+  // Built once per canvas. `settings.mediaUpload` is the real media-API
+  // uploader (editor/blocks.ts), so the image block's native Upload button and
+  // drag/drop write through to /api/admin/media; a stable settings object also
+  // stops BlockEditorProvider re-reading settings on every keystroke.
   const settings = useMemo(() => editorSettings(), []);
 
   const notices = useSelect(
