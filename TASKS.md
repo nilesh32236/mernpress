@@ -178,10 +178,10 @@ unchanged.**
 | ID | Task | Status | Depends on | Acceptance criteria |
 | --- | --- | --- | --- | --- |
 | P8-01 | Revisions | done | P3 | Pre-update snapshots in-transaction (content fields only), retention 50, cumulative revisionCount, stable revisionNumber, restore via update path (undoable + version-checked); editor panel UI; 11 API + 2 editor tests |
-| P8-02 | Autosave | planned | P8-01 | Debounced autosave, conflict detection, recovery prompt; no lost edits |
+| P8-02 | Autosave | done | P8-01 | One autosave/post (`post_revisions kind='autosave'`); 30 s debounced PUT (never touches the posts row → cannot clobber edits); recovery banner when autosave newer than post; restore/discard; save discards. 7 API + 4 editor tests |
 | P8-03 | Preview permissions | done | P2, P7 | Revocable 256-bit token column, rotate/revoke admin endpoints; public `/api/public/preview/:token` through the same sanitizer; noindex + no-store; editor Preview button opens the web `/preview/[token]` route (banner, force-dynamic) |
 | P8-04 | Scheduled publish | done | P3 | First-publish `scheduled_at` column (ADR 0008 §4 — not a SCHEDULED status); 60 s sweeper with atomic claim + boot catch-up; DRAFT-only, 60 s–1 y window, optimistic concurrency; admin schedule endpoints; 11 tests. Multi-instance needs FOR UPDATE SKIP LOCKED (documented) |
-| P8-05 | Conflict/recovery UX | partial | P8-02 | 409 conflict panel exists (reload/overwrite); autosave-recovery prompt remains with P8-02 |
+| P8-05 | Conflict/recovery UX | done | P8-02 | 409 conflict panel (reload/overwrite) + autosave recovery banner (restore/dismiss); save-path conflict tests cover both |
 
 ## Phase 9 — Extension contracts
 
