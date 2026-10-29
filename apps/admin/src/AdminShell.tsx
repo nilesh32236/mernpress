@@ -27,6 +27,12 @@ function topBarTitle(route: Route): string {
       return `Edit ${route.type}`;
     case 'terms':
       return 'Categories & Tags';
+    case 'users':
+      return 'Users';
+    case 'profile':
+      return 'Profile';
+    case 'settings':
+      return 'Settings';
     case 'notFound':
       return 'Not found';
   }
@@ -125,8 +131,37 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
   // would duplicate navigation and sit behind the editor toolbar.
   const isEditorRoute = route.name === 'new' || route.name === 'edit';
 
-  const navItems: Array<{ to: string; label: string; active: boolean; show: boolean }> = [
-    { to: '/', label: 'Dashboard', active: route.name === 'dashboard', show: true },
+  const navItems: Array<{
+    to: string;
+    label: string;
+    active: boolean;
+    show: boolean;
+    icon: ReactNode;
+  }> = [
+    {
+      to: '/',
+      label: 'Dashboard',
+      active: route.name === 'dashboard',
+      show: true,
+      icon: (
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="3" y="3" width="7" height="9" />
+          <rect x="14" y="3" width="7" height="5" />
+          <rect x="14" y="12" width="7" height="9" />
+          <rect x="3" y="16" width="7" height="5" />
+        </svg>
+      ),
+    },
     {
       to: '/posts',
       label: 'Posts',
@@ -136,6 +171,22 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
         'type' in route &&
         route.type === 'post',
       show: canReadContent(user),
+      icon: (
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+        </svg>
+      ),
     },
     {
       to: '/pages',
@@ -146,8 +197,91 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
         'type' in route &&
         route.type === 'page',
       show: canReadContent(user),
+      icon: (
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+        </svg>
+      ),
     },
-    { to: '/terms', label: 'Terms', active: route.name === 'terms', show: canManageTerms(user) },
+    {
+      to: '/terms',
+      label: 'Terms',
+      active: route.name === 'terms',
+      show: canManageTerms(user),
+      icon: (
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.24H4a1 1 0 0 0-1 1v5.59a2 2 0 0 0 .59 1.41l9.58 9.59a2 2 0 0 0 2.83 0l4.59-4.59a2 2 0 0 0 0-2.83z" />
+          <circle cx="7.5" cy="7.5" r="1" />
+        </svg>
+      ),
+    },
+    {
+      to: '/users',
+      label: 'Users',
+      active: route.name === 'users',
+      show: user.role === 'administrator',
+      icon: (
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      ),
+    },
+    {
+      to: '/settings',
+      label: 'Settings',
+      active: route.name === 'settings',
+      show: user.role === 'administrator',
+      icon: (
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+      ),
+    },
   ];
 
   return (
@@ -207,32 +341,48 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
                       setMobileOpen(false);
                     }}
                   >
+                    <span className="nav-icon" aria-hidden="true">
+                      {item.icon}
+                    </span>
                     <span className="nav-link-text">{item.label}</span>
                   </a>
                 </li>
               ))}
           </ul>
-          <div className="sidebar-footer">
-            <div className="sidebar-user">
-              <p className="sidebar-user-name">{user.username}</p>
-              <p className="sidebar-user-role">{roleLabel(user.role)}</p>
-            </div>
-            <button
-              type="button"
-              className="button secondary-button sidebar-signout"
-              onClick={() => void handleSignOut()}
-              disabled={signingOut}
-              aria-busy={signingOut}
-            >
-              {signingOut ? 'Signing out…' : 'Sign out'}
-            </button>
-            {signOutError ? (
-              <p className="form-error" role="alert">
-                {signOutError}
-              </p>
-            ) : null}
-          </div>
         </nav>
+        <div className="sidebar-footer">
+          <div className="sidebar-user">
+            <a
+              className="sidebar-user-name sidebar-profile-link"
+              href="/profile"
+              aria-label={`Profile for ${user.username}`}
+              onClick={(event) => {
+                event.preventDefault();
+                if (confirmNavigation()) {
+                  navigate('/profile');
+                  setMobileOpen(false);
+                }
+              }}
+            >
+              {user.username}
+            </a>
+            <p className="sidebar-user-role">{roleLabel(user.role)}</p>
+          </div>
+          <button
+            type="button"
+            className="button secondary-button sidebar-signout"
+            onClick={() => void handleSignOut()}
+            disabled={signingOut}
+            aria-busy={signingOut}
+          >
+            {signingOut ? 'Signing out…' : 'Sign out'}
+          </button>
+          {signOutError ? (
+            <p className="form-error" role="alert">
+              {signOutError}
+            </p>
+          ) : null}
+        </div>
       </aside>
 
       <div className="admin-main">
@@ -313,17 +463,21 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
           tabIndex={-1}
           ref={mainRef}
         >
-          {isEditorRoute ? null : (
-            <Breadcrumbs
-              items={breadcrumbItems}
-              onNavigate={(to) => {
-                if (confirmNavigation()) {
-                  navigate(to);
-                }
-              }}
-            />
+          {isEditorRoute ? (
+            children
+          ) : (
+            <div className="main-content-inner">
+              <Breadcrumbs
+                items={breadcrumbItems}
+                onNavigate={(to) => {
+                  if (confirmNavigation()) {
+                    navigate(to);
+                  }
+                }}
+              />
+              {children}
+            </div>
           )}
-          {children}
         </main>
 
         <footer className="app-footer">

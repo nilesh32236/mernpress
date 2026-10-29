@@ -495,6 +495,193 @@ export function loginErrorMessage(error: unknown): string {
   return 'Cannot reach the API. Check that it is running.';
 }
 
+export type UserStatus = 'active' | 'disabled';
+export type OptionGroup = 'general' | 'reading' | 'writing';
+
+export interface AdminUser {
+  id: string;
+  username: string;
+  role: UserRole;
+  status: UserStatus;
+  createdAt: string;
+  postCount: number;
+}
+
+export interface AdminUserList {
+  items: AdminUser[];
+  pagination: Pagination;
+}
+
+export interface UserProfile {
+  id: string;
+  username: string;
+  role: UserRole;
+  createdAt: string;
+}
+
+export type OptionValues = Record<string, unknown>;
+
+export async function fetchUsers(
+  params: { search?: string; page?: number; perPage?: number } = {},
+): Promise<AdminUserList> {
+  const response = await fetch(
+    `/api/users${queryString({ search: params.search, page: params.page, perPage: params.perPage })}`,
+    {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { accept: 'application/json' },
+    },
+  );
+  return readJson<AdminUserList>(response);
+}
+
+export async function createUser(payload: {
+  username: string;
+  password: string;
+  role: UserRole;
+}): Promise<AdminUser> {
+  const response = await fetch('/api/users', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify(payload),
+  });
+  return readJson<AdminUser>(response);
+}
+
+export async function updateUserRole(id: string, role: UserRole): Promise<AdminUser> {
+  const response = await fetch(`/api/users/${encodeURIComponent(id)}/role`, {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ role }),
+  });
+  return readJson<AdminUser>(response);
+}
+
+export async function updateUserStatus(id: string, status: UserStatus): Promise<AdminUser> {
+  const response = await fetch(`/api/users/${encodeURIComponent(id)}/status`, {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ status }),
+  });
+  return readJson<AdminUser>(response);
+}
+
+export async function resetUserPassword(id: string, password: string): Promise<void> {
+  const response = await fetch(`/api/users/${encodeURIComponent(id)}/password`, {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { 'content-type': 'application/json', ...csrfHeader() },
+    body: JSON.stringify({ password }),
+  });
+  if (!response.ok) {
+    throw await toApiError(response);
+  }
+}
+
+export async function deleteUser(id: string, reassignTo?: string): Promise<void> {
+  const response = await fetch(
+    `/api/users/${encodeURIComponent(id)}${queryString({ reassignTo })}`,
+    {
+      method: 'DELETE',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { ...csrfHeader() },
+    },
+  );
+  if (!response.ok) {
+    throw await toApiError(response);
+  }
+}
+
+export async function fetchProfile(): Promise<UserProfile> {
+  const response = await fetch('/api/profile', {
+    method: 'GET',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<UserProfile>(response);
+}
+
+export async function updateProfile(payload: { username?: string }): Promise<UserProfile> {
+  const response = await fetch('/api/profile', {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify(payload),
+  });
+  return readJson<UserProfile>(response);
+}
+
+export async function changeOwnPassword(payload: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<void> {
+  const response = await fetch('/api/profile/password', {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { 'content-type': 'application/json', ...csrfHeader() },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw await toApiError(response);
+  }
+}
+
+export async function fetchOptions(group: OptionGroup): Promise<OptionValues> {
+  const response = await fetch(`/api/options${queryString({ group })}`, {
+    method: 'GET',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<OptionValues>(response);
+}
+
+export async function updateOptions(
+  group: OptionGroup,
+  values: OptionValues,
+): Promise<OptionValues> {
+  const response = await fetch('/api/options', {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ group, values }),
+  });
+  return readJson<OptionValues>(response);
+}
+
 export function actionErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
     switch (error.status) {

@@ -8,7 +8,7 @@ import { config as loadDotenv } from 'dotenv';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 loadDotenv({ path: path.join(repoRoot, '.env'), quiet: true });
 
-const ADMIN_URL = 'http://127.0.0.1:5173/admin';
+const ADMIN_URL = 'http://127.0.0.1:5173/admin/';
 const suffix = randomUUID().slice(0, 10);
 const editorUsername = `e2e_ed_${suffix}`;
 const subscriberUsername = `e2e_sub_${suffix}`;
@@ -77,12 +77,16 @@ test('editor can create, rename and delete a category', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Categories & Tags' })).toBeVisible();
 
   await page.getByLabel('New category name').fill(termName);
-  await page.getByRole('button', { name: 'Create category' }).click();
+  await page
+    .getByRole('form', { name: 'Create category' })
+    .getByRole('button', { name: 'Add New category' })
+    .click();
   await expect(page.getByText('Category created.')).toBeVisible();
   await expect(page.getByText(termName)).toBeVisible();
 
   const termSlug = termName.toLowerCase().replace(/ /g, '-');
   const row = page.locator('tr', { hasText: termSlug });
+  await row.hover();
   await row.getByRole('button', { name: 'Rename' }).click();
   await row.getByRole('textbox').fill(renamedTermName);
   await row.getByRole('button', { name: 'Save' }).click();
@@ -90,12 +94,13 @@ test('editor can create, rename and delete a category', async ({ page }) => {
   await expect(page.getByText(renamedTermName)).toBeVisible();
 
   const deleteRow = page.locator('tr', { hasText: renamedTermName });
+  await deleteRow.hover();
   await deleteRow.getByRole('button', { name: 'Delete' }).click();
   await expect(page.getByText(/post\(s\) detached/i)).toBeVisible();
 });
 
 test('non-editor gets no-access on terms', async ({ page }) => {
   await login(page, subscriberUsername);
-  await page.goto(`${ADMIN_URL}/terms`);
+  await page.goto(`${ADMIN_URL}terms`);
   await expect(page.getByText('No term management access')).toBeVisible();
 });

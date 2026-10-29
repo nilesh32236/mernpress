@@ -4,6 +4,7 @@ import {
   createTerm,
   deleteTerm,
   fetchTerms,
+  updateTerm,
   type AdminTerm,
   type AuthUser,
   type Paged,
@@ -168,6 +169,35 @@ export function TermsPage({ user }: { user: AuthUser }) {
     setEditError(null);
   }
 
+  function cancelRename() {
+    setEditingId(null);
+    setEditName('');
+    setEditError(null);
+  }
+
+  async function saveRename(term: AdminTerm) {
+    const name = editName.trim();
+    if (!name) {
+      setEditError('Name is required.');
+      return;
+    }
+    if (pendingAction !== null) return;
+    setPendingAction(`rename:${term.id}`);
+    setEditError(null);
+    setNotice(null);
+    try {
+      await updateTerm(term.id, { name });
+      setEditingId(null);
+      setEditName('');
+      setNotice({ tone: 'success', text: 'Term renamed.' });
+      setReloadKey((value) => value + 1);
+    } catch (caught) {
+      setEditError(actionErrorMessage(caught));
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
   async function handleDelete(term: AdminTerm) {
     const confirmMessage = `Delete “${term.name}”? ${term.postCount} post(s) will be detached.`;
     if (!window.confirm(confirmMessage)) {
@@ -241,7 +271,7 @@ export function TermsPage({ user }: { user: AuthUser }) {
           >
             <h3>Add New {singularLabel(taxonomy)}</h3>
             <div className="field">
-              <label htmlFor="term-new-name">{singularLabel(taxonomy)} Name</label>
+              <label htmlFor="term-new-name">New {singularLabel(taxonomy)} name</label>
               <input
                 id="term-new-name"
                 type="text"
@@ -378,9 +408,37 @@ export function TermsPage({ user }: { user: AuthUser }) {
                                   type="text"
                                   value={editName}
                                   onChange={(event) => setEditName(event.target.value)}
+                                  onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                      event.preventDefault();
+                                      void saveRename(term);
+                                    }
+                                    if (event.key === 'Escape') {
+                                      cancelRename();
+                                    }
+                                  }}
                                   disabled={pendingAction !== null}
                                   aria-label={`Rename ${term.name}`}
                                 />
+                                <div className="row-actions" style={{ visibility: 'visible' }}>
+                                  <button
+                                    type="button"
+                                    className="button small-button edit-link"
+                                    disabled={pendingAction !== null}
+                                    aria-busy={pendingAction === `rename:${term.id}`}
+                                    onClick={() => void saveRename(term)}
+                                  >
+                                    {pendingAction === `rename:${term.id}` ? 'Saving…' : 'Save'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="button small-button delete-link"
+                                    disabled={pendingAction !== null}
+                                    onClick={cancelRename}
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
                                 {editError ? (
                                   <p className="field-error" role="alert">
                                     {editError}
@@ -397,7 +455,7 @@ export function TermsPage({ user }: { user: AuthUser }) {
                                     disabled={pendingAction !== null}
                                     onClick={() => startRename(term)}
                                   >
-                                    Edit
+                                    Rename
                                   </button>
                                   <button
                                     type="button"

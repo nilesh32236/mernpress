@@ -8,7 +8,7 @@ import { config as loadDotenv } from 'dotenv';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 loadDotenv({ path: path.join(repoRoot, '.env'), quiet: true });
 
-const ADMIN_URL = 'http://127.0.0.1:5173/admin';
+const ADMIN_URL = 'http://127.0.0.1:5173/admin/';
 const suffix = randomUUID().slice(0, 10);
 const editorUsername = `e2e_ed_${suffix}`;
 const subscriberUsername = `e2e_sub_${suffix}`;
@@ -106,8 +106,8 @@ test('editor can create, edit, publish, unpublish, trash and restore content', a
   });
 
   await login(page, editorUsername);
-  await expect(page.getByRole('heading', { name: 'Content overview' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Posts', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'At a Glance' })).toBeVisible();
 
   await openNewPost(page);
   await page.getByLabel('Title').fill(`E2E Acceptance Post ${suffix}`);
@@ -148,7 +148,7 @@ test('editor can create, edit, publish, unpublish, trash and restore content', a
   await page.getByLabel('Search posts').fill(`E2E Acceptance Post ${suffix}`);
   await page.getByRole('button', { name: 'Search' }).click();
   await expect(page.getByRole('link', { name: `E2E Acceptance Post ${suffix}` })).toBeVisible();
-  await page.getByRole('tab', { name: /Published/ }).click();
+  await page.getByRole('button', { name: /Published/ }).click();
   await expect(page.getByRole('link', { name: `E2E Acceptance Post ${suffix}` })).toBeVisible();
 
   await page.getByRole('link', { name: `E2E Acceptance Post ${suffix}` }).click();
@@ -161,7 +161,7 @@ test('editor can create, edit, publish, unpublish, trash and restore content', a
   await expect(page.locator('.editor-topbar .status-badge')).toHaveText('Draft');
 
   page.once('dialog', (dialog) => void dialog.accept());
-  await page.getByRole('button', { name: 'Trash' }).click();
+  await page.getByRole('button', { name: 'Move to Trash' }).click();
   await expect(page.getByText('Content moved to trash.')).toBeVisible();
   await expect(page.locator('.editor-topbar .status-badge')).toHaveText('Trashed');
 
@@ -184,10 +184,10 @@ test('stale edits show a recoverable conflict instead of overwriting', async ({
   await login(page, editorUsername);
 
   const secondPage = await context.newPage();
-  await secondPage.goto(`${ADMIN_URL}/posts/${createdPostId}/edit`);
+  await secondPage.goto(`${ADMIN_URL}posts/${createdPostId}/edit`);
   await expect(secondPage.getByRole('heading', { level: 1, name: 'Edit post' })).toBeVisible();
 
-  await page.goto(`${ADMIN_URL}/posts/${createdPostId}/edit`);
+  await page.goto(`${ADMIN_URL}posts/${createdPostId}/edit`);
   await expect(page.getByRole('heading', { level: 1, name: 'Edit post' })).toBeVisible();
   await page.getByLabel('Title').fill(`E2E Conflict Winner ${suffix}`);
   await page.getByRole('button', { name: 'Save draft' }).click();
@@ -238,10 +238,12 @@ test('list pagination uses server totals', async ({ page }) => {
 
   await page.getByLabel('Search posts').fill(`Pagination ${suffix}`);
   await page.getByRole('button', { name: 'Search' }).click();
-  await expect(page.getByText(/Page 1 of 2 · 11 total/)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
-  await page.getByRole('button', { name: 'Next' }).click();
-  await expect(page.getByText(/Page 2 of 2 · 11 total/)).toBeVisible();
+  await expect(page.getByText('11 Posts')).toBeVisible();
+  await expect(page.locator('.page-numbers.current')).toHaveText('1');
+  await expect(page.getByRole('button', { name: 'Next »' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Next »' }).click();
+  await expect(page.locator('.page-numbers.current')).toHaveText('2');
+  await expect(page.getByText('11 Posts')).toBeVisible();
 });
 
 test('keyboard navigation, skip link and narrow viewport work', async ({ page }) => {

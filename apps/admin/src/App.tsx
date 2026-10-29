@@ -5,6 +5,9 @@ import { ContentList } from './ContentList.js';
 import { TermsPage } from './TermsPage.js';
 import { Dashboard } from './Dashboard.js';
 import { LoginForm } from './LoginForm.js';
+import { UsersPage } from './UsersPage.js';
+import { ProfilePage } from './ProfilePage.js';
+import { SettingsPage } from './SettingsPage.js';
 import { AdminShell } from './AdminShell.js';
 import { NavigationGuardProvider } from './navigation-guard.js';
 import { navigate, parseRoute, useLocation, type Route } from './router.js';
@@ -55,7 +58,6 @@ export function App() {
           <a className="brand" href={ADMIN_BASE} aria-label="MERNPress admin home">
             MERNPress
           </a>
-          <span className="phase-badge">Phase 5 · Editor</span>
         </header>
         <main id="main-content" className="main-content" tabIndex={-1} aria-busy="true">
           <div className="content-card">
@@ -83,7 +85,6 @@ export function App() {
           <a className="brand" href={ADMIN_BASE} aria-label="MERNPress admin home">
             MERNPress
           </a>
-          <span className="phase-badge">Phase 5 · Editor</span>
         </header>
         <main id="main-content" className="main-content" tabIndex={-1}>
           {sessionError ? (
@@ -114,12 +115,26 @@ export function App() {
 
   return (
     <NavigationGuardProvider>
-      <SignedInApp user={user} onSignedOut={() => setUser(null)} />
+      <SignedInApp
+        user={user}
+        onSignedOut={() => setUser(null)}
+        onUserUpdated={(partial) =>
+          setUser((current) => (current ? { ...current, ...partial } : current))
+        }
+      />
     </NavigationGuardProvider>
   );
 }
 
-function SignedInApp({ user, onSignedOut }: { user: AuthUser; onSignedOut: () => void }) {
+function SignedInApp({
+  user,
+  onSignedOut,
+  onUserUpdated,
+}: {
+  user: AuthUser;
+  onSignedOut: () => void;
+  onUserUpdated: (partial: Partial<AuthUser>) => void;
+}) {
   const location = useLocation();
   const route = parseRoute(location.pathname);
 
@@ -129,7 +144,7 @@ function SignedInApp({ user, onSignedOut }: { user: AuthUser; onSignedOut: () =>
 
   return (
     <AdminShell user={user} route={route} onSignedOut={onSignedOut}>
-      <RouteView user={user} route={route} />
+      <RouteView user={user} route={route} onUserUpdated={onUserUpdated} />
     </AdminShell>
   );
 }
@@ -146,12 +161,36 @@ function pageTitle(route: Route): string {
       return `MERNPress admin · Edit ${route.type}`;
     case 'terms':
       return 'MERNPress admin · Categories & Tags';
+    case 'users':
+      return 'MERNPress admin · Users';
+    case 'profile':
+      return 'MERNPress admin · Profile';
+    case 'settings':
+      return 'MERNPress admin · Settings';
     case 'notFound':
       return 'MERNPress admin · Not found';
   }
 }
 
-function RouteView({ user, route }: { user: AuthUser; route: Route }) {
+function Forbidden() {
+  return (
+    <div className="content-card">
+      <p className="eyebrow">No access</p>
+      <h1>No access</h1>
+      <p className="lede">Only administrators can open this screen.</p>
+    </div>
+  );
+}
+
+function RouteView({
+  user,
+  route,
+  onUserUpdated,
+}: {
+  user: AuthUser;
+  route: Route;
+  onUserUpdated: (partial: Partial<AuthUser>) => void;
+}) {
   switch (route.name) {
     case 'dashboard':
       return <Dashboard user={user} />;
@@ -163,6 +202,12 @@ function RouteView({ user, route }: { user: AuthUser; route: Route }) {
       return <ContentEditor user={user} type={route.type} id={route.id} />;
     case 'terms':
       return <TermsPage user={user} />;
+    case 'users':
+      return user.role === 'administrator' ? <UsersPage user={user} /> : <Forbidden />;
+    case 'profile':
+      return <ProfilePage user={user} onProfileUpdated={onUserUpdated} />;
+    case 'settings':
+      return user.role === 'administrator' ? <SettingsPage user={user} /> : <Forbidden />;
     case 'notFound':
       return (
         <div className="content-card">

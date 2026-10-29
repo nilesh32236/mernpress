@@ -17,7 +17,9 @@ export type ContentErrorCode =
   | 'TERM_PARENT_INVALID'
   | 'TERM_PARENT_CYCLE'
   | 'TERM_SLUG_TAKEN'
-  | 'HOOK_REJECTED';
+  | 'HOOK_REJECTED'
+  | 'UNKNOWN_OPTION_KEY'
+  | 'INVALID_OPTION_GROUP';
 
 /**
  * Typed domain error for content/taxonomy. Routes map `statusCode` + `code` to

@@ -1,5 +1,89 @@
 # Implementation log
 
+## 2026-10-29 — WordPress-style admin redesign + Users/Settings parity slice
+
+**Status:** implemented and fully verified locally; pushed to `master`; deployed to
+production (release `20261029T08…` → see production-hosting.md for the release id).
+Owner acceptance of the live UI pending. Design target and reference extractions:
+[docs/design/wordpress-admin-target.md](design/wordpress-admin-target.md),
+[reference-cms-design-inventory.md](design/reference-cms-design-inventory.md),
+[reference-cms-feature-matrix.md](design/reference-cms-feature-matrix.md)
+(analysis of the qrolichealth-cms reference; design lessons adopted, no code copied).
+
+### What changed
+
+- **Root-cause fix**: `apps/admin/src/styles.css` contained two competing design
+  systems — a later fixed-position off-canvas `.admin-sidebar` overrode the grid
+  shell, so the sidebar rendered off-screen at every viewport width and the
+  editor main column collapsed. Consolidated to ONE WordPress design system
+  (tokens: sidebar `#1d2327`, WP blue `#2271b1`/`#135e96`, content bg `#f0f0f1`,
+  borders `#c3c4c7`/`#8c8f94`, text `#2c3338`/muted `#646970`, WP status pills).
+- **Admin shell**: dark 220px sidebar always visible ≥1024px (52px icon rail when
+  collapsed; off-canvas drawer + backdrop below), dark 36px topbar, WP nav icons,
+  sidebar footer with username (→ Profile) / role / Sign out.
+- **Screens restyled**: login (centered card, stale "Phase 4/later phases" copy
+  removed), dashboard (welcome banner + At a Glance card), posts/pages lists
+  (WP `.subsubsub` status tabs with counts, tablenav, widefat table, hover row
+  actions), terms (two-column, nav-tabs), 404.
+- **Editor layout rebuilt**: dark 58px header (back, title, save state, Draft
+  pill, Save draft/Publish/Settings), centered 800px white paper (large title,
+  permalink under it, horizontal Gutenberg toolbar, 60vh canvas), 320px Document
+  sidebar with bordered panels, ≤1024px right overlay drawer. Duplicate
+  `.editor-screen`/`.editor-layout`/`.editor-sidebar` definitions removed
+  (root cause of the crushed canvas). Publish panel: status "Edit" action now
+  exposes `aria-label="Unpublish"`/`Change status`; added Restore button for
+  trashed content.
+- **Users administration (P2-05, owner-authorized autonomous slice)**:
+  - API: `GET/POST /api/users`, `PUT /api/users/:id/role|status|password`,
+    `DELETE /api/users/:id?reassignTo=` — administrator-only via new
+    `user.manage` capability, self-role-change/last-admin guards, session
+    invalidation on disable/password reset, post reassignment on delete, audit
+    events, no passwordHash leakage. 18 tests.
+  - UI: `UsersPage` (WP list table, search, pagination, Add User / Change role /
+    Reset password / Delete-with-reassignment modals) + `ProfilePage` (username
+    edit, change password with client checks; shell user updates live). 13 tests.
+- **Settings (options store)**:
+  - DB: new additive migration `20261029090000_add_options` (`options` table:
+    key PK, value, group, autoload, updated_at timestamptz).
+  - API: `GET/PUT /api/options` with an allowlisted key set across groups
+    general/reading/writing (site_title, site_tagline, admin_email, site_url,
+    homepage_mode, homepage_id, posts_page_id, posts_per_page,
+    default_post_category, default_author); reads any authenticated principal,
+    writes administrator-only (`manage_options`); defaults merged over stored
+    rows; unknown keys 400. 8 tests.
+  - UI: `SettingsPage` with WP nav-tabs (General/Reading/Writing), typed values,
+    dirty-gated Save, success/error notices. 4 tests.
+- **Terms defect fixed**: inline rename had unr wired state (input rendered but
+  no save path). Added Save/Cancel buttons, Enter/Escape handling and the
+  `updateTerm` call.
+- **E2E updated for the accepted redesign**: `/admin/` trailing slash base URL,
+  dashboard "At a Glance" assertion, subsubsub status buttons, "Add New
+  category" scoped to the create form, "Move to Trash"/"Unpublish" labels,
+  row-hover before row actions, WP pagination text ("11 Posts" + current page).
+
+### Verification (exact)
+
+- `pnpm lint` / `pnpm format:check` / `pnpm typecheck` — clean.
+- `pnpm test` — 356 pass (admin 92, api 248, block-system 15, web 1).
+- `pnpm build` — 6/6 tasks successful.
+- `E2E_API_PORT=4100 pnpm test:e2e` — 21/21 pass.
+- Visual pass (Playwright, 1440×900 + 900×800): login, dashboard, posts, pages,
+  terms, users, profile, settings (3 tabs), editor — zero console errors;
+  geometry checked (sidebar 220px visible, editor paper 800px centered,
+  toolbar horizontal 798×48, Document sidebar 320px).
+- Migration applied to `mernpress_test` only; dev/prod DBs need `pnpm db:migrate`
+  on next deploy (options table is additive, no data change).
+
+### Known limitations / notes
+
+- Settings Reading/Writing page/author pickers are ID text inputs (no
+  search-picker UI yet).
+- UsersPage modal backdrop uses inline styles; a shared dialog primitive is a
+  candidate for the design system.
+- Media library remains Phase 6 gated — not started.
+- The CI bundle-budget step exists locally in `.github/workflows/ci.yml` but
+  cannot be pushed (OAuth token lacks `workflow` scope) — unchanged from before.
+
 ## 2026-10-28 — Phase 5 MVP: real Gutenberg block editor
 
 **Status:** implemented, browser-tested and committed locally on branch

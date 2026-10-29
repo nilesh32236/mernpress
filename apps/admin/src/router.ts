@@ -9,6 +9,9 @@ export type Route =
   | { name: 'new'; type: ContentType }
   | { name: 'edit'; type: ContentType; id: string }
   | { name: 'terms' }
+  | { name: 'users' }
+  | { name: 'profile' }
+  | { name: 'settings' }
   | { name: 'notFound' };
 
 export interface LocationState {
@@ -46,6 +49,15 @@ export function parseRoute(pathname: string): Route {
   const [typeSegment, second, third] = parts;
   if (typeSegment === 'terms' && parts.length === 1) {
     return { name: 'terms' };
+  }
+  if (typeSegment === 'users' && parts.length === 1) {
+    return { name: 'users' };
+  }
+  if (typeSegment === 'profile' && parts.length === 1) {
+    return { name: 'profile' };
+  }
+  if (typeSegment === 'settings' && parts.length === 1) {
+    return { name: 'settings' };
   }
   if (typeSegment !== 'posts' && typeSegment !== 'pages') {
     return { name: 'notFound' };
@@ -140,6 +152,12 @@ export function breadcrumbs(route: Route): Array<{ label: string; to?: string }>
       ];
     case 'terms':
       return [{ label: 'Dashboard', to: '/' }, { label: 'Categories & Tags' }];
+    case 'users':
+      return [{ label: 'Dashboard', to: '/' }, { label: 'Users' }];
+    case 'profile':
+      return [{ label: 'Dashboard', to: '/' }, { label: 'Profile' }];
+    case 'settings':
+      return [{ label: 'Dashboard', to: '/' }, { label: 'Settings' }];
     case 'notFound':
       return [{ label: 'Not found' }];
   }

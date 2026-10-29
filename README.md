@@ -278,6 +278,9 @@ Start here, then follow the links.
 | [docs/research/editor-model-benchmark-2026-10-28.md](docs/research/editor-model-benchmark-2026-10-28.md) | Three-model microbenchmark run during Phase 5 |
 | [docs/architecture/system-overview.md](docs/architecture/system-overview.md) | Components, boundaries, request/content flow and local runtime |
 | [docs/architecture/code-standards.md](docs/architecture/code-standards.md) | Module boundaries, SOLID/DRY rules, error/logging, testing and scalability conventions |
+| [docs/design/wordpress-admin-target.md](docs/design/wordpress-admin-target.md) | WordPress-style admin design target (tokens, shell contract, screen patterns, parity roadmap) |
+| [docs/design/reference-cms-design-inventory.md](docs/design/reference-cms-design-inventory.md) | Design system extracted from the qrolichealth reference CMS |
+| [docs/design/reference-cms-feature-matrix.md](docs/design/reference-cms-feature-matrix.md) | Feature/screen matrix of the reference CMS and MERNPress gap analysis |
 | [docs/architecture/authentication.md](docs/architecture/authentication.md) | Phase 2 auth scope, schema, flows, CSRF, sessions, rate limiting and config |
 | [docs/architecture/content-model.md](docs/architecture/content-model.md) | Entities, lifecycle, slugs, media, taxonomy, revisions and migrations |
 | [docs/architecture/gutenberg-and-rendering.md](docs/architecture/gutenberg-and-rendering.md) | Content format, block registry, editor and renderer |

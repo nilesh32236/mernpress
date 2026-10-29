@@ -8,7 +8,7 @@ import { config as loadDotenv } from 'dotenv';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 loadDotenv({ path: path.join(repoRoot, '.env'), quiet: true });
 
-const ADMIN_URL = 'http://127.0.0.1:5173/admin';
+const ADMIN_URL = 'http://127.0.0.1:5173/admin/';
 const suffix = randomUUID().slice(0, 10);
 const editorUsername = `e2e_block_${suffix}`;
 const password = `E2E-${randomUUID()}-Aa1!`;
@@ -155,7 +155,7 @@ test('creates content with paragraph, heading and list blocks and reloads it', a
 test('publishes from the editor and exposes the post publicly', async ({ page }) => {
   expect(postId).not.toBe('');
   await login(page);
-  await page.goto(`${ADMIN_URL}/posts/${postId}/edit`);
+  await page.goto(`${ADMIN_URL}posts/${postId}/edit`);
   await expect(page.getByRole('heading', { level: 1, name: 'Edit post' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Publish' }).click();
@@ -277,7 +277,7 @@ test('unknown blocks are preserved byte-for-byte through load and save', async (
     return (await response.json()) as { id: string; content: string };
   }, unknownContent);
 
-  await page.goto(`${ADMIN_URL}/posts/${created.id}/edit`);
+  await page.goto(`${ADMIN_URL}posts/${created.id}/edit`);
   await expect(page.locator('.block-canvas-sheet')).toContainText('Custom widget');
   await expect(page.locator('.block-canvas-sheet')).toContainText('Known paragraph');
   await expect(page.locator('.block-canvas-sheet')).toContainText(/doesn’t include support/);

@@ -245,35 +245,54 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
 
       {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
 
-      <div className="list-filters">
-        <form className="search-form" onSubmit={handleSearch} role="search">
-          <label htmlFor={`${type}-search`}>Search {label}</label>
-          <input
-            id={`${type}-search`}
-            type="search"
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            placeholder={`Search ${label}`}
-          />
-          <button type="submit" className="button secondary-button">
-            Search
-          </button>
-        </form>
-        <div className="status-filter">
-          <label htmlFor={`${type}-status-filter`}>Filter by status</label>
-          <select
-            id={`${type}-status-filter`}
-            value={status}
-            onChange={(event) => {
-              applyFilters(sanitizeStatus(event.target.value), search, 1);
-            }}
-          >
-            {TABS.map((tab) => (
-              <option key={tab.value} value={tab.value}>
-                {tab.label} ({counts[tab.value] ?? 0})
-              </option>
-            ))}
-          </select>
+      <ul className="subsubsub" aria-label={`${label} status filter`}>
+        {TABS.map((tab) => (
+          <li key={tab.value || 'all'}>
+            <button
+              type="button"
+              className="subsubsub-tab"
+              aria-current={status === tab.value ? 'true' : undefined}
+              onClick={() => applyFilters(tab.value, search, 1)}
+            >
+              {tab.label} <span className="count">({counts[tab.value] ?? 0})</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <div className="tablenav">
+        <div className="alignleft">
+          <div className="status-filter">
+            <label htmlFor={`${type}-status-filter`}>Filter by status</label>
+            <select
+              id={`${type}-status-filter`}
+              value={status}
+              onChange={(event) => {
+                applyFilters(sanitizeStatus(event.target.value), search, 1);
+              }}
+            >
+              {TABS.map((tab) => (
+                <option key={tab.value} value={tab.value}>
+                  {tab.label} ({counts[tab.value] ?? 0})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="alignright">
+          <form className="search-form" onSubmit={handleSearch} role="search">
+            <label htmlFor={`${type}-search`}>Search {label}</label>
+            <input
+              id={`${type}-search`}
+              type="search"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder={`Search ${label}`}
+            />
+            <button type="submit" className="button secondary-button">
+              Search
+            </button>
+          </form>
         </div>
       </div>
 

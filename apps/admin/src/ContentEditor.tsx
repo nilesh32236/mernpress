@@ -706,44 +706,48 @@ export function ContentEditor({
         ) : (
           <div className="editor-layout">
             <div className="editor-main-column">
-              <div className="editor-title-block">
-                <textarea
-                  ref={titleRef}
-                  className="editor-title-input editor-title-textarea"
-                  id="content-title"
-                  name="title"
-                  rows={1}
-                  maxLength={300}
-                  placeholder="Add title"
-                  aria-label="Title"
-                  aria-invalid={Boolean(fieldErrors['title'])}
-                  aria-describedby={fieldErrors['title'] ? 'content-title-error' : undefined}
-                  value={form.title}
-                  onChange={(event) => updateForm('title', event.target.value)}
-                />
-                <FieldError id="content-title-error" message={fieldErrors['title']} />
-                <div className="editor-permalink">
-                  {post ? (
-                    <>
-                      <span>https://example.com/</span>
-                      <code>{form.slug || post.slug}</code>
-                    </>
-                  ) : (
-                    <>
-                      <span>https://example.com/</span>
-                      <span className="permalink-edit">{form.slug || '(derived from title)'}</span>
-                    </>
-                  )}
+              <div className="editor-document">
+                <div className="editor-title-block">
+                  <textarea
+                    ref={titleRef}
+                    className="editor-title-input editor-title-textarea"
+                    id="content-title"
+                    name="title"
+                    rows={1}
+                    maxLength={300}
+                    placeholder="Add title"
+                    aria-label="Title"
+                    aria-invalid={Boolean(fieldErrors['title'])}
+                    aria-describedby={fieldErrors['title'] ? 'content-title-error' : undefined}
+                    value={form.title}
+                    onChange={(event) => updateForm('title', event.target.value)}
+                  />
+                  <FieldError id="content-title-error" message={fieldErrors['title']} />
+                  <div className="editor-permalink">
+                    {post ? (
+                      <>
+                        <span>https://example.com/</span>
+                        <code>{form.slug || post.slug}</code>
+                      </>
+                    ) : (
+                      <>
+                        <span>https://example.com/</span>
+                        <span className="permalink-edit">
+                          {form.slug || '(derived from title)'}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
+                <Suspense fallback={<Skeleton label="Loading block editor…" lines={6} />}>
+                  <BlockCanvas
+                    ref={canvasRef}
+                    initialContent={form.content}
+                    onChange={updateContent}
+                    onDirty={() => setContentTouched(true)}
+                  />
+                </Suspense>
               </div>
-              <Suspense fallback={<Skeleton label="Loading block editor…" lines={6} />}>
-                <BlockCanvas
-                  ref={canvasRef}
-                  initialContent={form.content}
-                  onChange={updateContent}
-                  onDirty={() => setContentTouched(true)}
-                />
-              </Suspense>
               <p className="editor-status-line">
                 {post
                   ? `Status: ${statusLabel} · Version ${post.version} · Updated ${formatDateTime(post.updatedAt)}`
@@ -790,6 +794,7 @@ export function ContentEditor({
                             type="button"
                             className="button small-button edit-link"
                             disabled={transitioning !== null || dirty}
+                            aria-label={post.status === 'DRAFT' ? 'Change status' : 'Unpublish'}
                             onClick={() =>
                               void runTransition(post.status === 'DRAFT' ? 'publish' : 'unpublish')
                             }
@@ -818,6 +823,18 @@ export function ContentEditor({
                           onClick={() => void runTransition('trash')}
                         >
                           Move to Trash
+                        </button>
+                      </div>
+                    ) : null}
+                    {post.status === 'TRASHED' && transitions.includes('restore') ? (
+                      <div className="publish-field">
+                        <button
+                          type="button"
+                          className="button secondary-button"
+                          disabled={transitioning !== null || dirty}
+                          onClick={() => void runTransition('restore')}
+                        >
+                          Restore
                         </button>
                       </div>
                     ) : null}

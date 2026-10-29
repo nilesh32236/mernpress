@@ -1,27 +1,40 @@
 /* Gutenberg canvas styling. Loaded only with the lazy editor chunk. */
 
+/* The canvas lives inside the white .editor-document surface (styles.css),
+   so it only owns the block area, not its own paper or frame. */
 .block-canvas-root {
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  width: 100%;
+  height: max(420px, 60vh);
   color-scheme: light;
   color: #1e1e1e;
-  background: #f0f0f1;
-  border: 1px solid #dcdcde;
-  border-radius: 6px;
+  background: #ffffff;
+  border: 0;
+  border-radius: 0 0 3px 3px;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
+/* BlockEditorProvider wraps its children in a plain div. Make that wrapper the
+   flex column so the canvas body can fill the 60vh sheet height. */
+.block-canvas-root > div:first-child {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Toolbar: horizontal row across the full width of the canvas. */
 .block-canvas-toolbar {
   display: flex;
   align-items: center;
   gap: 4px;
   flex-wrap: wrap;
-  padding: 6px 8px;
-  background: #1e1e1e;
-  color: #fff;
+  width: 100%;
   min-height: 48px;
+  padding: 6px 12px;
+  background: var(--wp-sidebar, #1d2327);
+  color: #fff;
   border-bottom: 1px solid #3c434a;
 }
 
@@ -84,8 +97,8 @@
   flex: 1;
   min-width: 0;
   overflow: auto;
-  padding: 32px 20px 48px;
-  background: #f0f0f1;
+  padding: 24px 40px 48px;
+  background: #ffffff;
 }
 
 .block-canvas-sheet {
@@ -93,11 +106,11 @@
   max-width: 760px;
   min-height: auto;
   margin: 0 auto;
-  padding: 48px 56px 64px;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  padding: 8px 0 40px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .block-canvas-sheet .block-editor-block-list__layout {
@@ -210,42 +223,8 @@
   z-index: 100000;
 }
 
-/* The canonical editor title field, rendered inside the white sheet. */
-.editor-title-input {
-  display: block;
-  width: 100%;
-  margin: 0 0 28px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #1e1e1e;
-  font-family: inherit;
-  font-size: clamp(1.9rem, 1.5rem + 1.4vw, 2.6rem);
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
-}
-
-.editor-title-input::placeholder {
-  color: #8c8f94;
-  font-weight: 400;
-}
-
-.editor-title-textarea {
-  resize: none;
-  overflow: hidden;
-  white-space: pre-wrap;
-  min-height: 1.2em;
-}
-
-.editor-title-input:focus {
-  outline: none;
-}
-
-.editor-title-input:focus-visible {
-  outline: 2px solid #3858e9;
-  outline-offset: 4px;
-}
+/* The title field (rendered by ContentEditor above the canvas) lives in
+   styles.css so it is styled before the lazy Gutenberg chunk loads. */
 
 /* WordPress portals (inserter, link popover, block toolbar) render into body;
    raise them above the admin shell without touching global admin styles. */
@@ -257,11 +236,11 @@
 
 @media (max-width: 782px) {
   .block-canvas-scroll {
-    padding: 16px 10px 32px;
+    padding: 16px 14px 32px;
   }
 
   .block-canvas-sheet {
-    padding: 28px 20px 40px;
+    padding: 4px 0 28px;
   }
 
   .block-canvas-listview,
@@ -280,10 +259,11 @@
 }
 
 @media (max-width: 480px) {
-  .block-canvas-sheet {
-    padding: 20px 16px 32px;
+  .block-canvas-scroll {
+    padding: 12px 10px 24px;
   }
-  .editor-title-input {
-    font-size: 1.6rem;
+
+  .block-canvas-toolbar {
+    padding: 6px 8px;
   }
 }

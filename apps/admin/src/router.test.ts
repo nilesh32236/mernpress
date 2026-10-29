@@ -24,6 +24,15 @@ describe('admin router', () => {
     expect(parseRoute('/posts/abc/edit')).toEqual({ name: 'edit', type: 'post', id: 'abc' });
   });
 
+  it('maps the users, profile and settings routes', () => {
+    expect(parseRoute('/admin/users')).toEqual({ name: 'users' });
+    expect(parseRoute('/admin/profile')).toEqual({ name: 'profile' });
+    expect(parseRoute('/admin/settings')).toEqual({ name: 'settings' });
+    expect(parseRoute('/users')).toEqual({ name: 'users' });
+    expect(parseRoute('/profile')).toEqual({ name: 'profile' });
+    expect(parseRoute('/settings')).toEqual({ name: 'settings' });
+  });
+
   it('returns notFound for unknown routes', () => {
     expect(parseRoute('/admin/taxonomy')).toEqual({ name: 'notFound' });
     expect(parseRoute('/taxonomy')).toEqual({ name: 'notFound' });

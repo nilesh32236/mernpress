@@ -168,3 +168,15 @@ model PostTerm {
   @@index([termId, postId])
   @@map("post_terms")
 }
+
+
+model Option {
+  key       String   @id @db.VarChar(191)
+  value     String   @db.Text
+  group     String   @default("general") @db.VarChar(50)
+  autoload  Boolean  @default(true) @map("autoload")
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([group])
+  @@map("options")
+}

@@ -8,6 +8,8 @@ import {
   createContentService,
   createHookRegistry,
   createTaxonomyService,
+  createUserAdminService,
+  createOptionService,
   type AuthConfig,
 } from '@mernpress/cms-core';
 import { checkDatabase, createDatabaseClient } from '@mernpress/database';
@@ -17,6 +19,9 @@ import { registerAuthRoutes } from './routes/auth.js';
 import { registerContentRoutes } from './routes/content.js';
 import { registerPublicContentRoutes } from './routes/public-content.js';
 import { registerTaxonomyRoutes } from './routes/taxonomy.js';
+import { registerUserRoutes } from './routes/users.js';
+import { registerProfileRoutes } from './routes/profile.js';
+import { registerOptionRoutes } from './routes/options.js';
 import { resolveRequestId } from './http/request-id.js';
 
 export interface BuildAppOptions {
@@ -98,6 +103,11 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const taxonomy = createTaxonomyService({ prisma: database, hooks: contentHooks });
   app.decorate('taxonomy', taxonomy);
 
+  const users = createUserAdminService({ prisma: database });
+  app.decorate('users', users);
+
+  const optionService = createOptionService({ prisma: database });
+
   app.addHook('onRequest', async (request, reply) => {
     if (!MUTATING_METHODS.has(request.method)) {
       return;
@@ -127,6 +137,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerAuthRoutes(app, { env, auth });
   registerContentRoutes(app, { env, auth, content });
   registerTaxonomyRoutes(app, { env, auth, taxonomy });
+  registerUserRoutes(app, { env, auth, users });
+  registerProfileRoutes(app, { env, auth, users });
+  registerOptionRoutes(app, { env, auth, options: optionService });
   registerPublicContentRoutes(app, { content });
 
   app.get('/api/health', async () => ({

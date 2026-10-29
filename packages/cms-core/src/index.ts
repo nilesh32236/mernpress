@@ -38,6 +38,23 @@ export type {
   UserStatus,
 } from './auth/types.js';
 
+// ---- Phase 2 user administration + self-service profile (P2-05) ----
+export {
+  createUserAdminService,
+  UserAdminError,
+  type AdminUser,
+  type ChangeOwnPasswordInput,
+  type CreateUserInput,
+  type DeleteUserOptions,
+  type DeleteUserResult,
+  type UpdateProfileInput,
+  type UserAdminErrorCode,
+  type UserAdminService,
+  type UserAdminServiceOptions,
+  type UserListQuery,
+  type UserProfile,
+} from './auth/users.js';
+
 // ---- Phase 2 roles/capabilities (ADR 0004) ----
 export {
   ownsObject,
@@ -99,3 +116,8 @@ export type {
   TermListQuery,
   UpdateTermInput,
 } from './taxonomy/types.js';
+
+// ---- Options store (Settings) ----
+export { createOptionService, type OptionService } from './options/service.js';
+export { OptionError, type OptionErrorCode } from './options/errors.js';
+export type { OptionGroup, GetOptionsInput, UpdateOptionsInput } from './options/types.js';

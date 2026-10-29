@@ -98,66 +98,74 @@ export function Dashboard({ user }: { user: AuthUser }) {
         <Skeleton label="Loading dashboard…" lines={6} />
       ) : (
         <>
+          <section className="welcome-panel" aria-labelledby="welcome-heading">
+            <h2 id="welcome-heading">Welcome to MERNPress</h2>
+            <p>
+              This is your content home base. The At a Glance card below shows where every post and
+              page stands, and the Add New buttons get you writing in one click.
+            </p>
+          </section>
+
           <section className="dashboard-at-a-glance" aria-labelledby="at-a-glance-heading">
-            <h2 id="at-a-glance-heading" className="screen-reader-text">
-              At a glance
-            </h2>
-            <table className="at-a-glance-table">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>Published</th>
-                  <th>Drafts</th>
-                  <th>Trashed</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(['post', 'page'] as ContentType[]).map((type) => {
-                  const label = type === 'post' ? 'Posts' : 'Pages';
-                  return (
-                    <tr key={type}>
-                      <th scope="row">{label}</th>
-                      <td>
-                        <a
-                          className="at-a-glance-count"
-                          href={listPath(type, { status: 'PUBLISHED' })}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            navigate(listPath(type, { status: 'PUBLISHED' }));
-                          }}
-                        >
-                          {counts[type].PUBLISHED}
-                        </a>
-                      </td>
-                      <td>
-                        <a
-                          className="at-a-glance-count"
-                          href={listPath(type, { status: 'DRAFT' })}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            navigate(listPath(type, { status: 'DRAFT' }));
-                          }}
-                        >
-                          {counts[type].DRAFT}
-                        </a>
-                      </td>
-                      <td>
-                        <a
-                          className="at-a-glance-count"
-                          href={listPath(type, { status: 'TRASHED' })}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            navigate(listPath(type, { status: 'TRASHED' }));
-                          }}
-                        >
-                          {counts[type].TRASHED}
-                        </a>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <h2 id="at-a-glance-heading">At a Glance</h2>
+            <div className="at-a-glance-body">
+              <table className="at-a-glance-table">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th>Published</th>
+                    <th>Drafts</th>
+                    <th>Trashed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(['post', 'page'] as ContentType[]).map((type) => {
+                    const label = type === 'post' ? 'Posts' : 'Pages';
+                    return (
+                      <tr key={type}>
+                        <th scope="row">{label}</th>
+                        <td>
+                          <a
+                            className="at-a-glance-count"
+                            href={listPath(type, { status: 'PUBLISHED' })}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              navigate(listPath(type, { status: 'PUBLISHED' }));
+                            }}
+                          >
+                            {counts[type].PUBLISHED}
+                          </a>
+                        </td>
+                        <td>
+                          <a
+                            className="at-a-glance-count"
+                            href={listPath(type, { status: 'DRAFT' })}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              navigate(listPath(type, { status: 'DRAFT' }));
+                            }}
+                          >
+                            {counts[type].DRAFT}
+                          </a>
+                        </td>
+                        <td>
+                          <a
+                            className="at-a-glance-count"
+                            href={listPath(type, { status: 'TRASHED' })}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              navigate(listPath(type, { status: 'TRASHED' }));
+                            }}
+                          >
+                            {counts[type].TRASHED}
+                          </a>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </section>
 
           <section className="dashboard-help" aria-labelledby="dashboard-help-heading">

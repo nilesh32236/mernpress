@@ -34,13 +34,13 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   }
 
   return (
-    <section aria-labelledby="login-heading">
-      <p className="eyebrow">Secure admin · Phase 4</p>
+    <section className="login-card" aria-labelledby="login-heading">
+      <div className="login-brand" aria-hidden="true">
+        <span className="brand-mark">M</span>
+        <span>MERNPress</span>
+      </div>
       <h1 id="login-heading">MERNPress admin</h1>
-      <p className="lede">
-        Sign in to manage posts and pages. The block editor and media library arrive in later
-        phases.
-      </p>
+      <p className="lede">Sign in to manage your content.</p>
 
       <form className="auth-form" onSubmit={handleSubmit}>
         <div className="field">
@@ -83,7 +83,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         ) : null}
 
         <button
-          className="primary-button"
+          className="button primary-button"
           type="submit"
           disabled={submitting}
           aria-busy={submitting}
