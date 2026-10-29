@@ -2,6 +2,7 @@ import type {
   AuthService,
   ContentService,
   HookRegistry,
+  ScheduleService,
   TaxonomyService,
   UserAdminService,
 } from '@mernpress/cms-core';
@@ -15,5 +16,6 @@ declare module 'fastify' {
     taxonomy: TaxonomyService;
     contentHooks: HookRegistry;
     users: UserAdminService;
+    schedule: ScheduleService;
   }
 }

@@ -10,6 +10,7 @@ import {
   createTaxonomyService,
   createUserAdminService,
   createOptionService,
+  createScheduleService,
   type AuthConfig,
 } from '@mernpress/cms-core';
 import { checkDatabase, createDatabaseClient } from '@mernpress/database';
@@ -22,6 +23,8 @@ import { registerTaxonomyRoutes } from './routes/taxonomy.js';
 import { registerUserRoutes } from './routes/users.js';
 import { registerProfileRoutes } from './routes/profile.js';
 import { registerOptionRoutes } from './routes/options.js';
+import { registerScheduleRoutes } from './routes/schedule.js';
+import { startPublishScheduler } from './scheduler.js';
 import { resolveRequestId } from './http/request-id.js';
 
 export interface BuildAppOptions {
@@ -114,6 +117,13 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   const optionService = createOptionService({ prisma: database });
 
+  const schedule = createScheduleService({
+    prisma: database,
+    hooks: contentHooks,
+    ...(options.now === undefined ? {} : { now: options.now }),
+  });
+  app.decorate('schedule', schedule);
+
   app.addHook('onRequest', async (request, reply) => {
     if (!MUTATING_METHODS.has(request.method)) {
       return;
@@ -146,7 +156,12 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerUserRoutes(app, { env, auth, users });
   registerProfileRoutes(app, { env, auth, users });
   registerOptionRoutes(app, { env, auth, options: optionService });
+  registerScheduleRoutes(app, { env, auth, schedule });
   registerPublicContentRoutes(app, { content });
+
+  if (env.SCHEDULER_ENABLED) {
+    startPublishScheduler(app, { schedule });
+  }
 
   app.get('/api/health', async () => ({
     status: 'ok',

@@ -19,7 +19,10 @@ export type ContentErrorCode =
   | 'TERM_SLUG_TAKEN'
   | 'HOOK_REJECTED'
   | 'UNKNOWN_OPTION_KEY'
-  | 'INVALID_OPTION_GROUP';
+  | 'INVALID_OPTION_GROUP'
+  | 'SCHEDULE_TOO_SOON'
+  | 'SCHEDULE_TOO_FAR'
+  | 'SCHEDULE_INVALID_STATUS';
 
 /**
  * Typed domain error for content/taxonomy. Routes map `statusCode` + `code` to

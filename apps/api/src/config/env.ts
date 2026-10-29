@@ -61,6 +61,15 @@ const rawEnvSchema = z.object({
   SESSION_IDLE_MINUTES: z.coerce.number().int().min(1).max(1_440).default(30),
   LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().min(1).max(100).default(5),
   LOGIN_RATE_LIMIT_WINDOW_MINUTES: z.coerce.number().int().min(1).max(1_440).default(15),
+  /// Absolute path of the media storage root (Phase 6). Files are served only
+  /// through the API; the directory must not be exposed statically.
+  MEDIA_STORAGE_DIR: z.string().min(1, 'MEDIA_STORAGE_DIR must not be empty').default('var/media'),
+  /// First-publish scheduling sweeper (P8-04, ADR 0008 §4). Disable in tests
+  /// or when running multiple unsynchronized instances.
+  SCHEDULER_ENABLED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((value) => value === 'true'),
 });
 
 export type Env = {
@@ -76,6 +85,8 @@ export type Env = {
   SESSION_IDLE_MINUTES: number;
   LOGIN_RATE_LIMIT_MAX: number;
   LOGIN_RATE_LIMIT_WINDOW_MINUTES: number;
+  MEDIA_STORAGE_DIR: string;
+  SCHEDULER_ENABLED: boolean;
 };
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
@@ -151,9 +162,14 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     }
   }
 
+  const storageDir = path.isAbsolute(parsed.data.MEDIA_STORAGE_DIR)
+    ? parsed.data.MEDIA_STORAGE_DIR
+    : path.resolve(process.cwd(), parsed.data.MEDIA_STORAGE_DIR);
+
   return {
     ...parsed.data,
     AUTH_HASH_PEPPER: hashPepper,
     CORS_ORIGINS: normalizedOrigins,
+    MEDIA_STORAGE_DIR: storageDir,
   };
 }

@@ -70,6 +70,7 @@ export interface HookRegistry {
 import type {
   PostActionPayload,
   PostFilterDraft,
+  PostScheduledActionPayload,
   PostTermsActionPayload,
 } from '../content/types.js';
 import type { TermActionPayload, TermFilterDraft } from '../taxonomy/types.js';
@@ -82,6 +83,8 @@ export interface ActionMap {
   'content.post.trashed': PostActionPayload;
   'content.post.restored': PostActionPayload;
   'content.post.terms_updated': PostTermsActionPayload;
+  'content.post.scheduled': PostScheduledActionPayload;
+  'content.post.unscheduled': PostScheduledActionPayload;
   'taxonomy.term.created': TermActionPayload;
   'taxonomy.term.updated': TermActionPayload;
   'taxonomy.term.deleted': TermActionPayload;

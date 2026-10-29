@@ -27,3 +27,4 @@ apps/web/next-env.d.ts
 .codegraph/
 .turbo/
 .DS_Store
+var/media

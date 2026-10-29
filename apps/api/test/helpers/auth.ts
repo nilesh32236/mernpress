@@ -31,7 +31,8 @@ export async function createTestApp(
 export async function resetAuthTables(app: FastifyInstance): Promise<void> {
   await app.database.$executeRaw`
     TRUNCATE TABLE
-      "options", "post_terms", "post_slug_history", "terms", "posts",
+      "options", "post_terms", "post_slug_history", "post_revisions",
+      "terms", "posts", "media_items",
       "audit_events", "sessions", "login_attempts", "users"
     RESTART IDENTITY CASCADE
   `;

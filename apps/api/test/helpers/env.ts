@@ -1,3 +1,6 @@
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { loadEnv, type Env } from '../../src/config/env.js';
 
 const loadedEnv = loadEnv();
@@ -28,6 +31,10 @@ export function makeTestEnv(overrides: Partial<Env> = {}): Env {
     SESSION_IDLE_MINUTES: 30,
     LOGIN_RATE_LIMIT_MAX: 5,
     LOGIN_RATE_LIMIT_WINDOW_MINUTES: 15,
+    // Per-app storage root: upload tests never touch the repo or each other
+    // (reference test-setup pattern).
+    MEDIA_STORAGE_DIR: mkdtempSync(path.join(tmpdir(), 'mernpress-test-media-')),
+    SCHEDULER_ENABLED: false,
     ...overrides,
   };
 }
