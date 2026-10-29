@@ -109,12 +109,12 @@ Boundaries:
 | T-04 | Session fixation | Account takeover | Low | New token on login, rotation, no token in URL | — |
 | T-05 | IDOR / missing object authorization | Data leak/modification | High | Capability service + object checks on every operation; tests for wrong-object | Logic bug in a new route |
 | T-06 | Privilege escalation via mass assignment | Admin takeover | Medium | Allowlist DTO fields; never bind `role`, `authorId`, `status` from arbitrary input | A new field added carelessly |
-| T-07 | Stored XSS in block content | Admin/site compromise | High | Structural parser limits now reject size/depth/count abuse; **render-time allowlist sanitizer is still Phase 7**, so stored markup must not be rendered publicly. Escape text/attrs, URL protocol allowlist, CSP, XSS tests when the renderer lands | Sanitizer bypass/0-day; unrendered markup is inert today |
+| T-07 | Stored XSS in block content | Admin/site compromise | High | **Mitigated (2026-10-29, ADR 0007):** render-time DOMPurify allowlist sanitizer (no SVG/scripts/handlers/data-*; strict URI schemes; CSS property filter; no `data:` URIs) over the structural parser limits; 31-payload XSS suite + golden tests + public-route integration tests; public API serves only sanitized `renderedContent`. Escape text/attrs at block level, CSP remains defense-in-depth | Sanitizer bypass/0-day; CSP not yet deployed on the web app |
 | T-08 | XSS in media metadata/SEO/settings | Same | Medium | Escape on output, validate/sanitize, no raw HTML in settings | Same |
-| T-09 | Upload MIME spoofing/executable upload | RCE/host compromise | High | Magic-byte check, extension allowlist, re-encode images, random names, no executable formats, serve with safe headers | Image codec 0-day |
-| T-10 | Path traversal in media serving | File disclosure | Medium | Canonicalize + confine to storage root; reject `..`/absolute; tests | OS/path edge case |
-| T-11 | Image decompression bomb/DoS | Resource exhaustion | Medium | Size/dimension/pixel limits, timeouts, memory caps, queue | Large legitimate files |
-| T-12 | SVG/HTML upload XSS | Admin/site compromise | High | No SVG/HTML in MVP; if added, sanitize and serve as attachment with CSP | Future feature risk |
+| T-09 | Upload MIME spoofing/executable upload | RCE/host compromise | High | **Mitigated (2026-10-29, Phase 6):** raster-only allowlist; sharp metadata parse as the content check (extension/MIME are advisory); EXIF stripped by WebP re-encode; 10 MB cap; random names; tests cover spoofed MIME, renamed SVG, executables, oversize | Image codec 0-day |
+| T-10 | Path traversal in media serving | File disclosure | Medium | **Mitigated (2026-10-29):** serving resolves against the storage root and rejects anything outside; file names validated against the DB row's own files; `..`/absolute/wrong-name → 404 with tests | OS/path edge case |
+| T-11 | Image decompression bomb/DoS | Resource exhaustion | Medium | 10 MB upload cap + 2560px main cap + sharp's own limits; size recorded; queue/rate-limits remain future work | Large legitimate files |
+| T-12 | SVG/HTML upload XSS | Admin/site compromise | High | No SVG (raster-only upload enforced by sharp parse); SVG needs a separate sanitizer + decision before it is ever accepted (T-07's DOMPurify has an SVG profile but it is deliberately off) | Future feature risk |
 | T-13 | SQL injection via raw SQL | Data breach | Medium | Prisma parameterization; `Prisma.sql` tags; no string interpolation; sort/filter allow-lists | A new raw query bug |
 | T-14 | Unsafe filtering/sorting | Data leak/DoS | Medium | Allow-list columns/operators; bound page size; validate | — |
 | T-15 | SSRF via external fetch | Internal network access | Medium | No arbitrary fetch in MVP; if added, allowlist hosts, block private IPs/metadata, timeouts | Future feature |
@@ -128,7 +128,7 @@ Boundaries:
 | T-23 | Log injection/PII in logs | Privacy/incident | Medium | Structured logs, redact, truncate, no raw bodies/secrets | Unknown field logged |
 | T-24 | Dependency/runtime EOL | Unpatched RCE | Medium | Node 24 LTS, PostgreSQL 18, update policy, advisory monitoring | Zero-day |
 | T-25 | DoS via large content/expensive render | Outage | Medium | Body/content size caps (2 MB), parser depth 20 / 5,000-block caps in `@mernpress/block-system`, rate limit, timeouts | Resource exhaustion |
-| T-26 | Preview token leakage | Draft disclosure | Medium | Signed, short-lived, draft-only, noindex/no-store, revocable | Link sharing |
+| T-26 | Preview token leakage | Draft disclosure | Medium | **Mitigated (2026-10-29, P8-03):** 256-bit revocable token column, constant-time compare, malformed=400, mismatch/absent=404 (same shape as unknown slugs — no existence leak), noindex + no-store, token never echoed in responses, same sanitized renderer as public content | Link sharing; no expiry (revocation is manual) — acceptably small window for a self-hosted CMS |
 | T-27 | Cache poisoning/stale draft | Data leak | Medium | Cache only published content; preview no-store; tag invalidation; secret webhook | Cache bug |
 | T-28 | Open redirect | Phishing | Low | Validate redirect destinations; allow only relative/internal or allowlisted hosts | — |
 | T-29 | Email header injection (if email added) | Spam/abuse | Medium | Sanitize headers, no user-controlled `From`/`Subject` newlines, provider API | Future feature |
@@ -275,10 +275,10 @@ Boundaries:
 | 2 | Auth/session/CSRF/rate-limit tests, cookie flags, bounded retention/audit, same-origin client contract, admin authz; roles/object authz deferred to P2-04 |
 | 3 | Object-level authz, mass-assignment review, validation, conflict handling |
 | 4 | XSS in admin forms/lists, CSRF, admin route guards |
-| 5 | Sanitizer/XSS suite, unknown-block safety, CSP compatibility, no eval |
-| 6 | Upload MIME/traversal/bomb tests, storage confinement, image processing limits |
-| 7 | Public XSS, canonical/redirect validation, cache poisoning, headers |
-| 8 | Preview token security, scheduler concurrency, autosave authorization |
+| 5 | Sanitizer/XSS suite, unknown-block safety, CSP compatibility, no eval — **met 2026-10-29 (ADR 0007)** |
+| 6 | Upload MIME/traversal/bomb tests, storage confinement, image processing limits — **met 2026-10-29 (Phase 6)** |
+| 7 | Public XSS, canonical/redirect validation, cache poisoning, headers — **met 2026-10-29 for rendering; revalidation webhook (T-27) remains** |
+| 8 | Preview token security, scheduler concurrency, autosave authorization — **met 2026-10-29 (P8-01..04)** |
 | 9 | Plugin trust model, migrations, supply chain, least privilege, no remote install |
 | 10 | Theme trust model, settings sanitization, no DB access, CSP |
 | Pre-deploy | Backup/restore drill, TLS/HSTS, secrets rotation, dependency audit, log review |

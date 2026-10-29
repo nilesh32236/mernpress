@@ -91,12 +91,18 @@ Evidence columns point at MERNPress paths and the reference implementation
 
 ## Remaining gaps after this branch (ranked)
 
-1. Media admin UI + editor picker (P6-04) — backend done, UI lane pending.
-2. Autosave with recovery prompt (P8-02) — revisions backend exists; needs
-   editor debounce + restore UX.
-3. Bulk actions backend + wiring of the existing dead UI (P4-02 gap).
-4. Featured image on posts (needs media FK + picker reuse).
-5. Audit-log viewer UI (data exists via hooks; no screen).
-6. Password reset (blocked: needs mail delivery design).
-7. Render cache columns (blocked: needs measurement first, ADR 0007 §4).
-8. Theme system (Phase 10), comments/menus (Phase 11+, deferred by roadmap).
+1. Gutenberg media library modal (P6-04 follow-up): standalone build stubs
+   `editor.MediaUpload` — needs a custom modal over `listMedia` or
+   `@wordpress/media-utils`. Upload-from-device + URL work today.
+2. Featured image on posts (needs media FK + picker reuse).
+3. Media usage tracking (reference `GET /:id/usage`) + replace flow.
+4. Audit-log viewer UI (events exist via hooks; no screen).
+5. Render cache columns (`rendered_html`/`render_hash`): render-on-read is
+   the current contract; add cache only after measurement (ADR 0007 §4).
+6. Password reset (blocked: needs mail delivery/token architecture).
+7. Revalidation webhook with secret (U-007); archive/taxonomy/search routes
+   on the public site; theme system (Phase 10); comments/menus (Phase 11+).
+8. Scheduled publish **updates** (payload envelopes) — reference design
+   documented in ADR 0008 §4 as the future path.
+9. SVG support (blocked by design: needs sanitizer review, T-12).
+10. Password policy/2FA (documented residual risks in threat-model §8).

@@ -1,5 +1,69 @@
 # Implementation log
 
+## 2026-10-29 (evening) — CMS completion: renderer, media, workflows, public site
+
+**Status:** implemented on branch `feat/cms-completion` (17 commits), fully
+verified locally. NOT pushed, NOT merged, NOT deployed (per task rules).
+
+### What happened
+
+A comprehensive capability-gap audit against the qrolichealth-cms reference
+(extracted from ~/reference-archives to /tmp/opencode/refs) produced
+docs/design/capability-gap-matrix.md, followed by autonomous implementation
+in the task's priority order. Baseline: master `9f74f5f` (deployed release
+`20261029T103000Z-7dd1a1d`).
+
+### Implemented (one commit per slice on the branch)
+
+1. **P5-06 server renderer + sanitizer** (ADR 0007, `92834e0`):
+   `packages/block-system` `./render` + `./sanitize` — DOMPurify+jsdom with a
+   tight MVP allowlist (no SVG/forms/data-*, strict URI schemes, CSS property
+   filter), structural limits enforced before render, deterministic heading
+   anchors + TOC, per-block fail-closed fallback. `PublicPost.renderedContent`
+   + `toc`. 50 new tests.
+2. **Schema** (`ca9fedd`): media_items, post_revisions, preview_token,
+   scheduled_at, revision_count; then revision `kind` (`0481c0e`). Two
+   additive migrations, applied to dev/test only.
+3. **First-publish scheduling** (`2fad7df`): ADR 0008 §4 — `scheduled_at`
+   column, atomic-claim sweeper (60 s + boot catch-up), admin schedule
+   endpoints, 11 tests.
+4. **Editor SEO tab + Next.js public site** (`36e9581`): all six stored SEO
+   fields editable; real public rendering (home, /posts, /posts/[slug],
+   /[slug], sitemap, robots, generateMetadata chains).
+5. **Bulk actions** (`935c12a`, `ff51ccc`, `fd95658`): POST
+   /api/admin/posts/bulk (≤100, per-item outcomes) + the previously dead list
+   UI wired (selection, contextual options, partial-failure notice).
+6. **Revisions + preview tokens** (`28b324d`, `3848485`, `0b3cec0`):
+   pre-update snapshots (retention 50, cumulative count, restore via update
+   path); revocable 256-bit preview tokens with sanitized public route and a
+   web `/preview/[token]` route (banner, noindex, no-store).
+7. **Media library** (`2874fde`, `8da762a`): raster-only upload (sharp
+   metadata sniff, WebP q85 ≤2560px + 300/600/1200 derivatives, random names,
+   confinement-checked serving), admin media page (grid, upload progress,
+   drawer edit/delete), Gutenberg `settings.mediaUpload`.
+8. **Autosave** (`0481c0e`): one autosave/post (kind='autosave'), 30 s
+   debounce, recovery banner, restore/discard, save discards.
+9. **Editor revisions/preview UI** (`f3af590`): on-demand revisions panel,
+   detail dialog + restore; topbar Preview button.
+
+### Bugs found by live browser verification (fixed, `49a23f9`)
+
+- rotatePreviewToken sent JSON content-type with an empty body → Fastify 400;
+  Preview button silently failed.
+- previewUrlFor read the JSON-encoded option column raw → quoted preview URLs.
+
+### Verification (all PASS)
+
+- lint/format/typecheck: clean (9 packages).
+- Unit/integration: **528** (333 API, 119 admin, 65 block-system, 11 web).
+- E2E: **23/23** (incl. new media + preview browser flows).
+- Builds: 6/6 (incl. Next.js with real routes).
+- Live browser rig (API+admin+web): media upload → derivatives → serving with
+  headers; editor save → revision #1 → dialog; Preview → token → web preview
+  with banner; XSS post → public page with zero onerror/javascript:/script.
+- `pnpm audit --prod`: 1 low (deepmerge via @wordpress/*, no patch; documented).
+- `git diff --check`: clean.
+
 ## 2026-10-29 (PM) — Admin design matched to the reference CMS
 
 **Status:** implemented, fully verified, pushed to `master` (`7dd1a1d`) and

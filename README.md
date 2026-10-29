@@ -270,6 +270,7 @@ Start here, then follow the links.
 | [docs/testing/phase-5-manual-acceptance.md](docs/testing/phase-5-manual-acceptance.md) | Phase 5 editor acceptance checklist (canvas, save/publish, responsive, a11y) |
 | [docs/phase-4-implementation-plan.md](docs/phase-4-implementation-plan.md) | Phase 4 goal, acceptance criteria, risks and completion checklist |
 | [docs/implementation-log.md](docs/implementation-log.md) | Dated record of what was actually done and verified |
+| [docs/design/capability-gap-matrix.md](docs/design/capability-gap-matrix.md) | Evidence-based capability inventory vs the reference CMS (complete/partial/missing/blocked with file paths) |
 | [docs/research/reference-codebase-audit.md](docs/research/reference-codebase-audit.md) | What was inspected in WordPress and the reference archives |
 | [docs/research/feature-matrix.md](docs/research/feature-matrix.md) | Feature comparison and MVP/next/later/out classification |
 | [docs/research/wordpress-core-audit.md](docs/research/wordpress-core-audit.md) | WordPress 7.1.3 mechanisms worth emulating, adapting or avoiding |
@@ -291,6 +292,8 @@ Start here, then follow the links.
 | [docs/adr/0004-roles-and-capabilities.md](docs/adr/0004-roles-and-capabilities.md) | Five roles, code capability map and object-level content authorization |
 | [docs/adr/0005-content-visibility-policy.md](docs/adr/0005-content-visibility-policy.md) | Admin content read visibility and the 403/404 mutation residual |
 | [docs/adr/0006-gutenberg-editor-integration.md](docs/adr/0006-gutenberg-editor-integration.md) | Phase 5 block editor integration, package set, bundling, undo and validation |
+| [docs/adr/0007-server-renderer-and-sanitizer.md](docs/adr/0007-server-renderer-and-sanitizer.md) | P5-06 server renderer, DOMPurify allowlist sanitization, deterministic output and failure modes |
+| [docs/adr/0008-media-revisions-preview-scheduling.md](docs/adr/0008-media-revisions-preview-scheduling.md) | Media pipeline, revisions, preview tokens and first-publish scheduling designs |
 | [docs/roadmap/roadmap.md](docs/roadmap/roadmap.md) | Phase-by-phase implementation order, gates and acceptance criteria |
 | [docs/roadmap/mvp-definition.md](docs/roadmap/mvp-definition.md) | MVP scope, non-goals and definition of done |
 | [docs/testing/strategy.md](docs/testing/strategy.md) | Unit, integration, E2E, migration, serialization, security and a11y testing |
