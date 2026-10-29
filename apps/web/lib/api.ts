@@ -67,3 +67,16 @@ export async function getPublishedBySlug(
   if (!res.ok) throw new Error(`Failed to load ${type} "${slug}": ${res.status}`);
   return (await res.json()) as PublicPost;
 }
+
+/**
+ * Token-gated draft preview (P8-03). Never cached: preview content is a
+ * bearer secret and must reflect the current stored state on every view.
+ */
+export async function getPreviewByToken(token: string): Promise<PublicPost | null> {
+  if (!/^[0-9a-f]{64}$/.test(token)) return null;
+  const url = `${apiUrl()}/api/public/preview/${encodeURIComponent(token)}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Failed to load preview: ${res.status}`);
+  return (await res.json()) as PublicPost;
+}
