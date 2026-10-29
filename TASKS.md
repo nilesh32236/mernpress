@@ -124,7 +124,7 @@ not CI-verified.
 | ID | Task | Status | Depends on | Acceptance criteria |
 | --- | --- | --- | --- | --- |
 | P4-01 | Admin shell | done | P2, P3 | WordPress-inspired layout/nav, skip link, responsive, keyboard navigable, active states, session loading/error, sign-out |
-| P4-02 | Content list tables | done | P3 | Posts/pages lists, type/status filters, search, pagination, empty/loading/error states, role-aware per-row actions. Bulk actions deferred until the API exposes bulk operations |
+| P4-02 | Content list tables | done | P3 | Posts/pages lists, type/status filters, search, pagination, empty/loading/error states, role-aware per-row actions. **Bulk actions implemented 2026-10-29**: `POST /api/admin/posts/bulk` (publish/unpublish/trash/restore/delete, ≤100 items, per-item outcomes) + list UI (selection, contextual options, partial-failure notice) |
 | P4-03 | Create/edit forms | done | P3 | API-supported fields only: title, slug, excerpt, content, status transitions, terms with `baseVersion` optimistic concurrency; validation messages; unsaved-changes guard. Author is read-only (API assigns the creator; no reassignment endpoint), publication date is lifecycle-managed/read-only (no scheduled date), and media is deferred to Phase 6 |
 | P4-04 | Notices and feedback | done | P4-03 | Success/error notices, inline validation, retry on save failure; no silent failures |
 | P4-05 | Accessibility pass | done | P4-01..P4-06 | Keyboard-only walkthrough, focus visible, labels, dialogs, error announcements; automated checks where supported |
@@ -146,8 +146,8 @@ unchanged.**
 | P5-03 | Block registry + shared schemas | partial | P5-01 | `SUPPORTED_BLOCKS` is the single allowlist for provider settings and the inserter; `packages/block-system` owns parser/limits contracts. Attribute schemas remain the official core block definitions; the renderer registry does not exist yet (P5-06) |
 | P5-04 | Initial block set | partial | P5-02..P5-03 | Allowed: paragraph, heading, list/list-item, quote, image (URL), separator, spacer, buttons/button, columns/column, group, code, preformatted. Browser-tested: paragraph, heading, list, separator, unknown-block placeholder. Image URL path verified manually; buttons/columns/group are registered but not covered by a renderer (P5-06). Cover excluded (media Phase 6) |
 | P5-05 | Save/load contract | done | P5-03 | Official parser/serializer in the admin; API validates structure via `@mernpress/block-system`; unknown blocks preserved byte-for-byte (E2E); blank-document normalization; no second format |
-| P5-06 | Server renderer | planned | P5-05 | Not started. Blocks are stored and structurally validated only; the public renderer must not trust saved HTML until this task lands |
-| P5-07 | Round-trip/golden tests | partial | P5-05..P5-06 | Parser/limit tests (15) and admin serializer round-trip tests (8), plus unknown-block byte equality E2E. Golden HTML and XSS suites wait for the renderer |
+| P5-06 | Server renderer | done | P5-05 | ADR 0007. `packages/block-system` `./render` + `./sanitize` (DOMPurify+jsdom, tight allowlist, strict URI schemes, CSS property filter, no data:/SVG). Parse → validate → reassemble → deterministic heading anchors + TOC → per-block sanitize with fail-closed fallback. `PublicPost.renderedContent`/`toc` on public routes |
+| P5-07 | Round-trip/golden tests | done | P5-05..P5-06 | Parser/limit tests (15), admin serializer round-trips (8), unknown-block byte equality E2E, **golden render tests (19) and XSS sanitizer suite (31)** plus 3 public-route render integration tests |
 | P5-08 | Editor browser smoke test | done | P5-02..P5-05 | 7 Playwright tests: create paragraph/heading/list + reload, publish + public API, undo/redo structural edit, quote + real block settings, image from URL, unknown-block byte equality, 375 px off-canvas settings. Existing content spec updated for the canvas |
 | P5-09 | Performance gate | done | P5-08 | Editor route lazy-loaded: main 276 kB, editor 5.98 MB (1.34 MB gzip) + 478 kB CSS; vips worker emitted but not fetched; production build ~4–11 s with default heap; `pnpm check:bundle` (CI) guards 400 kB main / 6.5 MB editor / 600 kB CSS. Documented in ADR 0006 |
 
@@ -155,39 +155,39 @@ unchanged.**
 
 | ID | Task | Status | Depends on | Acceptance criteria |
 | --- | --- | --- | --- | --- |
-| P6-01 | Upload pipeline | planned | P3 | Size/MIME/extension checks, magic bytes, random name, storage abstraction; tests |
-| P6-02 | Image processing | planned | P6-01 | Sharp re-encode, dimensions, thumbnails, EXIF strip; no SVG/GIF animation until reviewed |
-| P6-03 | Media metadata + listing | planned | P6-01 | Alt/title/caption, dimensions, mime, size, uploader, dates; paginated list; usage lookup |
-| P6-04 | Media chooser | planned | P6-03, P5 | Editor media modal; featured image; alt/caption editing; permission checks |
-| P6-05 | Serving + cleanup | planned | P6-01 | Controlled serving, path traversal tests, orphan policy, delete rules; no executable content |
+| P6-01 | Upload pipeline | done | P3 | 10 MB cap, extension allowlist + sharp metadata raster sniff, random 16-hex names, YYYY/MM storage root, `@fastify/multipart`; raster-only (jpeg/png/webp/gif); tests |
+| P6-02 | Image processing | done | P6-01 | Sharp re-encode WebP q85 (≤2560px, no enlargement), EXIF stripped by re-encode, derivatives 300/600/1200 q80; GIF flattened to static; no SVG (T-12) |
+| P6-03 | Media metadata + listing | done | P6-01 | alt/caption/description, dimensions, mime, size, uploader, dates; paginated search list; metadata PATCH with owner-or-editor authz. Usage lookup deferred |
+| P6-04 | Media chooser | partial | P6-03, P5 | `settings.mediaUpload` uploads through `/api/admin/media` (native image-block Upload); media page is the library; a Gutenberg library modal needs a custom modal (standalone build stubs `editor.MediaUpload`) or `@wordpress/media-utils` — follow-up. Featured image on posts deferred |
+| P6-05 | Serving + cleanup | done | P6-01 | `/api/media/:id/:name` with storage-root confinement, nosniff, immutable cache; traversal/wrong-name → 404; delete removes DB row + files |
 
 ## Phase 7 — Public rendering
 
 | ID | Task | Status | Depends on | Acceptance criteria |
 | --- | --- | --- | --- | --- |
-| P7-01 | Public API contract | planned | P3, P5 | Published-only posts/pages, rendered HTML + blocks + SEO; preview token separate; cache headers |
-| P7-02 | Next.js app + theme contract | planned | P1, P7-01 | App Router; theme package selects templates; no Prisma/API internals imported |
-| P7-03 | Routes and templates | planned | P7-02 | home, post, page, archive/taxonomy, search, 404; fallback chain; empty/error states |
-| P7-04 | SEO metadata | planned | P7-01 | title/description/canonical/OG/Twitter; sitemap/robots; no duplicate canonical |
-| P7-05 | Safe HTML rendering | planned | P5-06 | API-rendered HTML rendered without client re-sanitization gaps; CSP; XSS regression tests |
-| P7-06 | Cache/revalidation | planned | P7-01 | Tag/path revalidation webhook with secret; preview no-store; documented cache policy |
-| P7-07 | Starter theme | planned | P7-02..P7-05 | One accessible, responsive theme; tokens; header/footer/parts; no site-specific content |
+| P7-01 | Public API contract | done | P3, P5 | Published-only posts/pages with sanitized `renderedContent` + `toc` + SEO fields; preview token route separate (no-store); 60 s public cache on reads |
+| P7-02 | Next.js app + theme contract | partial | P1, P7-01 | Next.js 16 App Router consuming the API over HTTP; no Prisma/API internals. Theme packages remain Phase 10 |
+| P7-03 | Routes and templates | partial | P7-02 | home, paginated /posts, /posts/[slug], /[slug] pages, /preview/[token], 404, empty/error states. Archive/taxonomy/search routes deferred |
+| P7-04 | SEO metadata | done | P7-01 | generateMetadata fallback chains (seoTitle→title, seoDescription→excerpt→content, robots, canonical, OG); sitemap.xml + robots.txt |
+| P7-05 | Safe HTML rendering | done | P5-06 | Only sanitized `renderedContent` is injected (ADR 0007 contract); raw `content` never rendered; 31-payload XSS suite + public-route integration tests |
+| P7-06 | Cache/revalidation | partial | P7-01 | `revalidate: 60` fetch cache; preview no-store enforced. Secret revalidation webhook deferred (U-007) |
+| P7-07 | Starter theme | partial | P7-02..P7-05 | Minimal accessible readable theme (content column, focus styles, prose typography, chips). Token/theme-package system remains Phase 10 |
 
 ## Phase 8 — Editorial reliability
 
 | ID | Task | Status | Depends on | Acceptance criteria |
 | --- | --- | --- | --- | --- |
-| P8-01 | Revisions | planned | P3 | Immutable snapshots, list/diff/restore, retention; tests |
+| P8-01 | Revisions | done | P3 | Pre-update snapshots in-transaction (content fields only), retention 50, cumulative revisionCount, stable revisionNumber, restore via update path (undoable + version-checked); editor panel UI; 11 API + 2 editor tests |
 | P8-02 | Autosave | planned | P8-01 | Debounced autosave, conflict detection, recovery prompt; no lost edits |
-| P8-03 | Preview permissions | planned | P2, P7 | Signed/short-lived preview tokens; draft-only; noindex; revoke/expire |
-| P8-04 | Scheduled publish | planned | P3 | SCHEDULED status, due worker with `FOR UPDATE SKIP LOCKED`, retry/backoff, failure visibility |
-| P8-05 | Conflict/recovery UX | planned | P8-02 | Clear conflict state, compare, overwrite/save-as-draft; tests |
+| P8-03 | Preview permissions | done | P2, P7 | Revocable 256-bit token column, rotate/revoke admin endpoints; public `/api/public/preview/:token` through the same sanitizer; noindex + no-store; editor Preview button opens the web `/preview/[token]` route (banner, force-dynamic) |
+| P8-04 | Scheduled publish | done | P3 | First-publish `scheduled_at` column (ADR 0008 §4 — not a SCHEDULED status); 60 s sweeper with atomic claim + boot catch-up; DRAFT-only, 60 s–1 y window, optimistic concurrency; admin schedule endpoints; 11 tests. Multi-instance needs FOR UPDATE SKIP LOCKED (documented) |
+| P8-05 | Conflict/recovery UX | partial | P8-02 | 409 conflict panel exists (reload/overwrite); autosave-recovery prompt remains with P8-02 |
 
 ## Phase 9 — Extension contracts
 
 | ID | Task | Status | Depends on | Acceptance criteria |
 | --- | --- | --- | --- | --- |
-| P9-01 | Hook/filter bus | planned | P3 | Typed actions/filters, priority, async, error isolation; tests |
+| P9-01 | Hook/filter bus | done (internal) | P3 | Typed actions/filters, priority, async, error isolation, depth guard — `packages/cms-core/src/hooks/` exists since Phase 3 and now covers content/taxonomy/scheduling lifecycle points. The public plugin runtime remains P9-02+ |
 | P9-02 | Plugin manifest + discovery | planned | P9-01 | Versioned manifest, deterministic order, dependency/conflict checks, enable/disable |
 | P9-03 | Plugin lifecycle + migrations | planned | P9-02 | activate/deactivate/uninstall; plugin migration table + advisory lock; idempotency tests |
 | P9-04 | Plugin SDK surface | planned | P9-02 | Custom post types/taxonomies, blocks, admin nav/routes, settings, capabilities; documented |
