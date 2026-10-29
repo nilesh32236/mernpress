@@ -45,6 +45,9 @@ in the task's priority order. Baseline: master `9f74f5f` (deployed release
    debounce, recovery banner, restore/discard, save discards.
 9. **Editor revisions/preview UI** (`f3af590`): on-demand revisions panel,
    detail dialog + restore; topbar Preview button.
+10. **Featured image** (`dfc81b3`): `posts.featured_media_id` (SetNull on
+    media delete), editor picker panel, `featuredImage` on admin/public DTOs,
+    og:image + article rendering on the web. 7 new tests.
 
 ### Bugs found by live browser verification (fixed, `49a23f9`)
 

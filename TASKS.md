@@ -158,7 +158,7 @@ unchanged.**
 | P6-01 | Upload pipeline | done | P3 | 10 MB cap, extension allowlist + sharp metadata raster sniff, random 16-hex names, YYYY/MM storage root, `@fastify/multipart`; raster-only (jpeg/png/webp/gif); tests |
 | P6-02 | Image processing | done | P6-01 | Sharp re-encode WebP q85 (≤2560px, no enlargement), EXIF stripped by re-encode, derivatives 300/600/1200 q80; GIF flattened to static; no SVG (T-12) |
 | P6-03 | Media metadata + listing | done | P6-01 | alt/caption/description, dimensions, mime, size, uploader, dates; paginated search list; metadata PATCH with owner-or-editor authz. Usage lookup deferred |
-| P6-04 | Media chooser | partial | P6-03, P5 | `settings.mediaUpload` uploads through `/api/admin/media` (native image-block Upload); media page is the library; a Gutenberg library modal needs a custom modal (standalone build stubs `editor.MediaUpload`) or `@wordpress/media-utils` — follow-up. Featured image on posts deferred |
+| P6-04 | Media chooser | done | P6-03, P5 | `settings.mediaUpload` uploads through `/api/admin/media` (native image-block Upload); media page is the library; **featured image on posts implemented** (`featured_media_id` FK, editor picker panel, public `featuredImage` + og:image). A Gutenberg library modal needs a custom modal (standalone build stubs `editor.MediaUpload`) or `@wordpress/media-utils` — follow-up |
 | P6-05 | Serving + cleanup | done | P6-01 | `/api/media/:id/:name` with storage-root confinement, nosniff, immutable cache; traversal/wrong-name → 404; delete removes DB row + files |
 
 ## Phase 7 — Public rendering

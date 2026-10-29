@@ -33,10 +33,10 @@ Evidence columns point at MERNPress paths and the reference implementation
 | Media metadata + list/search/pagination | **missing** | done | `media_items` table; GET list/search |
 | Metadata editing (alt/caption/description) | **missing** | done | PATCH endpoint |
 | Controlled serving + traversal defense | **missing** | done | `/api/media/:id/:name` confinement |
-| Admin media page | **missing** | **partial (pending UI lane)** | |
-| Editor media picker (`settings.mediaUpload`) | **missing** ("Phase 6" stub) | **partial (pending UI lane)** | `apps/admin/src/editor/blocks.ts` |
+| Admin media page | **missing** | done | `apps/admin/src/MediaPage.tsx`; grid/upload/drawer/search/pagination; 11 tests |
+| Editor media picker (`settings.mediaUpload`) | **missing** ("Phase 6" stub) | done | `apps/admin/src/editor/blocks.ts` real uploader; featured-image picker in editor; library modal = follow-up |
 | SVG/video/documents | **missing** | **n/a** | raster-only by design (T-12); ADR 0008 §1 |
-| Featured image on posts | **missing** | **missing (next slice)** | needs media FK on posts |
+| Featured image on posts | **missing** | done | `posts.featured_media_id`; editor picker; public og:image + rendering; 7 tests |
 | Usage tracking (where-used) | **missing** | **missing** | reference has `GET /:id/usage`; deferred |
 
 ## 3. Content workflows
@@ -93,16 +93,16 @@ Evidence columns point at MERNPress paths and the reference implementation
 
 1. Gutenberg media library modal (P6-04 follow-up): standalone build stubs
    `editor.MediaUpload` — needs a custom modal over `listMedia` or
-   `@wordpress/media-utils`. Upload-from-device + URL work today.
-2. Featured image on posts (needs media FK + picker reuse).
-3. Media usage tracking (reference `GET /:id/usage`) + replace flow.
-4. Audit-log viewer UI (events exist via hooks; no screen).
-5. Render cache columns (`rendered_html`/`render_hash`): render-on-read is
+   `@wordpress/media-utils`. Upload-from-device + URL + featured-image picker
+   work today.
+2. Media usage tracking (reference `GET /:id/usage`) + replace flow.
+3. Audit-log viewer UI (events exist via hooks; no screen).
+4. Render cache columns (`rendered_html`/`render_hash`): render-on-read is
    the current contract; add cache only after measurement (ADR 0007 §4).
-6. Password reset (blocked: needs mail delivery/token architecture).
-7. Revalidation webhook with secret (U-007); archive/taxonomy/search routes
+5. Password reset (blocked: needs mail delivery/token architecture).
+6. Revalidation webhook with secret (U-007); archive/taxonomy/search routes
    on the public site; theme system (Phase 10); comments/menus (Phase 11+).
-8. Scheduled publish **updates** (payload envelopes) — reference design
+7. Scheduled publish **updates** (payload envelopes) — reference design
    documented in ADR 0008 §4 as the future path.
-9. SVG support (blocked by design: needs sanitizer review, T-12).
-10. Password policy/2FA (documented residual risks in threat-model §8).
+8. SVG support (blocked by design: needs sanitizer review, T-12).
+9. Password policy/2FA (documented residual risks in threat-model §8).
