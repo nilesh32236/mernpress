@@ -11,12 +11,7 @@ const EMPTY_COUNTS: Counts = {
   page: { DRAFT: 0, PUBLISHED: 0, TRASHED: 0 },
 };
 
-const STATUSES: PostStatus[] = ['DRAFT', 'PUBLISHED', 'TRASHED'];
-const STATUS_LABELS: Record<PostStatus, string> = {
-  DRAFT: 'Drafts',
-  PUBLISHED: 'Published',
-  TRASHED: 'Trashed',
-};
+const STATUSES: PostStatus[] = ['PUBLISHED', 'DRAFT', 'TRASHED'];
 
 export function Dashboard({ user }: { user: AuthUser }) {
   const [counts, setCounts] = useState<Counts>(EMPTY_COUNTS);
@@ -74,7 +69,7 @@ export function Dashboard({ user }: { user: AuthUser }) {
       <>
         <PageHeader
           eyebrow="Dashboard"
-          title="Content overview"
+          title="Dashboard"
           description="Your account does not have access to the content administration API."
         />
         <EmptyState
@@ -89,8 +84,8 @@ export function Dashboard({ user }: { user: AuthUser }) {
     <>
       <PageHeader
         eyebrow="Dashboard"
-        title="Content overview"
-        description="Counts come directly from the content API and respect your role and ownership visibility."
+        title="Dashboard"
+        description="At a glance summary of your content, straight from the content API."
       />
 
       {error ? (
@@ -100,47 +95,81 @@ export function Dashboard({ user }: { user: AuthUser }) {
           onRetry={() => setReloadKey((key) => key + 1)}
         />
       ) : loading ? (
-        <Skeleton label="Loading content counts…" lines={6} />
+        <Skeleton label="Loading dashboard…" lines={6} />
       ) : (
-        <div className="dashboard-sections">
-          {(['post', 'page'] as ContentType[]).map((type) => (
-            <section key={type} className="dashboard-section" aria-labelledby={`${type}-counts`}>
-              <div className="section-heading">
-                <h2 id={`${type}-counts`}>{type === 'post' ? 'Posts' : 'Pages'}</h2>
-                <a className="text-link" href={listPath(type)}>
-                  Open all {type === 'post' ? 'posts' : 'pages'}
-                </a>
-              </div>
-              <div className="stat-grid">
-                {STATUSES.map((status) => (
-                  <a
-                    key={status}
-                    className="stat-card"
-                    href={listPath(type, { status })}
-                    aria-label={`${counts[type][status]} ${STATUS_LABELS[status]} ${type === 'post' ? 'posts' : 'pages'}`}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      navigate(listPath(type, { status }));
-                    }}
-                  >
-                    <span className="stat-value">{counts[type][status]}</span>
-                    <span className="stat-label">{STATUS_LABELS[status]}</span>
-                  </a>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      )}
+        <>
+          <section className="dashboard-at-a-glance" aria-labelledby="at-a-glance-heading">
+            <h2 id="at-a-glance-heading" className="screen-reader-text">
+              At a glance
+            </h2>
+            <table className="at-a-glance-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Published</th>
+                  <th>Drafts</th>
+                  <th>Trashed</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(['post', 'page'] as ContentType[]).map((type) => {
+                  const label = type === 'post' ? 'Posts' : 'Pages';
+                  return (
+                    <tr key={type}>
+                      <th scope="row">{label}</th>
+                      <td>
+                        <a
+                          className="at-a-glance-count"
+                          href={listPath(type, { status: 'PUBLISHED' })}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            navigate(listPath(type, { status: 'PUBLISHED' }));
+                          }}
+                        >
+                          {counts[type].PUBLISHED}
+                        </a>
+                      </td>
+                      <td>
+                        <a
+                          className="at-a-glance-count"
+                          href={listPath(type, { status: 'DRAFT' })}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            navigate(listPath(type, { status: 'DRAFT' }));
+                          }}
+                        >
+                          {counts[type].DRAFT}
+                        </a>
+                      </td>
+                      <td>
+                        <a
+                          className="at-a-glance-count"
+                          href={listPath(type, { status: 'TRASHED' })}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            navigate(listPath(type, { status: 'TRASHED' }));
+                          }}
+                        >
+                          {counts[type].TRASHED}
+                        </a>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </section>
 
-      <section className="dashboard-help" aria-labelledby="dashboard-help-heading">
-        <h2 id="dashboard-help-heading">What you can do here</h2>
-        <p>
-          Create posts and pages, edit drafts, publish or unpublish saved content, move content to
-          the trash, restore it, and assign existing categories and tags. The block editor and media
-          library are later phases.
-        </p>
-      </section>
+          <section className="dashboard-help" aria-labelledby="dashboard-help-heading">
+            <h2 id="dashboard-help-heading">What you can do here</h2>
+            <p>
+              Create posts and pages, edit drafts, publish or unpublish saved content, move content
+              to the trash, restore it, and assign existing categories and tags. The block editor is
+              available for posts and pages.
+            </p>
+          </section>
+        </>
+      )}
     </>
   );
 }

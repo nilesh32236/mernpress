@@ -8,6 +8,7 @@ import { LoginForm } from './LoginForm.js';
 import { AdminShell } from './AdminShell.js';
 import { NavigationGuardProvider } from './navigation-guard.js';
 import { navigate, parseRoute, useLocation, type Route } from './router.js';
+import { ADMIN_BASE } from './router.js';
 
 export function App() {
   const [user, setUser] = useState<AuthUser | null | undefined>(undefined);
@@ -51,7 +52,7 @@ export function App() {
           Skip to content
         </a>
         <header className="app-header">
-          <a className="brand" href="/" aria-label="MERNPress admin home">
+          <a className="brand" href={ADMIN_BASE} aria-label="MERNPress admin home">
             MERNPress
           </a>
           <span className="phase-badge">Phase 5 · Editor</span>
@@ -79,7 +80,7 @@ export function App() {
           Skip to content
         </a>
         <header className="app-header">
-          <a className="brand" href="/" aria-label="MERNPress admin home">
+          <a className="brand" href={ADMIN_BASE} aria-label="MERNPress admin home">
             MERNPress
           </a>
           <span className="phase-badge">Phase 5 · Editor</span>
@@ -170,10 +171,10 @@ function RouteView({ user, route }: { user: AuthUser; route: Route }) {
           <p className="lede">That admin route does not exist.</p>
           <a
             className="button primary-button"
-            href="/"
+            href={ADMIN_BASE}
             onClick={(event) => {
               event.preventDefault();
-              navigate('/');
+              navigate('/admin');
             }}
           >
             Back to dashboard

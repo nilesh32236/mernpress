@@ -47,12 +47,6 @@ interface Baseline {
 }
 
 const EMPTY_FORM: FormState = { title: '', slug: '', excerpt: '', content: '' };
-const ACTION_LABELS: Record<TransitionAction, string> = {
-  publish: 'Publish',
-  unpublish: 'Unpublish',
-  trash: 'Trash',
-  restore: 'Restore',
-};
 const ACTION_SUCCESS: Record<TransitionAction, string> = {
   publish: 'Content published.',
   unpublish: 'Content returned to draft.',
@@ -557,9 +551,6 @@ export function ContentEditor({
   }
 
   const transitions = post ? availableTransitions(user, post) : [];
-  // Publish lives in the top bar; the sidebar carries the remaining lifecycle
-  // actions so one action never renders twice with the same accessible name.
-  const sidebarTransitions = transitions.filter((action) => action !== 'publish');
   const canPublishNew = ['administrator', 'editor', 'author'].includes(user.role);
   const title = isNew
     ? `New ${type}`
@@ -715,31 +706,42 @@ export function ContentEditor({
         ) : (
           <div className="editor-layout">
             <div className="editor-main-column">
+              <div className="editor-title-block">
+                <textarea
+                  ref={titleRef}
+                  className="editor-title-input editor-title-textarea"
+                  id="content-title"
+                  name="title"
+                  rows={1}
+                  maxLength={300}
+                  placeholder="Add title"
+                  aria-label="Title"
+                  aria-invalid={Boolean(fieldErrors['title'])}
+                  aria-describedby={fieldErrors['title'] ? 'content-title-error' : undefined}
+                  value={form.title}
+                  onChange={(event) => updateForm('title', event.target.value)}
+                />
+                <FieldError id="content-title-error" message={fieldErrors['title']} />
+                <div className="editor-permalink">
+                  {post ? (
+                    <>
+                      <span>https://example.com/</span>
+                      <code>{form.slug || post.slug}</code>
+                    </>
+                  ) : (
+                    <>
+                      <span>https://example.com/</span>
+                      <span className="permalink-edit">{form.slug || '(derived from title)'}</span>
+                    </>
+                  )}
+                </div>
+              </div>
               <Suspense fallback={<Skeleton label="Loading block editor…" lines={6} />}>
                 <BlockCanvas
                   ref={canvasRef}
                   initialContent={form.content}
                   onChange={updateContent}
                   onDirty={() => setContentTouched(true)}
-                  titleSlot={
-                    <>
-                      <textarea
-                        ref={titleRef}
-                        className="editor-title-input editor-title-textarea"
-                        id="content-title"
-                        name="title"
-                        rows={1}
-                        maxLength={300}
-                        placeholder="Add title"
-                        aria-label="Title"
-                        aria-invalid={Boolean(fieldErrors['title'])}
-                        aria-describedby={fieldErrors['title'] ? 'content-title-error' : undefined}
-                        value={form.title}
-                        onChange={(event) => updateForm('title', event.target.value)}
-                      />
-                      <FieldError id="content-title-error" message={fieldErrors['title']} />
-                    </>
-                  }
                 />
               </Suspense>
               <p className="editor-status-line">
@@ -775,53 +777,50 @@ export function ContentEditor({
                 </button>
               </div>
 
-              <section className="editor-panel" aria-labelledby="publish-heading">
-                <h3 id="publish-heading">Publishing</h3>
+              <section className="editor-panel publish-panel" aria-labelledby="publish-heading">
+                <h3 id="publish-heading">Publish</h3>
                 {post ? (
                   <>
-                    <dl className="meta-list">
-                      <div>
-                        <dt>Status</dt>
-                        <dd>
-                          <StatusBadge status={post.status} />
-                        </dd>
+                    <div className="publish-field">
+                      <span className="publish-label">Status</span>
+                      <div className="publish-value">
+                        <StatusBadge status={post.status} />
+                        {transitions.includes('publish') || transitions.includes('unpublish') ? (
+                          <button
+                            type="button"
+                            className="button small-button edit-link"
+                            disabled={transitioning !== null || dirty}
+                            onClick={() =>
+                              void runTransition(post.status === 'DRAFT' ? 'publish' : 'unpublish')
+                            }
+                          >
+                            Edit
+                          </button>
+                        ) : null}
                       </div>
-                      <div>
-                        <dt>Author</dt>
-                        <dd>{post.authorId === user.id ? 'You' : 'Another user'}</dd>
-                      </div>
-                      <div>
-                        <dt>Published</dt>
-                        <dd>{formatDateTime(post.publishedAt)}</dd>
-                      </div>
-                      <div>
-                        <dt>Updated</dt>
-                        <dd>{formatDateTime(post.updatedAt)}</dd>
-                      </div>
-                      <div>
-                        <dt>Version</dt>
-                        <dd>{post.version}</dd>
-                      </div>
-                    </dl>
-                    {dirty ? (
-                      <p className="field-help">Save your changes before changing status.</p>
-                    ) : null}
-                    <div className="side-actions">
-                      {sidebarTransitions.map((action) => (
-                        <button
-                          key={action}
-                          type="button"
-                          className="button secondary-button"
-                          disabled={transitioning !== null || dirty}
-                          aria-busy={transitioning === action}
-                          onClick={() => void runTransition(action)}
-                        >
-                          {transitioning === action
-                            ? `${ACTION_LABELS[action]}…`
-                            : ACTION_LABELS[action]}
-                        </button>
-                      ))}
                     </div>
+                    <div className="publish-field">
+                      <span className="publish-label">Visibility</span>
+                      <div className="publish-value">Public</div>
+                    </div>
+                    <div className="publish-field">
+                      <span className="publish-label">Publish immediately</span>
+                      <div className="publish-value">
+                        {formatDateTime(post.publishedAt ?? post.updatedAt)}
+                      </div>
+                    </div>
+                    {post.status !== 'TRASHED' && transitions.includes('trash') ? (
+                      <div className="publish-field">
+                        <button
+                          type="button"
+                          className="button delete-link"
+                          disabled={transitioning !== null || dirty}
+                          onClick={() => void runTransition('trash')}
+                        >
+                          Move to Trash
+                        </button>
+                      </div>
+                    ) : null}
                   </>
                 ) : (
                   <p className="field-help">

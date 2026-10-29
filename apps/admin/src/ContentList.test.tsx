@@ -16,7 +16,6 @@ afterEach(() => {
 });
 
 const admin: AuthUser = { id: 'u1', username: 'admin', role: 'administrator', status: 'active' };
-const authorA: AuthUser = { id: 'a1', username: 'author-a', role: 'author', status: 'active' };
 const authorB: AuthUser = { id: 'a2', username: 'author-b', role: 'author', status: 'active' };
 
 function makePost(overrides: Partial<AdminPost> = {}): AdminPost {
@@ -78,12 +77,13 @@ describe('content lists', () => {
 
     expect(await screen.findByRole('link', { name: 'First post' })).toBeDefined();
     expect(screen.getByText('Draft')).toBeDefined();
-    expect(screen.getByText('first-post')).toBeDefined();
-    expect(screen.getByText('Page 1 of 2 · 11 total')).toBeDefined();
-    expect((screen.getByRole('button', { name: 'Previous' }) as HTMLButtonElement).disabled).toBe(
+    expect(screen.getByText('Another user')).toBeDefined();
+    expect(screen.getByText('Oct 27, 2026, 11:00 AM')).toBeDefined();
+    expect(screen.getByText('11 Posts')).toBeDefined();
+    expect((screen.getByRole('button', { name: '« Previous' }) as HTMLButtonElement).disabled).toBe(
       true,
     );
-    expect((screen.getByRole('button', { name: 'Next' }) as HTMLButtonElement).disabled).toBe(
+    expect((screen.getByRole('button', { name: 'Next »' }) as HTMLButtonElement).disabled).toBe(
       false,
     );
   });
@@ -112,8 +112,7 @@ describe('content lists', () => {
     render(<ContentList user={authorB} type="post" />);
 
     expect(await screen.findByRole('link', { name: 'A draft' })).toBeDefined();
-    expect(screen.getAllByText('View')).toHaveLength(2);
-    expect(screen.queryByRole('button', { name: 'Publish' })).toBeNull();
+    expect(screen.getAllByRole('link', { name: 'View' })).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Trash' })).toBeNull();
   });
 
@@ -131,15 +130,12 @@ describe('content lists', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    render(<ContentList user={authorA} type="post" />);
+    render(<ContentList user={admin} type="post" />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Publish' }));
-
-    expect(await screen.findByText('Content published.')).toBeDefined();
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(11));
-    const publishCall = fetchMock.mock.calls.find(([url]) => String(url).includes('/publish'));
-    expect(publishCall?.[0]).toBe('/api/admin/posts/post-1/publish');
-    expect(JSON.parse(String(publishCall?.[1]?.body))).toEqual({ baseVersion: 1 });
+    // The row action "Edit" opens the editor; publishing happens in the editor.
+    // Verify the list row action exists instead.
+    await screen.findByRole('link', { name: 'First post' });
+    expect(screen.getAllByRole('link', { name: 'Edit' })).toHaveLength(1);
   });
 
   it('shows an empty state and a create action', async () => {
@@ -151,7 +147,7 @@ describe('content lists', () => {
     render(<ContentList user={admin} type="page" />);
 
     expect(await screen.findByText('No pages yet')).toBeDefined();
-    expect(screen.getAllByRole('link', { name: 'New page' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('link', { name: 'Add New Page' }).length).toBeGreaterThan(0);
   });
 
   it('shows an error with retry', async () => {
@@ -174,25 +170,32 @@ describe('content lists', () => {
     expect(await screen.findByRole('link', { name: 'First post' })).toBeDefined();
   });
 
-  it('applies a search query and status filter', async () => {
+  it('applies a search query and status filter via the select', async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(response(paged([], 0)));
     vi.stubGlobal('fetch', fetchMock);
 
     render(<ContentList user={admin} type="post" />);
     await screen.findByText('No posts yet');
 
-    fireEvent.change(screen.getByLabelText('Search posts'), { target: { value: 'hello' } });
+    fireEvent.change(screen.getByLabelText(/search posts/i), { target: { value: 'hello' } });
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(10));
-    expect(fetchMock.mock.calls.some(([url]) => String(url).includes('search=hello'))).toBe(true);
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([url]) => String(url).includes('search=hello'))).toBe(true),
+    );
 
-    fireEvent.click(screen.getByRole('tab', { name: /Trashed/ }));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(11));
-    expect(fetchMock.mock.calls.some(([url]) => String(url).includes('status=TRASHED'))).toBe(true);
+    // Change status via the select dropdown.
+    fireEvent.change(screen.getByLabelText('Filter by status'), {
+      target: { value: 'TRASHED' },
+    });
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([url]) => String(url).includes('status=TRASHED'))).toBe(
+        true,
+      ),
+    );
   });
 
-  it('shows real tab counts from server totals', async () => {
+  it('shows real status counts in the filter select', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn<typeof fetch>().mockImplementation(async (input) => {
@@ -207,10 +210,13 @@ describe('content lists', () => {
 
     render(<ContentList user={admin} type="post" />);
 
-    expect(await screen.findByRole('tab', { name: /All \(9\)/ })).toBeDefined();
-    expect(screen.getByRole('tab', { name: /Drafts \(3\)/ })).toBeDefined();
-    expect(screen.getByRole('tab', { name: /Published \(5\)/ })).toBeDefined();
-    expect(screen.getByRole('tab', { name: /Trashed \(1\)/ })).toBeDefined();
+    await screen.findByText('All (9)');
+    const select = screen.getByLabelText('Filter by status');
+    const options = (select as HTMLSelectElement).options;
+    expect(options[0]!.text).toBe('All (9)');
+    expect(options[1]!.text).toBe('Drafts (3)');
+    expect(options[2]!.text).toBe('Published (5)');
+    expect(options[3]!.text).toBe('Trashed (1)');
   });
 
   it('sanitizes invalid URL parameters on load', async () => {
@@ -223,7 +229,7 @@ describe('content lists', () => {
     render(<ContentList user={admin} type="post" />);
 
     await screen.findByText('No posts yet');
-    expect(screen.getByRole('tab', { name: /All/ }).getAttribute('aria-selected')).toBe('true');
+    expect((screen.getByLabelText('Filter by status') as HTMLSelectElement).value).toBe('');
   });
 
   it('reproduces the view on Back and Forward', async () => {
@@ -239,8 +245,8 @@ describe('content lists', () => {
     window.history.pushState(null, '', '/posts?status=TRASHED&page=2');
     window.dispatchEvent(new PopStateEvent('popstate'));
     await waitFor(() =>
-      expect(screen.getByRole('tab', { name: /Trashed/ }).getAttribute('aria-selected')).toBe(
-        'true',
+      expect((screen.getByLabelText('Filter by status') as HTMLSelectElement).value).toBe(
+        'TRASHED',
       ),
     );
 
@@ -248,7 +254,7 @@ describe('content lists', () => {
     await waitFor(() => expect(window.location.search).toBe(''));
   });
 
-  it('tab click resets to page 1 and updates the URL', async () => {
+  it('status change resets to page 1 and updates the URL', async () => {
     window.history.replaceState(null, '', '/posts?page=3');
     vi.stubGlobal(
       'fetch',
@@ -258,7 +264,9 @@ describe('content lists', () => {
     render(<ContentList user={admin} type="post" />);
     await screen.findByText('No posts yet');
 
-    fireEvent.click(screen.getByRole('tab', { name: /Drafts/ }));
+    fireEvent.change(screen.getByLabelText('Filter by status'), {
+      target: { value: 'DRAFT' },
+    });
     await waitFor(() => expect(window.location.search).toContain('status=DRAFT'));
     expect(window.location.search).not.toContain('page=');
   });

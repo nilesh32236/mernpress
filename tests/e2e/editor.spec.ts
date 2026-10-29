@@ -8,7 +8,7 @@ import { config as loadDotenv } from 'dotenv';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 loadDotenv({ path: path.join(repoRoot, '.env'), quiet: true });
 
-const ADMIN_URL = 'http://127.0.0.1:5173';
+const ADMIN_URL = 'http://127.0.0.1:5173/admin';
 const suffix = randomUUID().slice(0, 10);
 const editorUsername = `e2e_block_${suffix}`;
 const password = `E2E-${randomUUID()}-Aa1!`;
@@ -123,7 +123,7 @@ test('creates content with paragraph, heading and list blocks and reloads it', a
   await expect(page.getByText('Content created.')).toBeVisible();
   await expect(page.getByRole('heading', { level: 1, name: 'Edit post' })).toBeVisible();
 
-  postId = new URL(page.url()).pathname.split('/')[2] ?? '';
+  postId = new URL(page.url()).pathname.split('/')[3] ?? '';
   expect(postId).toMatch(/^[0-9a-f-]{36}$/);
 
   const content = await storedContent(page, postId);
@@ -201,7 +201,7 @@ test('undo and redo restore structural changes without losing typed text', async
   // server-side.
   await page.keyboard.press('Control+s');
   await expect(page.getByText('Content created.')).toBeVisible();
-  const id = new URL(page.url()).pathname.split('/')[2] ?? '';
+  const id = new URL(page.url()).pathname.split('/')[3] ?? '';
   const content = await storedContent(page, id);
   expect(content).toContain('Keep this paragraph.');
   expect(content).toContain('<!-- wp:separator');
@@ -227,7 +227,7 @@ test('inserts a quote and shows real block settings in the inspector', async ({ 
   await page.getByRole('button', { name: 'Save draft' }).click();
   await expect(page.getByText('Content created.')).toBeVisible();
 
-  const id = new URL(page.url()).pathname.split('/')[2] ?? '';
+  const id = new URL(page.url()).pathname.split('/')[3] ?? '';
   const content = await storedContent(page, id);
   expect(content).toContain('<!-- wp:quote');
   expect(content).toContain('A line worth quoting.');
@@ -251,7 +251,7 @@ test('inserts an image from a URL and persists canonical image markup', async ({
   await page.getByRole('button', { name: 'Save draft' }).click();
   await expect(page.getByText('Content created.')).toBeVisible();
 
-  const id = new URL(page.url()).pathname.split('/')[2] ?? '';
+  const id = new URL(page.url()).pathname.split('/')[3] ?? '';
   const content = await storedContent(page, id);
   expect(content).toContain('<!-- wp:image');
   expect(content).toContain('src="https://images.example.com/photo.jpg"');

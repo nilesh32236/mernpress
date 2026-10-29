@@ -70,7 +70,7 @@ describe('admin application shell', () => {
       'page',
     );
     expect(screen.queryByLabelText('Password')).toBeNull();
-    expect(await screen.findByText('Content overview')).toBeDefined();
+    expect(screen.getByText('Dashboard', { selector: '.top-bar-title' })).toBeDefined();
   });
 
   it('hides content navigation from subscribers and explains the permission boundary', async () => {
@@ -99,7 +99,6 @@ describe('admin application shell', () => {
 
     render(<App />);
 
-    expect(await screen.findByText('Content overview')).toBeDefined();
     expect(screen.queryByRole('link', { name: 'Terms' })).toBeNull();
   });
 

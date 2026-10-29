@@ -38,7 +38,7 @@ describe('dashboard', () => {
 
     render(<Dashboard user={admin} />);
 
-    expect(await screen.findByText('Content overview')).toBeDefined();
+    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeDefined();
     expect(await screen.findByText('5')).toBeDefined();
     expect(await screen.findByText('4')).toBeDefined();
     expect(fetchMock).toHaveBeenCalledTimes(6);

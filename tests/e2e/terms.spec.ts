@@ -8,7 +8,7 @@ import { config as loadDotenv } from 'dotenv';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 loadDotenv({ path: path.join(repoRoot, '.env'), quiet: true });
 
-const ADMIN_URL = 'http://127.0.0.1:5173';
+const ADMIN_URL = 'http://127.0.0.1:5173/admin';
 const suffix = randomUUID().slice(0, 10);
 const editorUsername = `e2e_ed_${suffix}`;
 const subscriberUsername = `e2e_sub_${suffix}`;

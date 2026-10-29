@@ -95,7 +95,9 @@ describe('content editor', () => {
     fireEvent.change(await screen.findByLabelText('Title'), { target: { value: 'New title' } });
     fireEvent.change(screen.getByLabelText('Slug'), { target: { value: 'new-title' } });
     fireEvent.change(screen.getByLabelText('Excerpt'), { target: { value: 'Short excerpt' } });
-    fireEvent.change(screen.getByLabelText('Content'), { target: { value: 'Hello content' } });
+    fireEvent.change(await screen.findByLabelText('Content'), {
+      target: { value: 'Hello content' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
@@ -118,7 +120,7 @@ describe('content editor', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     renderEditor(authorA);
-    fireEvent.click(await screen.findByRole('button', { name: 'Save draft' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
 
     expect(await screen.findByText('Title is required.')).toBeDefined();
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -222,7 +224,7 @@ describe('content editor', () => {
         'Read-only view. Your role can read this content but cannot edit it.',
       ),
     ).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Update' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Back to posts' })).toBeDefined();
   });
 });

@@ -8,7 +8,7 @@ import { config as loadDotenv } from 'dotenv';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 loadDotenv({ path: path.join(repoRoot, '.env'), quiet: true });
 
-const ADMIN_URL = 'http://127.0.0.1:5173';
+const ADMIN_URL = 'http://127.0.0.1:5173/admin';
 const suffix = randomUUID().slice(0, 10);
 const editorUsername = `e2e_ed_${suffix}`;
 const subscriberUsername = `e2e_sub_${suffix}`;
@@ -122,7 +122,7 @@ test('editor can create, edit, publish, unpublish, trash and restore content', a
     'Hello from the Phase 5 block editor.',
   );
 
-  createdPostId = new URL(page.url()).pathname.split('/')[2] ?? '';
+  createdPostId = new URL(page.url()).pathname.split('/')[3] ?? '';
   expect(createdPostId).toMatch(/^[0-9a-f-]{36}$/);
 
   // Content is persisted as canonical WordPress block markup, not plain text.

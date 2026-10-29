@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { ContentType, PostStatus } from './api.js';
 
+const ADMIN_BASE = '/admin';
+
 export type Route =
   | { name: 'dashboard' }
   | { name: 'list'; type: ContentType }
@@ -16,8 +18,25 @@ export interface LocationState {
 
 export const ROUTE_EVENT = 'mernpress:navigate';
 
+function stripBase(pathname: string): string {
+  return pathname.startsWith(`${ADMIN_BASE}/`)
+    ? pathname.slice(ADMIN_BASE.length)
+    : pathname === ADMIN_BASE
+      ? '/'
+      : pathname;
+}
+
+function fullPath(path: string): string {
+  // In production the app is served under /admin; in dev it runs at root.
+  // Only prefix when the browser is already under /admin.
+  if (typeof window === 'undefined') return path;
+  const underAdmin = window.location.pathname.startsWith(ADMIN_BASE);
+  return underAdmin && path.startsWith('/') ? `${ADMIN_BASE}${path}` : path;
+}
+
 export function parseRoute(pathname: string): Route {
-  const parts = pathname
+  const normalized = stripBase(pathname);
+  const parts = normalized
     .replace(/^\/+|\/+$/g, '')
     .split('/')
     .filter(Boolean);
@@ -49,15 +68,17 @@ export function currentLocation(): LocationState {
 }
 
 export function navigate(to: string): void {
-  if (`${window.location.pathname}${window.location.search}` === to) {
+  const full = fullPath(to);
+  if (`${window.location.pathname}${window.location.search}` === full) {
     return;
   }
-  window.history.pushState(null, '', to);
+  window.history.pushState(null, '', full);
   window.dispatchEvent(new Event(ROUTE_EVENT));
 }
 
 export function replace(to: string): void {
-  window.history.replaceState(null, '', to);
+  const full = fullPath(to);
+  window.history.replaceState(null, '', full);
   window.dispatchEvent(new Event(ROUTE_EVENT));
 }
 
@@ -132,3 +153,5 @@ export function editContentPath(type: ContentType, id: string): string {
   const base = type === 'post' ? '/posts' : '/pages';
   return `${base}/${encodeURIComponent(id)}/edit`;
 }
+
+export { ADMIN_BASE };

@@ -92,14 +92,11 @@ describe('terms page', () => {
 
     await screen.findByText(/no categories yet/i);
 
-    fireEvent.change(screen.getByLabelText(/new category name/i), {
-      target: { value: '   ' },
-    });
-    // bypass client empty check by setting a value then clearing via direct input? Instead submit empty
-    const input = screen.getByLabelText(/new category name/i) as HTMLInputElement;
-    // force value empty and submit to trigger client validation
+    const input = screen.getByLabelText(/category name/i) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '   ' } });
+    // bypass client empty check by setting a value then clearing via direct input
     fireEvent.change(input, { target: { value: '' } });
-    fireEvent.click(screen.getByRole('button', { name: /create category/i }));
+    fireEvent.submit(screen.getByRole('form', { name: 'Create category' }));
 
     // client validation error shown without fetch
     expect(await screen.findByText('Name is required.')).toBeDefined();

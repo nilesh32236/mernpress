@@ -4,7 +4,6 @@ import {
   createTerm,
   deleteTerm,
   fetchTerms,
-  updateTerm,
   type AdminTerm,
   type AuthUser,
   type Paged,
@@ -61,14 +60,14 @@ export function TermsPage({ user }: { user: AuthUser }) {
   const [reloadKey, setReloadKey] = useState(0);
 
   const [newName, setNewName] = useState('');
+  const [newSlug, setNewSlug] = useState('');
+  const [newDescription, setNewDescription] = useState('');
   const [createError, setCreateError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editError, setEditError] = useState<string | null>(null);
-  const [savingId, setSavingId] = useState<string | null>(null);
-
   const [pendingAction, setPendingAction] = useState<string | null>(null);
 
   function applyState(nextTaxonomy: TaxonomyTab, nextSearch: string, nextPage: number) {
@@ -137,8 +136,15 @@ export function TermsPage({ user }: { user: AuthUser }) {
     setCreateError(null);
     setNotice(null);
     try {
-      await createTerm({ taxonomy, name });
+      await createTerm({
+        taxonomy,
+        name,
+        ...(newSlug.trim() ? { slug: newSlug.trim() } : {}),
+        ...(newDescription.trim() ? { description: newDescription.trim() } : {}),
+      });
       setNewName('');
+      setNewSlug('');
+      setNewDescription('');
       setNotice({
         tone: 'success',
         text: `${taxonomy === 'category' ? 'Category' : 'Tag'} created.`,
@@ -160,40 +166,6 @@ export function TermsPage({ user }: { user: AuthUser }) {
     setEditingId(term.id);
     setEditName(term.name);
     setEditError(null);
-  }
-
-  function cancelRename() {
-    setEditingId(null);
-    setEditName('');
-    setEditError(null);
-  }
-
-  async function saveRename(term: AdminTerm) {
-    if (savingId) return;
-    const name = editName.trim();
-    if (!name) {
-      setEditError('Name is required.');
-      return;
-    }
-    setSavingId(term.id);
-    setEditError(null);
-    setNotice(null);
-    try {
-      await updateTerm(term.id, { name });
-      setEditingId(null);
-      setEditName('');
-      setNotice({ tone: 'success', text: 'Term renamed.' });
-      setReloadKey((value) => value + 1);
-    } catch (caught) {
-      const message =
-        caught instanceof Error && 'details' in caught
-          ? ((caught as { details?: Array<{ message?: string }> }).details?.[0]?.message ??
-            actionErrorMessage(caught))
-          : actionErrorMessage(caught);
-      setEditError(message);
-    } finally {
-      setSavingId(null);
-    }
   }
 
   async function handleDelete(term: AdminTerm) {
@@ -231,6 +203,8 @@ export function TermsPage({ user }: { user: AuthUser }) {
     );
   }
 
+  const totalPages = Math.max(data?.pagination.totalPages ?? 1, 1);
+
   return (
     <>
       <PageHeader
@@ -257,191 +231,232 @@ export function TermsPage({ user }: { user: AuthUser }) {
         ))}
       </div>
 
-      <form
-        className="list-filters"
-        onSubmit={handleCreate}
-        aria-label={`Create ${singularLabel(taxonomy)}`}
-      >
-        <div className="field">
-          <label htmlFor="term-new-name">New {singularLabel(taxonomy)} name</label>
-          <input
-            id="term-new-name"
-            type="text"
-            value={newName}
-            onChange={(event) => setNewName(event.target.value)}
-            placeholder={`Name`}
-            disabled={creating}
-          />
-        </div>
-        <button
-          type="submit"
-          className="button primary-button"
-          disabled={creating}
-          aria-busy={creating}
-        >
-          {creating ? 'Creating…' : `Create ${singularLabel(taxonomy)}`}
-        </button>
-        {createError ? (
-          <p className="form-error" role="alert">
-            {createError}
-          </p>
-        ) : null}
-      </form>
+      <div className="terms-layout">
+        {/* Left column: add term form */}
+        <aside className="terms-add-panel">
+          <form
+            className="terms-add-form"
+            onSubmit={handleCreate}
+            aria-label={`Create ${singularLabel(taxonomy)}`}
+          >
+            <h3>Add New {singularLabel(taxonomy)}</h3>
+            <div className="field">
+              <label htmlFor="term-new-name">{singularLabel(taxonomy)} Name</label>
+              <input
+                id="term-new-name"
+                type="text"
+                value={newName}
+                onChange={(event) => setNewName(event.target.value)}
+                placeholder="Enter name"
+                disabled={creating}
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="term-new-slug">Slug</label>
+              <input
+                id="term-new-slug"
+                type="text"
+                value={newSlug}
+                onChange={(event) => setNewSlug(event.target.value)}
+                placeholder="Enter slug"
+                disabled={creating}
+              />
+              <p className="field-help">
+                The “slug” is the URL-friendly version of the name. It is usually all lowercase and
+                contains only letters, numbers and hyphens.
+              </p>
+            </div>
+            <div className="field">
+              <label htmlFor="term-new-description">Description</label>
+              <textarea
+                id="term-new-description"
+                value={newDescription}
+                onChange={(event) => setNewDescription(event.target.value)}
+                placeholder="Enter description"
+                disabled={creating}
+                rows={2}
+              />
+            </div>
+            {createError ? (
+              <p className="form-error" role="alert">
+                {createError}
+              </p>
+            ) : null}
+            <div className="field actions">
+              <button
+                type="submit"
+                className="button primary-button"
+                disabled={creating}
+                aria-busy={creating}
+              >
+                {creating ? 'Creating…' : `Add New ${singularLabel(taxonomy)}`}
+              </button>
+            </div>
+          </form>
+        </aside>
 
-      <form className="list-filters" onSubmit={handleSearch} role="search">
-        <div className="field">
-          <label htmlFor="term-search">Search {taxonomyLabel(taxonomy).toLowerCase()}</label>
-          <input
-            id="term-search"
-            type="search"
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Name or slug"
-            disabled={loading}
-          />
-        </div>
-        <button type="submit" className="button secondary-button" disabled={loading}>
-          Search
-        </button>
-      </form>
+        {/* Right column: term list table */}
+        <section className="terms-list">
+          <form className="list-filters" onSubmit={handleSearch} role="search">
+            <div className="field">
+              <label htmlFor="term-search">Search {taxonomyLabel(taxonomy).toLowerCase()}</label>
+              <input
+                id="term-search"
+                type="search"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Name or slug"
+                disabled={loading}
+              />
+            </div>
+            <button type="submit" className="button secondary-button" disabled={loading}>
+              Search
+            </button>
+          </form>
 
-      {error ? (
-        <ErrorState
-          title={`Could not load ${taxonomyLabel(taxonomy).toLowerCase()}`}
-          message={error}
-          onRetry={() => setReloadKey((value) => value + 1)}
-        />
-      ) : loading ? (
-        <Skeleton label={`Loading ${taxonomyLabel(taxonomy).toLowerCase()}…`} lines={5} />
-      ) : !data || data.items.length === 0 ? (
-        <EmptyState
-          title={search ? 'No matching terms' : `No ${taxonomyLabel(taxonomy).toLowerCase()} yet`}
-          message={
-            search
-              ? 'Try a different search term.'
-              : `Create your first ${singularLabel(taxonomy)} to get started.`
-          }
-        />
-      ) : (
-        <>
-          <div className="table-scroll">
-            <table className="content-table">
-              <caption className="visually-hidden">{taxonomyLabel(taxonomy)}</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Name</th>
-                  <th scope="col">Slug</th>
-                  <th scope="col">Posts</th>
-                  <th scope="col">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.items.map((term) => {
-                  const isEditing = editingId === term.id;
-                  const isSaving = savingId === term.id;
-                  const isDeleting = pendingAction === `delete:${term.id}`;
-                  return (
-                    <tr key={term.id}>
-                      <td data-label="Name">
-                        {isEditing ? (
-                          <div className="field">
-                            <input
-                              type="text"
-                              value={editName}
-                              onChange={(event) => setEditName(event.target.value)}
-                              disabled={isSaving}
-                              aria-label={`Rename ${term.name}`}
-                            />
-                            {editError ? (
-                              <p className="field-error" role="alert">
-                                {editError}
-                              </p>
-                            ) : null}
-                          </div>
-                        ) : (
-                          term.name
-                        )}
-                      </td>
-                      <td data-label="Slug">
-                        <code>{term.slug}</code>
-                      </td>
-                      <td data-label="Posts">{term.postCount}</td>
-                      <td data-label="Actions">
-                        <div className="row-actions">
-                          {isEditing ? (
-                            <>
-                              <button
-                                type="button"
-                                className="button small-button"
-                                disabled={isSaving || pendingAction !== null}
-                                aria-busy={isSaving}
-                                onClick={() => void saveRename(term)}
-                              >
-                                {isSaving ? 'Saving…' : 'Save'}
-                              </button>
-                              <button
-                                type="button"
-                                className="button small-button"
-                                disabled={isSaving}
-                                onClick={cancelRename}
-                              >
-                                Cancel
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <button
-                                type="button"
-                                className="button small-button"
-                                disabled={pendingAction !== null || savingId !== null}
-                                onClick={() => startRename(term)}
-                              >
-                                Rename
-                              </button>
-                              <button
-                                type="button"
-                                className="button small-button"
-                                disabled={pendingAction !== null || savingId !== null}
-                                aria-busy={isDeleting}
-                                onClick={() => void handleDelete(term)}
-                              >
-                                {isDeleting ? 'Deleting…' : 'Delete'}
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
+          {error ? (
+            <ErrorState
+              title={`Could not load ${taxonomyLabel(taxonomy).toLowerCase()}`}
+              message={error}
+              onRetry={() => setReloadKey((value) => value + 1)}
+            />
+          ) : loading ? (
+            <Skeleton label={`Loading ${taxonomyLabel(taxonomy).toLowerCase()}…`} lines={5} />
+          ) : !data || data.items.length === 0 ? (
+            <EmptyState
+              title={
+                search ? 'No matching terms' : `No ${taxonomyLabel(taxonomy).toLowerCase()} yet`
+              }
+              message={
+                search
+                  ? 'Try a different search term.'
+                  : `Create your first ${singularLabel(taxonomy)} to get started.`
+              }
+              action={
+                <button
+                  className="button primary-button"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    document.getElementById('term-new-name')?.focus();
+                  }}
+                >
+                  Add New {singularLabel(taxonomy)}
+                </button>
+              }
+            />
+          ) : (
+            <>
+              <div className="table-scroll">
+                <table className="content-table widefat fixed striped terms">
+                  <caption className="screen-reader-text">{taxonomyLabel(taxonomy)}</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col" className="check-column">
+                        <input type="checkbox" />
+                      </th>
+                      <th scope="col">Name</th>
+                      <th scope="col">Description</th>
+                      <th scope="col">Slug</th>
+                      <th scope="col">Posts</th>
+                      <th scope="col">Actions</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody>
+                    {data.items.map((term) => {
+                      const isEditing = editingId === term.id;
+                      const isDeleting = pendingAction === `delete:${term.id}`;
+                      return (
+                        <tr key={term.id}>
+                          <th scope="row" className="check-column">
+                            <input type="checkbox" />
+                          </th>
+                          <td className="title column-name">
+                            {isEditing ? (
+                              <div className="field inline">
+                                <input
+                                  type="text"
+                                  value={editName}
+                                  onChange={(event) => setEditName(event.target.value)}
+                                  disabled={pendingAction !== null}
+                                  aria-label={`Rename ${term.name}`}
+                                />
+                                {editError ? (
+                                  <p className="field-error" role="alert">
+                                    {editError}
+                                  </p>
+                                ) : null}
+                              </div>
+                            ) : (
+                              <>
+                                <span className="row-title">{term.name}</span>
+                                <div className="row-actions">
+                                  <button
+                                    type="button"
+                                    className="button small-button edit-link"
+                                    disabled={pendingAction !== null}
+                                    onClick={() => startRename(term)}
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="button small-button delete-link"
+                                    disabled={pendingAction !== null}
+                                    aria-busy={isDeleting}
+                                    onClick={() => void handleDelete(term)}
+                                  >
+                                    {isDeleting ? 'Deleting…' : 'Delete'}
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </td>
+                          <td className="description column-description">
+                            {term.description ?? '—'}
+                          </td>
+                          <td className="slug column-slug">
+                            <code>{term.slug}</code>
+                          </td>
+                          <td className="posts column-posts">{term.postCount}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
 
-          <nav className="pagination" aria-label={`${taxonomyLabel(taxonomy)} pagination`}>
-            <button
-              type="button"
-              className="button secondary-button"
-              disabled={page <= 1}
-              onClick={() => applyState(taxonomy, search, page - 1)}
-            >
-              Previous
-            </button>
-            <p>
-              Page {data.pagination.page} of {Math.max(data.pagination.totalPages, 1)} ·{' '}
-              {data.pagination.total} total
-            </p>
-            <button
-              type="button"
-              className="button secondary-button"
-              disabled={page >= Math.max(data.pagination.totalPages, 1)}
-              onClick={() => applyState(taxonomy, search, page + 1)}
-            >
-              Next
-            </button>
-          </nav>
-        </>
-      )}
+              <nav className="pagination" aria-label={`${taxonomyLabel(taxonomy)} pagination`}>
+                <div className="tablenav-pages">
+                  <span className="displaying-num">
+                    {data.pagination.total} {taxonomyLabel(taxonomy)}
+                    {data.pagination.total !== 1 ? 's' : ''}
+                  </span>
+                  <span className="pagination-links">
+                    <button
+                      type="button"
+                      className="button secondary-button pagination-button prev"
+                      disabled={page <= 1}
+                      onClick={() => applyState(taxonomy, search, page - 1)}
+                    >
+                      « Previous
+                    </button>
+                    <span className="page-numbers current">{page}</span>
+                    <button
+                      type="button"
+                      className="button secondary-button pagination-button next"
+                      disabled={page >= totalPages}
+                      onClick={() => applyState(taxonomy, search, page + 1)}
+                    >
+                      Next »
+                    </button>
+                  </span>
+                </div>
+              </nav>
+            </>
+          )}
+        </section>
+      </div>
     </>
   );
 }

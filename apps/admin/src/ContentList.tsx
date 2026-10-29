@@ -53,13 +53,6 @@ function sanitizePage(value: string | null): number {
   return Number.isInteger(number) && number > 0 ? number : 1;
 }
 
-const ACTION_LABELS: Record<TransitionAction, string> = {
-  publish: 'Publish',
-  unpublish: 'Unpublish',
-  trash: 'Trash',
-  restore: 'Restore',
-};
-
 const ACTION_SUCCESS: Record<TransitionAction, string> = {
   publish: 'Content published.',
   unpublish: 'Content returned to draft.',
@@ -77,7 +70,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [, setPendingAction] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [counts, setCounts] = useState<Record<PostStatus | '', number>>({
     '': 0,
@@ -222,6 +215,8 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
     );
   }
 
+  const totalPages = Math.max(data?.pagination.totalPages ?? 1, 1);
+
   return (
     <>
       <PageHeader
@@ -242,7 +237,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                 navigate(newContentPath(type));
               }}
             >
-              New {type === 'post' ? 'post' : 'page'}
+              Add New {type === 'post' ? 'Post' : 'Page'}
             </a>
           ) : null
         }
@@ -250,36 +245,37 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
 
       {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
 
-      <div className="status-tabs" role="tablist" aria-label={`${label} status`}>
-        {TABS.map((tab) => (
-          <button
-            key={tab.value || 'all'}
-            type="button"
-            role="tab"
-            aria-selected={status === tab.value}
-            className={`button small-button ${status === tab.value ? 'primary-button' : 'secondary-button'}`}
-            onClick={() => applyFilters(tab.value, search, 1)}
-          >
-            {tab.label} ({counts[tab.value] ?? 0})
-          </button>
-        ))}
-      </div>
-
-      <form className="list-filters" onSubmit={handleSearch} role="search">
-        <div className="field">
-          <label htmlFor={`${type}-search`}>Search {label.toLowerCase()}</label>
+      <div className="list-filters">
+        <form className="search-form" onSubmit={handleSearch} role="search">
+          <label htmlFor={`${type}-search`}>Search {label}</label>
           <input
             id={`${type}-search`}
             type="search"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Title or excerpt"
+            placeholder={`Search ${label}`}
           />
+          <button type="submit" className="button secondary-button">
+            Search
+          </button>
+        </form>
+        <div className="status-filter">
+          <label htmlFor={`${type}-status-filter`}>Filter by status</label>
+          <select
+            id={`${type}-status-filter`}
+            value={status}
+            onChange={(event) => {
+              applyFilters(sanitizeStatus(event.target.value), search, 1);
+            }}
+          >
+            {TABS.map((tab) => (
+              <option key={tab.value} value={tab.value}>
+                {tab.label} ({counts[tab.value] ?? 0})
+              </option>
+            ))}
+          </select>
         </div>
-        <button type="submit" className="button secondary-button">
-          Search
-        </button>
-      </form>
+      </div>
 
       {error ? (
         <ErrorState
@@ -307,23 +303,37 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                   navigate(newContentPath(type));
                 }}
               >
-                New {type === 'post' ? 'post' : 'page'}
+                Add New {type === 'post' ? 'Post' : 'Page'}
               </a>
             ) : null
           }
         />
       ) : (
         <>
+          <div className="bulk-actions">
+            <label htmlFor="bulk-action">Bulk actions</label>
+            <select id="bulk-action">
+              <option value="">Bulk actions</option>
+              <option value="trash">Move to Trash</option>
+            </select>
+            <button type="button" className="button secondary-button bulk-apply">
+              Apply
+            </button>
+          </div>
+
           <div className="table-scroll">
-            <table className="content-table">
-              <caption className="visually-hidden">{label}</caption>
+            <table className="content-table widefat fixed striped posts">
+              <caption className="screen-reader-text">{label}</caption>
               <thead>
                 <tr>
+                  <th scope="col" className="check-column">
+                    <input type="checkbox" />
+                  </th>
                   <th scope="col">Title</th>
                   <th scope="col">Status</th>
-                  <th scope="col">Slug</th>
-                  <th scope="col">Updated</th>
-                  <th scope="col">Actions</th>
+                  <th scope="col">Author</th>
+                  <th scope="col">{type === 'post' ? 'Categories' : ''}</th>
+                  <th scope="col">Date</th>
                 </tr>
               </thead>
               <tbody>
@@ -332,7 +342,10 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                   const editable = canEditPost(user, post);
                   return (
                     <tr key={post.id}>
-                      <td data-label="Title">
+                      <th scope="row" className="check-column">
+                        <input type="checkbox" />
+                      </th>
+                      <td className="title column-title">
                         <a
                           className="row-title"
                           href={editContentPath(type, post.id)}
@@ -344,45 +357,92 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                           {post.title}
                         </a>
                         {post.excerpt ? <p className="row-excerpt">{post.excerpt}</p> : null}
-                      </td>
-                      <td data-label="Status">
-                        <StatusBadge status={post.status} />
-                      </td>
-                      <td data-label="Slug">
-                        <code>{post.slug}</code>
-                      </td>
-                      <td data-label="Updated">{formatDateTime(post.updatedAt)}</td>
-                      <td data-label="Actions">
                         <div className="row-actions">
-                          <a
-                            className="text-link"
-                            href={editContentPath(type, post.id)}
-                            onClick={(event) => {
-                              event.preventDefault();
-                              navigate(editContentPath(type, post.id));
-                            }}
-                          >
-                            {editable ? 'Edit' : 'View'}
-                          </a>
-                          {transitions.map((action) => {
-                            const key = `${post.id}:${action}`;
-                            return (
+                          {editable ? (
+                            <a
+                              className="edit-link"
+                              href={editContentPath(type, post.id)}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                navigate(editContentPath(type, post.id));
+                              }}
+                            >
+                              Edit
+                            </a>
+                          ) : null}
+                          {transitions.includes('trash') ? (
+                            <>
+                              {editable ? <span> | </span> : null}
                               <button
-                                key={action}
                                 type="button"
-                                className="button small-button"
-                                disabled={pendingAction !== null}
-                                aria-busy={pendingAction === key}
-                                onClick={() => void runAction(post, action)}
+                                className="delete-link"
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  void runAction(post, 'trash');
+                                }}
                               >
-                                {pendingAction === key
-                                  ? `${ACTION_LABELS[action]}…`
-                                  : ACTION_LABELS[action]}
+                                Trash
                               </button>
-                            );
-                          })}
+                            </>
+                          ) : null}
+                          {transitions.includes('restore') ? (
+                            <>
+                              <span> | </span>
+                              <button
+                                type="button"
+                                className="delete-link"
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  void runAction(post, 'restore');
+                                }}
+                              >
+                                Restore
+                              </button>
+                            </>
+                          ) : null}
+                          {(post.status === 'PUBLISHED' ||
+                            transitions.includes('publish') ||
+                            transitions.includes('unpublish')) && (
+                            <>
+                              {(editable ||
+                                transitions.includes('trash') ||
+                                transitions.includes('restore')) && <span> | </span>}
+                              <a
+                                className="view-link"
+                                href={editContentPath(type, post.id)}
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  navigate(editContentPath(type, post.id));
+                                }}
+                              >
+                                View
+                              </a>
+                            </>
+                          )}
+                          {!editable &&
+                            transitions.length === 0 &&
+                            !(
+                              post.status === 'PUBLISHED' ||
+                              transitions.includes('publish') ||
+                              transitions.includes('unpublish')
+                            ) && <span className="no-row-actions">—</span>}
                         </div>
                       </td>
+                      <td className="status column-status">
+                        <StatusBadge status={post.status} />
+                      </td>
+                      <td className="author column-author">
+                        {post.authorId === user.id ? 'You' : 'Another user'}
+                      </td>
+                      <td className="categories column-categories">
+                        {post.terms.categories.map((term) => (
+                          <span key={term.id} className="term-link">
+                            {term.name}
+                          </span>
+                        ))}
+                        {post.terms.categories.length === 0 && <span className="no-terms">—</span>}
+                      </td>
+                      <td className="date column-date">{formatDateTime(post.updatedAt)}</td>
                     </tr>
                   );
                 })}
@@ -391,26 +451,30 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
           </div>
 
           <nav className="pagination" aria-label={`${label} pagination`}>
-            <button
-              type="button"
-              className="button secondary-button"
-              disabled={page <= 1}
-              onClick={() => applyFilters(status, search, page - 1)}
-            >
-              Previous
-            </button>
-            <p>
-              Page {data.pagination.page} of {Math.max(data.pagination.totalPages, 1)} ·{' '}
-              {data.pagination.total} total
-            </p>
-            <button
-              type="button"
-              className="button secondary-button"
-              disabled={page >= Math.max(data.pagination.totalPages, 1)}
-              onClick={() => applyFilters(status, search, page + 1)}
-            >
-              Next
-            </button>
+            <div className="tablenav-pages">
+              <span className="displaying-num">
+                {`${data.pagination.total} ${data.pagination.total === 1 ? label.slice(0, -1) : label}`}
+              </span>
+              <span className="pagination-links">
+                <button
+                  type="button"
+                  className="button secondary-button pagination-button prev"
+                  disabled={page <= 1}
+                  onClick={() => applyFilters(status, search, page - 1)}
+                >
+                  « Previous
+                </button>
+                <span className="page-numbers current">{page}</span>
+                <button
+                  type="button"
+                  className="button secondary-button pagination-button next"
+                  disabled={page >= totalPages}
+                  onClick={() => applyFilters(status, search, page + 1)}
+                >
+                  Next »
+                </button>
+              </span>
+            </div>
           </nav>
         </>
       )}

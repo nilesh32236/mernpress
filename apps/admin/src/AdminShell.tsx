@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { logout, type AuthUser } from './api.js';
 import type { Route } from './router.js';
 import { breadcrumbs, navigate } from './router.js';
+import { ADMIN_BASE } from './router.js';
 import { Breadcrumbs, type BreadcrumbItem } from './components.js';
 import { useNavigationGuard } from './navigation-guard.js';
 import { canManageTerms, canReadContent, roleLabel } from './roles.js';
@@ -175,17 +176,16 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
         <div className="sidebar-brand">
           <a
             className="brand"
-            href="/"
+            href={ADMIN_BASE}
             aria-label="MERNPress admin home"
             onClick={(e) => {
               e.preventDefault();
-              if (confirmNavigation()) navigate('/');
+              if (confirmNavigation()) navigate('/admin');
             }}
           >
             <span className="brand-mark">M</span>
             <span className="brand-text">MERNPress</span>
           </a>
-          <span className="phase-badge">Phase 5 · Editor</span>
         </div>
         <nav className="sidebar-nav" aria-label="Primary">
           <p className="nav-group-label">Content</p>
@@ -198,7 +198,6 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
                     className={`nav-link${item.active ? ' nav-link-active' : ''}`}
                     href={item.to}
                     aria-current={item.active ? 'page' : undefined}
-                    aria-label={item.label}
                     onClick={(event) => {
                       event.preventDefault();
                       if (!confirmNavigation()) {
@@ -213,6 +212,26 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
                 </li>
               ))}
           </ul>
+          <div className="sidebar-footer">
+            <div className="sidebar-user">
+              <p className="sidebar-user-name">{user.username}</p>
+              <p className="sidebar-user-role">{roleLabel(user.role)}</p>
+            </div>
+            <button
+              type="button"
+              className="button secondary-button sidebar-signout"
+              onClick={() => void handleSignOut()}
+              disabled={signingOut}
+              aria-busy={signingOut}
+            >
+              {signingOut ? 'Signing out…' : 'Sign out'}
+            </button>
+            {signOutError ? (
+              <p className="form-error" role="alert">
+                {signOutError}
+              </p>
+            ) : null}
+          </div>
         </nav>
       </aside>
 
@@ -285,28 +304,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
             )}
             {isEditorRoute ? null : <span className="top-bar-title">{topBarTitle(route)}</span>}
           </div>
-          <div className="top-bar-right">
-            <div className="user-panel">
-              <p className="user-identity">
-                <strong>{user.username}</strong>
-                <span className="role-label">{roleLabel(user.role)}</span>
-              </p>
-              <button
-                type="button"
-                className="button secondary-button"
-                onClick={() => void handleSignOut()}
-                disabled={signingOut}
-                aria-busy={signingOut}
-              >
-                {signingOut ? 'Signing out…' : 'Sign out'}
-              </button>
-              {signOutError ? (
-                <p className="form-error" role="alert">
-                  {signOutError}
-                </p>
-              ) : null}
-            </div>
-          </div>
+          <div className="top-bar-right" />
         </header>
 
         <main
@@ -329,7 +327,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
         </main>
 
         <footer className="app-footer">
-          <p>MERNPress Phase 5 · Content administration</p>
+          <p>MERNPress Content administration</p>
         </footer>
       </div>
     </div>

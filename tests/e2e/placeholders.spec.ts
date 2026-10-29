@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const ADMIN_URL = 'http://127.0.0.1:5173';
+const ADMIN_URL = 'http://127.0.0.1:5173/admin';
 const WEB_URL = 'http://localhost:3000';
 const API_URL = 'http://127.0.0.1:4000';
 
