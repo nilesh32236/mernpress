@@ -18,15 +18,19 @@ Status: **LIVE AND VERIFIED** for the deployed Phase 4 build at
 
 ## Public routing
 
-`https://mernpress.duckdns.org` serves:
+`https://mernpress.duckdns.org` serves (since 2026-10-30):
 
 - `/api` and `/api/*` → `127.0.0.1:4000` (Fastify API, systemd
   `mernpress-api.service`).
-- everything else → `/opt/mernpress/current/apps/admin/dist` with SPA fallback
-  to `index.html` (Caddy `handle` blocks are mutually exclusive).
+- `/admin*` → `/opt/mernpress/current/apps/admin/dist` with SPA fallback
+  (`uri strip_prefix /admin`).
+- everything else (the public site) → `127.0.0.1:3100` (Next.js standalone,
+  systemd `mernpress-web.service`, enabled 2026-10-30; env
+  `MERNPRESS_API_URL=http://127.0.0.1:4000`).
 
-Caddy site block: `/etc/caddy/Caddyfile` (backup:
-`/etc/caddy/Caddyfile.bak.20261027T140907Z`). Caddy access log:
+Caddy site block: `/etc/caddy/Caddyfile` (backups:
+`/etc/caddy/Caddyfile.bak.20261027T140907Z`,
+`/etc/caddy/Caddyfile.bak-20261030`). Caddy access log:
 `/var/log/caddy/mernpress-access.log`. Caddy 2.11.2 manages TLS automatically;
 no DuckDNS token is stored in the Caddyfile.
 
@@ -45,7 +49,28 @@ no DuckDNS token is stored in the Caddyfile.
 
 ## Release
 
-- Current release: `/opt/mernpress/releases/20261029T103000Z-7dd1a1d`
+- Current release: `/opt/mernpress/releases/20261030T053600Z-2bf2809`
+  symlinked as `/opt/mernpress/current` (switched 2026-10-30; previous release
+  `/opt/mernpress/releases/20261029T103000Z-7dd1a1d` retained for rollback).
+  Deployed: **CMS completion** at Git HEAD `2bf2809` (master, pushed;
+  `feat/cms-completion` merged fast-forward) — server renderer + DOMPurify
+  sanitizer (ADR 0007), media library (sharp raster pipeline, derivatives,
+  confinement serving, admin UI, Gutenberg upload), revisions (retention 50),
+  autosave (recovery banner), preview tokens (+ web `/preview/[token]`),
+  first-publish scheduling (60 s sweeper), bulk actions, editor SEO tab,
+  featured image, and the Next.js public site (new `mernpress-web.service`).
+  Three additive migrations applied to production after a full `pg_dump`
+  backup (`/opt/mernpress/backups/pre-cms-completion-20261030T053550Z.sql`).
+  New env: `MEDIA_STORAGE_DIR=/opt/mernpress/media` (persistent),
+  `SCHEDULER_ENABLED=true`. Verified live: `/` 200 (public site), `/admin/`
+  200, API health ok, public API serves sanitized `renderedContent`, single
+  post page 200, media upload 401/403 correctly rejected, preview 400/404
+  contract, zero API errors in journal.
+- Previous release: `/opt/mernpress/releases/20261029T103000Z-7dd1a1d`
+  (reference-CMS-matched admin design; rollback: re-point symlink, restore
+  pre-migration dump only if schema rollback is needed — the new columns are
+  additive and inert to the old build).
+- Earlier release record: `/opt/mernpress/releases/20261029T103000Z-7dd1a1d`
   symlinked as `/opt/mernpress/current` (switched 2026-10-29; previous release
   `/opt/mernpress/releases/20261029T091500Z-274a28c` retained for rollback).
   Deployed: reference-CMS-matched admin design at Git HEAD `7dd1a1d` (master,
