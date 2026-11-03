@@ -10,6 +10,8 @@ export const updateProfileSchema = z
     username: z.string().min(1).max(64).optional(),
     email: z.string().max(254).nullable().optional(),
     displayName: z.string().max(100).nullable().optional(),
+    bio: z.string().max(2000).nullable().optional(),
+    website: z.string().max(2048).nullable().optional(),
   })
   .strict();
 

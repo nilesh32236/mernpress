@@ -25,7 +25,8 @@ export type UserAdminErrorCode =
   | 'SELF_STATUS_CHANGE'
   | 'SELF_DELETE'
   | 'REASSIGN_REQUIRED'
-  | 'REASSIGN_INVALID';
+  | 'REASSIGN_INVALID'
+  | 'INVALID_WEBSITE';
 
 export class UserAdminError extends Error {
   readonly code: UserAdminErrorCode;
@@ -61,6 +62,10 @@ export interface UserProfile {
   username: string;
   email: string | null;
   displayName: string | null;
+  /** WordPress "Biographical Info". */
+  bio: string | null;
+  /** WordPress "Website". */
+  website: string | null;
   role: UserRole;
   /** ISO-8601 UTC instant. */
   createdAt: string;
@@ -86,6 +91,8 @@ export interface UpdateProfileInput {
   username?: string | undefined;
   email?: string | null | undefined;
   displayName?: string | null | undefined;
+  bio?: string | null | undefined;
+  website?: string | null | undefined;
 }
 
 export interface ChangeOwnPasswordInput {
@@ -149,6 +156,8 @@ const PROFILE_SELECT = {
   username: true,
   email: true,
   displayName: true,
+  bio: true,
+  website: true,
   role: true,
   createdAt: true,
 } as const;
@@ -170,6 +179,8 @@ type ProfileRow = {
   username: string;
   email: string | null;
   displayName: string | null;
+  bio: string | null;
+  website: string | null;
   role: UserRole;
   createdAt: Date;
 };
@@ -247,9 +258,34 @@ function toProfile(row: ProfileRow): UserProfile {
     username: row.username,
     email: row.email,
     displayName: row.displayName,
+    bio: row.bio,
+    website: row.website,
     role: row.role,
     createdAt: row.createdAt.toISOString(),
   };
+}
+
+function normalizeBio(value: string | null): string | null {
+  if (value === null) return null;
+  const trimmed = value.trim();
+  return trimmed.length === 0 ? null : trimmed;
+}
+
+function normalizeWebsite(value: string | null): string | null {
+  if (value === null) return null;
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return null;
+  if (trimmed.length > 2048) {
+    throw new UserAdminError('INVALID_WEBSITE', 'Website URL is too long.', 400);
+  }
+  if (!/^https?:\/\//i.test(trimmed)) {
+    throw new UserAdminError(
+      'INVALID_WEBSITE',
+      'Website must start with http:// or https://.',
+      400,
+    );
+  }
+  return trimmed;
 }
 
 function assertRole(role: string): asserts role is UserRole {
@@ -674,11 +710,15 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
       input.displayName === undefined
         ? current.displayName
         : normalizeDisplayName(input.displayName);
+    const bio = input.bio === undefined ? current.bio : normalizeBio(input.bio);
+    const website = input.website === undefined ? current.website : normalizeWebsite(input.website);
 
     if (
       username === current.username &&
       email === current.email &&
-      displayName === current.displayName
+      displayName === current.displayName &&
+      bio === current.bio &&
+      website === current.website
     ) {
       return toProfile(current);
     }
@@ -706,7 +746,7 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
 
         const updated = await tx.user.update({
           where: { id: current.id },
-          data: { username, email, displayName },
+          data: { username, email, displayName, bio, website },
           select: PROFILE_SELECT,
         });
 

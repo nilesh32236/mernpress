@@ -27,6 +27,8 @@ export function ProfilePage({
   const [username, setUsername] = useState(user.username);
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
+  const [bio, setBio] = useState('');
+  const [website, setWebsite] = useState('');
   const [accountError, setAccountError] = useState<string | null>(null);
   const [savingAccount, setSavingAccount] = useState(false);
 
@@ -48,6 +50,8 @@ export function ProfilePage({
         setUsername(result.username);
         setDisplayName(result.displayName ?? '');
         setEmail(result.email ?? '');
+        setBio(result.bio ?? '');
+        setWebsite(result.website ?? '');
         setLoading(false);
       })
       .catch((caught) => {
@@ -71,10 +75,14 @@ export function ProfilePage({
     }
     const nextDisplayName = displayName.trim();
     const nextEmail = email.trim();
+    const nextBio = bio.trim();
+    const nextWebsite = website.trim();
     if (
       name === profile.username &&
       nextDisplayName === (profile.displayName ?? '') &&
-      nextEmail === (profile.email ?? '')
+      nextEmail === (profile.email ?? '') &&
+      nextBio === (profile.bio ?? '') &&
+      nextWebsite === (profile.website ?? '')
     ) {
       setAccountError(null);
       setNotice({ tone: 'info', text: 'No changes to save.' });
@@ -88,11 +96,15 @@ export function ProfilePage({
         username: name,
         displayName: nextDisplayName ? nextDisplayName : null,
         email: nextEmail ? nextEmail : null,
+        bio: nextBio ? nextBio : null,
+        website: nextWebsite ? nextWebsite : null,
       });
       setProfile(updated);
       setUsername(updated.username);
       setDisplayName(updated.displayName ?? '');
       setEmail(updated.email ?? '');
+      setBio(updated.bio ?? '');
+      setWebsite(updated.website ?? '');
       setNotice({ tone: 'success', text: 'Profile updated.' });
       onProfileUpdated?.({ username: updated.username });
     } catch (caught) {
@@ -200,6 +212,35 @@ export function ProfilePage({
                   This address is used for admin purposes and notifications.
                 </p>
               </div>
+            </div>
+
+            <h2 className="profile-section-title">About Yourself</h2>
+            <div className="field">
+              <label htmlFor="profile-bio">Biographical Info</label>
+              <div>
+                <textarea
+                  id="profile-bio"
+                  rows={5}
+                  maxLength={2000}
+                  value={bio}
+                  onChange={(event) => setBio(event.target.value)}
+                  disabled={savingAccount}
+                />
+                <p className="field-help">
+                  Share a little biographical information to fill out your profile.
+                </p>
+              </div>
+            </div>
+            <div className="field">
+              <label htmlFor="profile-website">Website</label>
+              <input
+                id="profile-website"
+                type="url"
+                maxLength={2048}
+                value={website}
+                onChange={(event) => setWebsite(event.target.value)}
+                disabled={savingAccount}
+              />
             </div>
 
             {accountError ? (

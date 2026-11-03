@@ -28,6 +28,8 @@ function makeProfile(overrides: Partial<UserProfile> = {}): UserProfile {
     username: 'admin',
     email: 'admin@example.com',
     displayName: 'Admin',
+    bio: null,
+    website: null,
     role: 'administrator',
     createdAt: '2026-10-01T09:00:00.000Z',
     ...overrides,
@@ -69,6 +71,8 @@ describe('profile page', () => {
         username: 'admin',
         displayName: 'Super Admin',
         email: 'admin@example.com',
+        bio: null,
+        website: null,
       }),
     );
     expect(await screen.findByText('Profile updated.')).toBeDefined();

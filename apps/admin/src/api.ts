@@ -818,6 +818,8 @@ export interface UserProfile {
   username: string;
   email: string | null;
   displayName: string | null;
+  bio: string | null;
+  website: string | null;
   role: UserRole;
   createdAt: string;
 }
@@ -937,6 +939,8 @@ export async function updateProfile(payload: {
   username?: string;
   email?: string | null;
   displayName?: string | null;
+  bio?: string | null;
+  website?: string | null;
 }): Promise<UserProfile> {
   const response = await fetch('/api/profile', {
     method: 'PUT',
