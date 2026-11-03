@@ -1,5 +1,52 @@
 # Implementation log
 
+## 2026-11-03 — Live verification pass: WordPress-parity fixes + production hardening
+
+**Status:** implemented, verified, pushed to `master` and deployed
+(release `20261103T060000Z-cd203ed`).
+
+### What was verified
+
+Full visual sweep of every admin screen (dashboard, posts, pages, media,
+terms, users, profile, settings ×3 tabs, editor new/edit, SEO tab, featured
+image panel, revisions panel, schedule control, login, 404) at 1440px and
+375px, plus the public site (home, post, page, preview, sitemap, robots) both
+locally and on production. 23/23 E2E and 537 unit/integration tests exercised.
+
+### Bugs found and fixed
+
+1. **Scheduling had no UI** — the P8-04 backend (endpoints + sweeper) was
+   implemented but users could not schedule anything. Added the WordPress
+   pattern to the editor PUBLISH panel: Immediately/Scheduled-for + Edit,
+   datetime-local input, Schedule/Cancel, wired to the existing endpoints.
+2. **Terms footer said "2 Categoriness"** — plural label bug; singular/plural
+   helpers fixed everywhere ("2 categories", "1 category").
+3. **List toolbar was two rows** — WordPress uses one row (Bulk actions +
+   Apply, filters, search right). Merged to a single row.
+4. **Dashboard Activity was placeholder copy** — now lists the newest
+   published posts (title link, status pill, date), reusing the existing
+   published query.
+5. **Production: media directory root-owned** — the API runs as `mernpress`,
+   so uploads would have failed with EACCES. Chowned to `mernpress:mernpress`.
+6. **Production: sitemap/robots advertised `http://localhost:3000`** — the
+   web app had no site URL; added `MERNPRESS_SITE_URL` (systemd env) and
+   `siteUrl()`/`mediaUrl()` helpers used by sitemap, robots, canonical and
+   og:image. Also fixed og:image/article images pointing at the internal API
+   origin.
+7. **Turbo cache baked stale URLs** — `build` reused a cached `.next` that
+   predated the env var. Fixed by declaring the site/media env vars in
+   `turbo.json` `globalEnv` (cache key now includes them) and rebuilding with
+   `--force`.
+
+### Verification (all PASS)
+
+- lint/format/typecheck clean; 537 unit/integration (337 API, 122 admin, 65
+  block-system, 13 web); 23/23 E2E; builds 6/6.
+- Production live checks: `/` 200 public site, `/admin/` 200, API health ok,
+  post page 200 with absolute canonical, sitemap/robots absolute URLs
+  (https://mernpress.duckdns.org), unauth media upload 401/403, preview
+  400/404 contract, zero API errors.
+
 ## 2026-10-29 (evening) — CMS completion: renderer, media, workflows, public site
 
 **Status:** implemented on branch `feat/cms-completion` (17 commits), fully

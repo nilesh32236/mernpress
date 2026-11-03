@@ -49,7 +49,15 @@ no DuckDNS token is stored in the Caddyfile.
 
 ## Release
 
-- Current release: `/opt/mernpress/releases/20261030T053600Z-2bf2809`
+- Current release: `/opt/mernpress/releases/20261103T060000Z-cd203ed`
+  (switched 2026-11-03): WordPress-parity fixes (scheduling UI, single-row
+  list toolbar, real dashboard activity, terms pluralization) and web URL
+  correctness (sitemap/robots/canonical/og:image use
+  `MERNPRESS_SITE_URL=https://mernpress.duckdns.org`; turbo `globalEnv`
+  includes the site/media vars so cached builds cannot bake stale URLs).
+  Media root chowned to `mernpress:mernpress` (the API user) — uploads now
+  writable. Rollback: re-point the symlink to the previous release.
+- Previous release: `/opt/mernpress/releases/20261030T053600Z-2bf2809`
   symlinked as `/opt/mernpress/current` (switched 2026-10-30; previous release
   `/opt/mernpress/releases/20261029T103000Z-7dd1a1d` retained for rollback).
   Deployed: **CMS completion** at Git HEAD `2bf2809` (master, pushed;
