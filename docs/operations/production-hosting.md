@@ -49,7 +49,11 @@ no DuckDNS token is stored in the Caddyfile.
 
 ## Release
 
-- Current release: `/opt/mernpress/releases/20261103T060000Z-cd203ed`
+- Current release: `/opt/mernpress/releases/20261103T063000Z-e31a5b5`
+  (switched 2026-11-03; adds the editor Block tab opening the real block
+  settings inspector). Prior same-day release `20261103T060000Z-cd203ed`
+  carried the WordPress-parity fixes and web URL correctness.
+- Earlier release: `/opt/mernpress/releases/20261103T060000Z-cd203ed`
   (switched 2026-11-03): WordPress-parity fixes (scheduling UI, single-row
   list toolbar, real dashboard activity, terms pluralization) and web URL
   correctness (sitemap/robots/canonical/og:image use
