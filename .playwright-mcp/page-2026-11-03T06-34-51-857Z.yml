@@ -1,0 +1,14 @@
+- generic [ref=f8e3]:
+    - link "Skip to content" [ref=f8e4] [cursor=pointer]:
+        - /url: '#main-content'
+    - banner [ref=f8e5]:
+        - link "MERNPress admin home" [ref=f8e6] [cursor=pointer]:
+            - /url: /admin
+            - text: MERNPress
+    - main [ref=f8e7]:
+        - generic [ref=f8e8]:
+            - paragraph [ref=f8e9]: Secure admin
+            - heading "MERNPress admin" [level=1] [ref=f8e10]
+            - status [ref=f8e11]: Checking your session…
+    - contentinfo [ref=f8e12]:
+        - paragraph [ref=f8e13]: MERNPress content administration

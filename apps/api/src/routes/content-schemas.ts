@@ -74,6 +74,11 @@ export const adminListQuerySchema = z
     type: contentType.optional(),
     status: postStatus.optional(),
     search: z.string().max(200).optional(),
+    category: z.string().uuid().optional(),
+    month: z
+      .string()
+      .regex(/^\d{4}-\d{2}$/, 'month must be YYYY-MM')
+      .optional(),
     sort: z.enum(['updatedAt', 'createdAt', 'publishedAt', 'title']).default('updatedAt'),
     order: z.enum(['asc', 'desc']).default('desc'),
     ...pagination,

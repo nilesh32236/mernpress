@@ -1,0 +1,135 @@
+- generic [ref=f9e3]:
+    - link "Skip to content" [ref=f9e4] [cursor=pointer]:
+        - /url: '#main-content'
+    - banner "Admin toolbar" [ref=f9e5]:
+        - generic [ref=f9e6]:
+            - link "MERNPress admin home" [ref=f9e7] [cursor=pointer]:
+                - /url: /admin
+                - generic [aria-hidden] [ref=f9e8]: M
+                - generic [ref=f9e9]: MERNPress
+            - link "Visit Site" [ref=f9e10] [cursor=pointer]:
+                - /url: /
+            - generic [ref=f9e15]:
+                - button "New content menu" [ref=f9e16] [cursor=pointer]:
+                    - generic [aria-hidden] [ref=f9e17]: +
+                    - generic [ref=f9e18]: New
+                - link "Post":
+                    - /url: /posts/new
+                - link "Page":
+                    - /url: /pages/new
+                - link "User":
+                    - /url: /users
+            - generic [ref=f9e22]: Users
+        - generic [ref=f9e24]:
+            - button "User profile menu" [ref=f9e25] [cursor=pointer]:
+                - generic [ref=f9e26]: Hello, admin
+                - generic [aria-hidden] [ref=f9e27]: AD
+            - link "Profile":
+                - /url: /profile
+            - button "Sign out"
+    - generic [ref=f9e31]:
+        - complementary "Primary navigation" [ref=f9e32]:
+            - button "Collapse menu" [ref=f9e33] [cursor=pointer]
+            - navigation "Primary" [ref=f9e38]:
+                - list [ref=f9e39]:
+                    - listitem [ref=f9e40]:
+                        - generic [ref=f9e41]:
+                            - link "Dashboard" [ref=f9e42] [cursor=pointer]:
+                                - /url: /
+                            - button "Toggle Dashboard submenu" [ref=f9e50] [cursor=pointer]
+                    - listitem [ref=f9e53]:
+                        - generic [ref=f9e54]:
+                            - link "Posts" [ref=f9e55] [cursor=pointer]:
+                                - /url: /posts
+                            - button "Toggle Posts submenu" [ref=f9e60] [cursor=pointer]
+                    - listitem [ref=f9e63]:
+                        - generic [ref=f9e64]:
+                            - link "Pages" [ref=f9e65] [cursor=pointer]:
+                                - /url: /pages
+                            - button "Toggle Pages submenu" [ref=f9e71] [cursor=pointer]
+                    - listitem [ref=f9e74]:
+                        - generic [ref=f9e75]:
+                            - link "Media" [ref=f9e76] [cursor=pointer]:
+                                - /url: /media
+                            - button "Toggle Media submenu" [ref=f9e83] [cursor=pointer]
+                    - listitem [ref=f9e86]:
+                        - generic [ref=f9e87]:
+                            - link "Users" [ref=f9e88] [cursor=pointer]:
+                                - /url: /users
+                            - button "Toggle Users submenu" [expanded] [ref=f9e96] [cursor=pointer]
+                        - list [ref=f9e99]:
+                            - listitem [ref=f9e100]:
+                                - link "All Users" [ref=f9e101] [cursor=pointer]:
+                                    - /url: /users
+                            - listitem [ref=f9e104]:
+                                - link "Profile" [ref=f9e105] [cursor=pointer]:
+                                    - /url: /profile
+                    - listitem [ref=f9e108]:
+                        - generic [ref=f9e109]:
+                            - link "Settings" [ref=f9e110] [cursor=pointer]:
+                                - /url: /settings
+                            - button "Toggle Settings submenu" [ref=f9e116] [cursor=pointer]
+            - generic [ref=f9e120]:
+                - paragraph [aria-hidden] [ref=f9e121]: admin
+                - paragraph [ref=f9e122]: Administrator
+        - generic [ref=f9e123]:
+            - main [ref=f9e124]:
+                - generic [ref=f9e125]:
+                    - navigation "Breadcrumb" [ref=f9e126]:
+                        - list [ref=f9e127]:
+                            - listitem [ref=f9e128]:
+                                - link "Dashboard" [ref=f9e129] [cursor=pointer]:
+                                    - /url: /
+                            - listitem [ref=f9e130]:
+                                - text: ›
+                                - generic [ref=f9e131]: Users
+                    - generic [ref=f9e132]:
+                        - heading "Users" [level=1] [ref=f9e139]
+                        - button "Add New User" [ref=f9e140] [cursor=pointer]:
+                            - generic [aria-hidden] [ref=f9e141]: +
+                            - text: Add New User
+                    - generic [ref=f9e142]:
+                        - generic [ref=f9e143]: All Users (1)
+                        - generic [aria-hidden] [ref=f9e144]: '|'
+                        - generic [ref=f9e145]: You are signed in as admin (ADMINISTRATOR)
+                    - generic [ref=f9e146]:
+                        - generic [ref=f9e147]: 1 user
+                        - search [ref=f9e150]:
+                            - generic [ref=f9e151]: Search Users
+                            - searchbox "Search Users" [ref=f9e152]
+                            - button "Search" [ref=f9e153] [cursor=pointer]
+                    - table [ref=f9e164]:
+                        - caption [ref=f9e165]: Users
+                        - rowgroup [ref=f9e166]:
+                            - row [ref=f9e167]:
+                                - columnheader [ref=f9e168]:
+                                    - checkbox [ref=f9e169]
+                                - columnheader "Username" [ref=f9e170]
+                                - columnheader "Name" [ref=f9e171]
+                                - columnheader "Email" [ref=f9e172]
+                                - columnheader "Role" [ref=f9e173]
+                                - columnheader "Posts" [ref=f9e174]
+                                - columnheader "Actions" [ref=f9e175]
+                        - rowgroup [ref=f9e176]:
+                            - row [ref=f9e177]:
+                                - rowheader [ref=f9e178]:
+                                    - checkbox [ref=f9e179]
+                                - cell "admin you (You)" [ref=f9e180]:
+                                    - generic [ref=f9e181]:
+                                        - generic [ref=f9e185]: admin
+                                        - generic [ref=f9e186]: you
+                                        - generic [ref=f9e187]: (You)
+                                - cell "—" [ref=f9e188]
+                                - cell "—" [ref=f9e189]
+                                - cell "Administrator" [ref=f9e190]
+                                - cell "0 posts" [ref=f9e191]
+                                - cell [ref=f9e192]
+                    - navigation "Users pagination" [ref=f9e193]:
+                        - generic [ref=f9e194]:
+                            - generic [ref=f9e195]: 1 user
+                            - generic [ref=f9e196]:
+                                - button "« Previous" [disabled] [ref=f9e197]
+                                - generic [ref=f9e198]: Page 1 of 1
+                                - button "Next »" [disabled] [ref=f9e199]
+            - contentinfo [ref=f9e161]:
+                - paragraph [ref=f9e162]: MERNPress Content administration

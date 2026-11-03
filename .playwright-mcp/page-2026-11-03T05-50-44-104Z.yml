@@ -1,0 +1,15 @@
+- generic [ref=f19e2]:
+    - generic [ref=f19e4]:
+        - heading "Admin Login" [level=1] [ref=f19e5]
+        - paragraph [ref=f19e6]: Sign in to Qrolic CMS
+        - generic [ref=f19e7]:
+            - generic [ref=f19e8]:
+                - generic [ref=f19e9]: Email
+                - textbox "Email" [ref=f19e10]:
+                    - /placeholder: admin@qrolic.com
+            - generic [ref=f19e11]:
+                - generic [ref=f19e12]: Password
+                - textbox "Password" [ref=f19e13]:
+                    - /placeholder: ••••••••
+        - button "Sign in" [ref=f19e14] [cursor=pointer]
+    - region "Notifications alt+T"

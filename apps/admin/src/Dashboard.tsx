@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import {
+  createPost,
   fetchPosts,
+  fetchSiteHealth,
   type AdminPost,
   type AuthUser,
   type ContentType,
   type PostStatus,
+  type SiteHealth,
 } from './api.js';
 import { EmptyState, ErrorState, Skeleton } from './components.js';
 import { canCreateContent, canManageTerms, canReadContent } from './roles.js';
@@ -80,6 +83,11 @@ function ChipIcon({ kind }: { kind: string }) {
 export function Dashboard({ user }: { user: AuthUser }) {
   const [counts, setCounts] = useState<Counts>(EMPTY_COUNTS);
   const [recent, setRecent] = useState<AdminPost[]>([]);
+  const [health, setHealth] = useState<SiteHealth | null>(null);
+  const [quickTitle, setQuickTitle] = useState('');
+  const [quickBody, setQuickBody] = useState('');
+  const [quickBusy, setQuickBusy] = useState(false);
+  const [quickNotice, setQuickNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -143,6 +151,50 @@ export function Dashboard({ user }: { user: AuthUser }) {
       active = false;
     };
   }, [allowed, reloadKey]);
+
+  useEffect(() => {
+    if (!allowed) return;
+    let active = true;
+    fetchSiteHealth()
+      .then((result) => {
+        if (active) setHealth(result);
+      })
+      .catch(() => {
+        if (active) setHealth(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [allowed]);
+
+  function escapeHtml(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  async function saveQuickDraft(): Promise<void> {
+    const title = quickTitle.trim();
+    if (!title || quickBusy) return;
+    setQuickBusy(true);
+    setQuickNotice(null);
+    try {
+      const body = quickBody.trim();
+      const content = body
+        ? `<!-- wp:paragraph -->\n<p>${escapeHtml(body)}</p>\n<!-- /wp:paragraph -->`
+        : '';
+      const created = await createPost({ type: 'post', title, content });
+      setQuickTitle('');
+      setQuickBody('');
+      navigate(`/posts/${created.id}/edit`);
+    } catch {
+      setQuickNotice('Could not save the draft. Try again.');
+    } finally {
+      setQuickBusy(false);
+    }
+  }
 
   if (!allowed) {
     return (
@@ -413,6 +465,147 @@ export function Dashboard({ user }: { user: AuthUser }) {
                     </li>
                   ))}
                 </ul>
+              )}
+            </div>
+          </section>
+
+          <section className="dash-card" aria-labelledby="quick-draft-heading">
+            <div className="dash-card-head">
+              <h2 id="quick-draft-heading">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                </svg>
+                Quick Draft
+              </h2>
+            </div>
+            <div className="dash-card-body quick-draft">
+              <label htmlFor="quick-draft-title" className="screen-reader-text">
+                Draft title
+              </label>
+              <input
+                id="quick-draft-title"
+                type="text"
+                placeholder="Title"
+                maxLength={300}
+                value={quickTitle}
+                onChange={(event) => setQuickTitle(event.target.value)}
+              />
+              <label htmlFor="quick-draft-body" className="screen-reader-text">
+                Draft content
+              </label>
+              <textarea
+                id="quick-draft-body"
+                rows={4}
+                placeholder="What's on your mind?"
+                value={quickBody}
+                onChange={(event) => setQuickBody(event.target.value)}
+              />
+              <div className="quick-draft-actions">
+                <button
+                  type="button"
+                  className="button primary-button"
+                  disabled={quickBusy || quickTitle.trim().length === 0}
+                  onClick={() => void saveQuickDraft()}
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M22 2 11 13" />
+                    <path d="M22 2 15 22l-4-9-9-4Z" />
+                  </svg>
+                  {quickBusy ? 'Saving…' : 'Save Draft'}
+                </button>
+              </div>
+              {quickNotice ? (
+                <p className="field-error" role="alert">
+                  {quickNotice}
+                </p>
+              ) : null}
+            </div>
+          </section>
+
+          <section className="dash-card" aria-labelledby="site-health-heading">
+            <div className="dash-card-head">
+              <h2 id="site-health-heading">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                </svg>
+                Site Health
+              </h2>
+            </div>
+            <div className="dash-card-body site-health">
+              {health === null ? (
+                <p className="field-help">Health checks are unavailable.</p>
+              ) : (
+                <>
+                  <p className="health-overall">
+                    Overall status:{' '}
+                    <span
+                      className={`health-pill ${
+                        health.database === 'ok' && health.mediaWritable ? 'is-pass' : 'is-critical'
+                      }`}
+                    >
+                      {health.database === 'ok' && health.mediaWritable
+                        ? 'Good'
+                        : 'Needs attention'}
+                    </span>
+                  </p>
+                  <ul className="health-list">
+                    <li>
+                      <span>Database connection</span>
+                      <span
+                        className={`health-pill ${health.database === 'ok' ? 'is-pass' : 'is-critical'}`}
+                      >
+                        {health.database === 'ok' ? 'Pass' : 'Critical'}
+                      </span>
+                    </li>
+                    <li>
+                      <span>Media storage writable</span>
+                      <span
+                        className={`health-pill ${health.mediaWritable ? 'is-pass' : 'is-critical'}`}
+                      >
+                        {health.mediaWritable ? 'Pass' : 'Critical'}
+                      </span>
+                    </li>
+                    <li>
+                      <span>Scheduled publishing</span>
+                      <span
+                        className={`health-pill ${health.schedulerEnabled ? 'is-pass' : 'is-recommended'}`}
+                      >
+                        {health.schedulerEnabled ? 'Pass' : 'Disabled'}
+                      </span>
+                    </li>
+                  </ul>
+                </>
               )}
             </div>
           </section>

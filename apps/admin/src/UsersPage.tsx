@@ -29,7 +29,7 @@ import {
   Skeleton,
   type NoticeMessage,
 } from './components.js';
-import { formatDateTime, pluralize } from './format.js';
+import { pluralize } from './format.js';
 import { roleLabel } from './roles.js';
 
 const PER_PAGE = 10;
@@ -160,6 +160,8 @@ function AddUserDialog({
   onSuccess: (message: string) => void;
 }) {
   const [username, setUsername] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('subscriber');
   const [error, setError] = useState<string | null>(null);
@@ -180,7 +182,13 @@ function AddUserDialog({
     setSaving(true);
     setError(null);
     try {
-      await createUser({ username: name, password, role });
+      await createUser({
+        username: name,
+        password,
+        role,
+        ...(displayName.trim() ? { displayName: displayName.trim() } : {}),
+        ...(email.trim() ? { email: email.trim() } : {}),
+      });
       onSuccess(`User “${name}” created.`);
     } catch (caught) {
       setError(actionErrorMessage(caught));
@@ -202,6 +210,30 @@ function AddUserDialog({
             disabled={saving}
             autoComplete="off"
             required
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="add-user-name">Name</label>
+          <input
+            id="add-user-name"
+            type="text"
+            maxLength={100}
+            value={displayName}
+            onChange={(event) => setDisplayName(event.target.value)}
+            disabled={saving}
+            autoComplete="off"
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="add-user-email">Email</label>
+          <input
+            id="add-user-email"
+            type="email"
+            maxLength={254}
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            disabled={saving}
+            autoComplete="off"
           />
         </div>
         <div className="field">
@@ -677,9 +709,11 @@ export function UsersPage({ user }: { user: AuthUser }) {
                     <input type="checkbox" />
                   </th>
                   <th scope="col">Username</th>
+                  <th scope="col">Name</th>
+                  <th scope="col">Email</th>
                   <th scope="col">Role</th>
                   <th scope="col">Posts</th>
-                  <th scope="col">Registered</th>
+                  <th scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -713,6 +747,12 @@ export function UsersPage({ user }: { user: AuthUser }) {
                         {item.status === 'disabled' ? (
                           <span className="status-badge status-draft disabled-badge">Disabled</span>
                         ) : null}
+                      </td>
+                      <td className="column-name">{item.displayName ?? '—'}</td>
+                      <td className="column-email">{item.email ?? '—'}</td>
+                      <td className="role column-role">{roleLabel(item.role)}</td>
+                      <td className="posts column-posts">{pluralize(item.postCount, 'post')}</td>
+                      <td className="actions column-actions">
                         <div className="row-actions">
                           {!isSelf ? (
                             <button
@@ -828,11 +868,6 @@ export function UsersPage({ user }: { user: AuthUser }) {
                             </>
                           ) : null}
                         </div>
-                      </td>
-                      <td className="role column-role">{roleLabel(item.role)}</td>
-                      <td className="posts column-posts">{pluralize(item.postCount, 'post')}</td>
-                      <td className="registered column-registered">
-                        {formatDateTime(item.createdAt)}
                       </td>
                     </tr>
                   );

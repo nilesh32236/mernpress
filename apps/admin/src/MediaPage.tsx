@@ -307,6 +307,14 @@ export function MediaPage({ user }: { user: AuthUser }) {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
   const [selected, setSelected] = useState<MediaItem | null>(null);
+  const [order, setOrder] = useState<'newest' | 'oldest'>('newest');
+  // Media → Add New deep link opens the file picker once on mount.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('upload') === '1') {
+      fileInputRef.current?.click();
+    }
+  }, []);
+  const [view, setView] = useState<'grid' | 'list'>('grid');
   const [uploads, setUploads] = useState<UploadJob[]>([]);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -461,13 +469,32 @@ export function MediaPage({ user }: { user: AuthUser }) {
 
   return (
     <>
-      <div className="list-title-row">
+      <div className="media-title-row">
         <span className="title-badge" aria-hidden="true">
           <ImageIcon size={17} />
         </span>
         <h1>Media Library ({total})</h1>
-        <button type="button" className="button primary-button list-add-new" onClick={openPicker}>
-          <span aria-hidden="true">+</span> Add New
+        <button
+          type="button"
+          className="button secondary-button media-add-new"
+          onClick={openPicker}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          Add New Media File
         </button>
         <input
           ref={fileInputRef}
@@ -545,13 +572,43 @@ export function MediaPage({ user }: { user: AuthUser }) {
         </ul>
       ) : null}
 
-      <div className="tablenav">
+      <div className="tablenav media-toolbar">
         <div className="alignleft">
-          <span className="displaying-num">{pluralize(total, 'media item')}</span>
+          <label htmlFor="media-type-filter" className="screen-reader-text">
+            Filter by media type
+          </label>
+          <select
+            id="media-type-filter"
+            className="bulk-select"
+            defaultValue="all"
+            onChange={() => {
+              // Only images exist in this phase; the filter mirrors the reference UI.
+            }}
+          >
+            <option value="all">All media items</option>
+            <option value="image">Images</option>
+          </select>
+          <label htmlFor="media-order" className="screen-reader-text">
+            Sort order
+          </label>
+          <select
+            id="media-order"
+            className="bulk-select"
+            value={order}
+            onChange={(event) => {
+              setOrder(event.target.value === 'oldest' ? 'oldest' : 'newest');
+              setPage(1);
+            }}
+          >
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+          </select>
         </div>
         <div className="alignright">
           <form className="search-form" onSubmit={handleSearch} role="search">
-            <label htmlFor={searchId}>Search Media</label>
+            <label htmlFor={searchId} className="screen-reader-text">
+              Search Media
+            </label>
             <span className="search-box">
               <svg
                 width="14"
@@ -572,13 +629,62 @@ export function MediaPage({ user }: { user: AuthUser }) {
                 type="search"
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="Search media"
+                placeholder="Search media…"
               />
             </span>
             <button type="submit" className="button secondary-button">
               Search
             </button>
           </form>
+          <span className="displaying-num media-count">{pluralize(total, 'item')}</span>
+          <div className="media-view-toggle" role="group" aria-label="Media view">
+            <button
+              type="button"
+              className={`view-toggle-button${view === 'grid' ? ' is-active' : ''}`}
+              aria-pressed={view === 'grid'}
+              onClick={() => setView('grid')}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+              </svg>
+              Grid
+            </button>
+            <button
+              type="button"
+              className={`view-toggle-button${view === 'list' ? ' is-active' : ''}`}
+              aria-pressed={view === 'list'}
+              onClick={() => setView('list')}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <line x1="8" y1="6" x2="21" y2="6" />
+                <line x1="8" y1="12" x2="21" y2="12" />
+                <line x1="8" y1="18" x2="21" y2="18" />
+                <line x1="3" y1="6" x2="3.01" y2="6" />
+                <line x1="3" y1="12" x2="3.01" y2="12" />
+                <line x1="3" y1="18" x2="3.01" y2="18" />
+              </svg>
+              List
+            </button>
+          </div>
         </div>
       </div>
 
@@ -604,30 +710,91 @@ export function MediaPage({ user }: { user: AuthUser }) {
         />
       ) : (
         <>
-          <ul className="media-grid" aria-label="Media items">
-            {data.items.map((item) => (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  className="media-card"
-                  onClick={() => setSelected(item)}
-                  aria-label={`View ${item.originalName}`}
-                >
-                  <span className="media-thumb">
-                    <img src={thumbnailUrl(item)} alt={item.altText || ''} loading="lazy" />
-                  </span>
-                  <span className="media-card-body">
-                    <span className="media-name" title={item.originalName}>
-                      {item.originalName}
+          {view === 'grid' ? (
+            <ul className="media-grid" aria-label="Media items">
+              {data.items.map((item) => (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    className="media-card"
+                    onClick={() => setSelected(item)}
+                    aria-label={`View ${item.originalName}`}
+                  >
+                    <span className="media-thumb">
+                      <img src={thumbnailUrl(item)} alt={item.altText || ''} loading="lazy" />
                     </span>
-                    <span className="media-meta">
-                      {formatDimensions(item)} · {formatBytes(item.sizeBytes)}
+                    <span className="media-card-body">
+                      <span className="media-name" title={item.originalName}>
+                        {item.originalName}
+                      </span>
+                      <span className="media-meta">
+                        {formatDimensions(item)} · {formatBytes(item.sizeBytes)}
+                      </span>
                     </span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="table-scroll">
+              <table className="content-table widefat fixed striped media-list">
+                <caption className="screen-reader-text">Media items</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">File</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Dimensions</th>
+                    <th scope="col">Size</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.items.map((item) => (
+                    <tr key={item.id}>
+                      <td className="media-list-file">
+                        <button
+                          type="button"
+                          className="media-list-open"
+                          onClick={() => setSelected(item)}
+                        >
+                          <img src={thumbnailUrl(item)} alt="" loading="lazy" />
+                          <span>{item.originalName}</span>
+                        </button>
+                      </td>
+                      <td>{item.mimeType}</td>
+                      <td>{formatDimensions(item)}</td>
+                      <td>{formatBytes(item.sizeBytes)}</td>
+                      <td>{formatDateTime(item.createdAt)}</td>
+                      <td className="actions column-actions">
+                        <button
+                          type="button"
+                          className="row-action-icon"
+                          aria-label={`Edit ${item.originalName}`}
+                          title="Edit"
+                          onClick={() => setSelected(item)}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           <nav className="pagination" aria-label="Media pagination">
             <div className="tablenav-pages">

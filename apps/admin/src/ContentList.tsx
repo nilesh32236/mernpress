@@ -3,8 +3,10 @@ import {
   actionErrorMessage,
   bulkPosts,
   fetchPosts,
+  fetchTerms,
   transitionPost,
   type AdminPost,
+  type AdminTerm,
   type AuthUser,
   type BulkAction,
   type ContentType,
@@ -55,6 +57,24 @@ function sanitizePage(value: string | null): number {
   return Number.isInteger(number) && number > 0 ? number : 1;
 }
 
+function monthOptions(): Array<{ value: string; label: string }> {
+  const now = new Date();
+  const options: Array<{ value: string; label: string }> = [];
+  for (let i = 0; i < 12; i += 1) {
+    const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+    const value = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+    options.push({
+      value,
+      label: date.toLocaleDateString(undefined, {
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+      }),
+    });
+  }
+  return options;
+}
+
 const ACTION_SUCCESS: Record<TransitionAction, string> = {
   publish: 'Content published.',
   unpublish: 'Content returned to draft.',
@@ -76,6 +96,9 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<BulkAction | ''>('');
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [monthFilter, setMonthFilter] = useState('');
+  const [categories, setCategories] = useState<AdminTerm[]>([]);
   const [reloadKey, setReloadKey] = useState(0);
   const [counts, setCounts] = useState<Record<PostStatus | '', number>>({
     '': 0,
@@ -112,6 +135,8 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
       type,
       ...(status ? { status } : {}),
       ...(search ? { search } : {}),
+      ...(categoryFilter ? { category: categoryFilter } : {}),
+      ...(monthFilter ? { month: monthFilter } : {}),
       page,
       perPage: PER_PAGE,
       sort: 'updatedAt',
@@ -132,7 +157,23 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
     return () => {
       active = false;
     };
-  }, [allowed, type, status, search, page, reloadKey]);
+  }, [allowed, type, status, search, page, categoryFilter, monthFilter, reloadKey]);
+
+  // Category filter options (posts only).
+  useEffect(() => {
+    if (!allowed || type !== 'post') return;
+    let active = true;
+    fetchTerms({ taxonomy: 'category', page: 1, perPage: 100 })
+      .then((result) => {
+        if (active) setCategories(result.items);
+      })
+      .catch(() => {
+        // Filters are optional; failure must not block the list.
+      });
+    return () => {
+      active = false;
+    };
+  }, [allowed, type]);
 
   // Real server-computed status counts for the current type + search term.
   useEffect(() => {
@@ -383,24 +424,48 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
               <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
             </svg>
           </span>
-          <div className="status-filter">
-            <label htmlFor={`${type}-status-filter`} className="screen-reader-text">
-              Filter by status
-            </label>
-            <select
-              id={`${type}-status-filter`}
-              value={status}
-              onChange={(event) => {
-                applyFilters(sanitizeStatus(event.target.value), search, 1);
-              }}
-            >
-              {TABS.map((tab) => (
-                <option key={tab.value} value={tab.value}>
-                  {tab.label} ({counts[tab.value] ?? 0})
-                </option>
-              ))}
-            </select>
-          </div>
+          {type === 'post' ? (
+            <>
+              <label htmlFor={`${type}-category-filter`} className="screen-reader-text">
+                Filter by category
+              </label>
+              <select
+                id={`${type}-category-filter`}
+                className="bulk-select"
+                value={categoryFilter}
+                onChange={(event) => {
+                  setCategoryFilter(event.target.value);
+                  setPage(1);
+                }}
+              >
+                <option value="">All categories</option>
+                {categories.map((term) => (
+                  <option key={term.id} value={term.id}>
+                    {term.name}
+                  </option>
+                ))}
+              </select>
+            </>
+          ) : null}
+          <label htmlFor={`${type}-month-filter`} className="screen-reader-text">
+            Filter by date
+          </label>
+          <select
+            id={`${type}-month-filter`}
+            className="bulk-select"
+            value={monthFilter}
+            onChange={(event) => {
+              setMonthFilter(event.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="">All dates</option>
+            {monthOptions().map((month) => (
+              <option key={month.value} value={month.value}>
+                {month.label}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="alignright">
           <form className="search-form" onSubmit={handleSearch} role="search">
@@ -501,10 +566,12 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                     />
                   </th>
                   <th scope="col">Title</th>
-                  <th scope="col">Status</th>
                   <th scope="col">Author</th>
                   <th scope="col">{type === 'post' ? 'Categories' : ''}</th>
+                  <th scope="col">{type === 'post' ? 'Tags' : ''}</th>
+                  <th scope="col">Status</th>
                   <th scope="col">Date</th>
+                  <th scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -534,82 +601,10 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                           {post.title}
                         </a>
                         {post.excerpt ? <p className="row-excerpt">{post.excerpt}</p> : null}
-                        <div className="row-actions">
-                          {editable ? (
-                            <a
-                              className="edit-link"
-                              href={editContentPath(type, post.id)}
-                              onClick={(event) => {
-                                event.preventDefault();
-                                navigate(editContentPath(type, post.id));
-                              }}
-                            >
-                              Edit
-                            </a>
-                          ) : null}
-                          {transitions.includes('trash') ? (
-                            <>
-                              {editable ? <span> | </span> : null}
-                              <button
-                                type="button"
-                                className="delete-link"
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  void runAction(post, 'trash');
-                                }}
-                              >
-                                Trash
-                              </button>
-                            </>
-                          ) : null}
-                          {transitions.includes('restore') ? (
-                            <>
-                              <span> | </span>
-                              <button
-                                type="button"
-                                className="delete-link"
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  void runAction(post, 'restore');
-                                }}
-                              >
-                                Restore
-                              </button>
-                            </>
-                          ) : null}
-                          {(post.status === 'PUBLISHED' ||
-                            transitions.includes('publish') ||
-                            transitions.includes('unpublish')) && (
-                            <>
-                              {(editable ||
-                                transitions.includes('trash') ||
-                                transitions.includes('restore')) && <span> | </span>}
-                              <a
-                                className="view-link"
-                                href={editContentPath(type, post.id)}
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  navigate(editContentPath(type, post.id));
-                                }}
-                              >
-                                View
-                              </a>
-                            </>
-                          )}
-                          {!editable &&
-                            transitions.length === 0 &&
-                            !(
-                              post.status === 'PUBLISHED' ||
-                              transitions.includes('publish') ||
-                              transitions.includes('unpublish')
-                            ) && <span className="no-row-actions">—</span>}
-                        </div>
-                      </td>
-                      <td className="status column-status">
-                        <StatusBadge status={post.status} />
                       </td>
                       <td className="author column-author">
-                        {post.authorId === user.id ? 'You' : 'Another user'}
+                        {post.author?.username ??
+                          (post.authorId === user.id ? 'You' : 'Another user')}
                       </td>
                       <td className="categories column-categories">
                         {post.terms.categories.map((term) => (
@@ -619,7 +614,132 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                         ))}
                         {post.terms.categories.length === 0 && <span className="no-terms">—</span>}
                       </td>
+                      <td className="tags column-tags">
+                        {post.terms.tags.map((term) => (
+                          <span key={term.id} className="term-link">
+                            {term.name}
+                          </span>
+                        ))}
+                        {post.terms.tags.length === 0 && <span className="no-terms">—</span>}
+                      </td>
+                      <td className="status column-status">
+                        <StatusBadge status={post.status} />
+                      </td>
                       <td className="date column-date">{formatDateTime(post.updatedAt)}</td>
+                      <td className="actions column-actions">
+                        {editable ? (
+                          <a
+                            className="row-action-icon"
+                            href={editContentPath(type, post.id)}
+                            aria-label="Edit"
+                            title="Edit"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              navigate(editContentPath(type, post.id));
+                            }}
+                          >
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                            </svg>
+                          </a>
+                        ) : null}
+                        {(post.status === 'PUBLISHED' ||
+                          transitions.includes('publish') ||
+                          transitions.includes('unpublish')) && (
+                          <a
+                            className="row-action-icon"
+                            href={editContentPath(type, post.id)}
+                            aria-label="View"
+                            title="View"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              navigate(editContentPath(type, post.id));
+                            }}
+                          >
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+                              <circle cx="12" cy="12" r="3" />
+                            </svg>
+                          </a>
+                        )}
+                        {transitions.includes('trash') ? (
+                          <button
+                            type="button"
+                            className="row-action-icon is-danger"
+                            aria-label="Trash"
+                            title="Move to Trash"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              void runAction(post, 'trash');
+                            }}
+                          >
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden="true"
+                            >
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
+                          </button>
+                        ) : null}
+                        {transitions.includes('restore') ? (
+                          <button
+                            type="button"
+                            className="row-action-icon"
+                            aria-label="Restore"
+                            title="Restore"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              void runAction(post, 'restore');
+                            }}
+                          >
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden="true"
+                            >
+                              <polyline points="1 4 1 10 7 10" />
+                              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                            </svg>
+                          </button>
+                        ) : null}
+                        {!editable && transitions.length === 0 ? (
+                          <span className="no-row-actions">—</span>
+                        ) : null}
+                      </td>
                     </tr>
                   );
                 })}

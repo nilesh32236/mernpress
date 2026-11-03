@@ -124,24 +124,6 @@ function PageIcon() {
   );
 }
 
-function TagIcon() {
-  return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.24H4a1 1 0 0 0-1 1v5.59a2 2 0 0 0 .59 1.41l9.58 9.59a2 2 0 0 0 2.83 0l4.59-4.59a2 2 0 0 0 0-2.83z" />
-      <circle cx="7.5" cy="7.5" r="1" />
-    </svg>
-  );
-}
 
 function UsersIcon() {
   return (
@@ -343,6 +325,10 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
   const isAdmin = user.role === 'administrator';
   const canCreate = canCreateContent(user);
   const hash = typeof window === 'undefined' ? '' : window.location.hash;
+  const searchParams =
+    typeof window === 'undefined'
+      ? new URLSearchParams()
+      : new URLSearchParams(window.location.search);
 
   const navItems: NavEntry[] = [
     {
@@ -375,7 +361,18 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
             ]
           : []),
         ...(canManageTerms(user)
-          ? [{ label: 'Categories & Tags', to: '/terms', active: route.name === 'terms' }]
+          ? [
+              {
+                label: 'Categories',
+                to: '/terms?taxonomy=category',
+                active: route.name === 'terms' && searchParams.get('taxonomy') !== 'tag',
+              },
+              {
+                label: 'Tags',
+                to: '/terms?taxonomy=tag',
+                active: route.name === 'terms' && searchParams.get('taxonomy') === 'tag',
+              },
+            ]
           : []),
       ],
     },
@@ -408,15 +405,14 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       active: route.name === 'media',
       show: canReadContent(user),
       icon: <MediaIcon />,
-      subs: [],
-    },
-    {
-      to: '/terms',
-      label: 'Terms',
-      active: route.name === 'terms',
-      show: canManageTerms(user) && !isPostRoute,
-      icon: <TagIcon />,
-      subs: [],
+      subs: [
+        { label: 'Library', to: '/media', active: route.name === 'media' },
+        {
+          label: 'Add New',
+          to: '/media?upload=1',
+          active: route.name === 'media' && searchParams.get('upload') === '1',
+        },
+      ],
     },
     {
       to: '/users',

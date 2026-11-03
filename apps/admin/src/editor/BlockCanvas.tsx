@@ -10,6 +10,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react';
+import { createPortal } from 'react-dom';
 import {
   __experimentalListView as ListView,
   BlockEditorProvider,
@@ -77,6 +78,12 @@ export interface BlockCanvasHandle {
 }
 
 export interface BlockCanvasProps {
+  /**
+   * Element in the editor top bar where the canvas toolbar (inserter,
+   * undo/redo, list view) is rendered. The reference CMS keeps these in the
+   * dark header; rendering there avoids a second dark strip inside the sheet.
+   */
+  toolbarSlot?: HTMLElement | null;
   /** Canonical content loaded from the API. */
   initialContent: string;
   /** Called with serialized content after typing (debounced) or structural edits. */
@@ -96,7 +103,7 @@ export interface BlockCanvasProps {
  * the keyboard shortcuts WordPress users expect.
  */
 export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(function BlockCanvas(
-  { initialContent, onChange, onDirty, titleSlot },
+  { initialContent, onChange, onDirty, titleSlot, toolbarSlot },
   ref,
 ) {
   const [blocks, setBlocks] = useState<Array<Block<Record<string, unknown>>>>(() =>
@@ -305,63 +312,68 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
               setHasSelection(Boolean(next?.selectionStart?.clientId));
             }}
           >
-            <div className="block-canvas-toolbar" role="toolbar" aria-label="Editor tools">
-              <InserterControl
-                renderToggle={({ onToggle, disabled }) => (
-                  <button
-                    type="button"
-                    className="block-canvas-tool block-canvas-tool-primary"
-                    onClick={onToggle}
-                    disabled={disabled}
-                    aria-label="Add block"
-                    title="Add block"
-                  >
-                    <Icon icon={plus} size={20} />
-                  </button>
-                )}
-              />
-              <span className="block-canvas-tool-divider" aria-hidden="true" />
-              <button
-                type="button"
-                className="block-canvas-tool"
-                onClick={handleUndo}
-                disabled={!canUndo}
-                aria-label="Undo"
-                title="Undo (Ctrl/Cmd+Z)"
-              >
-                <Icon icon={undo} size={20} />
-              </button>
-              <button
-                type="button"
-                className="block-canvas-tool"
-                onClick={handleRedo}
-                disabled={!canRedo}
-                aria-label="Redo"
-                title="Redo (Ctrl/Cmd+Shift+Z)"
-              >
-                <Icon icon={redo} size={20} />
-              </button>
-              <button
-                type="button"
-                className={`block-canvas-tool${listViewOpen ? ' is-active' : ''}`}
-                onClick={() => setListViewOpen((open) => !open)}
-                aria-label="Document overview"
-                aria-expanded={listViewOpen}
-                title="Document overview"
-              >
-                <Icon icon={listView} size={20} />
-              </button>
-              <button
-                type="button"
-                className={`block-canvas-tool${inspectorOpen ? ' is-active' : ''}`}
-                onClick={() => setInspectorOpen((open) => !open)}
-                aria-label="Block settings"
-                aria-expanded={inspectorOpen}
-                title="Block settings"
-              >
-                <Icon icon={settingsIcon} size={20} />
-              </button>
-            </div>
+            {toolbarSlot
+              ? createPortal(
+                  <div className="editor-topbar-tools" role="toolbar" aria-label="Editor tools">
+                    <InserterControl
+                      renderToggle={({ onToggle, disabled }) => (
+                        <button
+                          type="button"
+                          className="editor-topbar-tool editor-topbar-tool-primary"
+                          onClick={onToggle}
+                          disabled={disabled}
+                          aria-label="Add block"
+                          title="Add block"
+                        >
+                          <Icon icon={plus} size={20} />
+                        </button>
+                      )}
+                    />
+                    <span className="editor-topbar-divider" aria-hidden="true" />
+                    <button
+                      type="button"
+                      className="editor-topbar-tool"
+                      onClick={handleUndo}
+                      disabled={!canUndo}
+                      aria-label="Undo"
+                      title="Undo (Ctrl/Cmd+Z)"
+                    >
+                      <Icon icon={undo} size={20} />
+                    </button>
+                    <button
+                      type="button"
+                      className="editor-topbar-tool"
+                      onClick={handleRedo}
+                      disabled={!canRedo}
+                      aria-label="Redo"
+                      title="Redo (Ctrl/Cmd+Shift+Z)"
+                    >
+                      <Icon icon={redo} size={20} />
+                    </button>
+                    <button
+                      type="button"
+                      className={`editor-topbar-tool${listViewOpen ? ' is-active' : ''}`}
+                      onClick={() => setListViewOpen((open) => !open)}
+                      aria-label="Document overview"
+                      aria-expanded={listViewOpen}
+                      title="Document overview"
+                    >
+                      <Icon icon={listView} size={20} />
+                    </button>
+                    <button
+                      type="button"
+                      className={`editor-topbar-tool${inspectorOpen ? ' is-active' : ''}`}
+                      onClick={() => setInspectorOpen((open) => !open)}
+                      aria-label="Block settings"
+                      aria-expanded={inspectorOpen}
+                      title="Block settings"
+                    >
+                      <Icon icon={settingsIcon} size={20} />
+                    </button>
+                  </div>,
+                  toolbarSlot,
+                )
+              : null}
 
             <div className="block-canvas-body">
               {listViewOpen ? (

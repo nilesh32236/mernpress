@@ -202,7 +202,11 @@ function toSummary(term: { id: string; name: string; slug: string }): AdminTermS
 }
 
 type PostWithTerms = Prisma.PostGetPayload<{
-  include: { terms: { include: { term: true } }; featuredMedia: true };
+  include: {
+    terms: { include: { term: true } };
+    featuredMedia: true;
+    author: { select: { id: true; username: true } };
+  };
 }>;
 
 /** URL of a media file (public serving route, relative path). */
@@ -277,6 +281,7 @@ function toAdmin(row: PostWithTerms, options: { includePreviewToken?: boolean } 
     updatedAt: row.updatedAt.toISOString(),
     terms: splitTerms(row),
     featuredMedia: row.featuredMedia ? toFeaturedImage(row.featuredMedia) : null,
+    author: row.author ? { id: row.author.id, username: row.author.username } : null,
   };
   // The preview token is admin-only single-post data; list responses must not
   // carry it (P8-03).
@@ -349,6 +354,7 @@ function toPublic(row: PostWithTerms, logger?: ContentServiceOptions['logger']):
 const WITH_TERMS = {
   terms: { include: { term: true }, orderBy: { position: 'asc' as const } },
   featuredMedia: true,
+  author: { select: { id: true, username: true } },
 };
 
 async function loadWithTerms(tx: Tx, id: string): Promise<PostWithTerms | null> {
@@ -666,6 +672,15 @@ export function createContentService(options: ContentServiceOptions): ContentSer
           { excerpt: { contains: query.search, mode: 'insensitive' } },
         ],
       });
+    }
+    if (query.category) {
+      conditions.push({ terms: { some: { termId: query.category } } });
+    }
+    if (query.month && /^\d{4}-\d{2}$/.test(query.month)) {
+      const [year, month] = query.month.split('-').map(Number);
+      const start = new Date(Date.UTC(year ?? 1970, (month ?? 1) - 1, 1));
+      const end = new Date(Date.UTC(year ?? 1970, month ?? 1, 1));
+      conditions.push({ updatedAt: { gte: start, lt: end } });
     }
 
     // Visibility: administrators/editors see every state; other read.any

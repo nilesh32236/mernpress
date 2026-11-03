@@ -38,6 +38,7 @@ const listMediaQuerySchema = z
     perPage: z.coerce.number().int().min(1).max(100).default(24),
     search: z.string().max(200).optional(),
     type: z.enum(['image']).optional(),
+    order: z.enum(['newest', 'oldest']).optional(),
   })
   .strict();
 

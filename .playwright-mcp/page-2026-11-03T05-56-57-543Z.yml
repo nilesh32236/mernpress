@@ -1,0 +1,25 @@
+- generic [ref=f30e3]:
+    - link "Skip to content" [ref=f30e4] [cursor=pointer]:
+        - /url: '#main-content'
+    - banner [ref=f30e5]:
+        - link "MERNPress admin home" [ref=f30e6] [cursor=pointer]:
+            - /url: /admin
+            - text: MERNPress
+    - main [ref=f30e7]:
+        - region [ref=f30e14]:
+            - generic [aria-hidden] [ref=f30e15]:
+                - generic [ref=f30e16]: M
+                - generic [ref=f30e17]: MERNPress
+            - heading "MERNPress admin" [level=1] [ref=f30e18]
+            - paragraph [ref=f30e19]: Sign in to manage your content.
+            - generic [ref=f30e20]:
+                - generic [ref=f30e21]:
+                    - generic [ref=f30e22]: Username
+                    - textbox "Username" [active] [ref=f30e23]
+                - generic [ref=f30e24]:
+                    - generic [ref=f30e25]: Password
+                    - textbox "Password" [ref=f30e26]
+                - button "Sign in" [ref=f30e27] [cursor=pointer]
+            - paragraph [ref=f30e28]: Session tokens stay in HttpOnly cookies. No token is written to localStorage or sessionStorage.
+    - contentinfo [ref=f30e12]:
+        - paragraph [ref=f30e13]: MERNPress content administration

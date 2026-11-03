@@ -27,6 +27,8 @@ export function ProfilePage({
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
 
   const [username, setUsername] = useState(user.username);
+  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
   const [accountError, setAccountError] = useState<string | null>(null);
   const [savingAccount, setSavingAccount] = useState(false);
 
@@ -46,6 +48,8 @@ export function ProfilePage({
         if (!active) return;
         setProfile(result);
         setUsername(result.username);
+        setDisplayName(result.displayName ?? '');
+        setEmail(result.email ?? '');
         setLoading(false);
       })
       .catch((caught) => {
@@ -67,7 +71,13 @@ export function ProfilePage({
       setAccountError('Username is required.');
       return;
     }
-    if (name === profile.username) {
+    const nextDisplayName = displayName.trim();
+    const nextEmail = email.trim();
+    if (
+      name === profile.username &&
+      nextDisplayName === (profile.displayName ?? '') &&
+      nextEmail === (profile.email ?? '')
+    ) {
       setAccountError(null);
       setNotice({ tone: 'info', text: 'No changes to save.' });
       return;
@@ -76,9 +86,15 @@ export function ProfilePage({
     setAccountError(null);
     setNotice(null);
     try {
-      const updated = await updateProfile({ username: name });
+      const updated = await updateProfile({
+        username: name,
+        displayName: nextDisplayName ? nextDisplayName : null,
+        email: nextEmail ? nextEmail : null,
+      });
       setProfile(updated);
       setUsername(updated.username);
+      setDisplayName(updated.displayName ?? '');
+      setEmail(updated.email ?? '');
       setNotice({ tone: 'success', text: 'Profile updated.' });
       onProfileUpdated?.({ username: updated.username });
     } catch (caught) {
@@ -156,6 +172,32 @@ export function ProfilePage({
                   disabled={savingAccount}
                   autoComplete="username"
                   required
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="profile-name">Name</label>
+                <input
+                  id="profile-name"
+                  type="text"
+                  maxLength={100}
+                  value={displayName}
+                  onChange={(event) => setDisplayName(event.target.value)}
+                  disabled={savingAccount}
+                  autoComplete="name"
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="profile-email">Email</label>
+                <input
+                  id="profile-email"
+                  type="email"
+                  maxLength={254}
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  disabled={savingAccount}
+                  autoComplete="email"
                 />
               </div>
 

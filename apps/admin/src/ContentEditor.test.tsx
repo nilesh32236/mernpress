@@ -54,6 +54,7 @@ function makePost(overrides: Partial<AdminPost> = {}): AdminPost {
     updatedAt: '2026-10-27T11:00:00.000Z',
     terms: { categories: [], tags: [] },
     featuredMedia: null,
+    author: null,
     ...overrides,
   };
 }

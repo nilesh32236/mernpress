@@ -79,7 +79,7 @@ test('editor Preview rotates a token and the token-gated API preview serves the 
 
   // The Preview button rotates a token on first use and opens the web preview.
   const popupPromise = page.waitForEvent('popup', { timeout: 15_000 });
-  await page.getByRole('button', { name: 'Preview' }).click();
+  await page.getByRole('button', { name: 'Preview', exact: true }).click();
   const popup = await popupPromise;
   const previewUrl = popup.url();
   expect(previewUrl).toContain('/preview/');

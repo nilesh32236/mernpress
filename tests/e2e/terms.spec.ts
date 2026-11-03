@@ -73,7 +73,9 @@ test('editor can create, rename and delete a category', async ({ page }) => {
   page.on('dialog', (dialog) => void dialog.accept());
 
   await login(page, editorUsername);
-  await page.getByRole('link', { name: 'Terms' }).click();
+  // Taxonomy now lives under Posts (reference nav), so expand the group first.
+  await page.getByRole('button', { name: 'Toggle Posts submenu' }).click();
+  await page.getByRole('link', { name: 'Categories', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Categories & Tags' })).toBeVisible();
 
   await page.getByLabel('New category name').fill(termName);

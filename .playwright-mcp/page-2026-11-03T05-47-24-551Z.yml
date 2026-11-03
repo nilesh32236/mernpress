@@ -1,0 +1,15 @@
+- generic [active] [ref=f17e1]:
+    - link "Skip to content" [ref=f17e2] [cursor=pointer]:
+        - /url: '#main-content'
+    - main [ref=f17e3]:
+        - generic [ref=f17e4]:
+            - paragraph [ref=f17e5]: Public site
+            - heading "MERNPress" [level=1] [ref=f17e6]
+            - paragraph [ref=f17e7]: Latest published posts.
+        - list [ref=f17e8]:
+            - listitem [ref=f17e9]:
+                - heading [level=2] [ref=f17e10]:
+                    - link "test.com" [ref=f17e11] [cursor=pointer]:
+                        - /url: /posts/testcom
+                - paragraph [ref=f17e12]: Oct 29, 2026
+    - alert [ref=f17e13]

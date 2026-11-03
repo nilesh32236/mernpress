@@ -28,15 +28,22 @@ function countPage(total = 0): Response {
 }
 
 function authenticatedFetch(role = 'administrator'): ReturnType<typeof vi.fn<typeof fetch>> {
-  const fetchMock = vi.fn<typeof fetch>();
-  fetchMock.mockResolvedValueOnce(
-    response({
-      user: { id: 'u1', username: 'admin', role, status: 'active' },
-    }),
-  );
-  for (let i = 0; i < 6; i += 1) {
-    fetchMock.mockResolvedValueOnce(countPage(i));
-  }
+  // URL-aware so adding a dashboard request cannot shift the mock queue.
+  const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input) => {
+    const url = String(input);
+    if (url === '/api/auth/session') {
+      return response({
+        user: { id: 'u1', username: 'admin', role, status: 'active' },
+      }) as Response;
+    }
+    if (url === '/api/auth/logout') {
+      return response(null, 204) as Response;
+    }
+    if (url === '/api/admin/health') {
+      return response({ database: 'ok', mediaWritable: true, schedulerEnabled: true }) as Response;
+    }
+    return response(countPage(0)) as Response;
+  });
   return fetchMock;
 }
 
@@ -82,24 +89,27 @@ describe('admin application shell', () => {
     expect(screen.getByRole('link', { name: 'Dashboard' })).toBeDefined();
     expect(screen.queryByRole('link', { name: 'Posts' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Pages' })).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Terms' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Categories' })).toBeNull();
   });
 
-  it('shows the terms link only for editors and administrators', async () => {
+  it('shows the taxonomy links only for editors and administrators', async () => {
     vi.stubGlobal('fetch', authenticatedFetch('editor'));
 
     render(<App />);
 
-    expect(await screen.findByRole('link', { name: 'Terms' })).toBeDefined();
-    expect(screen.getByRole('link', { name: 'Posts' })).toBeDefined();
+    expect(await screen.findByRole('link', { name: 'Posts' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle Posts submenu' }));
+    expect(await screen.findByRole('link', { name: 'Categories' })).toBeDefined();
+    expect(screen.getByRole('link', { name: 'Tags' })).toBeDefined();
   });
 
-  it('hides the terms link from contributors', async () => {
+  it('hides taxonomy links from contributors', async () => {
     vi.stubGlobal('fetch', authenticatedFetch('contributor'));
 
     render(<App />);
 
-    expect(screen.queryByRole('link', { name: 'Terms' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Categories' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Tags' })).toBeNull();
   });
 
   it('shows a retryable session error and the login form', async () => {
@@ -116,7 +126,6 @@ describe('admin application shell', () => {
 
   it('signs out through the header action', async () => {
     const fetchMock = authenticatedFetch();
-    fetchMock.mockResolvedValueOnce(response(null, 204));
     vi.stubGlobal('fetch', fetchMock);
 
     render(<App />);

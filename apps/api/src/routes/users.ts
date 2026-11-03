@@ -24,6 +24,8 @@ export const createUserSchema = z
     username,
     password,
     role,
+    email: z.string().max(254).nullable().optional(),
+    displayName: z.string().max(100).nullable().optional(),
   })
   .strict();
 

@@ -390,7 +390,10 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
     const [rows, total] = await prisma.$transaction([
       prisma.mediaItem.findMany({
         where,
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        orderBy: [
+          { createdAt: query.order === 'oldest' ? 'asc' : 'desc' },
+          { id: query.order === 'oldest' ? 'asc' : 'desc' },
+        ],
         skip: (query.page - 1) * query.perPage,
         take: query.perPage,
       }),

@@ -44,6 +44,7 @@ function makePost(overrides: Partial<AdminPost> = {}): AdminPost {
     updatedAt: '2026-10-27T11:00:00.000Z',
     terms: { categories: [], tags: [] },
     featuredMedia: null,
+    author: null,
     ...overrides,
   };
 }
@@ -185,10 +186,8 @@ describe('content lists', () => {
       expect(fetchMock.mock.calls.some(([url]) => String(url).includes('search=hello'))).toBe(true),
     );
 
-    // Change status via the select dropdown.
-    fireEvent.change(screen.getByLabelText('Filter by status'), {
-      target: { value: 'TRASHED' },
-    });
+    // Change status via the status tab row.
+    fireEvent.click(screen.getByRole('button', { name: /^Trashed/ }));
     await waitFor(() =>
       expect(fetchMock.mock.calls.some(([url]) => String(url).includes('status=TRASHED'))).toBe(
         true,
@@ -196,7 +195,7 @@ describe('content lists', () => {
     );
   });
 
-  it('shows real status counts in the filter select', async () => {
+  it('shows real status counts in the status tabs', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn<typeof fetch>().mockImplementation(async (input) => {
@@ -211,13 +210,10 @@ describe('content lists', () => {
 
     render(<ContentList user={admin} type="post" />);
 
-    await screen.findByText('All (9)');
-    const select = screen.getByLabelText('Filter by status');
-    const options = (select as HTMLSelectElement).options;
-    expect(options[0]!.text).toBe('All (9)');
-    expect(options[1]!.text).toBe('Drafts (3)');
-    expect(options[2]!.text).toBe('Published (5)');
-    expect(options[3]!.text).toBe('Trashed (1)');
+    expect(await screen.findByRole('button', { name: 'All (9)' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Drafts (3)' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Published (5)' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Trashed (1)' })).toBeDefined();
   });
 
   it('sanitizes invalid URL parameters on load', async () => {
@@ -230,7 +226,9 @@ describe('content lists', () => {
     render(<ContentList user={admin} type="post" />);
 
     await screen.findByText('No posts yet');
-    expect((screen.getByLabelText('Filter by status') as HTMLSelectElement).value).toBe('');
+    expect(screen.getByRole('button', { name: 'All (0)' }).getAttribute('aria-current')).toBe(
+      'true',
+    );
   });
 
   it('reproduces the view on Back and Forward', async () => {
@@ -246,8 +244,8 @@ describe('content lists', () => {
     window.history.pushState(null, '', '/posts?status=TRASHED&page=2');
     window.dispatchEvent(new PopStateEvent('popstate'));
     await waitFor(() =>
-      expect((screen.getByLabelText('Filter by status') as HTMLSelectElement).value).toBe(
-        'TRASHED',
+      expect(screen.getByRole('button', { name: /^Trashed/ }).getAttribute('aria-current')).toBe(
+        'true',
       ),
     );
 
@@ -265,9 +263,7 @@ describe('content lists', () => {
     render(<ContentList user={admin} type="post" />);
     await screen.findByText('No posts yet');
 
-    fireEvent.change(screen.getByLabelText('Filter by status'), {
-      target: { value: 'DRAFT' },
-    });
+    fireEvent.click(screen.getByRole('button', { name: /^Drafts/ }));
     await waitFor(() => expect(window.location.search).toContain('status=DRAFT'));
     expect(window.location.search).not.toContain('page=');
   });

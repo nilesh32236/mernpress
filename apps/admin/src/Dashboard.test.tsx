@@ -41,7 +41,8 @@ describe('dashboard', () => {
     expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeDefined();
     expect(await screen.findByText('5')).toBeDefined();
     expect(await screen.findByText('4')).toBeDefined();
-    expect(fetchMock).toHaveBeenCalledTimes(6);
+    // Six count queries + one site-health check (dashboard card).
+    expect(fetchMock).toHaveBeenCalledTimes(7);
     const urls = fetchMock.mock.calls.map(([url]) => String(url));
     expect(urls.some((url) => url.includes('type=post') && url.includes('status=DRAFT'))).toBe(
       true,

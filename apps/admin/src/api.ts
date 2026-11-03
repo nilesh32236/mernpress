@@ -51,6 +51,7 @@ export interface AdminPost {
   updatedAt: string;
   terms: { categories: AdminTermSummary[]; tags: AdminTermSummary[] };
   featuredMedia: FeaturedImage | null;
+  author: { id: string; username: string } | null;
   /** Present only on the single-post admin view; never in list responses. */
   previewToken?: string | null;
 }
@@ -247,6 +248,8 @@ export interface PostListParams {
   type?: ContentType;
   status?: PostStatus;
   search?: string;
+  category?: string;
+  month?: string;
   page?: number;
   perPage?: number;
   sort?: 'updatedAt' | 'createdAt' | 'publishedAt' | 'title';
@@ -580,6 +583,21 @@ export async function transitionPost(
   return readJson<AdminPost>(response);
 }
 
+export interface SiteHealth {
+  database: 'ok' | 'error';
+  mediaWritable: boolean;
+  schedulerEnabled: boolean;
+}
+
+export async function fetchSiteHealth(): Promise<SiteHealth> {
+  const response = await fetch('/api/admin/health', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<SiteHealth>(response);
+}
+
 export interface ScheduleState {
   scheduledAt: string | null;
 }
@@ -775,6 +793,8 @@ export type OptionGroup = 'general' | 'reading' | 'writing';
 export interface AdminUser {
   id: string;
   username: string;
+  email: string | null;
+  displayName: string | null;
   role: UserRole;
   status: UserStatus;
   createdAt: string;
@@ -789,6 +809,8 @@ export interface AdminUserList {
 export interface UserProfile {
   id: string;
   username: string;
+  email: string | null;
+  displayName: string | null;
   role: UserRole;
   createdAt: string;
 }
@@ -814,6 +836,8 @@ export async function createUser(payload: {
   username: string;
   password: string;
   role: UserRole;
+  email?: string;
+  displayName?: string;
 }): Promise<AdminUser> {
   const response = await fetch('/api/users', {
     method: 'POST',
@@ -897,7 +921,11 @@ export async function fetchProfile(): Promise<UserProfile> {
   return readJson<UserProfile>(response);
 }
 
-export async function updateProfile(payload: { username?: string }): Promise<UserProfile> {
+export async function updateProfile(payload: {
+  username?: string;
+  email?: string | null;
+  displayName?: string | null;
+}): Promise<UserProfile> {
   const response = await fetch('/api/profile', {
     method: 'PUT',
     credentials: 'include',
@@ -989,6 +1017,7 @@ export interface MediaListParams {
   perPage?: number;
   search?: string;
   type?: 'image';
+  order?: 'newest' | 'oldest';
 }
 
 export interface UpdateMediaPayload {
@@ -1014,6 +1043,7 @@ export async function listMedia(params: MediaListParams = {}): Promise<Paged<Med
       perPage: params.perPage,
       search: params.search,
       type: params.type,
+      order: params.order,
     })}`,
     {
       method: 'GET',

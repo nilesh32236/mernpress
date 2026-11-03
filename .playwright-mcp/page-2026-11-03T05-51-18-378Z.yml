@@ -1,0 +1,280 @@
+- generic [ref=f22e2]:
+    - generic [ref=f22e3]:
+        - link "Skip to main content" [ref=f22e4] [cursor=pointer]:
+            - /url: '#main-content'
+        - banner "Admin toolbar" [ref=f22e5]:
+            - generic [ref=f22e6]:
+                - button "mernPress menu" [ref=f22e8] [cursor=pointer]
+                - generic [ref=f22e14]:
+                    - link "Q Qrolic Health" [ref=f22e15] [cursor=pointer]:
+                        - /url: /
+                        - generic [ref=f22e16]: Q
+                        - generic [ref=f22e17]: Qrolic Health
+                    - link "Visit Site" [ref=f22e18] [cursor=pointer]:
+                        - /url: http://localhost:3000
+                - button "New content menu" [ref=f22e29] [cursor=pointer]:
+                    - generic [ref=f22e31]: New
+            - button "User profile menu" [ref=f22e36] [cursor=pointer]:
+                - generic [ref=f22e37]:
+                    - generic [ref=f22e38]: Hello,
+                    - generic [ref=f22e39]: Admin
+                - generic [ref=f22e40]: AD
+        - generic [ref=f22e43]:
+            - complementary [ref=f22e44]:
+                - button "Collapse menu" [ref=f22e45] [cursor=pointer]
+                - navigation "Admin menu" [ref=f22e50]:
+                    - generic [ref=f22e51]:
+                        - generic [ref=f22e52]:
+                            - link "Dashboard" [ref=f22e53] [cursor=pointer]:
+                                - /url: /dashboard
+                            - button "Toggle Dashboard submenu" [ref=f22e60] [cursor=pointer]
+                        - link "Home" [ref=f22e64] [cursor=pointer]:
+                            - /url: /dashboard
+                    - generic [ref=f22e67]:
+                        - generic [ref=f22e68]:
+                            - link "Posts" [ref=f22e69] [cursor=pointer]:
+                                - /url: /posts
+                            - button "Toggle Posts submenu" [ref=f22e74] [cursor=pointer]
+                        - generic [ref=f22e77]:
+                            - link "All Posts" [ref=f22e78] [cursor=pointer]:
+                                - /url: /posts
+                            - link "Add New" [ref=f22e81] [cursor=pointer]:
+                                - /url: /posts/new
+                            - link "Categories" [ref=f22e84] [cursor=pointer]:
+                                - /url: /posts/categories
+                            - link "Tags" [ref=f22e87] [cursor=pointer]:
+                                - /url: /posts/tags
+                    - generic [ref=f22e90]:
+                        - generic [ref=f22e91]:
+                            - link "Media" [ref=f22e92] [cursor=pointer]:
+                                - /url: /media
+                            - button "Toggle Media submenu" [ref=f22e98] [cursor=pointer]
+                        - generic [ref=f22e101]:
+                            - link "Library" [ref=f22e102] [cursor=pointer]:
+                                - /url: /media
+                            - link "Add New" [ref=f22e105] [cursor=pointer]:
+                                - /url: /media?upload=1
+                    - generic [ref=f22e108]:
+                        - generic [ref=f22e109]:
+                            - link "Pages" [ref=f22e110] [cursor=pointer]:
+                                - /url: /pages
+                            - button "Toggle Pages submenu" [ref=f22e115] [cursor=pointer]
+                        - generic [ref=f22e120]:
+                            - link "All Pages" [ref=f22e121] [cursor=pointer]:
+                                - /url: /pages
+                            - link "Add New" [ref=f22e124] [cursor=pointer]:
+                                - /url: /pages/new
+                    - generic [ref=f22e127]:
+                        - generic [ref=f22e128]:
+                            - link "Landing Pages" [ref=f22e129] [cursor=pointer]:
+                                - /url: /landing-pages
+                            - button "Toggle Landing Pages submenu" [ref=f22e135] [cursor=pointer]
+                        - generic [ref=f22e138]:
+                            - link "All Landing Pages" [ref=f22e139] [cursor=pointer]:
+                                - /url: /landing-pages
+                            - link "Add New" [ref=f22e142] [cursor=pointer]:
+                                - /url: /landing-pages/new
+                    - generic [ref=f22e145]:
+                        - generic [ref=f22e146]:
+                            - link "Compliance" [ref=f22e147] [cursor=pointer]:
+                                - /url: /compliance
+                            - button "Toggle Compliance submenu" [ref=f22e152] [cursor=pointer]
+                        - generic [ref=f22e155]:
+                            - link "All Compliance Pages" [ref=f22e156] [cursor=pointer]:
+                                - /url: /compliance
+                            - link "Add New" [ref=f22e159] [cursor=pointer]:
+                                - /url: /compliance/new
+                    - generic [ref=f22e162]:
+                        - generic [ref=f22e163]:
+                            - link "Case Studies" [ref=f22e164] [cursor=pointer]:
+                                - /url: /case-studies
+                            - button "Toggle Case Studies submenu" [ref=f22e169] [cursor=pointer]
+                        - generic [ref=f22e172]:
+                            - link "All Case Studies" [ref=f22e173] [cursor=pointer]:
+                                - /url: /case-studies
+                            - link "Add New" [ref=f22e176] [cursor=pointer]:
+                                - /url: /case-studies/new
+                    - generic [ref=f22e179]:
+                        - generic [ref=f22e180]:
+                            - link "Services" [ref=f22e181] [cursor=pointer]:
+                                - /url: /services
+                            - button "Toggle Services submenu" [ref=f22e187] [cursor=pointer]
+                        - generic [ref=f22e190]:
+                            - link "All Services" [ref=f22e191] [cursor=pointer]:
+                                - /url: /services
+                            - link "Add New" [ref=f22e194] [cursor=pointer]:
+                                - /url: /services/new
+                    - generic [ref=f22e197]:
+                        - generic [ref=f22e198]:
+                            - link "Sectors" [ref=f22e199] [cursor=pointer]:
+                                - /url: /sectors
+                            - button "Toggle Sectors submenu" [ref=f22e205] [cursor=pointer]
+                        - generic [ref=f22e208]:
+                            - link "All Sectors" [ref=f22e209] [cursor=pointer]:
+                                - /url: /sectors
+                            - link "Add New" [ref=f22e212] [cursor=pointer]:
+                                - /url: /sectors/new
+                    - generic [ref=f22e215]:
+                        - generic [ref=f22e216]:
+                            - link "Scheduled" [ref=f22e217] [cursor=pointer]:
+                                - /url: /scheduled
+                            - button "Toggle Scheduled submenu" [ref=f22e222] [cursor=pointer]
+                        - link "All Scheduled" [ref=f22e226] [cursor=pointer]:
+                            - /url: /scheduled
+                    - generic [ref=f22e229]:
+                        - generic [ref=f22e230]:
+                            - link "Leads" [ref=f22e231] [cursor=pointer]:
+                                - /url: /leads
+                            - button "Toggle Leads submenu" [ref=f22e236] [cursor=pointer]
+                        - link "Inbox" [ref=f22e240] [cursor=pointer]:
+                            - /url: /leads
+                    - generic [ref=f22e243]:
+                        - generic [ref=f22e244]:
+                            - link "Outreach" [ref=f22e245] [cursor=pointer]:
+                                - /url: /outreach
+                            - button "Toggle Outreach submenu" [ref=f22e250] [cursor=pointer]
+                        - generic [ref=f22e253]:
+                            - link "Dashboard" [ref=f22e254] [cursor=pointer]:
+                                - /url: /outreach
+                            - link "Campaigns" [ref=f22e257] [cursor=pointer]:
+                                - /url: /outreach/campaigns
+                            - link "New Campaign" [ref=f22e260] [cursor=pointer]:
+                                - /url: /outreach/campaigns/new
+                            - link "Audience Groups" [ref=f22e263] [cursor=pointer]:
+                                - /url: /outreach/groups
+                            - link "Templates" [ref=f22e266] [cursor=pointer]:
+                                - /url: /outreach/templates
+                    - generic [ref=f22e269]:
+                        - generic [ref=f22e270]:
+                            - link "Forms" [ref=f22e271] [cursor=pointer]:
+                                - /url: /forms
+                            - button "Toggle Forms submenu" [ref=f22e276] [cursor=pointer]
+                        - link "All Forms" [ref=f22e280] [cursor=pointer]:
+                            - /url: /forms
+                    - generic [ref=f22e283]:
+                        - generic [ref=f22e284]:
+                            - link "Users" [ref=f22e285] [cursor=pointer]:
+                                - /url: /users
+                            - button "Toggle Users submenu" [ref=f22e292] [cursor=pointer]
+                        - generic [ref=f22e295]:
+                            - link "All Users" [ref=f22e296] [cursor=pointer]:
+                                - /url: /users
+                            - link "Profile" [ref=f22e299] [cursor=pointer]:
+                                - /url: /profile
+                    - generic [ref=f22e302]:
+                        - generic [ref=f22e303]:
+                            - link "SEO" [ref=f22e304] [cursor=pointer]:
+                                - /url: /seo/redirects
+                            - button "Toggle SEO submenu" [ref=f22e309] [cursor=pointer]
+                        - generic [ref=f22e312]:
+                            - link "Redirects" [ref=f22e313] [cursor=pointer]:
+                                - /url: /seo/redirects
+                            - link "404 Logs" [ref=f22e316] [cursor=pointer]:
+                                - /url: /seo/404-logs
+                    - generic [ref=f22e319]:
+                        - generic [ref=f22e320]:
+                            - link "Site Health" [ref=f22e321] [cursor=pointer]:
+                                - /url: /site-health
+                            - button "Toggle Site Health submenu" [ref=f22e325] [cursor=pointer]
+                        - link "Site Health" [ref=f22e329] [cursor=pointer]:
+                            - /url: /site-health
+                    - generic [ref=f22e332]:
+                        - generic [ref=f22e333]:
+                            - link "Settings" [ref=f22e334] [cursor=pointer]:
+                                - /url: /settings
+                            - button "Toggle Settings submenu" [ref=f22e339] [cursor=pointer]
+                        - generic [ref=f22e342]:
+                            - link "General" [ref=f22e343] [cursor=pointer]:
+                                - /url: /settings
+                            - link "Title Cards" [ref=f22e346] [cursor=pointer]:
+                                - /url: /settings#title-cards
+                            - link "Revalidation" [ref=f22e349] [cursor=pointer]:
+                                - /url: /settings#revalidation
+                            - link "Backups" [ref=f22e352] [cursor=pointer]:
+                                - /url: /settings#backups
+                            - link "SEO" [ref=f22e355] [cursor=pointer]:
+                                - /url: /settings#seo
+                    - generic [ref=f22e358]:
+                        - generic [ref=f22e359]:
+                            - link "Documentation" [ref=f22e360] [cursor=pointer]:
+                                - /url: /docs
+                            - button "Toggle Documentation submenu" [ref=f22e364] [cursor=pointer]
+                        - generic [ref=f22e367]:
+                            - link "All Documents" [ref=f22e368] [cursor=pointer]:
+                                - /url: /docs
+                            - link "Getting Started" [ref=f22e371] [cursor=pointer]:
+                                - /url: /docs/getting-started
+                            - link "Troubleshooting" [ref=f22e374] [cursor=pointer]:
+                                - /url: /docs/troubleshooting
+                            - link "Support" [ref=f22e377] [cursor=pointer]:
+                                - /url: /support
+            - main "Main content" [ref=f22e380]:
+                - generic [ref=f22e382]:
+                    - generic [ref=f22e383]:
+                        - heading "Pages" [level=1] [ref=f22e384]
+                        - link "Add New" [ref=f22e385] [cursor=pointer]:
+                            - /url: /pages/new
+                    - list "Filter pages by status" [ref=f22e387]:
+                        - listitem [ref=f22e388]:
+                            - button "All (0)" [ref=f22e389] [cursor=pointer]:
+                                - text: All
+                                - generic [ref=f22e390]: (0)
+                        - listitem [ref=f22e391]:
+                            - generic [aria-hidden] [ref=f22e392]: '|'
+                            - button "Published (0)" [ref=f22e393] [cursor=pointer]:
+                                - text: Published
+                                - generic [ref=f22e394]: (0)
+                        - listitem [ref=f22e395]:
+                            - generic [aria-hidden] [ref=f22e396]: '|'
+                            - button "Drafts (0)" [ref=f22e397] [cursor=pointer]:
+                                - text: Drafts
+                                - generic [ref=f22e398]: (0)
+                        - listitem [ref=f22e399]:
+                            - generic [aria-hidden] [ref=f22e400]: '|'
+                            - button "Trash (0)" [ref=f22e401] [cursor=pointer]:
+                                - text: Trash
+                                - generic [ref=f22e402]: (0)
+                    - generic [ref=f22e403]:
+                        - generic [ref=f22e404]:
+                            - generic [ref=f22e407]: Bulk actions
+                            - combobox "Bulk actions" [ref=f22e408]:
+                                - option "Bulk actions" [selected]
+                                - option "Move to Trash"
+                            - button "Apply" [ref=f22e409] [cursor=pointer]
+                        - generic [ref=f22e410]:
+                            - generic [ref=f22e411]: Filter by funnel stage
+                            - combobox "Filter by funnel stage" [ref=f22e412]:
+                                - option "All stages" [selected]
+                            - generic [ref=f22e413]: Filter by channel
+                            - combobox "Filter by channel" [ref=f22e414]:
+                                - option "All channels" [selected]
+                            - generic [ref=f22e415]: Filter by campaign
+                            - combobox "Filter by campaign" [ref=f22e416]:
+                                - option "All campaigns" [selected]
+                        - generic [ref=f22e417]:
+                            - generic [ref=f22e418]:
+                                - generic [ref=f22e419]: Search pages
+                                - textbox "Search pages" [ref=f22e420]
+                            - button "Search Pages" [ref=f22e421] [cursor=pointer]
+                    - table [ref=f22e426]:
+                        - rowgroup [ref=f22e427]:
+                            - row [ref=f22e428]:
+                                - columnheader [ref=f22e429]:
+                                    - checkbox "Select all pages" [ref=f22e430]
+                                - columnheader "Title" [ref=f22e431]
+                                - columnheader "Funnel" [ref=f22e432]
+                                - columnheader "Author" [ref=f22e433]
+                                - columnheader "Date" [ref=f22e434]
+                                - columnheader "Status" [ref=f22e435]
+                                - columnheader "Actions" [ref=f22e436]
+                        - rowgroup [ref=f22e437]:
+                            - row [ref=f22e438]:
+                                - cell [ref=f22e439]:
+                                    - paragraph [ref=f22e442]: Loading pages…
+                    - generic [ref=f22e443]:
+                        - generic [ref=f22e444]: 0 items
+                        - generic [ref=f22e445]:
+                            - button "Prev" [disabled] [ref=f22e446]
+                            - generic [ref=f22e449]: Page 1 of 1
+                            - button "Next" [disabled] [ref=f22e450]
+    - region "Notifications alt+T"

@@ -11,6 +11,7 @@ import {
   fetchTerms,
   restoreRevision,
   rotatePreviewToken,
+  revokePreviewToken,
   saveAutosave,
   fetchSchedule,
   schedulePost,
@@ -186,6 +187,7 @@ export function ContentEditor({
   const [revisionBusy, setRevisionBusy] = useState(false);
   const [previewBusy, setPreviewBusy] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<string | null>(null);
+  const [toolbarSlot, setToolbarSlot] = useState<HTMLElement | null>(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scheduleInput, setScheduleInput] = useState('');
   const [scheduleBusy, setScheduleBusy] = useState(false);
@@ -1021,7 +1023,7 @@ export function ContentEditor({
         <header className="editor-topbar">
           <div className="editor-topbar-left">
             <a
-              className="editor-back"
+              className="editor-logo"
               href={listPath(type)}
               aria-label={`Back to ${type === 'post' ? 'posts' : 'pages'}`}
               onClick={(event) => {
@@ -1035,41 +1037,28 @@ export function ContentEditor({
                 navigate(listPath(type));
               }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M15 5l-7 7 7 7"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              M
             </a>
-            <div className="editor-topbar-titles">
-              <span className="editor-eyebrow">{type === 'post' ? 'Post' : 'Page'}</span>
-              <h1 className="editor-topbar-title">{title}</h1>
-            </div>
+            <div className="editor-topbar-tools" ref={setToolbarSlot} />
+            {/* Kept for assistive tech and tests; the visible document title
+                lives in the canvas, like the reference editor. */}
+            <h1 className="screen-reader-text">{title}</h1>
+          </div>
+          <div className="editor-topbar-status" role="status" aria-live="polite">
+            {saving
+              ? 'Saving…'
+              : isNew && !dirty
+                ? 'Not saved yet'
+                : dirty
+                  ? 'Unsaved changes'
+                  : 'Saved'}
           </div>
           <div className="editor-topbar-actions">
-            <span
-              className={`editor-save-state${dirty ? ' is-dirty' : ''}`}
-              role="status"
-              aria-live="polite"
-            >
-              {saving
-                ? 'Saving…'
-                : isNew && !dirty
-                  ? 'Not saved yet'
-                  : dirty
-                    ? 'Unsaved changes'
-                    : 'Saved'}
-            </span>
             <StatusBadge status={post?.status ?? 'DRAFT'} />
             {post && !createdPost && post.status !== 'TRASHED' ? (
               <button
                 type="button"
-                className="button secondary-button editor-preview-button"
+                className="button editor-topbar-button"
                 onClick={() => void handlePreview()}
                 disabled={previewBusy || saving}
                 aria-busy={previewBusy}
@@ -1082,7 +1071,7 @@ export function ContentEditor({
                 {secondarySave ? (
                   <button
                     type="button"
-                    className="button secondary-button editor-save-button"
+                    className="button editor-topbar-button"
                     onClick={() => void handleSave('save')}
                     disabled={saving || Boolean(conflict)}
                     aria-busy={saving}
@@ -1094,7 +1083,7 @@ export function ContentEditor({
                 ) : null}
                 <button
                   type="button"
-                  className="button primary-button editor-publish-button"
+                  className="button primary-button editor-topbar-publish"
                   onClick={() => void handleSave(primaryAction.intent)}
                   disabled={saving || Boolean(conflict)}
                   aria-busy={saving}
@@ -1105,16 +1094,34 @@ export function ContentEditor({
                 </button>
               </>
             )}
+            {post && post.status === 'DRAFT' ? (
+              <button
+                type="button"
+                className="button editor-topbar-button"
+                onClick={() => {
+                  setSideTab('post');
+                  setSidebarOpen(true);
+                  setScheduleOpen(true);
+                  setScheduleInput(toLocalDateTimeInput(scheduledAt));
+                }}
+                disabled={saving}
+                title="Pick a date and time to publish later"
+              >
+                Schedule…
+              </button>
+            ) : null}
             <button
               type="button"
-              className="button secondary-button editor-sidebar-toggle"
+              className={`button editor-topbar-gear${sidebarOpen ? ' is-active' : ''}`}
               aria-expanded={sidebarOpen}
               aria-controls="editor-document-settings"
+              aria-label="Settings"
+              title="Settings"
               onClick={() => setSidebarOpen((open) => !open)}
             >
               <svg
-                width="14"
-                height="14"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -1126,7 +1133,6 @@ export function ContentEditor({
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
               </svg>
-              Settings
             </button>
           </div>
         </header>
@@ -1228,6 +1234,7 @@ export function ContentEditor({
                 <Suspense fallback={<Skeleton label="Loading block editor…" lines={6} />}>
                   <BlockCanvas
                     ref={canvasRef}
+                    toolbarSlot={toolbarSlot}
                     initialContent={form.content}
                     onChange={updateContent}
                     onDirty={() => setContentTouched(true)}
@@ -1290,530 +1297,627 @@ export function ContentEditor({
                 </button>
               </div>
 
-              <div hidden={sideTab !== 'post'}>
-                <section className="editor-panel publish-panel" aria-labelledby="publish-heading">
-                  <h3 id="publish-heading">Publish</h3>
-                  {post ? (
-                    <>
-                      <div className="publish-field">
-                        <span className="publish-label">Status</span>
-                        <div className="publish-value">
-                          <StatusBadge status={post.status} />
-                          {transitions.includes('publish') || transitions.includes('unpublish') ? (
-                            <button
-                              type="button"
-                              className="button small-button edit-link"
-                              disabled={transitioning !== null || dirty}
-                              aria-label={post.status === 'DRAFT' ? 'Change status' : 'Unpublish'}
-                              onClick={() =>
-                                void runTransition(
-                                  post.status === 'DRAFT' ? 'publish' : 'unpublish',
-                                )
-                              }
-                            >
-                              Edit
-                            </button>
-                          ) : null}
-                        </div>
-                      </div>
-                      <div className="publish-field">
-                        <span className="publish-label">Visibility</span>
-                        <div className="publish-value">Public</div>
-                      </div>
-                      {post.status === 'DRAFT' ? (
+              <div className="editor-sidebar-body">
+                <div hidden={sideTab !== 'post'}>
+                  <section className="editor-panel publish-panel" aria-labelledby="publish-heading">
+                    <h3 id="publish-heading">Publish</h3>
+                    {post ? (
+                      <>
                         <div className="publish-field">
-                          <span className="publish-label">
-                            {scheduledAt ? 'Scheduled for' : 'Publish'}
-                          </span>
-                          <div className="publish-value publish-schedule">
-                            <span>{scheduledAt ? formatDateTime(scheduledAt) : 'Immediately'}</span>
-                            <button
-                              type="button"
-                              className="button small-button edit-link"
-                              aria-label="Edit schedule"
-                              aria-expanded={scheduleOpen}
-                              disabled={scheduleBusy || dirty}
-                              onClick={() => {
-                                setScheduleInput(toLocalDateTimeInput(scheduledAt));
-                                setScheduleOpen((open) => !open);
-                              }}
-                            >
-                              Edit
-                            </button>
+                          <span className="publish-label">Status</span>
+                          <div className="publish-value">
+                            <StatusBadge status={post.status} />
+                            {transitions.includes('publish') ||
+                            transitions.includes('unpublish') ? (
+                              <button
+                                type="button"
+                                className="button small-button edit-link"
+                                disabled={transitioning !== null || dirty}
+                                aria-label={post.status === 'DRAFT' ? 'Change status' : 'Unpublish'}
+                                onClick={() =>
+                                  void runTransition(
+                                    post.status === 'DRAFT' ? 'publish' : 'unpublish',
+                                  )
+                                }
+                              >
+                                Edit
+                              </button>
+                            ) : null}
                           </div>
-                          {scheduleOpen ? (
-                            <div className="schedule-editor">
-                              <label htmlFor="schedule-at" className="screen-reader-text">
-                                Schedule date and time
-                              </label>
-                              <input
-                                id="schedule-at"
-                                type="datetime-local"
-                                value={scheduleInput}
-                                onChange={(event) => setScheduleInput(event.target.value)}
-                              />
-                              <div className="schedule-actions">
-                                <button
-                                  type="button"
-                                  className="button primary-button small-button"
-                                  disabled={scheduleBusy || !scheduleInput}
-                                  onClick={() => void handleScheduleSave()}
-                                >
-                                  {scheduleBusy ? 'Scheduling…' : 'Schedule'}
-                                </button>
-                                {scheduledAt ? (
+                        </div>
+                        <div className="publish-field">
+                          <span className="publish-label">Visibility</span>
+                          <div className="publish-value">Public</div>
+                        </div>
+                        {post.status === 'DRAFT' ? (
+                          <div className="publish-field">
+                            <span className="publish-label">
+                              {scheduledAt ? 'Scheduled for' : 'Publish'}
+                            </span>
+                            <div className="publish-value publish-schedule">
+                              <span>
+                                {scheduledAt ? formatDateTime(scheduledAt) : 'Immediately'}
+                              </span>
+                              <button
+                                type="button"
+                                className="button small-button edit-link"
+                                aria-label="Edit schedule"
+                                aria-expanded={scheduleOpen}
+                                disabled={scheduleBusy || dirty}
+                                onClick={() => {
+                                  setScheduleInput(toLocalDateTimeInput(scheduledAt));
+                                  setScheduleOpen((open) => !open);
+                                }}
+                              >
+                                Edit
+                              </button>
+                            </div>
+                            {scheduleOpen ? (
+                              <div className="schedule-editor">
+                                <label htmlFor="schedule-at" className="screen-reader-text">
+                                  Schedule date and time
+                                </label>
+                                <input
+                                  id="schedule-at"
+                                  type="datetime-local"
+                                  value={scheduleInput}
+                                  onChange={(event) => setScheduleInput(event.target.value)}
+                                />
+                                <div className="schedule-actions">
                                   <button
                                     type="button"
-                                    className="button secondary-button small-button"
-                                    disabled={scheduleBusy}
-                                    onClick={() => void handleUnschedule()}
+                                    className="button primary-button small-button"
+                                    disabled={scheduleBusy || !scheduleInput}
+                                    onClick={() => void handleScheduleSave()}
                                   >
-                                    Cancel schedule
+                                    {scheduleBusy ? 'Scheduling…' : 'Schedule'}
                                   </button>
-                                ) : null}
+                                  {scheduledAt ? (
+                                    <button
+                                      type="button"
+                                      className="button secondary-button small-button"
+                                      disabled={scheduleBusy}
+                                      onClick={() => void handleUnschedule()}
+                                    >
+                                      Cancel schedule
+                                    </button>
+                                  ) : null}
+                                </div>
+                                <p className="field-help">
+                                  At least one minute in the future. The post stays a draft until
+                                  the scheduler publishes it.
+                                </p>
                               </div>
-                              <p className="field-help">
-                                At least one minute in the future. The post stays a draft until the
-                                scheduler publishes it.
-                              </p>
-                            </div>
-                          ) : null}
-                        </div>
-                      ) : (
-                        <div className="publish-field">
-                          <span className="publish-label">Published</span>
-                          <div className="publish-value">
-                            {formatDateTime(post.publishedAt ?? post.updatedAt)}
+                            ) : null}
                           </div>
-                        </div>
-                      )}
-                      {post.status !== 'TRASHED' && transitions.includes('trash') ? (
-                        <div className="publish-field">
-                          <button
-                            type="button"
-                            className="button delete-link"
-                            disabled={transitioning !== null || dirty}
-                            onClick={() => void runTransition('trash')}
-                          >
-                            Move to Trash
-                          </button>
-                        </div>
-                      ) : null}
-                      {post.status === 'TRASHED' && transitions.includes('restore') ? (
-                        <div className="publish-field">
-                          <button
-                            type="button"
-                            className="button secondary-button"
-                            disabled={transitioning !== null || dirty}
-                            onClick={() => void runTransition('restore')}
-                          >
-                            Restore
-                          </button>
-                        </div>
-                      ) : null}
-                    </>
-                  ) : (
-                    <p className="field-help">
-                      The content is created as a draft. Publish it from the top bar when it is
-                      ready.
-                    </p>
-                  )}
-                </section>
+                        ) : (
+                          <div className="publish-field">
+                            <span className="publish-label">Published</span>
+                            <div className="publish-value">
+                              {formatDateTime(post.publishedAt ?? post.updatedAt)}
+                            </div>
+                          </div>
+                        )}
+                        {post.status !== 'TRASHED' && transitions.includes('trash') ? (
+                          <div className="publish-field">
+                            <button
+                              type="button"
+                              className="button delete-link"
+                              disabled={transitioning !== null || dirty}
+                              onClick={() => void runTransition('trash')}
+                            >
+                              Move to Trash
+                            </button>
+                          </div>
+                        ) : null}
+                        {post.status === 'TRASHED' && transitions.includes('restore') ? (
+                          <div className="publish-field">
+                            <button
+                              type="button"
+                              className="button secondary-button"
+                              disabled={transitioning !== null || dirty}
+                              onClick={() => void runTransition('restore')}
+                            >
+                              Restore
+                            </button>
+                          </div>
+                        ) : null}
+                      </>
+                    ) : (
+                      <p className="field-help">
+                        The content is created as a draft. Publish it from the top bar when it is
+                        ready.
+                      </p>
+                    )}
+                  </section>
 
-                <section className="editor-panel" aria-labelledby="document-fields-heading">
-                  <h3 id="document-fields-heading">Details</h3>
-                  <div className="field">
-                    <label htmlFor="content-slug">Slug</label>
-                    <input
-                      id="content-slug"
-                      name="slug"
-                      type="text"
-                      maxLength={200}
-                      value={form.slug}
-                      onChange={(event) => updateForm('slug', event.target.value)}
-                      aria-invalid={Boolean(fieldErrors['slug'])}
-                      aria-describedby={
-                        fieldErrors['slug']
-                          ? 'content-slug-help content-slug-error'
-                          : 'content-slug-help'
-                      }
-                    />
-                    <p id="content-slug-help" className="field-help">
-                      Leave blank to derive from the title when creating. On edit, leave unchanged
-                      to keep the current slug.
-                    </p>
-                    <FieldError id="content-slug-error" message={fieldErrors['slug']} />
-                  </div>
-                </section>
+                  <section className="editor-panel" aria-labelledby="document-fields-heading">
+                    <h3 id="document-fields-heading">Permalink</h3>
+                    <div className="field">
+                      <label htmlFor="content-slug">Slug</label>
+                      <div className="permalink-input">
+                        <span aria-hidden="true">/</span>
+                        <input
+                          id="content-slug"
+                          name="slug"
+                          type="text"
+                          maxLength={200}
+                          value={form.slug}
+                          onChange={(event) => updateForm('slug', event.target.value)}
+                          aria-invalid={Boolean(fieldErrors['slug'])}
+                          aria-describedby={
+                            fieldErrors['slug']
+                              ? 'content-slug-help content-slug-error'
+                              : 'content-slug-help'
+                          }
+                        />
+                      </div>
+                      <p id="content-slug-help" className="field-help">
+                        Leave blank to derive from the title when creating. On edit, leave unchanged
+                        to keep the current slug.
+                      </p>
+                      <FieldError id="content-slug-error" message={fieldErrors['slug']} />
+                    </div>
+                  </section>
 
-                <section className="editor-panel" aria-labelledby="featured-heading">
-                  <div className="revisions-panel-head">
-                    <h3 id="featured-heading">Featured image</h3>
+                  <section className="editor-panel" aria-labelledby="featured-heading">
+                    <div className="revisions-panel-head">
+                      <h3 id="featured-heading">Featured image</h3>
+                      {featuredMedia ? (
+                        <button
+                          type="button"
+                          className="button secondary-button revisions-toggle"
+                          onClick={() => setFeaturedMedia(null)}
+                        >
+                          Remove
+                        </button>
+                      ) : null}
+                    </div>
                     {featuredMedia ? (
                       <button
                         type="button"
-                        className="button secondary-button revisions-toggle"
-                        onClick={() => setFeaturedMedia(null)}
-                      >
-                        Remove
-                      </button>
-                    ) : null}
-                  </div>
-                  {featuredMedia ? (
-                    <button
-                      type="button"
-                      className="featured-current"
-                      onClick={() => setFeaturedPickerOpen((open) => !open)}
-                      aria-label="Replace featured image"
-                    >
-                      <img
-                        src={featuredMedia.derivatives['300'] ?? featuredMedia.url}
-                        alt={featuredMedia.altText}
-                      />
-                    </button>
-                  ) : (
-                    <>
-                      <p className="field-help">Shown in social previews and the public page.</p>
-                      <button
-                        type="button"
-                        className="button secondary-button"
-                        aria-expanded={featuredPickerOpen}
+                        className="featured-current"
                         onClick={() => setFeaturedPickerOpen((open) => !open)}
+                        aria-label="Replace featured image"
                       >
-                        {featuredPickerOpen ? 'Close media picker' : 'Select image'}
-                      </button>
-                    </>
-                  )}
-                  {featuredPickerOpen ? (
-                    <div className="featured-picker">
-                      <div className="featured-picker-search">
-                        <label htmlFor="featured-picker-search" className="screen-reader-text">
-                          Search media
-                        </label>
-                        <input
-                          id="featured-picker-search"
-                          type="search"
-                          placeholder="Search media…"
-                          value={featuredPickerSearch}
-                          onChange={(event) => {
-                            const value = event.target.value;
-                            setFeaturedPickerSearch(value);
-                            setFeaturedPickerItems(null);
-                            listMedia({
-                              ...(value.trim() ? { search: value.trim() } : {}),
-                              perPage: 12,
-                            })
-                              .then((result) => setFeaturedPickerItems(result.items))
-                              .catch(() => setFeaturedPickerItems([]));
-                          }}
+                        <img
+                          src={featuredMedia.derivatives['300'] ?? featuredMedia.url}
+                          alt={featuredMedia.altText}
                         />
-                      </div>
-                      {featuredPickerItems === null ? (
-                        <p className="field-help">Loading media…</p>
-                      ) : featuredPickerItems.length === 0 ? (
-                        <p className="field-help">
-                          No media found. Upload images in the Media Library first.
-                        </p>
-                      ) : (
-                        <div
-                          className="featured-picker-grid"
-                          role="listbox"
-                          aria-label="Media items"
+                      </button>
+                    ) : (
+                      <>
+                        <p className="field-help">Shown in social previews and the public page.</p>
+                        <button
+                          type="button"
+                          className="button secondary-button"
+                          aria-expanded={featuredPickerOpen}
+                          onClick={() => setFeaturedPickerOpen((open) => !open)}
                         >
-                          {featuredPickerItems.map((item) => (
+                          {featuredPickerOpen ? 'Close media picker' : 'Select image'}
+                        </button>
+                      </>
+                    )}
+                    {featuredPickerOpen ? (
+                      <div className="featured-picker">
+                        <div className="featured-picker-search">
+                          <label htmlFor="featured-picker-search" className="screen-reader-text">
+                            Search media
+                          </label>
+                          <input
+                            id="featured-picker-search"
+                            type="search"
+                            placeholder="Search media…"
+                            value={featuredPickerSearch}
+                            onChange={(event) => {
+                              const value = event.target.value;
+                              setFeaturedPickerSearch(value);
+                              setFeaturedPickerItems(null);
+                              listMedia({
+                                ...(value.trim() ? { search: value.trim() } : {}),
+                                perPage: 12,
+                              })
+                                .then((result) => setFeaturedPickerItems(result.items))
+                                .catch(() => setFeaturedPickerItems([]));
+                            }}
+                          />
+                        </div>
+                        {featuredPickerItems === null ? (
+                          <p className="field-help">Loading media…</p>
+                        ) : featuredPickerItems.length === 0 ? (
+                          <p className="field-help">
+                            No media found. Upload images in the Media Library first.
+                          </p>
+                        ) : (
+                          <div
+                            className="featured-picker-grid"
+                            role="listbox"
+                            aria-label="Media items"
+                          >
+                            {featuredPickerItems.map((item) => (
+                              <button
+                                key={item.id}
+                                type="button"
+                                role="option"
+                                aria-selected={featuredMedia?.id === item.id}
+                                className="featured-picker-item"
+                                title={item.originalName}
+                                onClick={() => {
+                                  setFeaturedMedia({
+                                    id: item.id,
+                                    url: item.url,
+                                    width: item.width,
+                                    height: item.height,
+                                    altText: item.altText,
+                                    derivatives: item.derivatives,
+                                  });
+                                  setFeaturedPickerOpen(false);
+                                }}
+                              >
+                                <img
+                                  src={item.derivatives['300'] ?? item.url}
+                                  alt={item.altText}
+                                  loading="lazy"
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                  </section>
+
+                  {post && !createdPost ? (
+                    <section className="editor-panel" aria-labelledby="preview-token-heading">
+                      <h3 id="preview-token-heading">Preview token</h3>
+                      {post.previewToken ? (
+                        <>
+                          <p className="field-help">
+                            Anyone with the token link can view this draft. Regenerating invalidates
+                            the old link.
+                          </p>
+                          <div className="preview-token-actions">
                             <button
-                              key={item.id}
                               type="button"
-                              role="option"
-                              aria-selected={featuredMedia?.id === item.id}
-                              className="featured-picker-item"
-                              title={item.originalName}
+                              className="button secondary-button small-button"
                               onClick={() => {
-                                setFeaturedMedia({
-                                  id: item.id,
-                                  url: item.url,
-                                  width: item.width,
-                                  height: item.height,
-                                  altText: item.altText,
-                                  derivatives: item.derivatives,
-                                });
-                                setFeaturedPickerOpen(false);
+                                void (async () => {
+                                  const rotated = await rotatePreviewToken(post.id);
+                                  if (rotated.previewUrl) {
+                                    const absolute = rotated.previewUrl.startsWith('http')
+                                      ? rotated.previewUrl
+                                      : `${window.location.origin}${rotated.previewUrl}`;
+                                    void navigator.clipboard?.writeText(absolute);
+                                    setNotice({ tone: 'success', text: 'Preview link copied.' });
+                                  }
+                                  setReloadKey((value) => value + 1);
+                                })().catch((caught) =>
+                                  setNotice({ tone: 'error', text: actionErrorMessage(caught) }),
+                                );
                               }}
                             >
-                              <img
-                                src={item.derivatives['300'] ?? item.url}
-                                alt={item.altText}
-                                loading="lazy"
-                              />
+                              Regenerate link
                             </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ) : null}
-                </section>
-
-                <section className="editor-panel" aria-labelledby="terms-heading">
-                  <h3 id="terms-heading">Categories and tags</h3>
-                  {!canAssign ? (
-                    <p className="field-help">Your role cannot assign taxonomy terms.</p>
-                  ) : termsError ? (
-                    <p className="field-help">Terms are unavailable. Content can still be saved.</p>
-                  ) : (
-                    <>
-                      <fieldset className="term-group">
-                        <legend>Categories</legend>
-                        {categories.length === 0 ? (
-                          <p className="field-help">No categories exist yet.</p>
-                        ) : (
-                          categories.map((term) => (
-                            <label key={term.id} className="checkbox-row">
-                              <input
-                                type="checkbox"
-                                checked={categoryIds.includes(term.id)}
-                                onChange={() =>
-                                  setCategoryIds((current) => toggleId(current, term.id))
-                                }
-                              />
-                              <span className="term-name">{term.name}</span>
-                              <span aria-hidden="true" className="term-slug">
-                                {term.slug}
-                              </span>
-                            </label>
-                          ))
-                        )}
-                      </fieldset>
-                      <fieldset className="term-group">
-                        <legend>Tags</legend>
-                        {tags.length === 0 ? (
-                          <p className="field-help">No tags exist yet.</p>
-                        ) : (
-                          tags.map((term) => (
-                            <label key={term.id} className="checkbox-row">
-                              <input
-                                type="checkbox"
-                                checked={tagIds.includes(term.id)}
-                                onChange={() => setTagIds((current) => toggleId(current, term.id))}
-                              />
-                              <span className="term-name">{term.name}</span>
-                              <span aria-hidden="true" className="term-slug">
-                                {term.slug}
-                              </span>
-                            </label>
-                          ))
-                        )}
-                      </fieldset>
-                    </>
-                  )}
-                </section>
-
-                {post && !createdPost ? (
-                  <section className="editor-panel" aria-labelledby="revisions-heading">
-                    <div className="revisions-panel-head">
-                      <h3 id="revisions-heading">Revisions</h3>
-                      <button
-                        type="button"
-                        className="button secondary-button revisions-toggle"
-                        aria-expanded={revisionsOpen}
-                        onClick={() => setRevisionsOpen((open) => !open)}
-                      >
-                        {revisionsOpen ? 'Hide' : 'Show'}
-                      </button>
-                    </div>
-                    {!revisionsOpen ? null : revisionsError ? (
-                      <p className="field-help">Revisions are unavailable.</p>
-                    ) : revisions === null ? (
-                      <p className="field-help">Loading revisions…</p>
-                    ) : revisions.length === 0 ? (
-                      <p className="field-help">Revisions appear after you save changes.</p>
-                    ) : (
-                      <ul className="revision-list">
-                        {revisions.map((revision) => (
-                          <li key={revision.id}>
                             <button
                               type="button"
-                              className="revision-link"
-                              disabled={revisionBusy}
-                              onClick={() => void handleViewRevision(revision)}
+                              className="button secondary-button small-button"
+                              onClick={() => {
+                                void revokePreviewToken(post.id)
+                                  .then(() => {
+                                    setNotice({ tone: 'success', text: 'Preview link revoked.' });
+                                    setReloadKey((value) => value + 1);
+                                  })
+                                  .catch((caught) =>
+                                    setNotice({ tone: 'error', text: actionErrorMessage(caught) }),
+                                  );
+                              }}
                             >
-                              <span className="revision-number">#{revision.revisionNumber}</span>
-                              <span className="revision-date">
-                                {formatDateTime(revision.createdAt)}
-                              </span>
+                              Revoke
                             </button>
-                          </li>
-                        ))}
-                      </ul>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <p className="field-help">
+                            Create a shareable link to preview this draft.
+                          </p>
+                          <button
+                            type="button"
+                            className="button secondary-button small-button"
+                            onClick={() => {
+                              void (async () => {
+                                const rotated = await rotatePreviewToken(post.id);
+                                if (rotated.previewUrl) {
+                                  const absolute = rotated.previewUrl.startsWith('http')
+                                    ? rotated.previewUrl
+                                    : `${window.location.origin}${rotated.previewUrl}`;
+                                  void navigator.clipboard?.writeText(absolute);
+                                  setNotice({
+                                    tone: 'success',
+                                    text: 'Preview link created and copied.',
+                                  });
+                                }
+                                setReloadKey((value) => value + 1);
+                              })().catch((caught) =>
+                                setNotice({ tone: 'error', text: actionErrorMessage(caught) }),
+                              );
+                            }}
+                          >
+                            Create preview link
+                          </button>
+                        </>
+                      )}
+                    </section>
+                  ) : null}
+
+                  <section className="editor-panel" aria-labelledby="terms-heading">
+                    <h3 id="terms-heading">Categories and tags</h3>
+                    {!canAssign ? (
+                      <p className="field-help">Your role cannot assign taxonomy terms.</p>
+                    ) : termsError ? (
+                      <p className="field-help">
+                        Terms are unavailable. Content can still be saved.
+                      </p>
+                    ) : (
+                      <>
+                        <fieldset className="term-group">
+                          <legend>Categories</legend>
+                          {categories.length === 0 ? (
+                            <p className="field-help">No categories exist yet.</p>
+                          ) : (
+                            categories.map((term) => (
+                              <label key={term.id} className="checkbox-row">
+                                <input
+                                  type="checkbox"
+                                  checked={categoryIds.includes(term.id)}
+                                  onChange={() =>
+                                    setCategoryIds((current) => toggleId(current, term.id))
+                                  }
+                                />
+                                <span className="term-name">{term.name}</span>
+                                <span aria-hidden="true" className="term-slug">
+                                  {term.slug}
+                                </span>
+                              </label>
+                            ))
+                          )}
+                        </fieldset>
+                        <fieldset className="term-group">
+                          <legend>Tags</legend>
+                          {tags.length === 0 ? (
+                            <p className="field-help">No tags exist yet.</p>
+                          ) : (
+                            tags.map((term) => (
+                              <label key={term.id} className="checkbox-row">
+                                <input
+                                  type="checkbox"
+                                  checked={tagIds.includes(term.id)}
+                                  onChange={() =>
+                                    setTagIds((current) => toggleId(current, term.id))
+                                  }
+                                />
+                                <span className="term-name">{term.name}</span>
+                                <span aria-hidden="true" className="term-slug">
+                                  {term.slug}
+                                </span>
+                              </label>
+                            ))
+                          )}
+                        </fieldset>
+                      </>
                     )}
                   </section>
-                ) : null}
-              </div>
 
-              <div hidden={sideTab !== 'seo'}>
-                <section className="editor-panel" aria-labelledby="seo-heading">
-                  <h3 id="seo-heading">SEO</h3>
-                  <div className="field">
-                    <label htmlFor="content-excerpt">Excerpt</label>
-                    <textarea
-                      id="content-excerpt"
-                      name="excerpt"
-                      rows={3}
-                      maxLength={2000}
-                      value={form.excerpt}
-                      onChange={(event) => updateForm('excerpt', event.target.value)}
-                      aria-invalid={Boolean(fieldErrors['excerpt'])}
-                      aria-describedby={
-                        fieldErrors['excerpt'] ? 'content-excerpt-error' : 'content-excerpt-help'
-                      }
-                    />
-                    <p id="content-excerpt-help" className="field-help">
-                      Shown as the meta description in search results.
+                  {post && !createdPost ? (
+                    <section className="editor-panel" aria-labelledby="revisions-heading">
+                      <div className="revisions-panel-head">
+                        <h3 id="revisions-heading">Revisions</h3>
+                        <button
+                          type="button"
+                          className="button secondary-button revisions-toggle"
+                          aria-expanded={revisionsOpen}
+                          onClick={() => setRevisionsOpen((open) => !open)}
+                        >
+                          {revisionsOpen ? 'Hide' : 'Show'}
+                        </button>
+                      </div>
+                      {!revisionsOpen ? null : revisionsError ? (
+                        <p className="field-help">Revisions are unavailable.</p>
+                      ) : revisions === null ? (
+                        <p className="field-help">Loading revisions…</p>
+                      ) : revisions.length === 0 ? (
+                        <p className="field-help">Revisions appear after you save changes.</p>
+                      ) : (
+                        <ul className="revision-list">
+                          {revisions.map((revision) => (
+                            <li key={revision.id}>
+                              <button
+                                type="button"
+                                className="revision-link"
+                                disabled={revisionBusy}
+                                onClick={() => void handleViewRevision(revision)}
+                              >
+                                <span className="revision-number">#{revision.revisionNumber}</span>
+                                <span className="revision-date">
+                                  {formatDateTime(revision.createdAt)}
+                                </span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </section>
+                  ) : null}
+                </div>
+
+                <div hidden={sideTab !== 'seo'}>
+                  <section className="editor-panel" aria-labelledby="seo-heading">
+                    <h3 id="seo-heading">SEO</h3>
+                    <div className="field">
+                      <label htmlFor="content-excerpt">Excerpt</label>
+                      <textarea
+                        id="content-excerpt"
+                        name="excerpt"
+                        rows={3}
+                        maxLength={2000}
+                        value={form.excerpt}
+                        onChange={(event) => updateForm('excerpt', event.target.value)}
+                        aria-invalid={Boolean(fieldErrors['excerpt'])}
+                        aria-describedby={
+                          fieldErrors['excerpt'] ? 'content-excerpt-error' : 'content-excerpt-help'
+                        }
+                      />
+                      <p id="content-excerpt-help" className="field-help">
+                        Shown as the meta description in search results.
+                      </p>
+                      <FieldError id="content-excerpt-error" message={fieldErrors['excerpt']} />
+                    </div>
+                    <div className="field">
+                      <label htmlFor="content-seo-title">SEO title</label>
+                      <input
+                        id="content-seo-title"
+                        name="seoTitle"
+                        type="text"
+                        maxLength={300}
+                        value={form.seoTitle}
+                        onChange={(event) => updateForm('seoTitle', event.target.value)}
+                        aria-invalid={Boolean(fieldErrors['seoTitle'])}
+                        aria-describedby={
+                          fieldErrors['seoTitle']
+                            ? 'content-seo-title-help content-seo-title-error'
+                            : 'content-seo-title-help'
+                        }
+                      />
+                      <p id="content-seo-title-help" className="field-help">
+                        Defaults to the post title when empty.
+                      </p>
+                      <FieldError id="content-seo-title-error" message={fieldErrors['seoTitle']} />
+                    </div>
+                    <div className="field">
+                      <label htmlFor="content-seo-description">SEO description</label>
+                      <textarea
+                        id="content-seo-description"
+                        name="seoDescription"
+                        rows={3}
+                        maxLength={500}
+                        value={form.seoDescription}
+                        onChange={(event) => updateForm('seoDescription', event.target.value)}
+                        aria-invalid={Boolean(fieldErrors['seoDescription'])}
+                        aria-describedby={
+                          fieldErrors['seoDescription']
+                            ? 'content-seo-description-help content-seo-description-error'
+                            : 'content-seo-description-help'
+                        }
+                      />
+                      <p id="content-seo-description-help" className="field-help">
+                        Defaults to the excerpt when empty.
+                      </p>
+                      <FieldError
+                        id="content-seo-description-error"
+                        message={fieldErrors['seoDescription']}
+                      />
+                    </div>
+                    <div className="field">
+                      <label htmlFor="content-canonical-url">Canonical URL</label>
+                      <input
+                        id="content-canonical-url"
+                        name="canonicalUrl"
+                        type="url"
+                        value={form.canonicalUrl}
+                        onChange={(event) => updateForm('canonicalUrl', event.target.value)}
+                        aria-invalid={Boolean(fieldErrors['canonicalUrl'])}
+                        aria-describedby={
+                          fieldErrors['canonicalUrl']
+                            ? 'content-canonical-url-help content-canonical-url-error'
+                            : 'content-canonical-url-help'
+                        }
+                      />
+                      <p id="content-canonical-url-help" className="field-help">
+                        Optional. Overrides the default public URL.
+                      </p>
+                      <FieldError
+                        id="content-canonical-url-error"
+                        message={fieldErrors['canonicalUrl']}
+                      />
+                    </div>
+                    <div className="field">
+                      <label htmlFor="content-robots">Robots</label>
+                      <select
+                        id="content-robots"
+                        name="robots"
+                        value={form.robots}
+                        onChange={(event) => updateForm('robots', event.target.value)}
+                        aria-invalid={Boolean(fieldErrors['robots'])}
+                        aria-describedby={
+                          fieldErrors['robots'] ? 'content-robots-error' : undefined
+                        }
+                      >
+                        <option value="">Site default (index, follow)</option>
+                        <option value="noindex, follow">noindex, follow</option>
+                        <option value="index, nofollow">index, nofollow</option>
+                        <option value="noindex, nofollow">noindex, nofollow</option>
+                      </select>
+                      <FieldError id="content-robots-error" message={fieldErrors['robots']} />
+                    </div>
+                    <div className="field">
+                      <label htmlFor="content-og-title">Social title</label>
+                      <input
+                        id="content-og-title"
+                        name="ogTitle"
+                        type="text"
+                        maxLength={300}
+                        value={form.ogTitle}
+                        onChange={(event) => updateForm('ogTitle', event.target.value)}
+                        aria-invalid={Boolean(fieldErrors['ogTitle'])}
+                        aria-describedby={
+                          fieldErrors['ogTitle']
+                            ? 'content-og-title-help content-og-title-error'
+                            : 'content-og-title-help'
+                        }
+                      />
+                      <p id="content-og-title-help" className="field-help">
+                        Defaults to the SEO title when empty.
+                      </p>
+                      <FieldError id="content-og-title-error" message={fieldErrors['ogTitle']} />
+                    </div>
+                    <div className="field">
+                      <label htmlFor="content-og-description">Social description</label>
+                      <textarea
+                        id="content-og-description"
+                        name="ogDescription"
+                        rows={2}
+                        maxLength={500}
+                        value={form.ogDescription}
+                        onChange={(event) => updateForm('ogDescription', event.target.value)}
+                        aria-invalid={Boolean(fieldErrors['ogDescription'])}
+                        aria-describedby={
+                          fieldErrors['ogDescription'] ? 'content-og-description-error' : undefined
+                        }
+                      />
+                      <FieldError
+                        id="content-og-description-error"
+                        message={fieldErrors['ogDescription']}
+                      />
+                    </div>
+                  </section>
+                </div>
+
+                <div hidden={sideTab !== 'block'}>
+                  <section className="editor-panel" aria-labelledby="block-heading">
+                    <h3 id="block-heading">Block</h3>
+                    <p className="field-help">
+                      Block settings are available in the canvas inspector. Select a block, then
+                      open the inspector.
                     </p>
-                    <FieldError id="content-excerpt-error" message={fieldErrors['excerpt']} />
-                  </div>
-                  <div className="field">
-                    <label htmlFor="content-seo-title">SEO title</label>
-                    <input
-                      id="content-seo-title"
-                      name="seoTitle"
-                      type="text"
-                      maxLength={300}
-                      value={form.seoTitle}
-                      onChange={(event) => updateForm('seoTitle', event.target.value)}
-                      aria-invalid={Boolean(fieldErrors['seoTitle'])}
-                      aria-describedby={
-                        fieldErrors['seoTitle']
-                          ? 'content-seo-title-help content-seo-title-error'
-                          : 'content-seo-title-help'
-                      }
-                    />
-                    <p id="content-seo-title-help" className="field-help">
-                      Defaults to the post title when empty.
-                    </p>
-                    <FieldError id="content-seo-title-error" message={fieldErrors['seoTitle']} />
-                  </div>
-                  <div className="field">
-                    <label htmlFor="content-seo-description">SEO description</label>
-                    <textarea
-                      id="content-seo-description"
-                      name="seoDescription"
-                      rows={3}
-                      maxLength={500}
-                      value={form.seoDescription}
-                      onChange={(event) => updateForm('seoDescription', event.target.value)}
-                      aria-invalid={Boolean(fieldErrors['seoDescription'])}
-                      aria-describedby={
-                        fieldErrors['seoDescription']
-                          ? 'content-seo-description-help content-seo-description-error'
-                          : 'content-seo-description-help'
-                      }
-                    />
-                    <p id="content-seo-description-help" className="field-help">
-                      Defaults to the excerpt when empty.
-                    </p>
-                    <FieldError
-                      id="content-seo-description-error"
-                      message={fieldErrors['seoDescription']}
-                    />
-                  </div>
-                  <div className="field">
-                    <label htmlFor="content-canonical-url">Canonical URL</label>
-                    <input
-                      id="content-canonical-url"
-                      name="canonicalUrl"
-                      type="url"
-                      value={form.canonicalUrl}
-                      onChange={(event) => updateForm('canonicalUrl', event.target.value)}
-                      aria-invalid={Boolean(fieldErrors['canonicalUrl'])}
-                      aria-describedby={
-                        fieldErrors['canonicalUrl']
-                          ? 'content-canonical-url-help content-canonical-url-error'
-                          : 'content-canonical-url-help'
-                      }
-                    />
-                    <p id="content-canonical-url-help" className="field-help">
-                      Optional. Overrides the default public URL.
-                    </p>
-                    <FieldError
-                      id="content-canonical-url-error"
-                      message={fieldErrors['canonicalUrl']}
-                    />
-                  </div>
-                  <div className="field">
-                    <label htmlFor="content-robots">Robots</label>
-                    <select
-                      id="content-robots"
-                      name="robots"
-                      value={form.robots}
-                      onChange={(event) => updateForm('robots', event.target.value)}
-                      aria-invalid={Boolean(fieldErrors['robots'])}
-                      aria-describedby={fieldErrors['robots'] ? 'content-robots-error' : undefined}
+                    <button
+                      type="button"
+                      className="button secondary-button"
+                      onClick={() => canvasRef.current?.openInspector()}
                     >
-                      <option value="">Site default (index, follow)</option>
-                      <option value="noindex, follow">noindex, follow</option>
-                      <option value="index, nofollow">index, nofollow</option>
-                      <option value="noindex, nofollow">noindex, nofollow</option>
-                    </select>
-                    <FieldError id="content-robots-error" message={fieldErrors['robots']} />
-                  </div>
-                  <div className="field">
-                    <label htmlFor="content-og-title">Social title</label>
-                    <input
-                      id="content-og-title"
-                      name="ogTitle"
-                      type="text"
-                      maxLength={300}
-                      value={form.ogTitle}
-                      onChange={(event) => updateForm('ogTitle', event.target.value)}
-                      aria-invalid={Boolean(fieldErrors['ogTitle'])}
-                      aria-describedby={
-                        fieldErrors['ogTitle']
-                          ? 'content-og-title-help content-og-title-error'
-                          : 'content-og-title-help'
-                      }
-                    />
-                    <p id="content-og-title-help" className="field-help">
-                      Defaults to the SEO title when empty.
-                    </p>
-                    <FieldError id="content-og-title-error" message={fieldErrors['ogTitle']} />
-                  </div>
-                  <div className="field">
-                    <label htmlFor="content-og-description">Social description</label>
-                    <textarea
-                      id="content-og-description"
-                      name="ogDescription"
-                      rows={2}
-                      maxLength={500}
-                      value={form.ogDescription}
-                      onChange={(event) => updateForm('ogDescription', event.target.value)}
-                      aria-invalid={Boolean(fieldErrors['ogDescription'])}
-                      aria-describedby={
-                        fieldErrors['ogDescription'] ? 'content-og-description-error' : undefined
-                      }
-                    />
-                    <FieldError
-                      id="content-og-description-error"
-                      message={fieldErrors['ogDescription']}
-                    />
-                  </div>
-                </section>
-              </div>
-
-              <div hidden={sideTab !== 'block'}>
-                <section className="editor-panel" aria-labelledby="block-heading">
-                  <h3 id="block-heading">Block</h3>
-                  <p className="field-help">
-                    Block settings are available in the canvas inspector. Select a block, then open
-                    the inspector.
-                  </p>
-                  <button
-                    type="button"
-                    className="button secondary-button"
-                    onClick={() => canvasRef.current?.openInspector()}
-                  >
-                    Open block settings
-                  </button>
-                </section>
+                      Open block settings
+                    </button>
+                  </section>
+                </div>
               </div>
             </aside>
           </div>

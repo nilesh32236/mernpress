@@ -79,6 +79,8 @@ export interface AdminPost {
   updatedAt: string;
   terms: { categories: AdminTermSummary[]; tags: AdminTermSummary[] };
   featuredMedia: FeaturedImage | null;
+  /** Author summary for list/single views (null when the author was deleted). */
+  author: { id: string; username: string } | null;
   /**
    * Admin-only draft-preview bearer token (P8-03). Present only on the single
    * post view (`getPost`); never emitted by list responses.
@@ -192,6 +194,10 @@ export interface AdminListQuery {
   type?: ContentType | undefined;
   status?: PostStatus | undefined;
   search?: string | undefined;
+  /** Filter by a taxonomy term id (WordPress "All categories"). */
+  category?: string | undefined;
+  /** Filter by ISO month `YYYY-MM` on the last-updated instant ("All dates"). */
+  month?: string | undefined;
   page: number;
   perPage: number;
   sort: AdminPostSort;

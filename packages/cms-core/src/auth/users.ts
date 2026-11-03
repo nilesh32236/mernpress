@@ -13,6 +13,8 @@ export type UserAdminErrorCode =
   | 'FORBIDDEN'
   | 'USER_NOT_FOUND'
   | 'USERNAME_TAKEN'
+  | 'EMAIL_TAKEN'
+  | 'INVALID_EMAIL'
   | 'INVALID_USERNAME'
   | 'INVALID_ROLE'
   | 'INVALID_STATUS'
@@ -41,6 +43,10 @@ export class UserAdminError extends Error {
 export interface AdminUser {
   id: string;
   username: string;
+  /** Optional contact email. */
+  email: string | null;
+  /** Optional display name. */
+  displayName: string | null;
   role: UserRole;
   status: UserStatus;
   /** ISO-8601 UTC instant. */
@@ -53,6 +59,8 @@ export interface AdminUser {
 export interface UserProfile {
   id: string;
   username: string;
+  email: string | null;
+  displayName: string | null;
   role: UserRole;
   /** ISO-8601 UTC instant. */
   createdAt: string;
@@ -68,10 +76,14 @@ export interface CreateUserInput {
   username: string;
   password: string;
   role: UserRole;
+  email?: string | null | undefined;
+  displayName?: string | null | undefined;
 }
 
 export interface UpdateProfileInput {
   username?: string | undefined;
+  email?: string | null | undefined;
+  displayName?: string | null | undefined;
 }
 
 export interface ChangeOwnPasswordInput {
@@ -123,6 +135,8 @@ const SEARCH_MAX = 200;
 const SUMMARY_SELECT = {
   id: true,
   username: true,
+  email: true,
+  displayName: true,
   role: true,
   status: true,
   createdAt: true,
@@ -131,6 +145,8 @@ const SUMMARY_SELECT = {
 const PROFILE_SELECT = {
   id: true,
   username: true,
+  email: true,
+  displayName: true,
   role: true,
   createdAt: true,
 } as const;
@@ -140,6 +156,8 @@ type AuditClient = Pick<DatabaseClient, 'auditEvent'>;
 type SummaryRow = {
   id: string;
   username: string;
+  email: string | null;
+  displayName: string | null;
   role: UserRole;
   status: UserStatus;
   createdAt: Date;
@@ -148,9 +166,38 @@ type SummaryRow = {
 type ProfileRow = {
   id: string;
   username: string;
+  email: string | null;
+  displayName: string | null;
   role: UserRole;
   createdAt: Date;
 };
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Normalise an optional email; empty strings clear it. */
+function normalizeEmail(value: string | null | undefined): string | null {
+  if (value === undefined || value === null) return null;
+  const email = value.trim().toLowerCase();
+  if (email.length === 0) return null;
+  if (email.length > 254 || !EMAIL_PATTERN.test(email)) {
+    throw new UserAdminError('INVALID_EMAIL', 'Enter a valid email address.', 400);
+  }
+  return email;
+}
+
+function normalizeDisplayName(value: string | null | undefined): string | null {
+  if (value === undefined || value === null) return null;
+  const name = value.trim();
+  if (name.length === 0) return null;
+  if (name.length > 100) {
+    throw new UserAdminError(
+      'INVALID_USERNAME',
+      'Display name must be 100 characters or fewer.',
+      400,
+    );
+  }
+  return name;
+}
 
 /**
  * Writes one user-administration audit row. Callers pass identifiers and
@@ -183,6 +230,8 @@ function toAdminUser(row: SummaryRow & { _count: { posts: number } }): AdminUser
   return {
     id: row.id,
     username: row.username,
+    email: row.email,
+    displayName: row.displayName,
     role: row.role,
     status: row.status,
     createdAt: row.createdAt.toISOString(),
@@ -194,6 +243,8 @@ function toProfile(row: ProfileRow): UserProfile {
   return {
     id: row.id,
     username: row.username,
+    email: row.email,
+    displayName: row.displayName,
     role: row.role,
     createdAt: row.createdAt.toISOString(),
   };
@@ -375,6 +426,8 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
             passwordHash,
             role: input.role,
             status: 'active',
+            email: normalizeEmail(input.email),
+            displayName: normalizeDisplayName(input.displayName),
           },
           select: { ...SUMMARY_SELECT, _count: { select: { posts: true } } },
         });
@@ -389,6 +442,10 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
       });
     } catch (error) {
       if (isUniqueViolation(error)) {
+        const target = String((error as { meta?: { target?: unknown } }).meta?.target ?? '');
+        if (target.includes('email')) {
+          throw new UserAdminError('EMAIL_TAKEN', 'That email address is already in use.', 409);
+        }
         throw new UserAdminError('USERNAME_TAKEN', 'That username is already in use.', 409);
       }
       throw error;
@@ -604,28 +661,46 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
       throw new UserAdminError('USER_NOT_FOUND', 'User not found.', 404);
     }
 
-    if (input.username === undefined) {
-      return toProfile(current);
-    }
+    const username =
+      input.username === undefined ? current.username : validatedUsername(input.username);
+    const email = input.email === undefined ? current.email : normalizeEmail(input.email);
+    const displayName =
+      input.displayName === undefined
+        ? current.displayName
+        : normalizeDisplayName(input.displayName);
 
-    const username = validatedUsername(input.username);
-    if (username === current.username) {
+    if (
+      username === current.username &&
+      email === current.email &&
+      displayName === current.displayName
+    ) {
       return toProfile(current);
     }
 
     try {
       return await prisma.$transaction(async (tx) => {
-        const taken = await tx.user.findFirst({
-          where: { username, id: { not: current.id } },
-          select: { id: true },
-        });
-        if (taken) {
-          throw new UserAdminError('USERNAME_TAKEN', 'That username is already in use.', 409);
+        if (username !== current.username) {
+          const taken = await tx.user.findFirst({
+            where: { username, id: { not: current.id } },
+            select: { id: true },
+          });
+          if (taken) {
+            throw new UserAdminError('USERNAME_TAKEN', 'That username is already in use.', 409);
+          }
+        }
+        if (email !== null) {
+          const emailTaken = await tx.user.findFirst({
+            where: { email, id: { not: current.id } },
+            select: { id: true },
+          });
+          if (emailTaken) {
+            throw new UserAdminError('EMAIL_TAKEN', 'That email address is already in use.', 409);
+          }
         }
 
         const updated = await tx.user.update({
           where: { id: current.id },
-          data: { username },
+          data: { username, email, displayName },
           select: PROFILE_SELECT,
         });
 
@@ -638,6 +713,10 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
       });
     } catch (error) {
       if (isUniqueViolation(error)) {
+        const target = String((error as { meta?: { target?: unknown } }).meta?.target ?? '');
+        if (target.includes('email')) {
+          throw new UserAdminError('EMAIL_TAKEN', 'That email address is already in use.', 409);
+        }
         throw new UserAdminError('USERNAME_TAKEN', 'That username is already in use.', 409);
       }
       throw error;

@@ -30,6 +30,7 @@ import { registerScheduleRoutes } from './routes/schedule.js';
 import { registerContentBulkRoutes } from './routes/content-bulk.js';
 import { registerMediaRoutes } from './routes/media.js';
 import { registerAutosaveRoutes } from './routes/autosave.js';
+import { registerAdminHealthRoutes } from './routes/admin-health.js';
 import { startPublishScheduler } from './scheduler.js';
 import { resolveRequestId } from './http/request-id.js';
 import { mkdirSync } from 'node:fs';
@@ -184,6 +185,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerContentBulkRoutes(app, { env, auth, bulk });
   registerMediaRoutes(app, { env, auth, media, storageRoot: env.MEDIA_STORAGE_DIR });
   registerAutosaveRoutes(app, { env, auth, autosave });
+  registerAdminHealthRoutes(app, { env, auth, database });
   registerPublicContentRoutes(app, { content });
 
   if (env.SCHEDULER_ENABLED) {

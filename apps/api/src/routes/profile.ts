@@ -8,6 +8,8 @@ import { sendRouteError } from './send-error.js';
 export const updateProfileSchema = z
   .object({
     username: z.string().min(1).max(64).optional(),
+    email: z.string().max(254).nullable().optional(),
+    displayName: z.string().max(100).nullable().optional(),
   })
   .strict();
 

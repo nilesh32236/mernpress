@@ -26,6 +26,8 @@ function makeProfile(overrides: Partial<UserProfile> = {}): UserProfile {
   return {
     id: 'u1',
     username: 'admin',
+    email: 'admin@example.com',
+    displayName: 'Admin',
     role: 'administrator',
     createdAt: '2026-10-01T09:00:00.000Z',
     ...overrides,
@@ -61,7 +63,11 @@ describe('profile page', () => {
     fireEvent.submit(screen.getByRole('form', { name: 'Account details' }));
 
     await waitFor(() =>
-      expect(vi.mocked(updateProfile)).toHaveBeenCalledWith({ username: 'superadmin' }),
+      expect(vi.mocked(updateProfile)).toHaveBeenCalledWith({
+        username: 'superadmin',
+        displayName: 'Admin',
+        email: 'admin@example.com',
+      }),
     );
     expect(await screen.findByText('Profile updated.')).toBeDefined();
     expect(onProfileUpdated).toHaveBeenCalledWith({ username: 'superadmin' });

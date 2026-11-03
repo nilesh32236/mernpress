@@ -1,0 +1,164 @@
+- generic [ref=e25]:
+    - link "Skip to content" [ref=e26] [cursor=pointer]:
+        - /url: '#main-content'
+    - banner "Admin toolbar" [ref=e27]:
+        - generic [ref=e28]:
+            - button "Open navigation" [ref=e29] [cursor=pointer]
+            - link "MERNPress admin home" [ref=e31] [cursor=pointer]:
+                - /url: /admin
+                - generic [aria-hidden] [ref=e32]: M
+            - generic [ref=e33]:
+                - button "New content menu" [ref=e34] [cursor=pointer]:
+                    - generic [aria-hidden] [ref=e35]: +
+                    - generic [ref=e36]: New
+                - link "Post":
+                    - /url: /posts/new
+                - link "Page":
+                    - /url: /pages/new
+                - link "User":
+                    - /url: /users
+        - generic [ref=e41]:
+            - button "User profile menu" [ref=e42] [cursor=pointer]:
+                - generic [aria-hidden] [ref=e43]: AD
+            - link "Profile":
+                - /url: /profile
+            - button "Sign out"
+    - generic [ref=e47]:
+        - complementary "Primary navigation" [ref=e48]:
+            - button "Collapse menu" [ref=e49] [cursor=pointer]
+            - navigation "Primary" [ref=e54]:
+                - list [ref=e55]:
+                    - listitem [ref=e56]:
+                        - generic [ref=e57]:
+                            - link "Dashboard" [ref=e58] [cursor=pointer]:
+                                - /url: /
+                            - button "Toggle Dashboard submenu" [expanded] [ref=e66] [cursor=pointer]
+                        - list [ref=e69]:
+                            - listitem [ref=e70]:
+                                - link "Home" [ref=e71] [cursor=pointer]:
+                                    - /url: /
+                    - listitem [ref=e74]:
+                        - generic [ref=e75]:
+                            - link "Posts" [ref=e76] [cursor=pointer]:
+                                - /url: /posts
+                            - button "Toggle Posts submenu" [ref=e81] [cursor=pointer]
+                    - listitem [ref=e84]:
+                        - generic [ref=e85]:
+                            - link "Pages" [ref=e86] [cursor=pointer]:
+                                - /url: /pages
+                            - button "Toggle Pages submenu" [ref=e92] [cursor=pointer]
+                    - listitem [ref=e95]:
+                        - generic [ref=e96]:
+                            - link "Media" [ref=e97] [cursor=pointer]:
+                                - /url: /media
+                            - button "Toggle Media submenu" [ref=e104] [cursor=pointer]
+                    - listitem [ref=e107]:
+                        - generic [ref=e108]:
+                            - link "Users" [ref=e109] [cursor=pointer]:
+                                - /url: /users
+                            - button "Toggle Users submenu" [ref=e117] [cursor=pointer]
+                    - listitem [ref=e120]:
+                        - generic [ref=e121]:
+                            - link "Settings" [ref=e122] [cursor=pointer]:
+                                - /url: /settings
+                            - button "Toggle Settings submenu" [ref=e128] [cursor=pointer]
+            - generic [ref=e132]:
+                - paragraph [aria-hidden] [ref=e133]: admin
+                - paragraph [ref=e134]: Administrator
+        - generic [ref=e135]:
+            - main [ref=e136]:
+                - generic [ref=e137]:
+                    - navigation "Breadcrumb" [ref=e138]:
+                        - list [ref=e139]:
+                            - listitem [ref=e140]:
+                                - generic [ref=e141]: Dashboard
+                    - heading "Dashboard" [level=1] [ref=e149]
+                    - region [ref=e150]:
+                        - heading "Welcome to MERNPress!" [level=2] [ref=e151]
+                        - paragraph [ref=e155]: We've assembled some links to get you started — write your first post with the block editor.
+                        - generic [ref=e156]:
+                            - link "Add New Post" [ref=e157] [cursor=pointer]:
+                                - /url: /posts/new
+                                - generic [aria-hidden] [ref=e158]: +
+                                - text: Add New Post
+                            - link "Add New Page" [ref=e159] [cursor=pointer]:
+                                - /url: /pages/new
+                                - generic [aria-hidden] [ref=e160]: +
+                                - text: Add New Page
+                            - link "Manage Posts" [ref=e161] [cursor=pointer]:
+                                - /url: /posts
+                            - link "Categories & Tags" [ref=e162] [cursor=pointer]:
+                                - /url: /terms
+                    - generic [ref=e163]:
+                        - region [ref=e164]:
+                            - heading "At a Glance" [level=2] [ref=e166]
+                            - generic [ref=e170]:
+                                - link [ref=e171] [cursor=pointer]:
+                                    - /url: /posts
+                                    - strong [ref=e175]: '1'
+                                    - text: Posts
+                                - generic [ref=e176]:
+                                    - strong [ref=e181]: '1'
+                                    - text: Published
+                                - generic [ref=e182]:
+                                    - strong [ref=e186]: '0'
+                                    - text: Drafts
+                                - generic [ref=e187]:
+                                    - strong [ref=e191]: '0'
+                                    - text: Trashed
+                                - link [ref=e192] [cursor=pointer]:
+                                    - /url: /pages
+                                    - strong [ref=e196]: '1'
+                                    - text: Pages
+                                - generic [ref=e197]:
+                                    - strong [ref=e201]: '0'
+                                    - text: Pages Published
+                                - generic [ref=e202]:
+                                    - strong [ref=e205]: '1'
+                                    - text: Pages Draft
+                                - generic [ref=e206]:
+                                    - strong [ref=e210]: '0'
+                                    - text: Pages Trashed
+                            - paragraph [ref=e211]: Site-wide totals, updated live.
+                        - region [ref=e215]:
+                            - generic [ref=e216]:
+                                - heading "Activity" [level=2] [ref=e217]
+                                - link "All posts" [ref=e220] [cursor=pointer]:
+                                    - /url: /posts
+                                    - text: All posts
+                                    - generic [aria-hidden] [ref=e221]: →
+                            - list [ref=e223]:
+                                - listitem [ref=e224]:
+                                    - link "Welcome to MERNPress" [ref=e225] [cursor=pointer]:
+                                        - /url: /posts/01a19fb6-93de-715b-abee-dd3453d12c5c/edit
+                                    - generic [ref=e226]:
+                                        - generic [ref=e227]: Published
+                                        - time [ref=e228]: Nov 3, 2026
+                        - region [ref=e229]:
+                            - heading "Quick Draft" [level=2] [ref=e231]
+                            - generic [ref=e234]:
+                                - generic [ref=e235]: Draft title
+                                - textbox "Draft title" [ref=e236]:
+                                    - /placeholder: Title
+                                - generic [ref=e237]: Draft content
+                                - textbox "Draft content" [ref=e238]:
+                                    - /placeholder: What's on your mind?
+                                - button "Save Draft" [disabled] [ref=e240]
+                        - region [ref=e244]:
+                            - heading "Site Health" [level=2] [ref=e246]
+                            - generic [ref=e249]:
+                                - paragraph [ref=e250]:
+                                    - text: 'Overall status:'
+                                    - generic [ref=e251]: Good
+                                - list [ref=e252]:
+                                    - listitem [ref=e253]:
+                                        - generic [ref=e254]: Database connection
+                                        - generic [ref=e255]: Pass
+                                    - listitem [ref=e256]:
+                                        - generic [ref=e257]: Media storage writable
+                                        - generic [ref=e258]: Pass
+                                    - listitem [ref=e259]:
+                                        - generic [ref=e260]: Scheduled publishing
+                                        - generic [ref=e261]: Pass
+            - contentinfo [ref=e262]:
+                - paragraph [ref=e263]: MERNPress Content administration

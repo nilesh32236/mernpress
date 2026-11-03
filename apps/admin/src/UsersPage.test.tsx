@@ -38,6 +38,8 @@ const EDITOR = makeUser({});
 const AUTHOR = makeUser({
   id: 'u3',
   username: 'author-c',
+  email: null,
+  displayName: null,
   role: 'author',
   postCount: 0,
   createdAt: '2026-10-21T10:00:00.000Z',
@@ -47,6 +49,8 @@ function makeUser(overrides: Partial<AdminUser> = {}): AdminUser {
   return {
     id: 'u2',
     username: 'editor-b',
+    email: 'editor-b@example.com',
+    displayName: 'Editor B',
     role: 'editor',
     status: 'active',
     createdAt: '2026-10-20T09:00:00.000Z',
@@ -88,7 +92,8 @@ describe('users page', () => {
     expect(screen.getByText('Editor')).toBeDefined();
     expect(screen.getByText('Administrator')).toBeDefined();
     expect(screen.getByText('3 posts')).toBeDefined();
-    expect(screen.getByText('Oct 20, 2026, 9:00 AM')).toBeDefined();
+    expect(screen.getAllByText('Editor B').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('editor-b@example.com').length).toBeGreaterThan(0);
     expect(screen.getByText('(You)')).toBeDefined();
   });
 

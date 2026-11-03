@@ -59,6 +59,8 @@ export interface MediaListQuery {
   search?: string | undefined;
   /** Only `image` exists in Phase 6; anything else is a validation error. */
   type?: 'image' | undefined;
+  /** Creation-date ordering; newest first by default. */
+  order?: 'newest' | 'oldest' | undefined;
 }
 
 export interface UploadMediaInput {

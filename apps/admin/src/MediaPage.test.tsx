@@ -169,7 +169,7 @@ describe('media library page', () => {
     render(<MediaPage user={admin} />);
     await screen.findByRole('button', { name: 'View sunset.png' });
 
-    expect(screen.getByRole('button', { name: 'Add New' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add New Media File' })).toBeDefined();
     chooseFiles(screen.getByLabelText('Upload media files'), [
       new File(['pixels'], 'beach.png', { type: 'image/png' }),
     ]);
