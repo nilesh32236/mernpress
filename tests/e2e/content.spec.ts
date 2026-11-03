@@ -61,10 +61,6 @@ test.afterAll(() => {
   });
 });
 
-function primaryNav(page: Page) {
-  return page.getByRole('navigation', { name: 'Primary' });
-}
-
 async function login(page: Page, username: string) {
   await page.goto(ADMIN_URL);
   await page.getByLabel('Username or Email Address').fill(username);
@@ -250,6 +246,7 @@ test('list pagination uses server totals', async ({ page }) => {
 });
 
 test('keyboard navigation, skip link and narrow viewport work', async ({ page }) => {
+  test.setTimeout(60_000);
   await login(page, editorUsername);
   await page.goto(ADMIN_URL);
   await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible();

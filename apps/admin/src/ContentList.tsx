@@ -32,6 +32,7 @@ import {
   useLocation,
 } from './router.js';
 import { SCREEN_OPTIONS_EVENT, screenPerPage } from './screenOptions.js';
+import { formatSettingsDate, formatSettingsTime } from './format.js';
 
 const MAX_SEARCH_LENGTH = 200;
 function sanitizeStatus(value: string | null): PostStatus | '' {
@@ -52,13 +53,7 @@ function formatWpDate(value: string | null): string {
   if (!value) return '—';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '—';
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const hours = date.getHours();
-  const h12 = hours % 12 === 0 ? 12 : hours % 12;
-  const suffix = hours < 12 ? 'am' : 'pm';
-  return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} at ${h12}:${pad(
-    date.getMinutes(),
-  )} ${suffix}`;
+  return `${formatSettingsDate(date)} at ${formatSettingsTime(date)}`;
 }
 
 function monthOptions(): Array<{ value: string; label: string }> {

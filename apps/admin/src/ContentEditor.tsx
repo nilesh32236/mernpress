@@ -1532,6 +1532,26 @@ export function ContentEditor({
                           <span className="publish-label">Visibility</span>
                           <div className="publish-value">Public</div>
                         </div>
+                        <div className="publish-field">
+                          <span className="publish-label">Author</span>
+                          <div className="publish-value">
+                            {post.author?.username ?? user.username}
+                          </div>
+                        </div>
+                        <div className="publish-field">
+                          <span className="publish-label">Template</span>
+                          <div className="publish-value">
+                            {post.type === 'post' ? 'Single Post' : 'Default Template'}
+                          </div>
+                        </div>
+                        <div className="publish-field">
+                          <span className="publish-label">Discussion</span>
+                          <div className="publish-value">Closed</div>
+                        </div>
+                        <div className="publish-field">
+                          <span className="publish-label">Format</span>
+                          <div className="publish-value">Standard</div>
+                        </div>
                         {post.status === 'DRAFT' ? (
                           <div className="publish-field">
                             <span className="publish-label">
@@ -1643,6 +1663,20 @@ export function ContentEditor({
                         <div className="publish-field">
                           <span className="publish-label">Author</span>
                           <div className="publish-value">{user.username}</div>
+                        </div>
+                        <div className="publish-field">
+                          <span className="publish-label">Template</span>
+                          <div className="publish-value">
+                            {type === 'post' ? 'Single Post' : 'Default Template'}
+                          </div>
+                        </div>
+                        <div className="publish-field">
+                          <span className="publish-label">Discussion</span>
+                          <div className="publish-value">Closed</div>
+                        </div>
+                        <div className="publish-field">
+                          <span className="publish-label">Format</span>
+                          <div className="publish-value">Standard</div>
                         </div>
                         <p className="field-help">
                           The content is created as a draft. Publish it from the top bar when it is

@@ -102,6 +102,77 @@ const SPECS: Record<string, OptionSpec> = {
       return value;
     },
   },
+  default_role: {
+    group: 'general',
+    defaultValue: 'subscriber',
+    validate: (value) => {
+      const roles = ['administrator', 'editor', 'author', 'contributor', 'subscriber'];
+      if (typeof value !== 'string' || !roles.includes(value)) {
+        throwValidation('default_role must be a valid role.');
+      }
+      return value;
+    },
+  },
+  users_can_register: {
+    group: 'general',
+    defaultValue: false,
+    validate: (value) => {
+      if (typeof value !== 'boolean') {
+        throwValidation('users_can_register must be a boolean.');
+      }
+      return value;
+    },
+  },
+  site_language: {
+    group: 'general',
+    defaultValue: 'en_US',
+    validate: (value) => {
+      if (typeof value !== 'string' || value.length > 20) {
+        throwValidation('site_language must be a short locale code.');
+      }
+      return value;
+    },
+  },
+  timezone: {
+    group: 'general',
+    defaultValue: 'UTC',
+    validate: (value) => {
+      if (typeof value !== 'string' || value.length > 64) {
+        throwValidation('timezone must be a timezone string.');
+      }
+      return value;
+    },
+  },
+  date_format: {
+    group: 'general',
+    defaultValue: 'Y/m/d',
+    validate: (value) => {
+      if (typeof value !== 'string' || value.length > 40) {
+        throwValidation('date_format must be a short pattern.');
+      }
+      return value;
+    },
+  },
+  time_format: {
+    group: 'general',
+    defaultValue: 'g:i a',
+    validate: (value) => {
+      if (typeof value !== 'string' || value.length > 40) {
+        throwValidation('time_format must be a short pattern.');
+      }
+      return value;
+    },
+  },
+  week_starts_on: {
+    group: 'general',
+    defaultValue: 1,
+    validate: (value) => {
+      if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > 6) {
+        throwValidation('week_starts_on must be 0-6.');
+      }
+      return value;
+    },
+  },
   homepage_mode: {
     group: 'reading',
     defaultValue: 'latest_posts',

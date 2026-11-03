@@ -165,7 +165,23 @@ function AddUserDialog({
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('subscriber');
+  const [role, setRole] = useState<UserRole>(() => {
+    try {
+      const stored = window.localStorage.getItem('mernpress.defaultRole');
+      if (
+        stored === 'administrator' ||
+        stored === 'editor' ||
+        stored === 'author' ||
+        stored === 'contributor' ||
+        stored === 'subscriber'
+      ) {
+        return stored;
+      }
+    } catch {
+      // Storage is optional.
+    }
+    return 'subscriber';
+  });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 

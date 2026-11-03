@@ -9,6 +9,7 @@ import {
 } from './api.js';
 import { ErrorState, Notice, PageHeader, Skeleton, type NoticeMessage } from './components.js';
 import { useLocation } from './router.js';
+import { cacheSiteFormats, formatSettingsDate, formatSettingsTime } from './format.js';
 
 type SettingsTab = OptionGroup;
 
@@ -150,6 +151,13 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
   const [siteTagline, setSiteTagline] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [siteUrl, setSiteUrl] = useState('');
+  const [usersCanRegister, setUsersCanRegister] = useState(false);
+  const [defaultRole, setDefaultRole] = useState('subscriber');
+  const [siteLanguage, setSiteLanguage] = useState('en_US');
+  const [timezone, setTimezone] = useState('UTC');
+  const [dateFormat, setDateFormat] = useState('Y/m/d');
+  const [timeFormat, setTimeFormat] = useState('g:i a');
+  const [weekStartsOn, setWeekStartsOn] = useState('1');
   const [generalDirty, setGeneralDirty] = useState(false);
 
   const [homepageMode, setHomepageMode] = useState<'latest_posts' | 'static_page'>('latest_posts');
@@ -172,6 +180,25 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
         setSiteTagline(textValue(values.site_tagline));
         setAdminEmail(textValue(values.admin_email));
         setSiteUrl(textValue(values.site_url));
+        setUsersCanRegister(values.users_can_register === true);
+        setDefaultRole(textValue(values.default_role) || 'subscriber');
+        setSiteLanguage(textValue(values.site_language) || 'en_US');
+        setTimezone(textValue(values.timezone) || 'UTC');
+        setDateFormat(textValue(values.date_format) || 'Y/m/d');
+        setTimeFormat(textValue(values.time_format) || 'g:i a');
+        setWeekStartsOn(textValue(values.week_starts_on) || '1');
+        cacheSiteFormats(
+          textValue(values.date_format) || 'Y/m/d',
+          textValue(values.time_format) || 'g:i a',
+        );
+        try {
+          window.localStorage.setItem(
+            'mernpress.defaultRole',
+            textValue(values.default_role) || 'subscriber',
+          );
+        } catch {
+          // Storage is optional.
+        }
         setGeneralDirty(false);
       } else if (group === 'reading') {
         setHomepageMode(values.homepage_mode === 'static_page' ? 'static_page' : 'latest_posts');
@@ -224,7 +251,20 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
         site_tagline: siteTagline,
         admin_email: adminEmail,
         site_url: siteUrl,
+        users_can_register: usersCanRegister,
+        default_role: defaultRole,
+        site_language: siteLanguage,
+        timezone,
+        date_format: dateFormat,
+        time_format: timeFormat,
+        week_starts_on: Number(weekStartsOn),
       });
+      cacheSiteFormats(dateFormat, timeFormat);
+      try {
+        window.localStorage.setItem('mernpress.defaultRole', defaultRole);
+      } catch {
+        // Storage is optional.
+      }
       setGeneralDirty(false);
       setNotice({ tone: 'success', text: 'Settings saved.' });
     } catch (caught) {
@@ -344,6 +384,157 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
                 disabled={saving.general}
               />
             </div>
+            <div className="field">
+              <label htmlFor="users_can_register">Membership</label>
+              <div>
+                <label className="checkbox-row">
+                  <input
+                    id="users_can_register"
+                    type="checkbox"
+                    checked={usersCanRegister}
+                    onChange={(event) => {
+                      setUsersCanRegister(event.target.checked);
+                      setGeneralDirty(true);
+                    }}
+                    disabled={saving.general}
+                  />
+                  <span>Anyone can register</span>
+                </label>
+                <p className="field-help">
+                  Public registration is not exposed by this build; the setting is preserved for
+                  parity.
+                </p>
+              </div>
+            </div>
+
+            <div className="field">
+              <label htmlFor="default_role">New User Default Role</label>
+              <select
+                id="default_role"
+                value={defaultRole}
+                onChange={(event) => {
+                  setDefaultRole(event.target.value);
+                  setGeneralDirty(true);
+                }}
+                disabled={saving.general}
+              >
+                <option value="administrator">Administrator</option>
+                <option value="editor">Editor</option>
+                <option value="author">Author</option>
+                <option value="contributor">Contributor</option>
+                <option value="subscriber">Subscriber</option>
+              </select>
+            </div>
+
+            <div className="field">
+              <label htmlFor="site_language">Site Language</label>
+              <select
+                id="site_language"
+                value={siteLanguage}
+                onChange={(event) => {
+                  setSiteLanguage(event.target.value);
+                  setGeneralDirty(true);
+                }}
+                disabled={saving.general}
+              >
+                <option value="en_US">English (United States)</option>
+              </select>
+            </div>
+
+            <div className="field">
+              <label htmlFor="timezone">Timezone</label>
+              <select
+                id="timezone"
+                value={timezone}
+                onChange={(event) => {
+                  setTimezone(event.target.value);
+                  setGeneralDirty(true);
+                }}
+                disabled={saving.general}
+              >
+                {[
+                  'UTC',
+                  'Asia/Kolkata',
+                  'Asia/Dubai',
+                  'Europe/London',
+                  'Europe/Berlin',
+                  'America/New_York',
+                  'America/Chicago',
+                  'America/Los_Angeles',
+                  'Australia/Sydney',
+                ].map((zone) => (
+                  <option key={zone} value={zone}>
+                    {zone}
+                  </option>
+                ))}
+              </select>
+              <p className="field-help">Choose a city in the same timezone as you.</p>
+            </div>
+
+            <div className="field">
+              <label htmlFor="date_format">Date Format</label>
+              <div>
+                <select
+                  id="date_format"
+                  value={dateFormat}
+                  onChange={(event) => {
+                    setDateFormat(event.target.value);
+                    setGeneralDirty(true);
+                  }}
+                  disabled={saving.general}
+                >
+                  <option value="Y/m/d">2026/11/03</option>
+                  <option value="F j, Y">November 3, 2026</option>
+                  <option value="Y-m-d">2026-11-03</option>
+                  <option value="m/d/Y">11/03/2026</option>
+                  <option value="d/m/Y">03/11/2026</option>
+                  <option value="d.m.Y">03.11.2026</option>
+                </select>
+                <p className="field-help">Preview: {formatSettingsDate(new Date())}</p>
+              </div>
+            </div>
+
+            <div className="field">
+              <label htmlFor="time_format">Time Format</label>
+              <div>
+                <select
+                  id="time_format"
+                  value={timeFormat}
+                  onChange={(event) => {
+                    setTimeFormat(event.target.value);
+                    setGeneralDirty(true);
+                  }}
+                  disabled={saving.general}
+                >
+                  <option value="g:i a">8:15 am</option>
+                  <option value="g:i A">8:15 AM</option>
+                  <option value="H:i">08:15</option>
+                </select>
+                <p className="field-help">Preview: {formatSettingsTime(new Date())}</p>
+              </div>
+            </div>
+
+            <div className="field">
+              <label htmlFor="week_starts_on">Week Starts On</label>
+              <select
+                id="week_starts_on"
+                value={weekStartsOn}
+                onChange={(event) => {
+                  setWeekStartsOn(event.target.value);
+                  setGeneralDirty(true);
+                }}
+                disabled={saving.general}
+              >
+                <option value="0">Sunday</option>
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+                <option value="5">Friday</option>
+                <option value="6">Saturday</option>
+              </select>
+            </div>
+
             <div className="field actions">
               <button
                 type="submit"
