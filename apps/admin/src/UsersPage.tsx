@@ -32,7 +32,7 @@ import {
 } from './components.js';
 import { pluralize } from './format.js';
 import { roleLabel } from './roles.js';
-import { navigate, useLocation } from './router.js';
+import { navigate, replace, useLocation } from './router.js';
 import { SCREEN_OPTIONS_EVENT, screenPerPage } from './screenOptions.js';
 
 const DEFAULT_PER_PAGE = 10;
@@ -155,17 +155,40 @@ function DialogActions({
   );
 }
 
-function AddUserDialog({
+function passwordStrength(password: string): { score: number; label: string } {
+  if (!password) return { score: 0, label: '' };
+  const checks = [
+    password.length >= 8,
+    password.length >= 12,
+    /[a-z]/.test(password) && /[A-Z]/.test(password),
+    /\d/.test(password),
+    /[^A-Za-z0-9]/.test(password),
+  ].filter(Boolean).length;
+  const score = Math.min(5, checks);
+  return { score, label: score >= 4 ? 'Strong' : score >= 3 ? 'Medium' : 'Weak' };
+}
+
+function generatePassword(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*';
+  const values = new Uint32Array(20);
+  crypto.getRandomValues(values);
+  return Array.from(values, (value) => chars[value % chars.length]).join('');
+}
+
+function AddUserPage({
   onCancel,
-  onSuccess,
+  onCreated,
 }: {
   onCancel: () => void;
-  onSuccess: (message: string) => void;
+  onCreated: (username: string) => void;
 }) {
   const [username, setUsername] = useState('');
-  const [displayName, setDisplayName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [website, setWebsite] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<UserRole>(() => {
     try {
       const stored = window.localStorage.getItem('mernpress.defaultRole');
@@ -185,6 +208,7 @@ function AddUserDialog({
   });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const strength = passwordStrength(password);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -198,6 +222,7 @@ function AddUserDialog({
       setError('Password is required.');
       return;
     }
+    const displayName = `${firstName.trim()} ${lastName.trim()}`.trim();
     setSaving(true);
     setError(null);
     try {
@@ -205,22 +230,26 @@ function AddUserDialog({
         username: name,
         password,
         role,
-        ...(displayName.trim() ? { displayName: displayName.trim() } : {}),
+        ...(displayName ? { displayName } : {}),
         ...(email.trim() ? { email: email.trim() } : {}),
+        ...(website.trim() ? { website: website.trim() } : {}),
       });
-      onSuccess(`User “${name}” created.`);
+      onCreated(name);
     } catch (caught) {
       setError(actionErrorMessage(caught));
-    } finally {
       setSaving(false);
     }
   }
 
   return (
-    <Modal title="Add New User" onClose={onCancel}>
-      <form onSubmit={handleSubmit} aria-label="Add user">
+    <div className="wp-list-screen user-new-page">
+      <PageHeader
+        title="Add User"
+        description="Create a brand new user and add them to this site."
+      />
+      <form className="settings-panel" onSubmit={handleSubmit} aria-label="Add user">
         <div className="field">
-          <label htmlFor="add-user-username">Username</label>
+          <label htmlFor="add-user-username">Username (required)</label>
           <input
             id="add-user-username"
             type="text"
@@ -230,21 +259,10 @@ function AddUserDialog({
             autoComplete="off"
             required
           />
+          <p className="field-help">Usernames cannot be changed.</p>
         </div>
         <div className="field">
-          <label htmlFor="add-user-name">Name</label>
-          <input
-            id="add-user-name"
-            type="text"
-            maxLength={100}
-            value={displayName}
-            onChange={(event) => setDisplayName(event.target.value)}
-            disabled={saving}
-            autoComplete="off"
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="add-user-email">Email</label>
+          <label htmlFor="add-user-email">Email (required)</label>
           <input
             id="add-user-email"
             type="email"
@@ -253,20 +271,87 @@ function AddUserDialog({
             onChange={(event) => setEmail(event.target.value)}
             disabled={saving}
             autoComplete="off"
+            required
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="add-user-first-name">First Name</label>
+          <input
+            id="add-user-first-name"
+            type="text"
+            maxLength={100}
+            value={firstName}
+            onChange={(event) => setFirstName(event.target.value)}
+            disabled={saving}
+            autoComplete="off"
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="add-user-last-name">Last Name</label>
+          <input
+            id="add-user-last-name"
+            type="text"
+            maxLength={100}
+            value={lastName}
+            onChange={(event) => setLastName(event.target.value)}
+            disabled={saving}
+            autoComplete="off"
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="add-user-website">Website</label>
+          <input
+            id="add-user-website"
+            type="url"
+            maxLength={2048}
+            value={website}
+            onChange={(event) => setWebsite(event.target.value)}
+            disabled={saving}
+            autoComplete="off"
           />
         </div>
         <div className="field">
           <label htmlFor="add-user-password">Password</label>
-          <input
-            id="add-user-password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            disabled={saving}
-            autoComplete="new-password"
-            required
-          />
-          <p className="field-help">The server enforces the password policy.</p>
+          <div>
+            <p className="password-generate">
+              <button
+                type="button"
+                className="button secondary-button"
+                onClick={() => {
+                  setPassword(generatePassword());
+                  setShowPassword(true);
+                }}
+                disabled={saving}
+              >
+                Generate password
+              </button>
+            </p>
+            <div className="password-row">
+              <input
+                id="add-user-password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                disabled={saving}
+                autoComplete="new-password"
+                required
+              />
+              <button
+                type="button"
+                className="button secondary-button"
+                onClick={() => setShowPassword((value) => !value)}
+                disabled={saving}
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            {password ? (
+              <div className={`password-strength is-${strength.label.toLowerCase()}`}>
+                <span style={{ width: `${strength.score * 20}%` }} />
+                <em>{strength.label}</em>
+              </div>
+            ) : null}
+          </div>
         </div>
         <div className="field">
           <label htmlFor="add-user-role">Role</label>
@@ -288,14 +373,26 @@ function AddUserDialog({
             {error}
           </p>
         ) : null}
-        <DialogActions
-          submitLabel="Add User"
-          busyLabel="Creating…"
-          submitting={saving}
-          onCancel={onCancel}
-        />
+        <div className="field actions">
+          <button
+            type="submit"
+            className="button primary-button"
+            disabled={saving}
+            aria-busy={saving}
+          >
+            {saving ? 'Creating…' : 'Add User'}
+          </button>
+          <button
+            type="button"
+            className="button secondary-button"
+            onClick={onCancel}
+            disabled={saving}
+          >
+            Cancel
+          </button>
+        </div>
       </form>
-    </Modal>
+    </div>
   );
 }
 
@@ -575,10 +672,11 @@ export function UsersPage({ user }: { user: AuthUser }) {
   const [bulkRole, setBulkRole] = useState<UserRole | ''>('');
   const [bulkBusy, setBulkBusy] = useState(false);
 
-  // "Users → Add User" navigates here with ?action=add, like WordPress user-new.php.
   useEffect(() => {
-    if (new URLSearchParams(location.search).get('action') === 'add') {
-      setDialog({ kind: 'add', target: null });
+    const created = new URLSearchParams(location.search).get('created');
+    if (created) {
+      setNotice({ tone: 'success', text: `User “${created}” created.` });
+      replace('/users');
     }
   }, [location.search]);
 
@@ -775,6 +873,16 @@ export function UsersPage({ user }: { user: AuthUser }) {
     );
   }
 
+  const isAddPage = new URLSearchParams(location.search).get('action') === 'add';
+  if (isAddPage) {
+    return (
+      <AddUserPage
+        onCancel={() => navigate('/users')}
+        onCreated={(name) => navigate(`/users?created=${encodeURIComponent(name)}`)}
+      />
+    );
+  }
+
   const totalPages = totalPagesFor(data);
   const total = data?.pagination.total ?? 0;
 
@@ -785,7 +893,7 @@ export function UsersPage({ user }: { user: AuthUser }) {
         <button
           type="button"
           className="button page-title-action"
-          onClick={() => openDialog('add', null)}
+          onClick={() => navigate('/users?action=add')}
         >
           Add User
         </button>
@@ -923,7 +1031,7 @@ export function UsersPage({ user }: { user: AuthUser }) {
             <button
               type="button"
               className="button primary-button"
-              onClick={() => openDialog('add', null)}
+              onClick={() => navigate('/users?action=add')}
             >
               Add New User
             </button>
@@ -1214,9 +1322,6 @@ export function UsersPage({ user }: { user: AuthUser }) {
         </>
       )}
 
-      {dialog?.kind === 'add' ? (
-        <AddUserDialog onCancel={() => setDialog(null)} onSuccess={finishDialog} />
-      ) : null}
       {dialog?.kind === 'role' && dialog.target ? (
         <ChangeRoleDialog
           target={dialog.target}

@@ -522,7 +522,7 @@ export function TermsPage({ user }: { user: AuthUser }) {
                           <SortIndicator direction={sort === 'name' ? order : null} />
                         </button>
                       </th>
-                      <th scope="col">
+                      <th scope="col" className="column-description">
                         <button
                           type="button"
                           className="sortable-column"
@@ -541,7 +541,7 @@ export function TermsPage({ user }: { user: AuthUser }) {
                           <SortIndicator direction={sort === 'description' ? order : null} />
                         </button>
                       </th>
-                      <th scope="col">
+                      <th scope="col" className="column-slug">
                         <button
                           type="button"
                           className="sortable-column"
@@ -560,7 +560,7 @@ export function TermsPage({ user }: { user: AuthUser }) {
                           <SortIndicator direction={sort === 'slug' ? order : null} />
                         </button>
                       </th>
-                      <th scope="col">
+                      <th scope="col" className="column-posts">
                         <button
                           type="button"
                           className="sortable-column"
@@ -732,7 +732,7 @@ export function TermsPage({ user }: { user: AuthUser }) {
                           <SortIndicator direction={sort === 'name' ? order : null} />
                         </button>
                       </th>
-                      <th scope="col">
+                      <th scope="col" className="column-description">
                         <button
                           type="button"
                           className="sortable-column"
@@ -751,7 +751,7 @@ export function TermsPage({ user }: { user: AuthUser }) {
                           <SortIndicator direction={sort === 'description' ? order : null} />
                         </button>
                       </th>
-                      <th scope="col">
+                      <th scope="col" className="column-slug">
                         <button
                           type="button"
                           className="sortable-column"
@@ -770,7 +770,7 @@ export function TermsPage({ user }: { user: AuthUser }) {
                           <SortIndicator direction={sort === 'slug' ? order : null} />
                         </button>
                       </th>
-                      <th scope="col">
+                      <th scope="col" className="column-posts">
                         <button
                           type="button"
                           className="sortable-column"

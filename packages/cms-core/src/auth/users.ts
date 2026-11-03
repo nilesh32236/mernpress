@@ -88,6 +88,7 @@ export interface CreateUserInput {
   role: UserRole;
   email?: string | null | undefined;
   displayName?: string | null | undefined;
+  website?: string | null | undefined;
 }
 
 export interface UpdateProfileInput {
@@ -478,6 +479,10 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
             status: 'active',
             email: normalizeEmail(input.email),
             displayName: normalizeDisplayName(input.displayName),
+            website:
+              input.website === undefined || input.website === null
+                ? null
+                : normalizeWebsite(input.website),
           },
           select: { ...SUMMARY_SELECT, _count: { select: { posts: true } } },
         });

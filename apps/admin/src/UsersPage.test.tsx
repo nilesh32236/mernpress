@@ -73,6 +73,7 @@ function rowFor(username: string): HTMLElement {
 }
 
 beforeEach(() => {
+  window.history.replaceState(null, '', '/users');
   vi.mocked(fetchUsers).mockResolvedValue(list([SELF, EDITOR, AUTHOR]));
   vi.mocked(createUser).mockResolvedValue(makeUser({ id: 'u4', username: 'new-user' }));
   vi.mocked(updateUserRole).mockResolvedValue(makeUser({ role: 'editor' }));
@@ -122,7 +123,7 @@ describe('users page', () => {
     expect(await screen.findByText('Username is required.')).toBeDefined();
     expect(vi.mocked(createUser)).not.toHaveBeenCalled();
 
-    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'new-user' } });
+    fireEvent.change(screen.getByLabelText(/Username/), { target: { value: 'new-user' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'secret-pass' } });
     fireEvent.change(screen.getByLabelText('Role'), { target: { value: 'author' } });
     fireEvent.submit(screen.getByRole('form', { name: 'Add user' }));
@@ -202,7 +203,7 @@ describe('users page', () => {
     await screen.findByText('editor-b');
 
     fireEvent.click(screen.getByRole('button', { name: 'Add User' }));
-    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'new-user' } });
+    fireEvent.change(screen.getByLabelText(/Username/), { target: { value: 'new-user' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'secret-pass' } });
     fireEvent.submit(screen.getByRole('form', { name: 'Add user' }));
 

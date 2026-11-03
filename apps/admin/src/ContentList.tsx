@@ -1077,79 +1077,92 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                       </tr>
                       {quickId === post.id ? (
                         <tr className="quick-edit-row">
-                          <td colSpan={type === 'post' ? 7 : 5}>
-                            <form
-                              className="quick-edit-form"
+                          <td colSpan={type === 'post' ? 7 : 5} className="colspanchange">
+                            <div
+                              className="inline-edit-wrapper"
+                              role="region"
                               aria-label={`Quick edit ${post.title}`}
-                              onSubmit={(event) => {
-                                event.preventDefault();
-                                void saveQuickEdit(post);
-                              }}
                             >
-                              <div className="quick-edit-fields">
-                                <label>
-                                  <span>Title</span>
-                                  <input
-                                    type="text"
-                                    value={quickTitle}
-                                    onChange={(event) => setQuickTitle(event.target.value)}
-                                    disabled={quickBusy}
-                                    required
-                                  />
-                                </label>
-                                <label>
-                                  <span>Slug</span>
-                                  <input
-                                    type="text"
-                                    value={quickSlug}
-                                    onChange={(event) => setQuickSlug(event.target.value)}
-                                    disabled={quickBusy}
-                                  />
-                                </label>
-                                <label>
-                                  <span>Status</span>
-                                  <select
-                                    value={quickStatus}
-                                    onChange={(event) =>
-                                      setQuickStatus(event.target.value as 'DRAFT' | 'PUBLISHED')
-                                    }
-                                    disabled={quickBusy}
-                                  >
-                                    {transitions.includes('unpublish') ||
-                                    post.status === 'DRAFT' ? (
-                                      <option value="DRAFT">Draft</option>
-                                    ) : null}
-                                    {transitions.includes('publish') ||
-                                    post.status === 'PUBLISHED' ? (
-                                      <option value="PUBLISHED">Published</option>
-                                    ) : null}
-                                  </select>
-                                </label>
-                              </div>
-                              {quickError ? (
-                                <p className="form-error" role="alert">
-                                  {quickError}
-                                </p>
-                              ) : null}
-                              <div className="quick-edit-actions">
+                              <fieldset className="inline-edit-col-left">
+                                <legend className="inline-edit-legend">Quick Edit</legend>
+                                <div className="inline-edit-col">
+                                  <label>
+                                    <span className="title">Title</span>
+                                    <span className="input-text-wrap">
+                                      <input
+                                        type="text"
+                                        value={quickTitle}
+                                        onChange={(event) => setQuickTitle(event.target.value)}
+                                        disabled={quickBusy}
+                                        required
+                                      />
+                                    </span>
+                                  </label>
+                                  <label>
+                                    <span className="title">Slug</span>
+                                    <span className="input-text-wrap">
+                                      <input
+                                        type="text"
+                                        value={quickSlug}
+                                        onChange={(event) => setQuickSlug(event.target.value)}
+                                        disabled={quickBusy}
+                                      />
+                                    </span>
+                                  </label>
+                                </div>
+                              </fieldset>
+                              <fieldset className="inline-edit-col-right">
+                                <div className="inline-edit-col">
+                                  <label>
+                                    <span className="title">Status</span>
+                                    <span className="input-text-wrap">
+                                      <select
+                                        value={quickStatus}
+                                        onChange={(event) =>
+                                          setQuickStatus(
+                                            event.target.value as 'DRAFT' | 'PUBLISHED',
+                                          )
+                                        }
+                                        disabled={quickBusy}
+                                      >
+                                        {transitions.includes('unpublish') ||
+                                        post.status === 'DRAFT' ? (
+                                          <option value="DRAFT">Draft</option>
+                                        ) : null}
+                                        {transitions.includes('publish') ||
+                                        post.status === 'PUBLISHED' ? (
+                                          <option value="PUBLISHED">Published</option>
+                                        ) : null}
+                                      </select>
+                                    </span>
+                                  </label>
+                                </div>
+                              </fieldset>
+                              <div className="inline-edit-save submit">
+                                {quickError ? (
+                                  <p className="form-error" role="alert">
+                                    {quickError}
+                                  </p>
+                                ) : null}
                                 <button
-                                  type="submit"
-                                  className="button primary-button"
+                                  type="button"
+                                  className="button primary-button save"
                                   disabled={quickBusy}
                                   aria-busy={quickBusy}
+                                  onClick={() => void saveQuickEdit(post)}
                                 >
                                   {quickBusy ? 'Updating…' : 'Update'}
                                 </button>
                                 <button
                                   type="button"
-                                  className="button secondary-button"
+                                  className="button secondary-button cancel"
                                   onClick={() => setQuickId(null)}
                                   disabled={quickBusy}
                                 >
                                   Cancel
                                 </button>
                               </div>
-                            </form>
+                            </div>
                           </td>
                         </tr>
                       ) : null}

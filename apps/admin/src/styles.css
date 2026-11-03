@@ -8238,3 +8238,226 @@ a.glance-chip:hover {
 .block-canvas-appender-button:hover {
   background: #3858e9;
 }
+
+/* WordPress Site Health widget inside padding. */
+#dashboard_site_health .inside {
+  margin-top: 11px;
+  padding: 0 12px 12px;
+}
+
+/* WordPress Quick Edit inline row. */
+.quick-edit-row > td.colspanchange {
+  background: #f6f7f7;
+  border-left: 4px solid #72aee6;
+  padding: 0;
+}
+
+.inline-edit-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 12px 10px;
+}
+
+.inline-edit-col-left,
+.inline-edit-col-right {
+  flex: 1 1 50%;
+  min-width: 280px;
+  margin: 0;
+  padding: 0 12px 0 0;
+  border: 0;
+}
+
+.inline-edit-legend {
+  padding: 2.6px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d2327;
+}
+
+.inline-edit-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inline-edit-col label {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.inline-edit-col .title {
+  font-size: 13px;
+  color: #1d2327;
+}
+
+.inline-edit-col input,
+.inline-edit-col select {
+  width: 100%;
+  min-height: 32px;
+}
+
+.inline-edit-save {
+  flex: 1 1 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.inline-edit-save .form-error {
+  margin-right: auto;
+}
+
+/* WordPress Bulk Edit panel. */
+.bulk-edit-panel {
+  margin: 0 0 8px;
+  padding: 12px 10px;
+  border: 1px solid #c3c4c7;
+  background: #ffffff;
+}
+
+.bulk-edit-panel h2 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.bulk-edit-panel .bulk-edit-summary {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #646970;
+}
+
+.bulk-edit-panel .bulk-edit-field {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 240px);
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.bulk-edit-panel .bulk-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* WordPress form-table controls start 10px inside the value column. */
+.settings-panel .field:not(.actions) > input,
+.settings-panel .field:not(.actions) > select,
+.settings-panel .field:not(.actions) > textarea,
+.settings-panel .field:not(.actions) > .field-help {
+  margin-left: 10px;
+}
+
+.settings-panel .field:not(.actions) > div {
+  margin-left: 10px;
+}
+
+/* Add User screen. */
+.user-new-page .settings-panel {
+  margin-top: 20px;
+}
+
+.user-new-page #add-user-role {
+  width: 121px;
+}
+
+.password-generate {
+  margin: 0 0 8px;
+}
+
+.password-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.password-row input {
+  flex: 1 1 auto;
+  max-width: 350px;
+}
+
+.password-strength {
+  position: relative;
+  max-width: 350px;
+  height: 20px;
+  margin-top: 4px;
+  background: #f0f0f1;
+  border: 1px solid #dcdcde;
+}
+
+.password-strength span {
+  display: block;
+  height: 100%;
+  background: #d63638;
+}
+
+.password-strength.is-medium span {
+  background: #dba617;
+}
+
+.password-strength.is-strong span {
+  background: #00a32a;
+}
+
+.password-strength em {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+  color: #1d2327;
+}
+
+/* Add User password input matches WordPress's 350px field. */
+.user-new-page .password-row input {
+  flex: 0 0 350px;
+  width: 350px;
+  max-width: 350px;
+}
+
+/* WordPress Quick Draft: 90px content box and a 40px Save Draft button. */
+#dashboard_quick_press textarea {
+  min-height: 90px;
+  padding: 8px 12px;
+}
+
+#dashboard_quick_press input[type='text'] {
+  min-height: 40px;
+}
+
+#dashboard_quick_press .button-primary {
+  height: 40px;
+  min-height: 40px;
+  padding: 0 16px;
+}
+
+/* At a Glance version line matches WordPress's 20px line box. */
+#wp-version-message {
+  margin: 5px 0 0;
+  line-height: 20px;
+}
+
+/* WordPress admin-menu icons are 20px dashicons. */
+.admin-menu-icon svg,
+.nav-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* WordPress form tables start 7px below the page title. */
+.settings-panel {
+  margin-top: -5px;
+}
+
+/* Users rows are 52px tall in WordPress. */
+.content-table.users tbody .row-actions {
+  line-height: 1.2;
+}

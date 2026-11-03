@@ -74,7 +74,10 @@ async function openNewPost(page: Page) {
 }
 
 async function insertBlock(page: Page, searchTerm: string, optionName: RegExp) {
-  await page.getByRole('toolbar', { name: 'Editor tools' }).getByRole('button', { name: 'Add block' }).click();
+  await page
+    .getByRole('toolbar', { name: 'Editor tools' })
+    .getByRole('button', { name: 'Add block' })
+    .click();
   const search = page.getByRole('searchbox').or(page.getByPlaceholder('Search')).first();
   await search.fill(searchTerm);
   const option = page.getByRole('option', { name: optionName }).first();
@@ -291,7 +294,9 @@ test('the editor stays usable at 375px with an off-canvas settings panel', async
 
   await expect(page.getByLabel('Title', { exact: true })).toBeVisible();
   await expect(page.locator('.block-canvas-sheet')).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByRole('toolbar', { name: 'Editor tools' }).getByRole('button', { name: 'Add block' })).toBeVisible();
+  await expect(
+    page.getByRole('toolbar', { name: 'Editor tools' }).getByRole('button', { name: 'Add block' }),
+  ).toBeVisible();
 
   const overflow = await page.evaluate(() => ({
     scroll: document.documentElement.scrollWidth,

@@ -870,6 +870,7 @@ export async function createUser(payload: {
   role: UserRole;
   email?: string;
   displayName?: string;
+  website?: string;
 }): Promise<AdminUser> {
   const response = await fetch('/api/users', {
     method: 'POST',
