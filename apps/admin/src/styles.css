@@ -6249,3 +6249,43 @@ a.glance-chip:hover {
   display: flex;
   justify-content: flex-end;
 }
+
+/* WordPress bulk edit panel. */
+.bulk-edit-panel {
+  margin: 8px 0;
+  padding: 12px 16px;
+  background: #ffffff;
+  border: 1px solid #c3c4c7;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.bulk-edit-panel h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 400;
+  color: #1d2327;
+}
+
+.bulk-edit-summary {
+  margin: 0 0 10px;
+  color: #50575e;
+  font-size: 13px;
+}
+
+.bulk-edit-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #1d2327;
+}
+
+.bulk-edit-field select {
+  min-height: 30px;
+}
+
+.bulk-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}

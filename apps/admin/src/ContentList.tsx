@@ -94,7 +94,9 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
   const [, setPendingAction] = useState<string | null>(null);
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
-  const [bulkAction, setBulkAction] = useState<BulkAction | ''>('');
+  const [bulkAction, setBulkAction] = useState<BulkAction | 'edit' | ''>('');
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [bulkEditStatus, setBulkEditStatus] = useState<'DRAFT' | 'PUBLISHED'>('DRAFT');
   const [bulkBusy, setBulkBusy] = useState(false);
   const [sort, setSort] = useState<'updatedAt' | 'title'>('updatedAt');
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
@@ -360,13 +362,14 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
 
   // Bulk actions operate on the same per-object rules as the row actions:
   // the API reports per-item outcomes, so a partial failure is shown as-is.
-  const bulkOptions: Array<{ value: BulkAction; label: string }> =
+  const bulkOptions: Array<{ value: BulkAction | 'edit'; label: string }> =
     status === 'TRASHED'
       ? [
           { value: 'restore', label: 'Restore' },
           { value: 'delete', label: 'Delete permanently' },
         ]
       : [
+          { value: 'edit', label: 'Edit' },
           { value: 'publish', label: 'Publish' },
           { value: 'unpublish', label: 'Move to Draft' },
           { value: 'trash', label: 'Move to Trash' },
@@ -400,6 +403,10 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
     if (!data || bulkAction === '' || selected.size === 0) {
       return;
     }
+    if (bulkAction === 'edit') {
+      setBulkEditOpen(true);
+      return;
+    }
     if (
       bulkAction === 'delete' &&
       !window.confirm(`Permanently delete ${selected.size} item(s)? This cannot be undone.`)
@@ -427,6 +434,35 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                 .join('; ')}`,
       });
       setSelected(new Set());
+      setBulkAction('');
+      setReloadKey((value) => value + 1);
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
+  async function runBulkEdit(): Promise<void> {
+    if (!data || selected.size === 0) return;
+    const targets = data.items.filter((post) => selected.has(post.id) && canEditPost(user, post));
+    if (targets.length === 0) return;
+    setBulkBusy(true);
+    setNotice(null);
+    try {
+      let updated = 0;
+      for (const post of targets) {
+        if (post.status === bulkEditStatus) continue;
+        await transitionPost(
+          post.id,
+          bulkEditStatus === 'PUBLISHED' ? 'publish' : 'unpublish',
+          post.version,
+        );
+        updated += 1;
+      }
+      setNotice({ tone: 'success', text: `${updated} item(s) updated.` });
+      setSelected(new Set());
+      setBulkEditOpen(false);
       setBulkAction('');
       setReloadKey((value) => value + 1);
     } catch (caught) {
@@ -577,7 +613,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                 id="bulk-action"
                 className="bulk-select"
                 value={bulkAction}
-                onChange={(event) => setBulkAction(event.target.value as BulkAction | '')}
+                onChange={(event) => setBulkAction(event.target.value as BulkAction | 'edit' | '')}
               >
                 <option value="">Bulk actions</option>
                 {bulkOptions.map((option) => (
@@ -687,6 +723,44 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
         />
       ) : (
         <>
+          {bulkEditOpen ? (
+            <div className="bulk-edit-panel">
+              <h2>Bulk Edit</h2>
+              <p className="bulk-edit-summary">{selected.size} item(s) selected</p>
+              <label className="bulk-edit-field">
+                <span>Status</span>
+                <select
+                  value={bulkEditStatus}
+                  onChange={(event) =>
+                    setBulkEditStatus(event.target.value as 'DRAFT' | 'PUBLISHED')
+                  }
+                  disabled={bulkBusy}
+                >
+                  <option value="DRAFT">Draft</option>
+                  <option value="PUBLISHED">Published</option>
+                </select>
+              </label>
+              <div className="bulk-edit-actions">
+                <button
+                  type="button"
+                  className="button primary-button"
+                  disabled={bulkBusy || selected.size === 0}
+                  onClick={() => void runBulkEdit()}
+                >
+                  {bulkBusy ? 'Updating…' : 'Update'}
+                </button>
+                <button
+                  type="button"
+                  className="button secondary-button"
+                  onClick={() => setBulkEditOpen(false)}
+                  disabled={bulkBusy}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : null}
+
           <div className="table-scroll">
             <table className="content-table widefat fixed striped posts">
               <caption className="screen-reader-text">{label}</caption>
@@ -1077,7 +1151,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                 id={`${type}-bulk-action-bottom`}
                 className="bulk-select"
                 value={bulkAction}
-                onChange={(event) => setBulkAction(event.target.value as BulkAction | '')}
+                onChange={(event) => setBulkAction(event.target.value as BulkAction | 'edit' | '')}
               >
                 <option value="">Bulk actions</option>
                 {bulkOptions.map((option) => (
