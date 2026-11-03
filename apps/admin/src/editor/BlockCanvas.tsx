@@ -72,6 +72,8 @@ interface HistoryState {
 export interface BlockCanvasHandle {
   /** Serialize the latest keystrokes and hand them to the parent synchronously. */
   flush: () => string;
+  /** Open the block-settings inspector (the editor sidebar's Block tab). */
+  openInspector: () => void;
 }
 
 export interface BlockCanvasProps {
@@ -258,6 +260,7 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
         clearTimer();
         return emit(blocksRef.current);
       },
+      openInspector: () => setInspectorOpen(true),
     }),
     [clearTimer, emit],
   );

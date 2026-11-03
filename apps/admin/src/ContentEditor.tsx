@@ -1802,7 +1802,17 @@ export function ContentEditor({
               <div hidden={sideTab !== 'block'}>
                 <section className="editor-panel" aria-labelledby="block-heading">
                   <h3 id="block-heading">Block</h3>
-                  <p className="field-help">Select a block in the canvas to see its settings.</p>
+                  <p className="field-help">
+                    Block settings are available in the canvas inspector. Select a block, then open
+                    the inspector.
+                  </p>
+                  <button
+                    type="button"
+                    className="button secondary-button"
+                    onClick={() => canvasRef.current?.openInspector()}
+                  >
+                    Open block settings
+                  </button>
                 </section>
               </div>
             </aside>
