@@ -60,7 +60,9 @@ function screenKey(route: Route): string {
 function screenHelp(route: Route): {
   title: string;
   sections: Array<{ heading: string; body: string }>;
+  links: Array<{ label: string; href: string }>;
 } {
+  const support = { label: 'Support forums', href: 'https://wordpress.org/support/forums/' };
   switch (route.name) {
     case 'list':
       return {
@@ -75,9 +77,24 @@ function screenHelp(route: Route): {
             body: 'The table shows the title, author, categories, tags and publication date. Row actions appear when you hover a row: Edit, Trash (or Restore) and View.',
           },
           {
+            heading: 'Available Actions',
+            body: 'Hover a row to Edit, Quick Edit, Trash or Preview/View it. Use Screen Options to hide columns or switch view mode.',
+          },
+          {
             heading: 'Bulk Actions',
             body: 'Select two or more rows, choose an action from the Bulk actions list and click Apply to move several items to the trash or restore them at once.',
           },
+        ],
+        links: [
+          {
+            label:
+              route.type === 'post' ? 'Documentation on Managing Posts' : 'Documentation on Pages',
+            href:
+              route.type === 'post'
+                ? 'https://wordpress.org/documentation/article/posts-screen/'
+                : 'https://wordpress.org/documentation/article/pages-screen/',
+          },
+          support,
         ],
       };
     case 'media':
@@ -89,9 +106,20 @@ function screenHelp(route: Route): {
             body: 'This screen lists every uploaded file. Use the grid/list toggles to change the view and the filters to narrow by type or month.',
           },
           {
-            heading: 'Bulk Select',
+            heading: 'Screen Content',
+            body: 'Grid view shows thumbnails; list view shows the file, author, upload target and date. Click an item for Attachment details.',
+          },
+          {
+            heading: 'Bulk Actions',
             body: 'Click Bulk select to reveal checkboxes, then select attachments and delete them in one action.',
           },
+        ],
+        links: [
+          {
+            label: 'Documentation on Media Library',
+            href: 'https://wordpress.org/documentation/article/media-library-screen/',
+          },
+          support,
         ],
       };
     case 'users':
@@ -103,23 +131,45 @@ function screenHelp(route: Route): {
             body: 'This screen lists every account on the site. Role links above the table filter the list by role, and the search box looks up usernames.',
           },
           {
+            heading: 'Screen Content',
+            body: 'Columns show Username, Name, Email, Role and Posts. Sort Username or Email with the column headers.',
+          },
+          {
             heading: 'Roles',
             body: 'Administrators manage settings and users. Editors manage all content. Authors manage their own posts, and subscribers only read content.',
           },
         ],
+        links: [
+          {
+            label: 'Documentation on Managing Users',
+            href: 'https://wordpress.org/documentation/article/users-screen/',
+          },
+          support,
+        ],
       };
     case 'terms':
       return {
-        title: route.name === 'terms' ? 'Categories and Tags' : 'Terms',
+        title: 'Categories and Tags',
         sections: [
           {
             heading: 'Overview',
             body: 'Categories and tags group posts. Categories can have a hierarchy; tags are flat.',
           },
           {
+            heading: 'Screen Content',
+            body: 'The left column adds a term; the right table lists Name, Description, Slug and Count. Sort by any of those columns.',
+          },
+          {
             heading: 'Bulk Actions',
             body: 'Select several terms and use Bulk actions to delete them. Deleting a term never deletes the posts assigned to it.',
           },
+        ],
+        links: [
+          {
+            label: 'Documentation on Categories',
+            href: 'https://wordpress.org/documentation/article/categories-screen/',
+          },
+          support,
         ],
       };
     case 'settings':
@@ -128,8 +178,19 @@ function screenHelp(route: Route): {
         sections: [
           {
             heading: 'Overview',
-            body: 'General holds the site title, tagline and address. Reading controls the homepage and posts per page. Writing controls the default category.',
+            body: 'General holds the site title, tagline, address and formats. Reading controls the homepage and posts per page. Writing controls the default category and author.',
           },
+          {
+            heading: 'Screen Content',
+            body: 'Each settings group is a separate screen; use the Settings submenu in the sidebar to switch between them.',
+          },
+        ],
+        links: [
+          {
+            label: 'Documentation on Settings',
+            href: 'https://wordpress.org/documentation/article/settings-general-screen/',
+          },
+          support,
         ],
       };
     case 'profile':
@@ -138,8 +199,19 @@ function screenHelp(route: Route): {
         sections: [
           {
             heading: 'Overview',
-            body: 'Your username cannot be changed. Update your display name, email address or password here.',
+            body: 'Your username cannot be changed. Update your display name, email address, website or password here.',
           },
+          {
+            heading: 'Personal Options',
+            body: 'Choose an admin colour scheme. The preference is stored in this browser.',
+          },
+        ],
+        links: [
+          {
+            label: 'Documentation on Your Profile',
+            href: 'https://wordpress.org/documentation/article/users-your-profile-screen/',
+          },
+          support,
         ],
       };
     case 'dashboard':
@@ -150,10 +222,55 @@ function screenHelp(route: Route): {
             heading: 'Overview',
             body: 'This screen is the control centre for the site. Widgets can be collapsed with the arrow in their header and reordered with the up/down arrows.',
           },
+          {
+            heading: 'Screen Options',
+            body: 'Use Screen Options to show or hide dashboard boxes and switch between one and four layout columns.',
+          },
+        ],
+        links: [
+          {
+            label: 'Documentation on Dashboard',
+            href: 'https://wordpress.org/documentation/article/dashboard-screen/',
+          },
+          support,
+        ],
+      };
+    case 'tools':
+      return {
+        title: 'Tools',
+        sections: [
+          {
+            heading: 'Overview',
+            body: 'Available Tools lists the export and site-health screens. Export downloads posts and pages; Site Health reports database, storage and scheduler checks.',
+          },
+        ],
+        links: [
+          {
+            label: 'Documentation on Tools',
+            href: 'https://wordpress.org/documentation/article/tools-screen/',
+          },
+          support,
+        ],
+      };
+    case 'updates':
+      return {
+        title: 'Updates',
+        sections: [
+          {
+            heading: 'Overview',
+            body: 'This screen reports the current MERNPress build. This installation is deployed from source and does not check for remote updates.',
+          },
+        ],
+        links: [
+          {
+            label: 'Documentation on Updating WordPress',
+            href: 'https://wordpress.org/documentation/article/updating-wordpress/',
+          },
+          support,
         ],
       };
     default:
-      return { title: 'Help', sections: [] };
+      return { title: 'Help', sections: [], links: [] };
   }
 }
 
@@ -289,6 +406,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
   const { confirmNavigation } = useNavigationGuard();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [metaPanel, setMetaPanel] = useState<'options' | 'help' | null>(null);
+  const [helpTab, setHelpTab] = useState(0);
   const [perPageChoice, setPerPageChoice] = useState(10);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -417,7 +535,8 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
     setViewModeChoice(screenViewMode(currentScreen));
     setHiddenWidgets(dashboardHiddenWidgets());
     setDashColumns(dashboardColumns());
-  }, [currentScreen]);
+    setHelpTab(0);
+  }, [currentScreen, metaPanel]);
 
   useEffect(() => {
     const sync = () => {
@@ -1201,17 +1320,53 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
                 {metaPanel === 'help' ? (
                   <div
                     id="contextual-help-wrap"
-                    className="screen-meta-panel"
+                    className="screen-meta-panel contextual-help"
                     role="region"
                     aria-label="Help"
                   >
-                    <h2>{help.title}</h2>
-                    {help.sections.map((section) => (
-                      <div key={section.heading} className="contextual-help-section">
-                        <h3>{section.heading}</h3>
-                        <p>{section.body}</p>
+                    <div className="contextual-help-tabs">
+                      <ul>
+                        {help.sections.map((section, index) => (
+                          <li key={section.heading} className={index === helpTab ? 'active' : ''}>
+                            <a
+                              href={`#help-panel-${index}`}
+                              aria-controls={`help-panel-${index}`}
+                              aria-selected={index === helpTab}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                setHelpTab(index);
+                              }}
+                            >
+                              {section.heading}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="contextual-help-panels">
+                      {help.sections[helpTab] ? (
+                        <div id={`help-panel-${helpTab}`}>
+                          <h3>{help.sections[helpTab]!.heading}</h3>
+                          <p>{help.sections[helpTab]!.body}</p>
+                        </div>
+                      ) : (
+                        <p>No help available for this screen.</p>
+                      )}
+                    </div>
+                    {help.links.length > 0 ? (
+                      <div className="contextual-help-sidebar">
+                        <p>
+                          <strong>For more information:</strong>
+                        </p>
+                        {help.links.map((link) => (
+                          <p key={link.href}>
+                            <a href={link.href} target="_blank" rel="noreferrer">
+                              {link.label}
+                            </a>
+                          </p>
+                        ))}
                       </div>
-                    ))}
+                    ) : null}
                   </div>
                 ) : null}
 
