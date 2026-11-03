@@ -11,6 +11,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [lostPassword, setLostPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const usernameRef = useRef<HTMLInputElement>(null);
@@ -33,6 +34,34 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (lostPassword) {
+    return (
+      <section className="login-screen" aria-labelledby="lost-password-heading">
+        <div className="login-logo" aria-hidden="true">
+          <span>M</span>
+        </div>
+        <div className="login-card">
+          <h1 id="lost-password-heading">Lost Password</h1>
+          <p className="login-help">
+            Password resets are handled by your site administrator. Ask an administrator to reset
+            your password from Users → your account.
+          </p>
+          <p className="login-back">
+            <a
+              href="#login"
+              onClick={(event) => {
+                event.preventDefault();
+                setLostPassword(false);
+              }}
+            >
+              ← Back to Log In
+            </a>
+          </p>
+        </div>
+      </section>
+    );
   }
 
   return (
@@ -136,6 +165,17 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         </form>
       </div>
 
+      <p className="login-card-links">
+        <a
+          href="#lost-password"
+          onClick={(event) => {
+            event.preventDefault();
+            setLostPassword(true);
+          }}
+        >
+          Lost your password?
+        </a>
+      </p>
       <p className="login-back">
         <a href="/">← Go to MERNPress</a>
       </p>

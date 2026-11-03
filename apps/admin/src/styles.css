@@ -6475,3 +6475,33 @@ a.glance-chip:hover {
   color: #50575e;
   text-align: center;
 }
+
+/* WordPress login help links. */
+.login-card-links {
+  margin: 16px 0 0;
+  font-size: 13px;
+  text-align: center;
+}
+
+.login-card-links a {
+  color: #50575e;
+}
+
+.login-card h1#lost-password-heading {
+  margin: 0 0 12px;
+  font-size: 20px;
+  font-weight: 400;
+  color: #1d2327;
+}
+
+.login-help {
+  margin: 0;
+  color: #50575e;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.login-card .login-back {
+  margin: 16px 0 0;
+  text-align: center;
+}
