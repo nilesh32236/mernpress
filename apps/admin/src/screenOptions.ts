@@ -128,3 +128,77 @@ export function setScreenViewMode(screen: string, mode: ScreenViewMode): void {
   }
   window.dispatchEvent(new CustomEvent(SCREEN_VIEW_MODE_EVENT, { detail: { screen } }));
 }
+
+/** WordPress dashboard Screen Options: boxes and layout columns. */
+export const DASHBOARD_WIDGETS_EVENT = 'mernpress:dashboard-widgets';
+export const DASHBOARD_COLUMNS_EVENT = 'mernpress:dashboard-columns';
+
+export interface DashboardWidget {
+  id: string;
+  label: string;
+}
+
+export const DASHBOARD_WIDGETS: DashboardWidget[] = [
+  { id: 'welcome', label: 'Welcome' },
+  { id: 'siteHealth', label: 'Site Health Status' },
+  { id: 'glance', label: 'At a Glance' },
+  { id: 'activity', label: 'Activity' },
+  { id: 'quickDraft', label: 'Quick Draft' },
+];
+
+const DASH_WIDGETS_PREFIX = 'mernpress.dashboardHidden.';
+const DASH_COLUMNS_KEY = 'mernpress.dashboardColumns';
+
+export function dashboardHiddenWidgets(): Set<string> {
+  try {
+    const raw = window.localStorage.getItem(DASH_WIDGETS_PREFIX);
+    if (raw !== null) {
+      const parsed: unknown = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return new Set(parsed.filter((value): value is string => typeof value === 'string'));
+      }
+    }
+  } catch {
+    // Storage is optional.
+  }
+  return new Set();
+}
+
+export function setDashboardWidgetHidden(id: string, hidden: boolean): void {
+  const next = dashboardHiddenWidgets();
+  if (hidden) {
+    next.add(id);
+  } else {
+    next.delete(id);
+  }
+  try {
+    window.localStorage.setItem(DASH_WIDGETS_PREFIX, JSON.stringify([...next]));
+  } catch {
+    // Storage is optional.
+  }
+  window.dispatchEvent(new CustomEvent(DASHBOARD_WIDGETS_EVENT));
+}
+
+export type DashboardColumns = 1 | 2 | 3 | 4;
+
+export function dashboardColumns(): DashboardColumns {
+  try {
+    const raw = window.localStorage.getItem(DASH_COLUMNS_KEY);
+    const value = raw === null ? Number.NaN : Number(raw);
+    if (value === 1 || value === 2 || value === 3 || value === 4) {
+      return value;
+    }
+  } catch {
+    // Storage is optional.
+  }
+  return 2;
+}
+
+export function setDashboardColumns(columns: DashboardColumns): void {
+  try {
+    window.localStorage.setItem(DASH_COLUMNS_KEY, String(columns));
+  } catch {
+    // Storage is optional.
+  }
+  window.dispatchEvent(new CustomEvent(DASHBOARD_COLUMNS_EVENT));
+}

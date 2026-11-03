@@ -12,6 +12,13 @@ import {
 import { EmptyState, ErrorState, Skeleton } from './components.js';
 import { canCreateContent, canManageTerms, canReadContent } from './roles.js';
 import { editContentPath, listPath, navigate, newContentPath } from './router.js';
+import {
+  DASHBOARD_COLUMNS_EVENT,
+  DASHBOARD_WIDGETS_EVENT,
+  dashboardColumns,
+  dashboardHiddenWidgets,
+  type DashboardColumns,
+} from './screenOptions.js';
 
 type Counts = Record<ContentType, Record<PostStatus, number>>;
 
@@ -149,6 +156,21 @@ export function Dashboard({ user }: { user: AuthUser }) {
   });
   const [leftOrder, setLeftOrder] = useState<WidgetKey[]>(['siteHealth', 'glance', 'activity']);
   const [rightOrder] = useState<WidgetKey[]>(['quickDraft']);
+  const [hiddenWidgets, setHiddenWidgets] = useState(() => dashboardHiddenWidgets());
+  const [columns, setColumns] = useState<DashboardColumns>(() => dashboardColumns());
+
+  useEffect(() => {
+    const sync = () => {
+      setHiddenWidgets(dashboardHiddenWidgets());
+      setColumns(dashboardColumns());
+    };
+    window.addEventListener(DASHBOARD_WIDGETS_EVENT, sync);
+    window.addEventListener(DASHBOARD_COLUMNS_EVENT, sync);
+    return () => {
+      window.removeEventListener(DASHBOARD_WIDGETS_EVENT, sync);
+      window.removeEventListener(DASHBOARD_COLUMNS_EVENT, sync);
+    };
+  }, []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -501,7 +523,7 @@ export function Dashboard({ user }: { user: AuthUser }) {
         <h1>Dashboard</h1>
       </div>
 
-      {welcomeDismissed ? null : (
+      {welcomeDismissed || hiddenWidgets.has('welcome') ? null : (
         <section className="welcome-panel" aria-labelledby="welcome-heading">
           <button
             type="button"
@@ -719,41 +741,47 @@ export function Dashboard({ user }: { user: AuthUser }) {
         <Skeleton label="Loading dashboard…" lines={6} />
       ) : (
         <div id="dashboard-widgets-wrap">
-          <div id="dashboard-widgets" className="columns-2">
-            <div id="postbox-container-1" className="postbox-container">
-              <div className="meta-box-sortables">
-                {leftOrder.map((key, index) => (
-                  <Postbox
-                    key={key}
-                    id={WIDGET_IDS[key]}
-                    title={WIDGET_TITLES[key]}
-                    canMoveUp={index > 0}
-                    canMoveDown={index < leftOrder.length - 1}
-                    onMoveUp={() => moveWidget(index, -1)}
-                    onMoveDown={() => moveWidget(index, 1)}
-                  >
-                    {renderWidget(key)}
-                  </Postbox>
-                ))}
-              </div>
-            </div>
-            <div id="postbox-container-2" className="postbox-container">
-              <div className="meta-box-sortables">
-                {rightOrder.map((key, index) => (
-                  <Postbox
-                    key={key}
-                    id={WIDGET_IDS[key]}
-                    title={WIDGET_TITLES[key]}
-                    canMoveUp={index > 0}
-                    canMoveDown={index < rightOrder.length - 1}
-                    onMoveUp={() => undefined}
-                    onMoveDown={() => undefined}
-                  >
-                    {renderWidget(key)}
-                  </Postbox>
-                ))}
-              </div>
-            </div>
+          <div id="dashboard-widgets" className={`columns-${columns}`}>
+            {(() => {
+              const visibleLeft = leftOrder.filter((key) => !hiddenWidgets.has(key));
+              const visibleRight = rightOrder.filter((key) => !hiddenWidgets.has(key));
+              const allVisible = [...visibleLeft, ...visibleRight];
+              const columnWidgets: WidgetKey[][] =
+                columns === 2
+                  ? [visibleLeft, visibleRight]
+                  : columns === 1
+                    ? [allVisible]
+                    : Array.from({ length: columns }, (_, columnIndex) =>
+                        allVisible.filter((_, index) => index % columns === columnIndex),
+                      );
+
+              return columnWidgets.map((keys, columnIndex) => (
+                <div
+                  key={columnIndex}
+                  id={`postbox-container-${columnIndex + 1}`}
+                  className="postbox-container"
+                >
+                  <div className="meta-box-sortables">
+                    {keys.map((key, index) => {
+                      const canReorder = columns === 2 && columnIndex === 0;
+                      return (
+                        <Postbox
+                          key={key}
+                          id={WIDGET_IDS[key]}
+                          title={WIDGET_TITLES[key]}
+                          canMoveUp={canReorder && index > 0}
+                          canMoveDown={canReorder && index < keys.length - 1}
+                          onMoveUp={canReorder ? () => moveWidget(index, -1) : () => undefined}
+                          onMoveDown={canReorder ? () => moveWidget(index, 1) : () => undefined}
+                        >
+                          {renderWidget(key)}
+                        </Postbox>
+                      );
+                    })}
+                  </div>
+                </div>
+              ));
+            })()}
           </div>
         </div>
       )}

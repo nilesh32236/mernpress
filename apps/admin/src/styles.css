@@ -8580,3 +8580,16 @@ a.glance-chip:hover {
 .nav-icon svg {
   stroke-width: 1.8;
 }
+
+/* WordPress dashboard layout columns. */
+#dashboard-widgets.columns-1 .postbox-container {
+  width: 100%;
+}
+
+#dashboard-widgets.columns-3 .postbox-container {
+  width: 33.333%;
+}
+
+#dashboard-widgets.columns-4 .postbox-container {
+  width: 25%;
+}

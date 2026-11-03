@@ -15,15 +15,23 @@ import { ADMIN_BASE } from './router.js';
 import { useNavigationGuard } from './navigation-guard.js';
 import { canCreateContent, canManageTerms, canReadContent } from './roles.js';
 import {
+  DASHBOARD_COLUMNS_EVENT,
+  DASHBOARD_WIDGETS,
+  DASHBOARD_WIDGETS_EVENT,
   SCREEN_COLUMNS,
   SCREEN_COLUMNS_EVENT,
   SCREEN_VIEW_MODE_EVENT,
+  dashboardColumns,
+  dashboardHiddenWidgets,
   screenHiddenColumns,
   screenPerPage,
   screenViewMode,
+  setDashboardColumns,
+  setDashboardWidgetHidden,
   setScreenColumnHidden,
   setScreenPerPage,
   setScreenViewMode,
+  type DashboardColumns,
   type ScreenViewMode,
 } from './screenOptions.js';
 import type { ReactNode } from 'react';
@@ -394,6 +402,9 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
   const supportsPerPage = ['posts', 'pages', 'users', 'terms', 'media'].includes(currentScreen);
   const screenColumns = SCREEN_COLUMNS[currentScreen] ?? [];
   const supportsViewMode = ['posts', 'pages'].includes(currentScreen);
+  const isDashboard = currentScreen === 'dashboard';
+  const [hiddenWidgets, setHiddenWidgets] = useState<Set<string>>(() => dashboardHiddenWidgets());
+  const [dashColumns, setDashColumns] = useState<DashboardColumns>(() => dashboardColumns());
   const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(() =>
     screenHiddenColumns(currentScreen),
   );
@@ -404,6 +415,8 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
   useEffect(() => {
     setHiddenColumns(screenHiddenColumns(currentScreen));
     setViewModeChoice(screenViewMode(currentScreen));
+    setHiddenWidgets(dashboardHiddenWidgets());
+    setDashColumns(dashboardColumns());
   }, [currentScreen]);
 
   useEffect(() => {
@@ -411,11 +424,19 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       setHiddenColumns(screenHiddenColumns(currentScreen));
       setViewModeChoice(screenViewMode(currentScreen));
     };
+    const syncDashboard = () => {
+      setHiddenWidgets(dashboardHiddenWidgets());
+      setDashColumns(dashboardColumns());
+    };
     window.addEventListener(SCREEN_COLUMNS_EVENT, sync);
     window.addEventListener(SCREEN_VIEW_MODE_EVENT, sync);
+    window.addEventListener(DASHBOARD_WIDGETS_EVENT, syncDashboard);
+    window.addEventListener(DASHBOARD_COLUMNS_EVENT, syncDashboard);
     return () => {
       window.removeEventListener(SCREEN_COLUMNS_EVENT, sync);
       window.removeEventListener(SCREEN_VIEW_MODE_EVENT, sync);
+      window.removeEventListener(DASHBOARD_WIDGETS_EVENT, syncDashboard);
+      window.removeEventListener(DASHBOARD_COLUMNS_EVENT, syncDashboard);
     };
   }, [currentScreen]);
 
@@ -1052,6 +1073,42 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
                     aria-label="Screen Options"
                   >
                     <h2>Screen Options</h2>
+                    {isDashboard ? (
+                      <>
+                        <fieldset className="metabox-prefs">
+                          <legend>Boxes</legend>
+                          {DASHBOARD_WIDGETS.map((widget) => (
+                            <label key={widget.id}>
+                              <input
+                                type="checkbox"
+                                checked={!hiddenWidgets.has(widget.id)}
+                                onChange={(event) =>
+                                  setDashboardWidgetHidden(widget.id, !event.target.checked)
+                                }
+                              />
+                              {widget.label}
+                            </label>
+                          ))}
+                        </fieldset>
+                        <fieldset className="screen-options-view-mode">
+                          <legend>Layout</legend>
+                          {[1, 2, 3, 4].map((count) => (
+                            <label key={count}>
+                              <input
+                                type="radio"
+                                name="dashboard-columns"
+                                checked={dashColumns === count}
+                                onChange={() => {
+                                  setDashboardColumns(count as DashboardColumns);
+                                  setDashColumns(count as DashboardColumns);
+                                }}
+                              />
+                              {count}
+                            </label>
+                          ))}
+                        </fieldset>
+                      </>
+                    ) : null}
                     {screenColumns.length > 0 ? (
                       <fieldset className="metabox-prefs">
                         <legend>Columns</legend>
@@ -1130,7 +1187,10 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
                         </label>
                       </fieldset>
                     ) : null}
-                    {screenColumns.length === 0 && !supportsPerPage && !supportsViewMode ? (
+                    {!isDashboard &&
+                    screenColumns.length === 0 &&
+                    !supportsPerPage &&
+                    !supportsViewMode ? (
                       <p className="screen-options-note">
                         This screen has no configurable options.
                       </p>
