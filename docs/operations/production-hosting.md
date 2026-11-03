@@ -49,7 +49,14 @@ no DuckDNS token is stored in the Caddyfile.
 
 ## Release
 
-- Current release: `/opt/mernpress/releases/20261103T063000Z-e31a5b5`
+- Current release: `/opt/mernpress/releases/20261103T074100Z-dadce21`
+  (switched 2026-11-03, design pass): reference-matched editor top bar +
+  sidebar, list toolbars with category/date filters, dashboard Quick Draft +
+  Site Health (new `/api/admin/health`), media toolbar + list view, users
+  Name/Email (migration `20261103070000_add_user_name_email`), Media/Posts
+  submenu structure. Backup before migration:
+  `/opt/mernpress/backups/pre-design-pass-20261103T064105Z.sql`.
+- Previous release: `/opt/mernpress/releases/20261103T063000Z-e31a5b5`
   (switched 2026-11-03; adds the editor Block tab opening the real block
   settings inspector). Prior same-day release `20261103T060000Z-cd203ed`
   carried the WordPress-parity fixes and web URL correctness.

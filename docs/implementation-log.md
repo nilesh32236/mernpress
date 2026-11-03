@@ -1,5 +1,55 @@
 # Implementation log
 
+## 2026-11-03 (PM) — Reference-matched design pass (side-by-side against the running qrolichealth CMS)
+
+**Status:** implemented, verified, pushed to `master` (`dadce21`) and deployed
+(release `20261103T074100Z-dadce21`).
+
+The owner reported the admin still did not look like WordPress or the
+qrolichealth CMS. This pass installed and seeded the reference CMS
+(`/tmp/opencode/refs/qrolichealth-cms-main`, DB `qrolic_cms`, API :4300, admin
+:5173) and compared every screen side by side, then fixed each divergence.
+
+### Editor (largest visual gap)
+
+- The Gutenberg toolbar (blue `+` inserter, undo, redo, document overview,
+  block settings) now portals into the 60px dark editor top bar, exactly like
+  the reference; the second dark strip inside the canvas is gone.
+- Top bar: white logo box (links back) · centered save state · right Preview /
+  Save draft / Publish / Schedule… / gear (blue when the sidebar is open).
+- Sidebar: white panel with an attached `Post | SEO | Block` tab strip (active
+  tab has a dark underline), 16px body padding and flat sections with
+  uppercase labels — no more boxed cards.
+- Added the reference's Permalink row (`/` prefix) and a Preview-token section
+  (create/regenerate/revoke, copies the link).
+
+### Lists, dashboard, media, users, nav
+
+- Lists: Add New moves to the top right; one WordPress toolbar row
+  (Bulk actions + Apply, funnel, **All categories**, **All dates**, search);
+  columns Title | Author | Categories | Tags | Status | Date | Actions with
+  icon actions; author name from a new `AdminPost.author` summary. New API
+  filters: `category` (term id) and `month` (YYYY-MM on updatedAt).
+- Dashboard: added Quick Draft (creates a real draft) and Site Health (new
+  `GET /api/admin/health`: database, media writable, scheduler) → the
+  reference's 2×2 widget grid; Activity shows real newest published posts.
+- Media: reference toolbar (type + sort filters, search, N items, Grid|List
+  toggle with a real list table), inline title row with “Add New Media File”,
+  `/media?upload=1` deep link opens the picker.
+- Users: Name/Email columns backed by new nullable user fields (additive
+  migration `20261103070000_add_user_name_email`), add-user form fields,
+  profile Name/Email editing, actions in an Actions column.
+- Nav: Posts → All Posts / Add New / Categories / Tags (separate pages),
+  Media → Library / Add New; redundant top-level Terms entry removed.
+
+### Verification
+
+- 537 unit/integration (337 API, 122 admin, 65 block-system, 13 web), 23/23
+  E2E, lint/format/typecheck clean, builds 6/6.
+- Production: migration applied after a `pg_dump` backup; `/`, `/admin/`,
+  post page, sitemap, API all 200; new bundle contains the new UI strings;
+  zero API errors.
+
 ## 2026-11-03 — Live verification pass: WordPress-parity fixes + production hardening
 
 **Status:** implemented, verified, pushed to `master` and deployed
