@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { logout, type AuthUser } from './api.js';
+import { fetchPosts, logout, type AdminPost, type AuthUser } from './api.js';
 import type { Route } from './router.js';
 import { navigate, newContentPath } from './router.js';
 import { ADMIN_BASE } from './router.js';
@@ -303,6 +303,11 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
   const [mobileOpen, setMobileOpen] = useState(false);
   const [metaPanel, setMetaPanel] = useState<'options' | 'help' | null>(null);
   const [perPageChoice, setPerPageChoice] = useState(10);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<AdminPost[]>([]);
+  const [searchBusy, setSearchBusy] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
@@ -412,6 +417,51 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
   useEffect(() => {
     setMetaPanel(null);
   }, [route.name, 'type' in route ? route.type : '']);
+
+  useEffect(() => {
+    if (searchOpen) searchInputRef.current?.focus();
+  }, [searchOpen]);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setSearchOpen(true);
+      }
+      if (event.key === 'Escape') {
+        setSearchOpen(false);
+      }
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    const query = searchQuery.trim();
+    if (query.length === 0) {
+      setSearchResults([]);
+      return;
+    }
+    let active = true;
+    const handle = window.setTimeout(() => {
+      setSearchBusy(true);
+      fetchPosts({ search: query, perPage: 8 })
+        .then((result) => {
+          if (active) setSearchResults(result.items);
+        })
+        .catch(() => {
+          if (active) setSearchResults([]);
+        })
+        .finally(() => {
+          if (active) setSearchBusy(false);
+        });
+    }, 250);
+    return () => {
+      active = false;
+      window.clearTimeout(handle);
+    };
+  }, [searchOpen, searchQuery]);
 
   useEffect(() => {
     if (metaPanel !== 'options' || !supportsPerPage) return;
@@ -633,6 +683,28 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
               Visit Site
             </a>
           </div>
+          <button
+            type="button"
+            className="admin-bar-search"
+            aria-label="Search admin"
+            title="Search (Ctrl+K)"
+            onClick={() => setSearchOpen(true)}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <span className="admin-bar-search-hint">Ctrl+K</span>
+          </button>
           {canCreate ? (
             <div className={`admin-bar-menu${newMenuOpen ? ' is-open' : ''}`}>
               <button
@@ -998,6 +1070,85 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
           </footer>
         </div>
       </div>
+
+      {searchOpen ? (
+        <div
+          className="command-overlay"
+          role="presentation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setSearchOpen(false);
+          }}
+        >
+          <div
+            className="command-palette"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Search admin"
+          >
+            <input
+              ref={searchInputRef}
+              type="search"
+              placeholder="Search posts and pages…"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              aria-label="Search posts and pages"
+            />
+            <div className="command-results">
+              {searchQuery.trim().length === 0 ? (
+                <>
+                  <p className="command-heading">Quick navigation</p>
+                  {[
+                    { label: 'Dashboard', to: '/admin' },
+                    { label: 'All Posts', to: '/posts' },
+                    { label: 'Add New Post', to: '/posts/new' },
+                    { label: 'Media Library', to: '/media' },
+                    { label: 'Pages', to: '/pages' },
+                    { label: 'Users', to: '/users' },
+                    { label: 'Settings', to: '/settings' },
+                  ].map((item) => (
+                    <button
+                      key={item.label}
+                      type="button"
+                      className="command-item"
+                      onClick={() => {
+                        setSearchOpen(false);
+                        go(item.to);
+                      }}
+                    >
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
+                </>
+              ) : searchBusy ? (
+                <p className="command-empty">Searching…</p>
+              ) : searchResults.length === 0 ? (
+                <p className="command-empty">No results.</p>
+              ) : (
+                searchResults.map((post) => (
+                  <button
+                    key={post.id}
+                    type="button"
+                    className="command-item"
+                    onClick={() => {
+                      setSearchOpen(false);
+                      go(
+                        post.type === 'page' ? `/pages/${post.id}/edit` : `/posts/${post.id}/edit`,
+                      );
+                    }}
+                  >
+                    <span className="command-badge">{post.type === 'page' ? 'Page' : 'Post'}</span>
+                    <span>{post.title}</span>
+                  </button>
+                ))
+              )}
+            </div>
+            <div className="command-footer">
+              <span>Esc to close</span>
+              <span>Enter to open the first result</span>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
