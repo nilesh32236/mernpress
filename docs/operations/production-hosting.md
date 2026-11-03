@@ -283,3 +283,8 @@ Both releases: `pnpm install --frozen-lockfile`, `pnpm build` with
 switched; `mernpress-api`/`mernpress-web` restarted; `/`, `/admin/` and
 `/api/health` verified 200. Rollback: repoint `/opt/mernpress/current` to the
 previous release and restart both services (no schema change in either).
+
+- `20261103T231210Z-61be777` — Add User screen, Quick Edit inline row, dashboard
+  Quick Draft/At a Glance tuning and users/terms table parity. Built and
+  verified 200 on `/`, `/admin/` and `/api/health`; no schema change (website
+  already existed).

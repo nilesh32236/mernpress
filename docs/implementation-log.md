@@ -2012,3 +2012,17 @@ backend supports (default category/author); post formats, posting by email and
 update services are not implemented. Media has no server-side image editor, so
 the WordPress "Edit Image" action is omitted. The admin menu uses MERNPress SVG
 icons rather than the WordPress Dashicons font.
+
+### 2026-11-03 — Add User, Quick Edit and dashboard parity
+
+- Add User is now a WordPress screen at `/users?action=add`: h1 "Add User",
+  description, Username/Email (required), First/Last Name, Website, password
+  generator with show/hide and strength meter, narrow role select and an
+  "Add User" submit. `POST /api/users` now accepts `website`.
+- Quick Edit uses the WordPress inline row (legend, left/right columns,
+  Update/Cancel); Bulk Edit restyled; Users role tabs only list roles that
+  have members (WordPress behaviour).
+- Terms table headers carry WordPress column classes; 7px form-table offset,
+  20px menu icons, 52px users rows, 90px Quick Draft content and a 40px Save
+  Draft button.
+- Docs: release `20261103T231210Z-61be777`.
