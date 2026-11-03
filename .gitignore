@@ -29,3 +29,4 @@ apps/web/next-env.d.ts
 .DS_Store
 var/media
 apps/api/var/
+.playwright-mcp/
