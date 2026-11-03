@@ -2046,3 +2046,10 @@ icons rather than the WordPress Dashicons font.
   and apply live, including a 1-4 column postbox grid.
 - All list screens use a shared WordPress pagination component: « ‹ [page] of N
   › » with a current-page input, total pages and displaying-num.
+
+### 2026-11-03 — WordPress contextual Help
+
+- Help is now wp-admin's tabbed contextual help: Overview / Screen Content /
+  Available Actions / Bulk Actions tabs, a content panel and a "For more
+  information" sidebar with per-screen documentation links for posts/pages,
+  media, users, terms, settings, profile, dashboard, tools and updates.

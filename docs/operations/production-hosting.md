@@ -298,3 +298,6 @@ Both verified 200 on `/`, `/admin/` and `/api/health`; no schema changes.
 - `20261103T234032Z-a6a8aff` — dashboard Screen Options (boxes + layout).
 - `20261103T234540Z-d76eeec` — WordPress tablenav pagination across lists.
 Both verified 200 on `/`, `/admin/` and `/api/health`; no schema changes.
+
+- `20261103T235422Z-c235736` — WordPress contextual Help tabs and docs sidebar.
+  Verified 200 on `/`, `/admin/` and `/api/health`; no schema change.
