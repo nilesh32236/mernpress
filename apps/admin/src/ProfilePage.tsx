@@ -8,6 +8,7 @@ import {
   type UserProfile,
 } from './api.js';
 import { Notice, PageHeader, Skeleton, ErrorState, type NoticeMessage } from './components.js';
+import { COLOR_SCHEMES, applyColorScheme, getColorScheme } from './colorScheme.js';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -28,6 +29,7 @@ export function ProfilePage({
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [bio, setBio] = useState('');
+  const [adminColor, setAdminColor] = useState(getColorScheme);
   const [website, setWebsite] = useState('');
   const [accountError, setAccountError] = useState<string | null>(null);
   const [savingAccount, setSavingAccount] = useState(false);
@@ -167,6 +169,36 @@ export function ProfilePage({
       ) : profile ? (
         <div className="settings-panel profile-panel">
           <form onSubmit={handleAccountSubmit} aria-label="Account details">
+            <h2 className="profile-section-title">Personal Options</h2>
+            <div className="field">
+              <span className="field-label">Admin Color Scheme</span>
+              <div className="color-scheme-grid" role="radiogroup" aria-label="Admin Color Scheme">
+                {COLOR_SCHEMES.map((scheme) => (
+                  <label
+                    key={scheme.id}
+                    className={`color-scheme-option${adminColor === scheme.id ? ' is-active' : ''}`}
+                  >
+                    <input
+                      type="radio"
+                      name="admin_color"
+                      value={scheme.id}
+                      checked={adminColor === scheme.id}
+                      onChange={() => {
+                        setAdminColor(scheme.id);
+                        applyColorScheme(scheme.id);
+                      }}
+                    />
+                    <span className="color-scheme-swatch" aria-hidden="true">
+                      {scheme.swatch.map((color) => (
+                        <span key={color} style={{ background: color }} />
+                      ))}
+                    </span>
+                    <span className="color-scheme-label">{scheme.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <h2 className="profile-section-title">Name</h2>
             <div className="field">
               <label htmlFor="profile-username">Username</label>
