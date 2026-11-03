@@ -399,7 +399,7 @@ h2 {
   gap: 5px;
   height: 32px;
   padding: 0 8px;
-  color: #f0f0f1;
+  color: var(--wp-bar-text);
   font-size: 13px;
   font-weight: 500;
   text-decoration: none;
@@ -407,8 +407,8 @@ h2 {
 }
 
 .visit-site-pill:hover {
-  background: #2c3338;
-  color: #72aee6;
+  background: var(--wp-sidebar-hover);
+  color: var(--wp-menu-hover);
 }
 
 .admin-bar-new {
@@ -420,7 +420,7 @@ h2 {
   border: 0;
   border-radius: 3px;
   background: transparent;
-  color: #f0f0f1;
+  color: var(--wp-bar-text);
   font: inherit;
   font-size: 13px;
   font-weight: 500;
@@ -431,7 +431,7 @@ h2 {
 .admin-bar-new:hover,
 .admin-bar-menu.is-open .admin-bar-new {
   background: var(--wp-sidebar-hover);
-  color: #ffffff;
+  color: var(--wp-menu-hover);
 }
 
 .plus-mark {
@@ -443,12 +443,12 @@ h2 {
 
 .chev {
   display: inline-flex;
-  color: #c3c4c7;
+  color: var(--wp-bar-muted);
 }
 
 .admin-bar-menu.is-open .chev {
   transform: rotate(180deg);
-  color: #ffffff;
+  color: var(--wp-menu-hover);
 }
 
 .top-bar-title {
@@ -468,7 +468,7 @@ h2 {
   border: 0;
   border-radius: 3px;
   background: transparent;
-  color: #f0f0f1;
+  color: var(--wp-bar-text);
   font: inherit;
   font-size: 13px;
   cursor: pointer;
@@ -478,11 +478,11 @@ h2 {
 .admin-bar-user:hover,
 .admin-bar-menu.is-open .admin-bar-user {
   background: var(--wp-sidebar-hover);
-  color: #ffffff;
+  color: var(--wp-menu-hover);
 }
 
 .hello-name {
-  color: #f0f0f1;
+  color: var(--wp-bar-text);
   font-size: 13px;
   font-weight: 400;
 }
@@ -552,7 +552,7 @@ h2 {
   border: 0;
   border-radius: 3px;
   background: transparent;
-  color: #f0f0f1;
+  color: var(--wp-bar-text);
   font: inherit;
   font-size: 13px;
   font-weight: 500;
@@ -6050,7 +6050,7 @@ a.glance-chip:hover {
 
 .admin-bar-search-hint {
   font-size: 11px;
-  color: #a7aaad;
+  color: var(--wp-bar-muted);
 }
 
 .command-overlay {

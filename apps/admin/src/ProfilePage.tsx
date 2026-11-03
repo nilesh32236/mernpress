@@ -189,8 +189,8 @@ export function ProfilePage({
                       }}
                     />
                     <span className="color-scheme-swatch" aria-hidden="true">
-                      {scheme.swatch.map((color) => (
-                        <span key={color} style={{ background: color }} />
+                      {scheme.swatch.map((color, index) => (
+                        <span key={`${scheme.id}-${index}`} style={{ background: color }} />
                       ))}
                     </span>
                     <span className="color-scheme-label">{scheme.label}</span>
