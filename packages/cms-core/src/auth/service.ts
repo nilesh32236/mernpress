@@ -206,8 +206,14 @@ export function createAuthService(options: {
   }
 
   async function login(input: LoginInput): Promise<LoginResult> {
-    const username = normalizeUsername(input.username);
-    const usernameError = usernamePolicyError(username);
+    const rawIdentifier = input.username.trim();
+    const emailMode = rawIdentifier.includes('@');
+    const username = emailMode ? rawIdentifier.toLowerCase() : normalizeUsername(rawIdentifier);
+    const usernameError = emailMode
+      ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(username)
+        ? null
+        : 'Enter a valid email address.'
+      : usernamePolicyError(username);
     const keys = rateLimiter.keysFor(username, input.ip);
     const identifierHash = hasher.username(username);
 
@@ -243,7 +249,9 @@ export function createAuthService(options: {
       return fail('invalid_username');
     }
 
-    const user = await prisma.user.findUnique({ where: { username } });
+    const user = await prisma.user.findFirst({
+      where: emailMode ? { email: username } : { username },
+    });
 
     if (!user) {
       await verifyDummyPassword(input.password);
@@ -263,7 +271,10 @@ export function createAuthService(options: {
     const sessionToken = generateOpaqueToken();
     const csrfToken = generateOpaqueToken();
     const createdAt = now();
-    const expiresAt = new Date(createdAt.getTime() + sessionTtlMs);
+    // WordPress "Remember Me" keeps the session for 14 days; the default TTL
+    // stays the server-configured window.
+    const ttlMs = input.remember ? Math.max(sessionTtlMs, 14 * 24 * 60 * 60 * 1000) : sessionTtlMs;
+    const expiresAt = new Date(createdAt.getTime() + ttlMs);
 
     await prisma.$transaction(async (tx) => {
       await rateLimiter.clear(keys, tx);

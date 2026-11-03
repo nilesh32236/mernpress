@@ -68,6 +68,8 @@ export interface UserProfile {
 
 export interface UserListQuery {
   search?: string | undefined;
+  /** Optional role filter (WordPress role tabs). */
+  role?: UserRole | undefined;
   page: number;
   perPage: number;
 }
@@ -381,6 +383,10 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
         contains: query.search.trim().slice(0, SEARCH_MAX),
         mode: 'insensitive',
       };
+    }
+    if (query.role !== undefined) {
+      assertRole(query.role);
+      where.role = query.role;
     }
 
     const [total, rows] = await Promise.all([

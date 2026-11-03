@@ -39,6 +39,10 @@ const listMediaQuerySchema = z
     search: z.string().max(200).optional(),
     type: z.enum(['image']).optional(),
     order: z.enum(['newest', 'oldest']).optional(),
+    month: z
+      .string()
+      .regex(/^\d{4}-\d{2}$/, 'month must be YYYY-MM')
+      .optional(),
   })
   .strict();
 

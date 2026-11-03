@@ -23,15 +23,7 @@ import {
 } from '@wordpress/block-editor';
 import { Popover, SlotFillProvider, SnackbarList } from '@wordpress/components';
 import { useDispatch, useSelect } from '@wordpress/data';
-import {
-  Icon,
-  close,
-  listView,
-  plus,
-  redo,
-  settings as settingsIcon,
-  undo,
-} from '@wordpress/icons';
+import { Icon, close, listView, plus, redo, undo } from '@wordpress/icons';
 import { ShortcutProvider } from '@wordpress/keyboard-shortcuts';
 import '@wordpress/keyboard-shortcuts';
 import { store as noticesStore } from '@wordpress/notices';
@@ -359,16 +351,6 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
                       title="Document overview"
                     >
                       <Icon icon={listView} size={20} />
-                    </button>
-                    <button
-                      type="button"
-                      className={`editor-topbar-tool${inspectorOpen ? ' is-active' : ''}`}
-                      onClick={() => setInspectorOpen((open) => !open)}
-                      aria-label="Block settings"
-                      aria-expanded={inspectorOpen}
-                      title="Block settings"
-                    >
-                      <Icon icon={settingsIcon} size={20} />
                     </button>
                   </div>,
                   toolbarSlot,

@@ -63,9 +63,9 @@ test.afterAll(() => {
 
 async function login(page: Page, username: string) {
   await page.goto(ADMIN_URL);
-  await page.getByLabel('Username').fill(username);
-  await page.getByLabel('Password').fill(password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByLabel('Username or Email Address').fill(username);
+  await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Log In' }).click();
   await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible();
 }
 
@@ -73,27 +73,25 @@ test('editor can create, rename and delete a category', async ({ page }) => {
   page.on('dialog', (dialog) => void dialog.accept());
 
   await login(page, editorUsername);
-  // Taxonomy now lives under Posts (reference nav), so expand the group first.
-  await page.getByRole('button', { name: 'Toggle Posts submenu' }).click();
-  await page.getByRole('link', { name: 'Categories', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Categories & Tags' })).toBeVisible();
+  await page.goto(`${ADMIN_URL}terms?taxonomy=category`);
+  await expect(page.getByRole('heading', { name: 'Categories' })).toBeVisible();
 
-  await page.getByLabel('New category name').fill(termName);
+  await page.getByLabel('Name').fill(termName);
   await page
-    .getByRole('form', { name: 'Create category' })
-    .getByRole('button', { name: 'Add New category' })
+    .getByRole('form', { name: 'Create Category' })
+    .getByRole('button', { name: 'Add Category' })
     .click();
   await expect(page.getByText('Category created.')).toBeVisible();
-  await expect(page.getByText(termName)).toBeVisible();
+  await expect(page.getByRole('table').getByText(termName)).toBeVisible();
 
   const termSlug = termName.toLowerCase().replace(/ /g, '-');
   const row = page.locator('tr', { hasText: termSlug });
   await row.hover();
-  await row.getByRole('button', { name: 'Rename' }).click();
+  await row.getByRole('button', { name: 'Edit' }).click();
   await row.getByRole('textbox').fill(renamedTermName);
   await row.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Term renamed.')).toBeVisible();
-  await expect(page.getByText(renamedTermName)).toBeVisible();
+  await expect(page.getByRole('table').getByText(renamedTermName)).toBeVisible();
 
   const deleteRow = page.locator('tr', { hasText: renamedTermName });
   await deleteRow.hover();

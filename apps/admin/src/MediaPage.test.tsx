@@ -92,16 +92,15 @@ afterEach(() => {
 });
 
 describe('media library page', () => {
-  it('renders thumbnails with file name, dimensions and size', async () => {
+  it('renders attachment thumbnails in the grid', async () => {
     render(<MediaPage user={admin} />);
 
     expect(await screen.findByRole('button', { name: 'View sunset.png' })).toBeDefined();
-    expect(screen.getByText('sunset.png')).toBeDefined();
-    expect(screen.getByText('1600 × 900 · 240 KB')).toBeDefined();
-    expect(screen.getByRole('heading', { name: 'Media Library (1)' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Media Library' })).toBeDefined();
     expect(vi.mocked(listMedia)).toHaveBeenCalledWith({
       page: 1,
       perPage: 24,
+      order: 'newest',
       type: 'image',
     });
 
@@ -114,16 +113,19 @@ describe('media library page', () => {
     render(<MediaPage user={admin} />);
     await screen.findByRole('button', { name: 'View sunset.png' });
 
-    fireEvent.change(screen.getByLabelText('Search Media'), { target: { value: ' sunset ' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+    // Media search is live (debounced), matching WordPress: no Search button.
+    fireEvent.change(screen.getByLabelText('Search media'), { target: { value: ' sunset ' } });
 
-    await waitFor(() =>
-      expect(vi.mocked(listMedia)).toHaveBeenLastCalledWith({
-        page: 1,
-        perPage: 24,
-        type: 'image',
-        search: 'sunset',
-      }),
+    await waitFor(
+      () =>
+        expect(vi.mocked(listMedia)).toHaveBeenLastCalledWith({
+          page: 1,
+          perPage: 24,
+          order: 'newest',
+          type: 'image',
+          search: 'sunset',
+        }),
+      { timeout: 3000 },
     );
   });
 
@@ -138,7 +140,7 @@ describe('media library page', () => {
     expect(await screen.findByText('Uploaded')).toBeDefined();
     expect(vi.mocked(uploadMedia)).toHaveBeenCalledTimes(1);
     expect(await screen.findByRole('button', { name: 'View beach.png' })).toBeDefined();
-    expect(screen.getByRole('heading', { name: 'Media Library (2)' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Media Library' })).toBeDefined();
     expect(screen.getByText('Uploaded “beach.png”.')).toBeDefined();
     expect(screen.queryByRole('progressbar')).toBeNull();
   });
@@ -169,7 +171,7 @@ describe('media library page', () => {
     render(<MediaPage user={admin} />);
     await screen.findByRole('button', { name: 'View sunset.png' });
 
-    expect(screen.getByRole('button', { name: 'Add New Media File' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add Media File' })).toBeDefined();
     chooseFiles(screen.getByLabelText('Upload media files'), [
       new File(['pixels'], 'beach.png', { type: 'image/png' }),
     ]);
@@ -263,12 +265,13 @@ describe('media library page', () => {
     await screen.findByRole('button', { name: 'View sunset.png' });
 
     expect(screen.getByText('Page 1 of 2')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Next »' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
 
     await waitFor(() =>
       expect(vi.mocked(listMedia)).toHaveBeenLastCalledWith({
         page: 2,
         perPage: 24,
+        order: 'newest',
         type: 'image',
       }),
     );

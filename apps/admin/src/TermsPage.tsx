@@ -19,9 +19,10 @@ import {
   type NoticeMessage,
 } from './components.js';
 import { canManageTerms } from './roles.js';
-import { replace } from './router.js';
+import { replace, useLocation } from './router.js';
+import { SCREEN_OPTIONS_EVENT, screenPerPage } from './screenOptions.js';
 
-const PER_PAGE = 10;
+const DEFAULT_PER_PAGE = 10;
 
 type TaxonomyTab = TaxonomyType;
 
@@ -44,15 +45,16 @@ function taxonomyLabel(taxonomy: TaxonomyType): string {
 }
 
 function singularLabel(taxonomy: TaxonomyType): string {
-  return taxonomy === 'category' ? 'category' : 'tag';
+  return taxonomy === 'category' ? 'Category' : 'Tag';
 }
 
 function taxonomyPlural(taxonomy: TaxonomyType): string {
-  return taxonomy === 'category' ? 'categories' : 'tags';
+  return taxonomy === 'category' ? 'Categories' : 'Tags';
 }
 
 export function TermsPage({ user }: { user: AuthUser }) {
   const allowed = canManageTerms(user);
+  const location = useLocation();
 
   const [taxonomy, setTaxonomy] = useState<TaxonomyTab>(initialTaxonomy);
   const [searchInput, setSearchInput] = useState(initialSearch);
@@ -63,10 +65,14 @@ export function TermsPage({ user }: { user: AuthUser }) {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [perPage, setPerPage] = useState(() => screenPerPage('terms', DEFAULT_PER_PAGE));
 
   const [newName, setNewName] = useState('');
   const [newSlug, setNewSlug] = useState('');
   const [newDescription, setNewDescription] = useState('');
+  const [newParent, setNewParent] = useState('');
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
@@ -93,6 +99,27 @@ export function TermsPage({ user }: { user: AuthUser }) {
     replace(`/terms${params.toString() ? `?${params.toString()}` : ''}`);
   }
 
+  // Keep Back/Forward and direct links in sync with the URL (taxonomy/search/page).
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const nextTaxonomy: TaxonomyTab = params.get('taxonomy') === 'tag' ? 'tag' : 'category';
+    const nextSearch = params.get('search') ?? '';
+    const rawPage = Number(params.get('page') ?? '1');
+    const nextPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
+    setTaxonomy(nextTaxonomy);
+    setSearch(nextSearch);
+    setSearchInput(nextSearch);
+    setPage(nextPage);
+  }, [location.search]);
+
+  useEffect(() => {
+    function onOptions() {
+      setPerPage(screenPerPage('terms', DEFAULT_PER_PAGE));
+    }
+    window.addEventListener(SCREEN_OPTIONS_EVENT, onOptions);
+    return () => window.removeEventListener(SCREEN_OPTIONS_EVENT, onOptions);
+  }, []);
+
   useEffect(() => {
     if (!allowed) {
       setLoading(false);
@@ -106,7 +133,7 @@ export function TermsPage({ user }: { user: AuthUser }) {
       taxonomy,
       ...(search ? { search } : {}),
       page,
-      perPage: PER_PAGE,
+      perPage,
     })
       .then((result) => {
         if (!active) return;
@@ -146,10 +173,12 @@ export function TermsPage({ user }: { user: AuthUser }) {
         name,
         ...(newSlug.trim() ? { slug: newSlug.trim() } : {}),
         ...(newDescription.trim() ? { description: newDescription.trim() } : {}),
+        ...(taxonomy === 'category' && newParent ? { parentId: newParent } : {}),
       });
       setNewName('');
       setNewSlug('');
       setNewDescription('');
+      setNewParent('');
       setNotice({
         tone: 'success',
         text: `${taxonomy === 'category' ? 'Category' : 'Tag'} created.`,
@@ -228,7 +257,7 @@ export function TermsPage({ user }: { user: AuthUser }) {
   if (!allowed) {
     return (
       <>
-        <PageHeader eyebrow="Taxonomy" title="Categories & Tags" />
+        <PageHeader title={taxonomy === 'category' ? 'Categories' : 'Tags'} />
         <EmptyState
           title="No term management access"
           message="Your account does not have permission to manage categories and tags."
@@ -239,31 +268,49 @@ export function TermsPage({ user }: { user: AuthUser }) {
 
   const totalPages = Math.max(data?.pagination.totalPages ?? 1, 1);
 
+  function toggleTerm(id: string): void {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  async function deleteSelected(): Promise<void> {
+    if (!data || selected.size === 0) return;
+    const targets = data.items.filter((term) => selected.has(term.id));
+    if (targets.length === 0) return;
+    if (!window.confirm(`Delete ${targets.length} ${taxonomyPlural(taxonomy).toLowerCase()}?`)) {
+      return;
+    }
+    setBulkBusy(true);
+    setNotice(null);
+    try {
+      for (const term of targets) {
+        await deleteTerm(term.id);
+      }
+      setNotice({
+        tone: 'success',
+        text: `${targets.length} ${taxonomyPlural(taxonomy).toLowerCase()} deleted.`,
+      });
+      setSelected(new Set());
+      setReloadKey((value) => value + 1);
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
   return (
     <>
-      <PageHeader
-        eyebrow="Taxonomy"
-        title="Categories & Tags"
-        description="Create, rename and delete categories and tags. Deleting a term detaches it from posts."
-      />
+      <PageHeader title={taxonomy === 'category' ? 'Categories' : 'Tags'} />
 
       {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
-
-      <div className="taxonomy-tabs" role="tablist" aria-label="Taxonomy type">
-        {(['category', 'tag'] as TaxonomyType[]).map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            role="tab"
-            aria-selected={taxonomy === tab}
-            className={`button small-button${taxonomy === tab ? ' nav-link-active' : ''}`}
-            onClick={() => applyState(tab, '', 1)}
-            disabled={pendingAction !== null}
-          >
-            {taxonomyLabel(tab)}
-          </button>
-        ))}
-      </div>
 
       <div className="terms-layout">
         {/* Left column: add term form */}
@@ -273,18 +320,18 @@ export function TermsPage({ user }: { user: AuthUser }) {
             onSubmit={handleCreate}
             aria-label={`Create ${singularLabel(taxonomy)}`}
           >
-            <h3>Add New {singularLabel(taxonomy)}</h3>
+            <h2>Add {singularLabel(taxonomy)}</h2>
             <div className="field">
-              <label htmlFor="term-new-name">New {singularLabel(taxonomy)} name</label>
+              <label htmlFor="term-new-name">Name</label>
               <input
                 id="term-new-name"
                 type="text"
                 value={newName}
                 onChange={(event) => setNewName(event.target.value)}
-                placeholder="Enter name"
                 disabled={creating}
                 required
               />
+              <p className="field-help">The name is how it appears on your site.</p>
             </div>
             <div className="field">
               <label htmlFor="term-new-slug">Slug</label>
@@ -293,7 +340,6 @@ export function TermsPage({ user }: { user: AuthUser }) {
                 type="text"
                 value={newSlug}
                 onChange={(event) => setNewSlug(event.target.value)}
-                placeholder="Enter slug"
                 disabled={creating}
               />
               <p className="field-help">
@@ -301,16 +347,39 @@ export function TermsPage({ user }: { user: AuthUser }) {
                 contains only letters, numbers and hyphens.
               </p>
             </div>
+            {taxonomy === 'category' ? (
+              <div className="field">
+                <label htmlFor="term-new-parent">Parent Category</label>
+                <select
+                  id="term-new-parent"
+                  value={newParent}
+                  onChange={(event) => setNewParent(event.target.value)}
+                  disabled={creating}
+                >
+                  <option value="">None</option>
+                  {(data?.items ?? []).map((term) => (
+                    <option key={term.id} value={term.id}>
+                      {term.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="field-help">
+                  Categories, unlike tags, can have a hierarchy. Totally optional.
+                </p>
+              </div>
+            ) : null}
             <div className="field">
               <label htmlFor="term-new-description">Description</label>
               <textarea
                 id="term-new-description"
                 value={newDescription}
                 onChange={(event) => setNewDescription(event.target.value)}
-                placeholder="Enter description"
                 disabled={creating}
-                rows={2}
+                rows={5}
               />
+              <p className="field-help">
+                The description is not prominent by default; however, some themes may show it.
+              </p>
             </div>
             {createError ? (
               <p className="form-error" role="alert">
@@ -324,7 +393,7 @@ export function TermsPage({ user }: { user: AuthUser }) {
                 disabled={creating}
                 aria-busy={creating}
               >
-                {creating ? 'Creating…' : `Add New ${singularLabel(taxonomy)}`}
+                {creating ? 'Creating…' : `Add ${singularLabel(taxonomy)}`}
               </button>
             </div>
           </form>
@@ -334,7 +403,9 @@ export function TermsPage({ user }: { user: AuthUser }) {
         <section className="terms-list">
           <form className="list-filters" onSubmit={handleSearch} role="search">
             <div className="field">
-              <label htmlFor="term-search">Search {taxonomyLabel(taxonomy).toLowerCase()}</label>
+              <label htmlFor="term-search" className="screen-reader-text">
+                Search {taxonomyPlural(taxonomy)}
+              </label>
               <input
                 id="term-search"
                 type="search"
@@ -345,7 +416,7 @@ export function TermsPage({ user }: { user: AuthUser }) {
               />
             </div>
             <button type="submit" className="button secondary-button" disabled={loading}>
-              Search
+              Search {taxonomyPlural(taxonomy)}
             </button>
           </form>
 
@@ -381,19 +452,56 @@ export function TermsPage({ user }: { user: AuthUser }) {
             />
           ) : (
             <>
+              <div className="tablenav">
+                <div className="alignleft">
+                  <label htmlFor="terms-bulk-action" className="screen-reader-text">
+                    Bulk actions
+                  </label>
+                  <select id="terms-bulk-action" className="bulk-select" defaultValue="delete">
+                    <option value="delete">Delete</option>
+                  </select>
+                  <button
+                    type="button"
+                    className="button secondary-button bulk-apply"
+                    disabled={bulkBusy || selected.size === 0}
+                    onClick={() => void deleteSelected()}
+                  >
+                    {bulkBusy ? 'Applying…' : 'Apply'}
+                  </button>
+                </div>
+                <div className="alignright">
+                  <span className="displaying-num">
+                    {`${data.pagination.total} ${data.pagination.total === 1 ? 'item' : 'items'}`}
+                  </span>
+                </div>
+              </div>
+
               <div className="table-scroll">
                 <table className="content-table widefat fixed striped terms">
                   <caption className="screen-reader-text">{taxonomyPlural(taxonomy)}</caption>
                   <thead>
                     <tr>
                       <th scope="col" className="check-column">
-                        <input type="checkbox" />
+                        <input
+                          type="checkbox"
+                          aria-label="Select all"
+                          checked={
+                            data.items.length > 0 &&
+                            data.items.every((term) => selected.has(term.id))
+                          }
+                          onChange={() =>
+                            setSelected((current) =>
+                              data.items.every((term) => current.has(term.id))
+                                ? new Set()
+                                : new Set(data.items.map((term) => term.id)),
+                            )
+                          }
+                        />
                       </th>
                       <th scope="col">Name</th>
                       <th scope="col">Description</th>
                       <th scope="col">Slug</th>
-                      <th scope="col">Posts</th>
-                      <th scope="col">Actions</th>
+                      <th scope="col">Count</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -403,7 +511,12 @@ export function TermsPage({ user }: { user: AuthUser }) {
                       return (
                         <tr key={term.id}>
                           <th scope="row" className="check-column">
-                            <input type="checkbox" />
+                            <input
+                              type="checkbox"
+                              aria-label={`Select ${term.name}`}
+                              checked={selected.has(term.id)}
+                              onChange={() => toggleTerm(term.id)}
+                            />
                           </th>
                           <td className="title column-name">
                             {isEditing ? (
@@ -455,15 +568,19 @@ export function TermsPage({ user }: { user: AuthUser }) {
                                 <div className="row-actions">
                                   <button
                                     type="button"
-                                    className="button small-button edit-link"
+                                    className="row-action-link"
                                     disabled={pendingAction !== null}
                                     onClick={() => startRename(term)}
                                   >
-                                    Rename
+                                    Edit
                                   </button>
+                                  <span className="row-action-sep" aria-hidden="true">
+                                    {' '}
+                                    |{' '}
+                                  </span>
                                   <button
                                     type="button"
-                                    className="button small-button delete-link"
+                                    className="row-action-link is-danger"
                                     disabled={pendingAction !== null}
                                     aria-busy={isDeleting}
                                     onClick={() => void handleDelete(term)}
@@ -480,45 +597,156 @@ export function TermsPage({ user }: { user: AuthUser }) {
                           <td className="slug column-slug">
                             <code>{term.slug}</code>
                           </td>
-                          <td className="posts column-posts">{term.postCount}</td>
+                          <td className="posts column-posts">
+                            <a
+                              href={
+                                taxonomy === 'category'
+                                  ? `/posts?category=${term.id}`
+                                  : `/posts?tag=${term.id}`
+                              }
+                              onClick={(event) => {
+                                event.preventDefault();
+                                window.location.assign(
+                                  taxonomy === 'category'
+                                    ? `/admin/posts?category=${term.id}`
+                                    : `/admin/posts?tag=${term.id}`,
+                                );
+                              }}
+                            >
+                              {term.postCount}
+                            </a>
+                          </td>
                         </tr>
                       );
                     })}
                   </tbody>
+
+                  <tfoot>
+                    <tr>
+                      <th scope="col" className="check-column">
+                        <input
+                          type="checkbox"
+                          aria-label="Select all"
+                          checked={
+                            data.items.length > 0 &&
+                            data.items.every((term) => selected.has(term.id))
+                          }
+                          onChange={() =>
+                            setSelected((current) =>
+                              data.items.every((term) => current.has(term.id))
+                                ? new Set()
+                                : new Set(data.items.map((term) => term.id)),
+                            )
+                          }
+                        />
+                      </th>
+                      <th scope="col">Name</th>
+                      <th scope="col">Description</th>
+                      <th scope="col">Slug</th>
+                      <th scope="col">Count</th>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
 
-              <nav className="pagination" aria-label={`${taxonomyPlural(taxonomy)} pagination`}>
-                <div className="tablenav-pages">
-                  <span className="displaying-num">
-                    {data.pagination.total}{' '}
-                    {data.pagination.total === 1
-                      ? taxonomyLabel(taxonomy)
-                      : taxonomyPlural(taxonomy)}
-                  </span>
-                  <span className="pagination-links">
-                    <button
-                      type="button"
-                      className="button secondary-button pagination-button prev"
-                      disabled={page <= 1}
-                      onClick={() => applyState(taxonomy, search, page - 1)}
-                    >
-                      « Previous
-                    </button>
-                    <span className="page-numbers current">
-                      Page {page} of {totalPages}
+              {totalPages > 1 ? (
+                <nav className="pagination" aria-label={`${taxonomyPlural(taxonomy)} pagination`}>
+                  <div className="tablenav-pages">
+                    <span className="displaying-num">
+                      {data.pagination.total}{' '}
+                      {data.pagination.total === 1
+                        ? taxonomyLabel(taxonomy)
+                        : taxonomyPlural(taxonomy)}
                     </span>
-                    <button
-                      type="button"
-                      className="button secondary-button pagination-button next"
-                      disabled={page >= totalPages}
-                      onClick={() => applyState(taxonomy, search, page + 1)}
-                    >
-                      Next »
-                    </button>
+                    <span className="pagination-links">
+                      <button
+                        type="button"
+                        className="button secondary-button pagination-button"
+                        aria-label="First page"
+                        title="First page"
+                        disabled={page <= 1}
+                        onClick={() => applyState(taxonomy, search, 1)}
+                      >
+                        «
+                      </button>
+                      <button
+                        type="button"
+                        className="button secondary-button pagination-button"
+                        aria-label="Previous page"
+                        title="Previous page"
+                        disabled={page <= 1}
+                        onClick={() => applyState(taxonomy, search, page - 1)}
+                      >
+                        ‹
+                      </button>
+                      <span className="page-numbers current">
+                        Page {page} of {totalPages}
+                      </span>
+                      <button
+                        type="button"
+                        className="button secondary-button pagination-button"
+                        aria-label="Next page"
+                        title="Next page"
+                        disabled={page >= totalPages}
+                        onClick={() => applyState(taxonomy, search, page + 1)}
+                      >
+                        ›
+                      </button>
+                      <button
+                        type="button"
+                        className="button secondary-button pagination-button"
+                        aria-label="Last page"
+                        title="Last page"
+                        disabled={page >= totalPages}
+                        onClick={() => applyState(taxonomy, search, totalPages)}
+                      >
+                        »
+                      </button>
+                    </span>
+                  </div>
+                </nav>
+              ) : null}
+
+              <div className="tablenav">
+                <div className="alignleft">
+                  <label htmlFor="terms-bulk-action-bottom" className="screen-reader-text">
+                    Bulk actions
+                  </label>
+                  <select
+                    id="terms-bulk-action-bottom"
+                    className="bulk-select"
+                    defaultValue="delete"
+                  >
+                    <option value="delete">Delete</option>
+                  </select>
+                  <button
+                    type="button"
+                    className="button secondary-button bulk-apply"
+                    disabled={bulkBusy || selected.size === 0}
+                    onClick={() => void deleteSelected()}
+                  >
+                    {bulkBusy ? 'Applying…' : 'Apply'}
+                  </button>
+                </div>
+                <div className="alignright">
+                  <span className="displaying-num">
+                    {`${data.pagination.total} ${data.pagination.total === 1 ? 'item' : 'items'}`}
                   </span>
                 </div>
-              </nav>
+              </div>
+
+              {taxonomy === 'category' ? (
+                <p className="term-note">
+                  Deleting a category does not delete the posts in that category. Instead, posts
+                  that were only assigned to the deleted category are set to the default category
+                  <strong> Uncategorized</strong>. The default category cannot be deleted.
+                </p>
+              ) : (
+                <p className="term-note">
+                  Deleting a tag does not delete the posts with that tag. Posts that were only
+                  assigned to the deleted tag remain published.
+                </p>
+              )}
             </>
           )}
         </section>

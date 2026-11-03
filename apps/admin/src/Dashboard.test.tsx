@@ -39,8 +39,8 @@ describe('dashboard', () => {
     render(<Dashboard user={admin} />);
 
     expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeDefined();
-    expect(await screen.findByText('5')).toBeDefined();
-    expect(await screen.findByText('4')).toBeDefined();
+    expect(await screen.findByRole('link', { name: /9\s*Posts/ })).toBeDefined();
+    expect(await screen.findByRole('link', { name: /6\s*Pages/ })).toBeDefined();
     // Six count queries + one site-health check (dashboard card).
     expect(fetchMock).toHaveBeenCalledTimes(7);
     const urls = fetchMock.mock.calls.map(([url]) => String(url));

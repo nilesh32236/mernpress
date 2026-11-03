@@ -56,9 +56,9 @@ test.afterAll(() => {
 
 async function login(page: Page) {
   await page.goto(ADMIN_URL);
-  await page.getByLabel('Username').fill(editorUsername);
-  await page.getByLabel('Password').fill(password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByLabel('Username or Email Address').fill(editorUsername);
+  await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Log In' }).click();
   await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible();
 }
 
@@ -93,7 +93,9 @@ test('editor can upload, browse, edit metadata and delete media', async ({ page 
   const hasEmpty = await emptyState.isVisible().catch(() => false);
 
   await uploadPng(page);
-  await expect(page.getByText(/160 × 90/)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('button', { name: /^View e2e-upload-/ })).toBeVisible({
+    timeout: 15_000,
+  });
   if (hasEmpty) {
     await expect(emptyState).toHaveCount(0);
   }
@@ -107,17 +109,14 @@ test('editor can upload, browse, edit metadata and delete media', async ({ page 
   await page.getByLabel('Close media details').click();
 
   // Search finds the item; a nonsense search empties the grid.
-  await page.getByLabel('Search Media').fill('e2e-upload');
-  await page.getByRole('button', { name: 'Search' }).click();
-  await expect(page.getByText(/160 × 90/)).toBeVisible();
-  await page.getByLabel('Search Media').fill('definitely-no-such-file');
-  await page.getByRole('button', { name: 'Search' }).click();
-  await expect(page.getByText(/160 × 90/)).toHaveCount(0);
+  await page.getByLabel('Search media').fill('e2e-upload');
+  await expect(page.getByRole('button', { name: /^View e2e-upload-/ })).toBeVisible();
+  await page.getByLabel('Search media').fill('definitely-no-such-file');
+  await expect(page.getByRole('button', { name: /^View e2e-upload-/ })).toHaveCount(0);
 
   // Delete with confirm.
   page.on('dialog', (dialog) => void dialog.accept());
-  await page.getByLabel('Search Media').fill('e2e-upload');
-  await page.getByRole('button', { name: 'Search' }).click();
+  await page.getByLabel('Search media').fill('e2e-upload');
   await page.getByRole('button', { name: /^View e2e-upload-/ }).click();
   await page.getByRole('button', { name: 'Delete' }).click();
   await expect(page.getByText(/160 × 90/)).toHaveCount(0, { timeout: 10_000 });

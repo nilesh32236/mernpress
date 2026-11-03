@@ -196,8 +196,12 @@ export interface AdminListQuery {
   search?: string | undefined;
   /** Filter by a taxonomy term id (WordPress "All categories"). */
   category?: string | undefined;
+  /** Filter by a tag term id (WordPress tag links). */
+  tag?: string | undefined;
   /** Filter by ISO month `YYYY-MM` on the last-updated instant ("All dates"). */
   month?: string | undefined;
+  /** Filter by author user id (WordPress "Mine"). */
+  author?: string | undefined;
   page: number;
   perPage: number;
   sort: AdminPostSort;

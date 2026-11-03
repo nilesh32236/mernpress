@@ -36,7 +36,7 @@ function makeProfile(overrides: Partial<UserProfile> = {}): UserProfile {
 
 beforeEach(() => {
   vi.mocked(fetchProfile).mockResolvedValue(makeProfile());
-  vi.mocked(updateProfile).mockResolvedValue(makeProfile({ username: 'superadmin' }));
+  vi.mocked(updateProfile).mockResolvedValue(makeProfile());
   vi.mocked(changeOwnPassword).mockResolvedValue(undefined);
 });
 
@@ -50,27 +50,29 @@ describe('profile page', () => {
     render(<ProfilePage user={admin} />);
 
     expect(((await screen.findByLabelText('Username')) as HTMLInputElement).value).toBe('admin');
-    expect(screen.getByText('Administrator')).toBeDefined();
-    expect(screen.getByText('Oct 1, 2026, 9:00 AM')).toBeDefined();
+    expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Admin');
+    expect((screen.getByLabelText('Email (required)') as HTMLInputElement).value).toBe(
+      'admin@example.com',
+    );
   });
 
-  it('saves the username and notifies the parent', async () => {
+  it('saves the display name and notifies the parent', async () => {
     const onProfileUpdated = vi.fn();
     render(<ProfilePage user={admin} onProfileUpdated={onProfileUpdated} />);
 
     await screen.findByLabelText('Username');
-    fireEvent.change(screen.getByLabelText('Username'), { target: { value: ' superadmin ' } });
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Super Admin' } });
     fireEvent.submit(screen.getByRole('form', { name: 'Account details' }));
 
     await waitFor(() =>
       expect(vi.mocked(updateProfile)).toHaveBeenCalledWith({
-        username: 'superadmin',
-        displayName: 'Admin',
+        username: 'admin',
+        displayName: 'Super Admin',
         email: 'admin@example.com',
       }),
     );
     expect(await screen.findByText('Profile updated.')).toBeDefined();
-    expect(onProfileUpdated).toHaveBeenCalledWith({ username: 'superadmin' });
+    expect(onProfileUpdated).toHaveBeenCalledWith({ username: 'admin' });
   });
 
   it('rejects a password confirmation mismatch on the client', async () => {

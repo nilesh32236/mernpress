@@ -22,8 +22,9 @@ import type { Env } from '../config/env.js';
 
 const loginSchema = z
   .object({
-    username: z.string().min(1).max(64),
+    username: z.string().min(1).max(254),
     password: z.string().min(1).max(128),
+    remember: z.boolean().optional(),
   })
   .strict();
 
@@ -125,18 +126,14 @@ export function registerAuthRoutes(app: FastifyInstance, options: AuthRouteOptio
         username: parsed.data.username,
         password: parsed.data.password,
         ip: request.ip,
+        ...(parsed.data.remember === undefined ? {} : { remember: parsed.data.remember }),
       });
 
-      reply.setCookie(
-        SESSION_COOKIE,
-        result.sessionToken,
-        sessionCookieOptions(env, env.SESSION_TTL_MINUTES * 60),
-      );
-      reply.setCookie(
-        CSRF_COOKIE,
-        result.csrfToken,
-        csrfCookieOptions(env, env.SESSION_TTL_MINUTES * 60),
-      );
+      // Follow the session's actual expiry so "Remember Me" can extend it.
+      const maxAge = Math.max(60, Math.round((result.expiresAt.getTime() - Date.now()) / 1000));
+
+      reply.setCookie(SESSION_COOKIE, result.sessionToken, sessionCookieOptions(env, maxAge));
+      reply.setCookie(CSRF_COOKIE, result.csrfToken, csrfCookieOptions(env, maxAge));
       reply.clearCookie(PREAUTH_CSRF_COOKIE, clearCsrfCookieOptions(env));
 
       return {

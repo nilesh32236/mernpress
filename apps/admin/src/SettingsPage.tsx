@@ -76,37 +76,14 @@ function WritingIcon() {
   );
 }
 
-function CheckIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
-
-function FieldLabel({ icon, children }: { icon: ReactNode; children: ReactNode }) {
-  return (
-    <span className="field-label-text">
-      {icon}
-      {children}
-    </span>
-  );
+function FieldLabel({ children }: { icon?: ReactNode; children: ReactNode }) {
+  return <span className="field-label-text">{children}</span>;
 }
 
 const TABS: Array<{ value: SettingsTab; label: string; icon: ReactNode }> = [
   { value: 'general', label: 'General', icon: <GeneralIcon /> },
-  { value: 'reading', label: 'Reading', icon: <ReadingIcon /> },
   { value: 'writing', label: 'Writing', icon: <WritingIcon /> },
+  { value: 'reading', label: 'Reading', icon: <ReadingIcon /> },
 ];
 
 function tabFromHash(hash: string): SettingsTab {
@@ -371,16 +348,10 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
               <button
                 type="submit"
                 className="button primary-button"
-                disabled={!generalDirty || saving.general}
+                disabled={saving.general}
                 aria-busy={saving.general}
               >
-                {saving.general ? (
-                  'Saving…'
-                ) : (
-                  <>
-                    <CheckIcon /> Save Changes
-                  </>
-                )}
+                {saving.general ? 'Saving…' : 'Save Changes'}
               </button>
             </div>
           </form>
@@ -482,13 +453,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
                 disabled={!readingDirty || saving.reading}
                 aria-busy={saving.reading}
               >
-                {saving.reading ? (
-                  'Saving…'
-                ) : (
-                  <>
-                    <CheckIcon /> Save Changes
-                  </>
-                )}
+                {saving.reading ? 'Saving…' : 'Save Changes'}
               </button>
             </div>
           </form>
@@ -536,13 +501,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
               disabled={!writingDirty || saving.writing}
               aria-busy={saving.writing}
             >
-              {saving.writing ? (
-                'Saving…'
-              ) : (
-                <>
-                  <CheckIcon /> Save Changes
-                </>
-              )}
+              {saving.writing ? 'Saving…' : 'Save Changes'}
             </button>
           </div>
         </form>
@@ -555,7 +514,15 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
 
   return (
     <>
-      <PageHeader eyebrow="Settings" title="Settings" description="Manage site-wide options." />
+      <PageHeader
+        title={
+          activeTab === 'general'
+            ? 'General Settings'
+            : activeTab === 'reading'
+              ? 'Reading Settings'
+              : 'Writing Settings'
+        }
+      />
       {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
 
       <div className="settings-tabs" role="tablist" aria-label="Settings sections">
@@ -570,7 +537,6 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
             className={`settings-tab${activeTab === tab.value ? ' is-active' : ''}`}
             onClick={() => handleTabChange(tab.value)}
           >
-            {tab.icon}
             {tab.label}
           </button>
         ))}

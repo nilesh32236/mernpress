@@ -118,6 +118,7 @@ describe('admin auth API client', () => {
     expect(JSON.parse(String(loginInit?.body))).toEqual({
       username: 'admin',
       password: 'correct horse battery staple',
+      remember: false,
     });
     expectSameOriginApiCalls(fetchMock.mock.calls);
   });

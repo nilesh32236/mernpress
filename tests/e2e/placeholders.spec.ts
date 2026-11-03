@@ -41,8 +41,8 @@ test('admin login page boots without console or asset errors', async ({ page }) 
 
   await page.goto(ADMIN_URL);
   await expect(page.getByRole('heading', { level: 1, name: 'MERNPress admin' })).toBeVisible();
-  await expect(page.getByLabel('Username')).toBeVisible();
-  await expect(page.getByLabel('Password')).toBeVisible();
+  await expect(page.getByLabel('Username or Email Address')).toBeVisible();
+  await expect(page.getByLabel('Password', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Skip to content' })).toBeAttached();
 
   expect(errors.consoleErrors).toEqual([]);

@@ -53,9 +53,9 @@ describe('admin application shell', () => {
 
     render(<App />);
 
-    expect(await screen.findByLabelText('Username')).toBeDefined();
+    expect(await screen.findByLabelText('Username or Email Address')).toBeDefined();
     expect(screen.getByLabelText('Password')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Sign in' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Log In' })).toBeDefined();
 
     const skipLink = screen.getByRole('link', { name: 'Skip to content' });
     expect(skipLink.getAttribute('href')).toBe('#main-content');
@@ -70,8 +70,8 @@ describe('admin application shell', () => {
     expect(await screen.findByRole('link', { name: 'Dashboard' })).toBeDefined();
     expect(screen.getByRole('link', { name: 'Posts' })).toBeDefined();
     expect(screen.getByRole('link', { name: 'Pages' })).toBeDefined();
-    expect(screen.getByText('admin')).toBeDefined();
-    expect(screen.getByText('Administrator')).toBeDefined();
+    expect(screen.getByText('Howdy, admin')).toBeDefined();
+
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeDefined();
     expect(screen.getByRole('link', { name: 'Dashboard' }).getAttribute('aria-current')).toBe(
       'page',
@@ -98,7 +98,6 @@ describe('admin application shell', () => {
     render(<App />);
 
     expect(await screen.findByRole('link', { name: 'Posts' })).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Toggle Posts submenu' }));
     expect(await screen.findByRole('link', { name: 'Categories' })).toBeDefined();
     expect(screen.getByRole('link', { name: 'Tags' })).toBeDefined();
   });
@@ -121,7 +120,7 @@ describe('admin application shell', () => {
       'Could not check your session',
     );
     expect(screen.getByRole('button', { name: 'Try again' })).toBeDefined();
-    expect(screen.getByLabelText('Username')).toBeDefined();
+    expect(screen.getByLabelText('Username or Email Address')).toBeDefined();
   });
 
   it('signs out through the header action', async () => {
@@ -131,7 +130,7 @@ describe('admin application shell', () => {
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Sign out' }));
 
-    expect(await screen.findByLabelText('Username')).toBeDefined();
+    expect(await screen.findByLabelText('Username or Email Address')).toBeDefined();
     const logoutCall = fetchMock.mock.calls.find(([url]) => url === '/api/auth/logout');
     expect(logoutCall?.[1]?.method).toBe('POST');
   });
@@ -177,7 +176,7 @@ describe('session expiry', () => {
 
     render(<App />);
 
-    expect(await screen.findByLabelText('Username')).toBeDefined();
+    expect(await screen.findByLabelText('Username or Email Address')).toBeDefined();
     expect(screen.getByRole('alert').textContent).toContain('Your session expired');
   });
 });

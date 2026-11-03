@@ -8,8 +8,6 @@ import {
   type UserProfile,
 } from './api.js';
 import { Notice, PageHeader, Skeleton, ErrorState, type NoticeMessage } from './components.js';
-import { formatDateTime } from './format.js';
-import { roleLabel } from './roles.js';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -141,11 +139,7 @@ export function ProfilePage({
 
   return (
     <>
-      <PageHeader
-        eyebrow="Users"
-        title="Profile"
-        description={`Account settings for ${user.username}.`}
-      />
+      <PageHeader title="Profile" />
 
       {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
 
@@ -158,38 +152,41 @@ export function ProfilePage({
       ) : loading ? (
         <Skeleton label="Loading profile…" lines={4} />
       ) : profile ? (
-        <div className="form-main">
-          <section className="content-card" aria-labelledby="profile-account-heading">
-            <h2 id="profile-account-heading">Account</h2>
-            <form onSubmit={handleAccountSubmit} aria-label="Account details">
-              <div className="field">
-                <label htmlFor="profile-username">Username</label>
+        <div className="settings-panel profile-panel">
+          <form onSubmit={handleAccountSubmit} aria-label="Account details">
+            <h2 className="profile-section-title">Name</h2>
+            <div className="field">
+              <label htmlFor="profile-username">Username</label>
+              <div>
                 <input
                   id="profile-username"
                   type="text"
                   value={username}
-                  onChange={(event) => setUsername(event.target.value)}
-                  disabled={savingAccount}
+                  readOnly
+                  disabled
                   autoComplete="username"
-                  required
                 />
+                <p className="field-help">Usernames cannot be changed.</p>
               </div>
+            </div>
 
-              <div className="field">
-                <label htmlFor="profile-name">Name</label>
-                <input
-                  id="profile-name"
-                  type="text"
-                  maxLength={100}
-                  value={displayName}
-                  onChange={(event) => setDisplayName(event.target.value)}
-                  disabled={savingAccount}
-                  autoComplete="name"
-                />
-              </div>
+            <div className="field">
+              <label htmlFor="profile-name">Name</label>
+              <input
+                id="profile-name"
+                type="text"
+                maxLength={100}
+                value={displayName}
+                onChange={(event) => setDisplayName(event.target.value)}
+                disabled={savingAccount}
+                autoComplete="name"
+              />
+            </div>
 
-              <div className="field">
-                <label htmlFor="profile-email">Email</label>
+            <h2 className="profile-section-title">Contact Info</h2>
+            <div className="field">
+              <label htmlFor="profile-email">Email (required)</label>
+              <div>
                 <input
                   id="profile-email"
                   type="email"
@@ -199,55 +196,47 @@ export function ProfilePage({
                   disabled={savingAccount}
                   autoComplete="email"
                 />
-              </div>
-
-              <div className="meta-grid">
-                <div>
-                  <span className="meta-label">Role</span>
-                  <span>{roleLabel(profile.role)}</span>
-                </div>
-                <div>
-                  <span className="meta-label">Registered</span>
-                  <span>{formatDateTime(profile.createdAt)}</span>
-                </div>
-              </div>
-
-              {accountError ? (
-                <p className="form-error" role="alert">
-                  {accountError}
+                <p className="field-help">
+                  This address is used for admin purposes and notifications.
                 </p>
-              ) : null}
-
-              <div className="side-actions">
-                <button
-                  type="submit"
-                  className="button primary-button"
-                  disabled={savingAccount}
-                  aria-busy={savingAccount}
-                >
-                  {savingAccount ? 'Saving…' : 'Save Profile'}
-                </button>
               </div>
-            </form>
-          </section>
+            </div>
 
-          <section className="content-card" aria-labelledby="profile-password-heading">
-            <h2 id="profile-password-heading">Change password</h2>
-            <form onSubmit={handlePasswordSubmit} aria-label="Change password">
-              <div className="field">
-                <label htmlFor="profile-current-password">Current password</label>
-                <input
-                  id="profile-current-password"
-                  type="password"
-                  value={currentPassword}
-                  onChange={(event) => setCurrentPassword(event.target.value)}
-                  disabled={savingPassword}
-                  autoComplete="current-password"
-                  required
-                />
-              </div>
-              <div className="field">
-                <label htmlFor="profile-new-password">New password</label>
+            {accountError ? (
+              <p className="form-error" role="alert">
+                {accountError}
+              </p>
+            ) : null}
+
+            <p className="profile-submit">
+              <button
+                type="submit"
+                className="button primary-button"
+                disabled={savingAccount}
+                aria-busy={savingAccount}
+              >
+                {savingAccount ? 'Saving…' : 'Update Profile'}
+              </button>
+            </p>
+          </form>
+
+          <form onSubmit={handlePasswordSubmit} aria-label="Change password">
+            <h2 className="profile-section-title">Account Management</h2>
+            <div className="field">
+              <label htmlFor="profile-current-password">Current password</label>
+              <input
+                id="profile-current-password"
+                type="password"
+                value={currentPassword}
+                onChange={(event) => setCurrentPassword(event.target.value)}
+                disabled={savingPassword}
+                autoComplete="current-password"
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="profile-new-password">New password</label>
+              <div>
                 <input
                   id="profile-new-password"
                   type="password"
@@ -261,37 +250,37 @@ export function ProfilePage({
                   At least {MIN_PASSWORD_LENGTH} characters. The server may require more.
                 </p>
               </div>
-              <div className="field">
-                <label htmlFor="profile-confirm-password">Confirm new password</label>
-                <input
-                  id="profile-confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
-                  disabled={savingPassword}
-                  autoComplete="new-password"
-                  required
-                />
-              </div>
+            </div>
+            <div className="field">
+              <label htmlFor="profile-confirm-password">Confirm new password</label>
+              <input
+                id="profile-confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                disabled={savingPassword}
+                autoComplete="new-password"
+                required
+              />
+            </div>
 
-              {passwordError ? (
-                <p className="form-error" role="alert">
-                  {passwordError}
-                </p>
-              ) : null}
+            {passwordError ? (
+              <p className="form-error" role="alert">
+                {passwordError}
+              </p>
+            ) : null}
 
-              <div className="side-actions">
-                <button
-                  type="submit"
-                  className="button primary-button"
-                  disabled={savingPassword}
-                  aria-busy={savingPassword}
-                >
-                  {savingPassword ? 'Updating…' : 'Update Password'}
-                </button>
-              </div>
-            </form>
-          </section>
+            <p className="profile-submit">
+              <button
+                type="submit"
+                className="button primary-button"
+                disabled={savingPassword}
+                aria-busy={savingPassword}
+              >
+                {savingPassword ? 'Updating…' : 'Update Password'}
+              </button>
+            </p>
+          </form>
         </div>
       ) : null}
     </>

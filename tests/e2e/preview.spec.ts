@@ -57,9 +57,9 @@ test.afterAll(() => {
 
 async function login(page: Page) {
   await page.goto(ADMIN_URL);
-  await page.getByLabel('Username').fill(editorUsername);
-  await page.getByLabel('Password').fill(password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByLabel('Username or Email Address').fill(editorUsername);
+  await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Log In' }).click();
   await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible();
 }
 

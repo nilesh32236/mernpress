@@ -1,12 +1,133 @@
 import { useEffect, useRef, useState } from 'react';
 import { logout, type AuthUser } from './api.js';
 import type { Route } from './router.js';
-import { breadcrumbs, navigate, newContentPath } from './router.js';
+import { navigate, newContentPath } from './router.js';
 import { ADMIN_BASE } from './router.js';
-import { Breadcrumbs, type BreadcrumbItem } from './components.js';
 import { useNavigationGuard } from './navigation-guard.js';
-import { canCreateContent, canManageTerms, canReadContent, roleLabel } from './roles.js';
+import { canCreateContent, canManageTerms, canReadContent } from './roles.js';
+import { screenPerPage, setScreenPerPage } from './screenOptions.js';
 import type { ReactNode } from 'react';
+
+function screenKey(route: Route): string {
+  switch (route.name) {
+    case 'list':
+      return route.type === 'post' ? 'posts' : 'pages';
+    case 'dashboard':
+      return 'dashboard';
+    case 'media':
+      return 'media';
+    case 'users':
+      return 'users';
+    case 'terms':
+      return 'terms';
+    case 'settings':
+      return 'settings';
+    case 'profile':
+      return 'profile';
+    default:
+      return '';
+  }
+}
+
+function screenHelp(route: Route): {
+  title: string;
+  sections: Array<{ heading: string; body: string }>;
+} {
+  switch (route.name) {
+    case 'list':
+      return {
+        title: route.type === 'post' ? 'Posts' : 'Pages',
+        sections: [
+          {
+            heading: 'Overview',
+            body: 'This screen lists every post or page you can manage. Use the status links above the table to narrow the list, or the search box to find a specific item.',
+          },
+          {
+            heading: 'Screen Content',
+            body: 'The table shows the title, author, categories, tags and publication date. Row actions appear when you hover a row: Edit, Trash (or Restore) and View.',
+          },
+          {
+            heading: 'Bulk Actions',
+            body: 'Select two or more rows, choose an action from the Bulk actions list and click Apply to move several items to the trash or restore them at once.',
+          },
+        ],
+      };
+    case 'media':
+      return {
+        title: 'Media Library',
+        sections: [
+          {
+            heading: 'Overview',
+            body: 'This screen lists every uploaded file. Use the grid/list toggles to change the view and the filters to narrow by type or month.',
+          },
+          {
+            heading: 'Bulk Select',
+            body: 'Click Bulk select to reveal checkboxes, then select attachments and delete them in one action.',
+          },
+        ],
+      };
+    case 'users':
+      return {
+        title: 'Users',
+        sections: [
+          {
+            heading: 'Overview',
+            body: 'This screen lists every account on the site. Role links above the table filter the list by role, and the search box looks up usernames.',
+          },
+          {
+            heading: 'Roles',
+            body: 'Administrators manage settings and users. Editors manage all content. Authors manage their own posts, and subscribers only read content.',
+          },
+        ],
+      };
+    case 'terms':
+      return {
+        title: route.name === 'terms' ? 'Categories and Tags' : 'Terms',
+        sections: [
+          {
+            heading: 'Overview',
+            body: 'Categories and tags group posts. Categories can have a hierarchy; tags are flat.',
+          },
+          {
+            heading: 'Bulk Actions',
+            body: 'Select several terms and use Bulk actions to delete them. Deleting a term never deletes the posts assigned to it.',
+          },
+        ],
+      };
+    case 'settings':
+      return {
+        title: 'Settings',
+        sections: [
+          {
+            heading: 'Overview',
+            body: 'General holds the site title, tagline and address. Reading controls the homepage and posts per page. Writing controls the default category.',
+          },
+        ],
+      };
+    case 'profile':
+      return {
+        title: 'Profile',
+        sections: [
+          {
+            heading: 'Overview',
+            body: 'Your username cannot be changed. Update your display name, email address or password here.',
+          },
+        ],
+      };
+    case 'dashboard':
+      return {
+        title: 'Dashboard',
+        sections: [
+          {
+            heading: 'Overview',
+            body: 'This screen is the control centre for the site. Widgets can be collapsed with the arrow in their header and reordered with the up/down arrows.',
+          },
+        ],
+      };
+    default:
+      return { title: 'Help', sections: [] };
+  }
+}
 
 interface AdminShellProps {
   user: AuthUser;
@@ -124,7 +245,6 @@ function PageIcon() {
   );
 }
 
-
 function UsersIcon() {
   return (
     <svg
@@ -206,12 +326,13 @@ function ChevronDownIcon() {
 export function AdminShell({ user, route, onSignedOut, children }: AdminShellProps) {
   const { confirmNavigation } = useNavigationGuard();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [metaPanel, setMetaPanel] = useState<'options' | 'help' | null>(null);
+  const [perPageChoice, setPerPageChoice] = useState(10);
   const [collapsed, setCollapsed] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const [newMenuOpen, setNewMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const toggleRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const mainRef = useRef<HTMLElement>(null);
@@ -307,10 +428,22 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [newMenuOpen, userMenuOpen]);
 
-  const breadcrumbItems: BreadcrumbItem[] = breadcrumbs(route);
   // The editor is a focused workspace with its own header; a shell breadcrumb
   // would duplicate navigation and sit behind the editor toolbar.
   const isEditorRoute = route.name === 'new' || route.name === 'edit';
+  const currentScreen = screenKey(route);
+  const supportsPerPage = ['posts', 'pages', 'users', 'terms', 'media'].includes(currentScreen);
+
+  useEffect(() => {
+    setMetaPanel(null);
+  }, [route.name, 'type' in route ? route.type : '']);
+
+  useEffect(() => {
+    if (metaPanel !== 'options' || !supportsPerPage) return;
+    setPerPageChoice(screenPerPage(currentScreen, currentScreen === 'media' ? 24 : 10));
+  }, [metaPanel, currentScreen, supportsPerPage]);
+
+  const help = screenHelp(route);
 
   const isPostRoute =
     route.name !== 'dashboard' &&
@@ -377,6 +510,21 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       ],
     },
     {
+      to: '/media',
+      label: 'Media',
+      active: route.name === 'media',
+      show: canReadContent(user),
+      icon: <MediaIcon />,
+      subs: [
+        { label: 'Library', to: '/media', active: route.name === 'media' },
+        {
+          label: 'Add New',
+          to: '/media?upload=1',
+          active: route.name === 'media' && searchParams.get('upload') === '1',
+        },
+      ],
+    },
+    {
       to: '/pages',
       label: 'Pages',
       active: isPageRoute,
@@ -400,21 +548,6 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       ],
     },
     {
-      to: '/media',
-      label: 'Media',
-      active: route.name === 'media',
-      show: canReadContent(user),
-      icon: <MediaIcon />,
-      subs: [
-        { label: 'Library', to: '/media', active: route.name === 'media' },
-        {
-          label: 'Add New',
-          to: '/media?upload=1',
-          active: route.name === 'media' && searchParams.get('upload') === '1',
-        },
-      ],
-    },
-    {
       to: '/users',
       label: 'Users',
       active: route.name === 'users' || route.name === 'profile',
@@ -422,6 +555,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       icon: <UsersIcon />,
       subs: [
         { label: 'All Users', to: '/users', active: route.name === 'users' },
+        { label: 'Add User', to: '/users?action=add', active: false },
         { label: 'Profile', to: '/profile', active: route.name === 'profile' },
       ],
     },
@@ -459,10 +593,6 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
     setMobileOpen(false);
     setNewMenuOpen(false);
     setUserMenuOpen(false);
-  }
-
-  function toggleExpanded(label: string) {
-    setExpanded((current) => ({ ...current, [label]: !(current[label] ?? false) }));
   }
 
   const visibleItems = navItems.filter((item) => item.show);
@@ -503,44 +633,31 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
               <line x1="3" y1="18" x2="21" y2="18" />
             </svg>
           </button>
-          <a
-            className="admin-bar-brand"
-            href={ADMIN_BASE}
-            aria-label="MERNPress admin home"
-            onClick={(e) => {
-              e.preventDefault();
-              go('/admin');
-            }}
-          >
-            <span className="brand-mark" aria-hidden="true">
-              M
-            </span>
-            <span className="brand-text">MERNPress</span>
-          </a>
-          <a
-            className="visit-site-pill"
-            href="/"
-            target="_blank"
-            rel="noreferrer"
-            title="Visit public site"
-          >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
+          <div className="admin-bar-site">
+            <a
+              className="admin-bar-site-name"
+              href={ADMIN_BASE}
+              aria-label="MERNPress admin home"
+              onClick={(e) => {
+                e.preventDefault();
+                go('/admin');
+              }}
             >
-              <circle cx="12" cy="12" r="10" />
-              <line x1="2" y1="12" x2="22" y2="12" />
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-            </svg>
-            <span>Visit Site</span>
-          </a>
+              <span className="brand-mark" aria-hidden="true">
+                M
+              </span>
+              <span className="brand-text">MERNPress</span>
+            </a>
+            <a
+              className="admin-bar-visit"
+              href="/"
+              target="_blank"
+              rel="noreferrer"
+              title="Visit public site"
+            >
+              Visit Site
+            </a>
+          </div>
           {canCreate ? (
             <div className={`admin-bar-menu${newMenuOpen ? ' is-open' : ''}`}>
               <button
@@ -614,7 +731,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
                 setNewMenuOpen(false);
               }}
             >
-              <span className="hello-name">Hello, {user.username}</span>
+              <span className="hello-name">Howdy, {user.username}</span>
               <span className="avatar-circle" aria-hidden="true">
                 {initials(user.username)}
               </span>
@@ -625,6 +742,11 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
             {/* Always mounted so the single 'Sign out' button is queryable;
                 hidden with opacity/pointer-events only (never display:none). */}
             <div className="admin-bar-pop" role="presentation">
+              {signOutError ? (
+                <p className="signout-error" role="alert">
+                  {signOutError}
+                </p>
+              ) : null}
               <a
                 href="/profile"
                 tabIndex={userMenuOpen ? undefined : -1}
@@ -692,11 +814,61 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
           aria-label="Primary navigation"
           ref={sidebarRef}
         >
+          <nav className="sidebar-nav" aria-label="Primary">
+            <ul>
+              {visibleItems.map((item) => {
+                const hasSubs = item.subs.length > 0;
+                return (
+                  <li
+                    key={item.to + item.label}
+                    className={`nav-item${item.active ? ' is-active' : ''}${railMode && !mobileOpen ? ' rail-item' : ''}`}
+                  >
+                    <div className="nav-row">
+                      <a
+                        className={`nav-link${item.active ? ' nav-link-active' : ''}`}
+                        href={item.to}
+                        aria-current={item.active ? 'page' : undefined}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          go(item.subs[0]?.to ?? item.to);
+                        }}
+                        title={railMode && !mobileOpen ? item.label : undefined}
+                      >
+                        <span className="nav-icon" aria-hidden="true">
+                          {item.icon}
+                        </span>
+                        <span className="nav-link-text">{item.label}</span>
+                      </a>
+                    </div>
+                    {hasSubs && !(railMode && !mobileOpen) ? (
+                      <ul className="nav-submenu">
+                        {item.subs.map((sub) => (
+                          <li key={sub.label}>
+                            <a
+                              className={`nav-sublink${sub.active ? ' is-active' : ''}`}
+                              href={sub.to}
+                              aria-current={sub.active ? 'page' : undefined}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                go(sub.to);
+                              }}
+                            >
+                              <span>{sub.label}</span>
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
           <button
             type="button"
             className="collapse-toggle"
-            aria-label={railMode ? 'Expand menu' : 'Collapse menu'}
-            title={railMode ? 'Expand menu' : 'Collapse menu'}
+            aria-label={railMode ? 'Expand Menu' : 'Collapse Menu'}
+            title={railMode ? 'Expand Menu' : 'Collapse Menu'}
             onClick={() => {
               if (!mobileOpen) {
                 setCollapsed((value) => !value);
@@ -725,7 +897,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
             ) : (
               <>
                 <span className="collapse-label">
-                  {mobileOpen ? 'Close menu' : 'Collapse menu'}
+                  {mobileOpen ? 'Close Menu' : 'Collapse Menu'}
                 </span>
                 <svg
                   width="16"
@@ -744,95 +916,6 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
               </>
             )}
           </button>
-          <nav className="sidebar-nav" aria-label="Primary">
-            <ul>
-              {visibleItems.map((item) => {
-                const hasSubs = item.subs.length > 0;
-                const isOpen = expanded[item.label] ?? item.active;
-                return (
-                  <li
-                    key={item.to + item.label}
-                    className={`nav-item${item.active ? ' is-active' : ''}${railMode && !mobileOpen ? ' rail-item' : ''}`}
-                  >
-                    <div className="nav-row">
-                      <a
-                        className={`nav-link${item.active ? ' nav-link-active' : ''}`}
-                        href={item.to}
-                        aria-current={item.active ? 'page' : undefined}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          go(item.subs[0]?.to ?? item.to);
-                        }}
-                        title={railMode && !mobileOpen ? item.label : undefined}
-                      >
-                        <span className="nav-icon" aria-hidden="true">
-                          {item.icon}
-                        </span>
-                        <span className="nav-link-text">{item.label}</span>
-                      </a>
-                      {hasSubs ? (
-                        <button
-                          type="button"
-                          className={`nav-chevron${isOpen ? ' is-open' : ''}`}
-                          aria-label={`Toggle ${item.label} submenu`}
-                          aria-expanded={isOpen}
-                          onClick={() => toggleExpanded(item.label)}
-                        >
-                          <ChevronDownIcon />
-                        </button>
-                      ) : null}
-                    </div>
-                    {hasSubs &&
-                      (railMode && !mobileOpen ? (
-                        <div className="rail-flyout" aria-hidden="true">
-                          <p className="rail-flyout-title">{item.label}</p>
-                          {item.subs.map((sub) => (
-                            <span
-                              key={sub.label}
-                              className={`rail-flyout-link${sub.active ? ' is-active' : ''}`}
-                            >
-                              {sub.label}
-                            </span>
-                          ))}
-                        </div>
-                      ) : isOpen ? (
-                        <ul className="nav-submenu">
-                          {item.subs.map((sub) => (
-                            <li key={sub.label}>
-                              <a
-                                className={`nav-sublink${sub.active ? ' is-active' : ''}`}
-                                href={sub.to}
-                                aria-current={sub.active ? 'page' : undefined}
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  go(sub.to);
-                                }}
-                              >
-                                <span className="sub-dot" aria-hidden="true" />
-                                <span>{sub.label}</span>
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : null)}
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-          <div className="sidebar-footer">
-            <div className="sidebar-user">
-              <p className="sidebar-user-name" aria-hidden="true">
-                {user.username}
-              </p>
-              <p className="sidebar-user-role">{roleLabel(user.role)}</p>
-            </div>
-            {signOutError ? (
-              <p className="form-error" role="alert">
-                {signOutError}
-              </p>
-            ) : null}
-          </div>
         </aside>
 
         <div className="admin-main">
@@ -846,21 +929,98 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
               children
             ) : (
               <div className="main-content-inner">
-                <Breadcrumbs
-                  items={breadcrumbItems}
-                  onNavigate={(to) => {
-                    if (confirmNavigation()) {
-                      navigate(to);
-                    }
-                  }}
-                />
+                <div id="screen-meta-links" className="screen-meta-links">
+                  {currentScreen !== 'media' ? (
+                    <button
+                      type="button"
+                      className={`button show-settings${metaPanel === 'options' ? ' is-active' : ''}`}
+                      aria-expanded={metaPanel === 'options'}
+                      aria-controls="screen-options-wrap"
+                      onClick={() =>
+                        setMetaPanel((current) => (current === 'options' ? null : 'options'))
+                      }
+                    >
+                      Screen Options
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className={`button show-settings${metaPanel === 'help' ? ' is-active' : ''}`}
+                    aria-expanded={metaPanel === 'help'}
+                    aria-controls="contextual-help-wrap"
+                    onClick={() => setMetaPanel((current) => (current === 'help' ? null : 'help'))}
+                  >
+                    Help
+                  </button>
+                </div>
+
+                {metaPanel === 'options' ? (
+                  <div
+                    id="screen-options-wrap"
+                    className="screen-meta-panel"
+                    role="region"
+                    aria-label="Screen Options"
+                  >
+                    <h2>Screen Options</h2>
+                    {supportsPerPage ? (
+                      <div className="screen-options-row">
+                        <label htmlFor="screen-per-page">Number of items per page:</label>
+                        <input
+                          id="screen-per-page"
+                          type="number"
+                          min={1}
+                          max={100}
+                          value={perPageChoice}
+                          onChange={(event) =>
+                            setPerPageChoice(
+                              Math.min(100, Math.max(1, Number(event.target.value) || 1)),
+                            )
+                          }
+                        />
+                        <button
+                          type="button"
+                          className="button"
+                          onClick={() => {
+                            setScreenPerPage(currentScreen, perPageChoice);
+                            setMetaPanel(null);
+                          }}
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="screen-options-note">
+                        This screen has no configurable options.
+                      </p>
+                    )}
+                  </div>
+                ) : null}
+
+                {metaPanel === 'help' ? (
+                  <div
+                    id="contextual-help-wrap"
+                    className="screen-meta-panel"
+                    role="region"
+                    aria-label="Help"
+                  >
+                    <h2>{help.title}</h2>
+                    {help.sections.map((section) => (
+                      <div key={section.heading} className="contextual-help-section">
+                        <h3>{section.heading}</h3>
+                        <p>{section.body}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
                 {children}
               </div>
             )}
           </main>
 
           <footer className="app-footer">
-            <p>MERNPress Content administration</p>
+            <p>Thank you for creating with MERNPress.</p>
+            <p className="footer-version">Version 0.1.0</p>
           </footer>
         </div>
       </div>

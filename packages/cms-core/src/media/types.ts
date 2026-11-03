@@ -61,6 +61,8 @@ export interface MediaListQuery {
   type?: 'image' | undefined;
   /** Creation-date ordering; newest first by default. */
   order?: 'newest' | 'oldest' | undefined;
+  /** ISO month `YYYY-MM` filter on the creation date ("All dates"). */
+  month?: string | undefined;
 }
 
 export interface UploadMediaInput {

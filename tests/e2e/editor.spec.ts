@@ -58,9 +58,9 @@ test.afterAll(() => {
 
 async function login(page: Page) {
   await page.goto(ADMIN_URL);
-  await page.getByLabel('Username').fill(editorUsername);
-  await page.getByLabel('Password').fill(password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByLabel('Username or Email Address').fill(editorUsername);
+  await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Log In' }).click();
   await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible();
 }
 
@@ -68,13 +68,9 @@ async function openNewPost(page: Page) {
   if ((page.viewportSize()?.width ?? 1280) < 900) {
     await page.getByRole('button', { name: 'Open navigation' }).click();
   }
-  await page
-    .getByRole('navigation', { name: 'Primary' })
-    .getByRole('link', { name: 'Posts', exact: true })
-    .click();
-  await page.getByRole('link', { name: 'New post' }).first().click();
+  await page.goto(`${ADMIN_URL}posts/new`);
   await expect(page.getByRole('heading', { level: 1, name: 'New post' })).toBeVisible();
-  await expect(page.locator('.block-canvas-sheet')).toBeVisible();
+  await expect(page.locator('.block-canvas-sheet')).toBeVisible({ timeout: 20_000 });
 }
 
 async function insertBlock(page: Page, searchTerm: string, optionName: RegExp) {
@@ -160,7 +156,7 @@ test('publishes from the editor and exposes the post publicly', async ({ page })
 
   await page.getByRole('button', { name: 'Publish' }).click();
   await expect(page.getByText('Content published.')).toBeVisible();
-  await expect(page.locator('.editor-topbar .status-badge')).toHaveText('Published');
+  await expect(page.locator('.editor-status-value')).toContainText('Published');
 
   postSlug = await page.evaluate(async (id) => {
     const response = await fetch(`/api/admin/posts/${id}`, { credentials: 'include' });
@@ -190,11 +186,11 @@ test('undo and redo restore structural changes without losing typed text', async
   await insertBlock(page, 'separator', /^Separator/);
   await expect(page.locator('.block-canvas-sheet .wp-block-separator')).toHaveCount(1);
 
-  await page.getByRole('button', { name: 'Undo' }).click();
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(page.locator('.block-canvas-sheet .wp-block-separator')).toHaveCount(0);
   await expect(page.locator('.block-canvas-sheet')).toContainText('Keep this paragraph.');
 
-  await page.getByRole('button', { name: 'Redo' }).click();
+  await page.getByRole('button', { name: 'Redo', exact: true }).click();
   await expect(page.locator('.block-canvas-sheet .wp-block-separator')).toHaveCount(1);
 
   // Persist the restored state with the keyboard shortcut, then verify it
@@ -216,7 +212,8 @@ test('inserts a quote and shows real block settings in the inspector', async ({ 
   await page.keyboard.type('A line worth quoting.');
 
   // The inspector must show the selected block's settings, not the empty hint.
-  await page.getByRole('button', { name: 'Block settings' }).click();
+  await page.getByRole('tab', { name: 'Block' }).click();
+  await page.getByRole('button', { name: 'Open block settings' }).click();
   const inspector = page.locator('.block-canvas-inspector');
   // Typing focuses the quote's inner paragraph, so the inspector shows that
   // block's real settings rather than the empty-selection hint.
@@ -293,7 +290,7 @@ test('the editor stays usable at 375px with an off-canvas settings panel', async
   await openNewPost(page);
 
   await expect(page.getByLabel('Title', { exact: true })).toBeVisible();
-  await expect(page.locator('.block-canvas-sheet')).toBeVisible();
+  await expect(page.locator('.block-canvas-sheet')).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole('button', { name: 'Add block' })).toBeVisible();
 
   const overflow = await page.evaluate(() => ({

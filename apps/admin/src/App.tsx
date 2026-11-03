@@ -62,7 +62,6 @@ export function App() {
         </header>
         <main id="main-content" className="main-content" tabIndex={-1} aria-busy="true">
           <div className="content-card">
-            <p className="eyebrow">Secure admin</p>
             <h1>MERNPress admin</h1>
             <p className="lede" role="status">
               Checking your session…
@@ -82,12 +81,7 @@ export function App() {
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>
-        <header className="app-header">
-          <a className="brand" href={ADMIN_BASE} aria-label="MERNPress admin home">
-            MERNPress
-          </a>
-        </header>
-        <main id="main-content" className="main-content" tabIndex={-1}>
+        <main id="main-content" className="login-page" tabIndex={-1}>
           {sessionError ? (
             <div className="notice notice-error" role="alert">
               <p>{sessionError}</p>
@@ -107,9 +101,6 @@ export function App() {
             }}
           />
         </main>
-        <footer className="app-footer">
-          <p>MERNPress content administration</p>
-        </footer>
       </div>
     );
   }
@@ -142,6 +133,12 @@ function SignedInApp({
   useEffect(() => {
     document.title = pageTitle(route);
   }, [route]);
+
+  // The block editor is a full-screen workspace in WordPress: no admin bar,
+  // no admin menu, just its own 60px header and canvas.
+  if (route.name === 'new' || route.name === 'edit') {
+    return <RouteView user={user} route={route} onUserUpdated={onUserUpdated} />;
+  }
 
   return (
     <AdminShell user={user} route={route} onSignedOut={onSignedOut}>
@@ -178,7 +175,6 @@ function pageTitle(route: Route): string {
 function Forbidden() {
   return (
     <div className="content-card">
-      <p className="eyebrow">No access</p>
       <h1>No access</h1>
       <p className="lede">Only administrators can open this screen.</p>
     </div>
@@ -216,7 +212,6 @@ function RouteView({
     case 'notFound':
       return (
         <div className="content-card">
-          <p className="eyebrow">Not found</p>
           <h1>Page not found</h1>
           <p className="lede">That admin route does not exist.</p>
           <a

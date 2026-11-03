@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdminPost, AdminTerm, AuthUser, Paged } from './api.js';
 import { ContentEditor } from './ContentEditor.js';
@@ -393,7 +393,7 @@ describe('editor SEO fields', () => {
 
     renderEditor(authorA);
     await screen.findByLabelText('Title');
-    fireEvent.click(screen.getByRole('tab', { name: 'SEO' }));
+    fireEvent.click(screen.getByText('SEO', { selector: 'summary' }));
 
     expect(screen.getByLabelText('SEO title')).toBeDefined();
     expect(screen.getByLabelText('SEO description')).toBeDefined();
@@ -415,7 +415,7 @@ describe('editor SEO fields', () => {
 
     renderEditor(authorA);
     fireEvent.change(await screen.findByLabelText('Title'), { target: { value: 'SEO post' } });
-    fireEvent.click(screen.getByRole('tab', { name: 'SEO' }));
+    fireEvent.click(screen.getByText('SEO', { selector: 'summary' }));
     fireEvent.change(screen.getByLabelText('SEO title'), { target: { value: 'Custom SEO title' } });
     fireEvent.change(screen.getByLabelText('SEO description'), {
       target: { value: 'Custom SEO description' },
@@ -453,7 +453,7 @@ describe('editor SEO fields', () => {
 
     renderEditor(authorA);
     fireEvent.change(await screen.findByLabelText('Title'), { target: { value: 'Plain post' } });
-    fireEvent.click(screen.getByRole('tab', { name: 'SEO' }));
+    fireEvent.click(screen.getByText('SEO', { selector: 'summary' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
@@ -477,7 +477,7 @@ describe('editor SEO fields', () => {
 
     renderEditor(authorA);
     fireEvent.change(await screen.findByLabelText('Title'), { target: { value: 'Bad URL post' } });
-    fireEvent.click(screen.getByRole('tab', { name: 'SEO' }));
+    fireEvent.click(screen.getByText('SEO', { selector: 'summary' }));
     fireEvent.change(screen.getByLabelText('Canonical URL'), { target: { value: 'not-a-url' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
 
@@ -503,7 +503,7 @@ describe('editor SEO fields', () => {
 
     renderEditor(authorA, post.id);
     await screen.findByLabelText('Title');
-    fireEvent.click(screen.getByRole('tab', { name: 'SEO' }));
+    fireEvent.click(screen.getByText('SEO', { selector: 'summary' }));
 
     expect((screen.getByLabelText('SEO title') as HTMLInputElement).value).toBe('Stored SEO title');
     expect((screen.getByLabelText('SEO description') as HTMLTextAreaElement).value).toBe(
@@ -884,8 +884,9 @@ describe('editor featured image', () => {
     await screen.findByLabelText('Title');
 
     // Open the picker and choose the image.
-    fireEvent.click(screen.getByRole('button', { name: 'Select image' }));
-    const option = await screen.findByRole('option');
+    fireEvent.click(screen.getByRole('button', { name: 'Set featured image' }));
+    const picker = await screen.findByRole('listbox', { name: 'Media items' });
+    const option = await within(picker).findByRole('option');
     fireEvent.click(option);
 
     // Save and assert the payload carries the media id.

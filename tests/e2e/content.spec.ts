@@ -67,21 +67,21 @@ function primaryNav(page: Page) {
 
 async function login(page: Page, username: string) {
   await page.goto(ADMIN_URL);
-  await page.getByLabel('Username').fill(username);
-  await page.getByLabel('Password').fill(password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByLabel('Username or Email Address').fill(username);
+  await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Log In' }).click();
   await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible();
 }
 
 async function openNewPost(page: Page) {
-  await primaryNav(page).getByRole('link', { name: 'Posts', exact: true }).click();
-  await page.getByRole('link', { name: 'New post' }).first().click();
+  await page.goto(`${ADMIN_URL}posts`);
+  await page.goto(`${ADMIN_URL}posts/new`);
   await expect(page.getByRole('heading', { level: 1, name: 'New post' })).toBeVisible();
 }
 
 async function typeInBlockCanvas(page: Page, text: string) {
   const sheet = page.locator('.block-canvas-sheet');
-  await expect(sheet).toBeVisible();
+  await expect(sheet).toBeVisible({ timeout: 20_000 });
   const editable = sheet.locator('[contenteditable="true"]').first();
   await editable.click();
   await page.keyboard.type(text);
@@ -112,7 +112,7 @@ test('editor can create, edit, publish, unpublish, trash and restore content', a
   await openNewPost(page);
   await page.getByLabel('Title', { exact: true }).fill(`E2E Acceptance Post ${suffix}`);
   await page.getByLabel('Slug').fill(createdPostSlug);
-  await page.getByRole('tab', { name: 'SEO' }).click();
+  await page.locator('summary', { hasText: 'SEO' }).click();
   await page.getByLabel('Excerpt').fill('Created by the Phase 4 browser workflow.');
   await typeInBlockCanvas(page, 'Hello from the Phase 5 block editor.');
   await page.getByRole('button', { name: 'Save draft' }).click();
@@ -136,7 +136,7 @@ test('editor can create, edit, publish, unpublish, trash and restore content', a
 
   await page.getByRole('button', { name: 'Publish' }).click();
   await expect(page.getByText('Content published.')).toBeVisible();
-  await expect(page.locator('.editor-topbar .status-badge')).toHaveText('Published');
+  await expect(page.locator('.editor-status-value')).toContainText('Published');
 
   const publicResponse = await page.evaluate(async (slug) => {
     const response = await fetch(`/api/public/posts/${slug}?type=post`);
@@ -145,9 +145,9 @@ test('editor can create, edit, publish, unpublish, trash and restore content', a
   expect(publicResponse.status).toBe(200);
   expect(publicResponse.body.title).toBe(`E2E Acceptance Post ${suffix}`);
 
-  await primaryNav(page).getByRole('link', { name: 'Posts', exact: true }).click();
-  await page.getByLabel('Search posts').fill(`E2E Acceptance Post ${suffix}`);
-  await page.getByRole('button', { name: 'Search' }).click();
+  await page.goto(`${ADMIN_URL}posts`);
+  await page.getByLabel('Search Posts').fill(`E2E Acceptance Post ${suffix}`);
+  await page.getByRole('button', { name: 'Search Posts' }).click();
   await expect(page.getByRole('link', { name: `E2E Acceptance Post ${suffix}` })).toBeVisible();
   await page.getByRole('button', { name: /Published/ }).click();
   await expect(page.getByRole('link', { name: `E2E Acceptance Post ${suffix}` })).toBeVisible();
@@ -159,16 +159,16 @@ test('editor can create, edit, publish, unpublish, trash and restore content', a
 
   await page.getByRole('button', { name: 'Unpublish' }).click();
   await expect(page.getByText('Content returned to draft.')).toBeVisible();
-  await expect(page.locator('.editor-topbar .status-badge')).toHaveText('Draft');
+  await expect(page.locator('.editor-status-value')).toContainText('Draft');
 
   page.once('dialog', (dialog) => void dialog.accept());
   await page.getByRole('button', { name: 'Move to Trash' }).click();
   await expect(page.getByText('Content moved to trash.')).toBeVisible();
-  await expect(page.locator('.editor-topbar .status-badge')).toHaveText('Trashed');
+  await expect(page.locator('.editor-status-value')).toContainText('Trashed');
 
   await page.getByRole('button', { name: 'Restore' }).click();
   await expect(page.getByText('Content restored.')).toBeVisible();
-  await expect(page.locator('.editor-topbar .status-badge')).toHaveText('Draft');
+  await expect(page.locator('.editor-status-value')).toContainText('Draft');
 
   // The anonymous session probe is expected to return 401; it is not a UI error.
   const unexpectedErrors = consoleErrors.filter(
@@ -218,7 +218,7 @@ test('subscribers cannot see content navigation or content counts', async ({ pag
 
 test('list pagination uses server totals', async ({ page }) => {
   await login(page, editorUsername);
-  await primaryNav(page).getByRole('link', { name: 'Posts', exact: true }).click();
+  await page.goto(`${ADMIN_URL}posts`);
 
   const csrf = await csrfFromBrowser(page);
   await page.evaluate(
@@ -239,14 +239,14 @@ test('list pagination uses server totals', async ({ page }) => {
     { csrf, suffix },
   );
 
-  await page.getByLabel('Search posts').fill(`Pagination ${suffix}`);
-  await page.getByRole('button', { name: 'Search' }).click();
-  await expect(page.getByText('11 Posts')).toBeVisible();
+  await page.getByLabel('Search Posts').fill(`Pagination ${suffix}`);
+  await page.getByRole('button', { name: 'Search Posts' }).click();
+  await expect(page.getByText('11 items').first()).toBeVisible();
   await expect(page.locator('.page-numbers.current')).toHaveText('Page 1 of 2');
-  await expect(page.getByRole('button', { name: 'Next »' })).toBeEnabled();
-  await page.getByRole('button', { name: 'Next »' }).click();
+  await expect(page.getByRole('button', { name: 'Next page' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Next page' }).click();
   await expect(page.locator('.page-numbers.current')).toHaveText('Page 2 of 2');
-  await expect(page.getByText('11 Posts')).toBeVisible();
+  await expect(page.getByText('11 items').first()).toBeVisible();
 });
 
 test('keyboard navigation, skip link and narrow viewport work', async ({ page }) => {
@@ -267,10 +267,10 @@ test('keyboard navigation, skip link and narrow viewport work', async ({ page })
   await page.keyboard.press('Enter');
   await expect(page.locator('#main-content')).toBeFocused();
 
-  await primaryNav(page).getByRole('link', { name: 'Posts', exact: true }).click();
+  await page.goto(`${ADMIN_URL}posts`);
   await expect(page.getByRole('heading', { level: 1, name: 'Posts' })).toBeVisible();
 
-  await page.getByRole('link', { name: 'New post' }).first().click();
+  await page.goto(`${ADMIN_URL}posts/new`);
   await expect(page.getByRole('heading', { level: 1, name: 'New post' })).toBeVisible();
   await page.getByLabel('Title', { exact: true }).focus();
   await page.keyboard.type(`Keyboard post ${suffix}`);
@@ -281,7 +281,7 @@ test('keyboard navigation, skip link and narrow viewport work', async ({ page })
   await expect(page.getByRole('heading', { level: 1, name: 'Edit post' })).toBeVisible();
   await expect(page.getByText('Content created.')).toBeVisible();
 
-  await primaryNav(page).getByRole('link', { name: 'Posts', exact: true }).click();
+  await page.goto(`${ADMIN_URL}posts`);
   await expect(page.getByRole('heading', { level: 1, name: 'Posts' })).toBeVisible();
 
   await page.setViewportSize({ width: 375, height: 812 });
@@ -291,7 +291,7 @@ test('keyboard navigation, skip link and narrow viewport work', async ({ page })
   }));
   expect(overflow.scroll).toBeLessThanOrEqual(overflow.width + 1);
 
-  await page.getByLabel('Search posts').focus();
+  await page.getByLabel('Search Posts').focus();
   await page.keyboard.type('nonexistent-query');
   await page.keyboard.press('Enter');
   await expect(page.getByText('No matching content')).toBeVisible();

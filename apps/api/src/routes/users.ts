@@ -14,6 +14,7 @@ const status = z.enum(['active', 'disabled']);
 export const listUsersQuerySchema = z
   .object({
     search: z.string().max(200).optional(),
+    role: z.enum(['administrator', 'editor', 'author', 'contributor', 'subscriber']).optional(),
     page: z.coerce.number().int().min(1).max(10_000).default(1),
     perPage: z.coerce.number().int().min(1).max(100).default(20),
   })

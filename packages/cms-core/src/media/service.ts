@@ -386,6 +386,13 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
         { altText: { contains: search, mode: 'insensitive' } },
       ];
     }
+    if (query.month && /^\d{4}-\d{2}$/.test(query.month)) {
+      const [year, month] = query.month.split('-').map(Number);
+      where.createdAt = {
+        gte: new Date(Date.UTC(year ?? 1970, (month ?? 1) - 1, 1)),
+        lt: new Date(Date.UTC(year ?? 1970, month ?? 1, 1)),
+      };
+    }
 
     const [rows, total] = await prisma.$transaction([
       prisma.mediaItem.findMany({

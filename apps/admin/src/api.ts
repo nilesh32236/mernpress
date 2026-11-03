@@ -249,7 +249,9 @@ export interface PostListParams {
   status?: PostStatus;
   search?: string;
   category?: string;
+  tag?: string;
   month?: string;
+  author?: string;
   page?: number;
   perPage?: number;
   sort?: 'updatedAt' | 'createdAt' | 'publishedAt' | 'title';
@@ -450,6 +452,7 @@ export async function fetchCsrfToken(): Promise<string> {
 export async function login(
   username: string,
   password: string,
+  remember = false,
 ): Promise<{ user: AuthUser; csrfToken: string; expiresAt: string }> {
   const csrfToken = await fetchCsrfToken();
   const response = await fetch('/api/auth/login', {
@@ -461,7 +464,7 @@ export async function login(
       'content-type': 'application/json',
       'x-csrf-token': csrfToken,
     },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username, password, remember }),
   });
 
   if (!response.ok) {
@@ -501,6 +504,10 @@ export async function fetchPosts(params: PostListParams = {}): Promise<Paged<Adm
       type: params.type,
       status: params.status,
       search: params.search,
+      category: params.category,
+      tag: params.tag,
+      month: params.month,
+      author: params.author,
       page: params.page,
       perPage: params.perPage,
       sort: params.sort,
@@ -818,10 +825,15 @@ export interface UserProfile {
 export type OptionValues = Record<string, unknown>;
 
 export async function fetchUsers(
-  params: { search?: string; page?: number; perPage?: number } = {},
+  params: { search?: string; role?: UserRole; page?: number; perPage?: number } = {},
 ): Promise<AdminUserList> {
   const response = await fetch(
-    `/api/users${queryString({ search: params.search, page: params.page, perPage: params.perPage })}`,
+    `/api/users${queryString({
+      search: params.search,
+      role: params.role,
+      page: params.page,
+      perPage: params.perPage,
+    })}`,
     {
       method: 'GET',
       credentials: 'include',
@@ -1018,6 +1030,7 @@ export interface MediaListParams {
   search?: string;
   type?: 'image';
   order?: 'newest' | 'oldest';
+  month?: string;
 }
 
 export interface UpdateMediaPayload {
@@ -1044,6 +1057,7 @@ export async function listMedia(params: MediaListParams = {}): Promise<Paged<Med
       search: params.search,
       type: params.type,
       order: params.order,
+      month: params.month,
     })}`,
     {
       method: 'GET',

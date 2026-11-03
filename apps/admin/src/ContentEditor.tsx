@@ -39,7 +39,6 @@ import {
   Notice,
   Skeleton,
   PageHeader,
-  StatusBadge,
   type NoticeMessage,
 } from './components.js';
 import { formatDateTime } from './format.js';
@@ -145,6 +144,16 @@ function fieldErrorsFrom(error: unknown): Record<string, string> {
 
 type SaveIntent = 'save' | 'publish';
 
+function EditorStatus({ status }: { status: 'DRAFT' | 'PUBLISHED' | 'TRASHED' }) {
+  const label = status === 'PUBLISHED' ? 'Published' : status === 'DRAFT' ? 'Draft' : 'Trashed';
+  return (
+    <span className={`editor-status-value is-${status.toLowerCase()}`}>
+      <span className="editor-status-dot" aria-hidden="true" />
+      {label}
+    </span>
+  );
+}
+
 export function ContentEditor({
   user,
   type,
@@ -180,7 +189,7 @@ export function ContentEditor({
   const [sidebarOpen, setSidebarOpen] = useState(() =>
     typeof window === 'undefined' ? true : window.innerWidth >= 1080,
   );
-  const [sideTab, setSideTab] = useState<'post' | 'seo' | 'block'>('post');
+  const [sideTab, setSideTab] = useState<'post' | 'block'>('post');
   const [revisions, setRevisions] = useState<AdminRevision[] | null>(null);
   const [revisionsError, setRevisionsError] = useState<string | null>(null);
   const [viewingRevision, setViewingRevision] = useState<AdminRevisionDetail | null>(null);
@@ -963,7 +972,7 @@ export function ContentEditor({
             <div className="meta-grid">
               <div>
                 <span className="meta-label">Status</span>
-                <StatusBadge status={post.status} />
+                <EditorStatus status={post.status} />
               </div>
               <div>
                 <span className="meta-label">Slug</span>
@@ -1044,26 +1053,55 @@ export function ContentEditor({
                 lives in the canvas, like the reference editor. */}
             <h1 className="screen-reader-text">{title}</h1>
           </div>
-          <div className="editor-topbar-status" role="status" aria-live="polite">
-            {saving
-              ? 'Saving…'
-              : isNew && !dirty
-                ? 'Not saved yet'
-                : dirty
-                  ? 'Unsaved changes'
-                  : 'Saved'}
+          <div className="editor-topbar-center">
+            <button
+              type="button"
+              className="editor-document-pill"
+              onClick={() => titleRef.current?.focus()}
+            >
+              <span className="editor-document-title">{form.title || 'No title'}</span>
+              <span className="editor-document-type">· {type === 'post' ? 'Post' : 'Page'}</span>
+              <span className="editor-document-shortcut" aria-hidden="true">
+                Ctrl+K
+              </span>
+            </button>
+            <span className="screen-reader-text" role="status" aria-live="polite">
+              {saving
+                ? 'Saving…'
+                : isNew && !dirty
+                  ? 'Not saved yet'
+                  : dirty
+                    ? 'Unsaved changes'
+                    : 'Saved'}
+            </span>
           </div>
           <div className="editor-topbar-actions">
-            <StatusBadge status={post?.status ?? 'DRAFT'} />
-            {post && !createdPost && post.status !== 'TRASHED' ? (
+            {!createdPost && post?.status !== 'TRASHED' ? (
               <button
                 type="button"
-                className="button editor-topbar-button"
+                className="editor-topbar-icon-button"
                 onClick={() => void handlePreview()}
-                disabled={previewBusy || saving}
+                disabled={previewBusy || saving || !post}
                 aria-busy={previewBusy}
+                aria-label="Preview"
+                title="Preview"
               >
-                {previewBusy ? 'Opening…' : 'Preview'}
+                {previewBusy ? (
+                  <span className="editor-spinner" aria-hidden="true" />
+                ) : (
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    aria-hidden="true"
+                  >
+                    <path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
               </button>
             ) : null}
             {createdPost ? null : (
@@ -1071,7 +1109,7 @@ export function ContentEditor({
                 {secondarySave ? (
                   <button
                     type="button"
-                    className="button editor-topbar-button"
+                    className="editor-topbar-text-button"
                     onClick={() => void handleSave('save')}
                     disabled={saving || Boolean(conflict)}
                     aria-busy={saving}
@@ -1094,22 +1132,6 @@ export function ContentEditor({
                 </button>
               </>
             )}
-            {post && post.status === 'DRAFT' ? (
-              <button
-                type="button"
-                className="button editor-topbar-button"
-                onClick={() => {
-                  setSideTab('post');
-                  setSidebarOpen(true);
-                  setScheduleOpen(true);
-                  setScheduleInput(toLocalDateTimeInput(scheduledAt));
-                }}
-                disabled={saving}
-                title="Pick a date and time to publish later"
-              >
-                Schedule…
-              </button>
-            ) : null}
             <button
               type="button"
               className={`button editor-topbar-gear${sidebarOpen ? ' is-active' : ''}`}
@@ -1120,15 +1142,27 @@ export function ContentEditor({
               onClick={() => setSidebarOpen((open) => !open)}
             >
               <svg
-                width="16"
-                height="16"
+                width="20"
+                height="20"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
                 strokeLinecap="round"
-                strokeLinejoin="round"
                 aria-hidden="true"
+              >
+                <circle cx="12" cy="5" r="1.2" fill="currentColor" />
+                <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+                <circle cx="12" cy="19" r="1.2" fill="currentColor" />
+              </svg>
+              <span className="screen-reader-text">Settings</span>
+              <svg
+                className="editor-gear-legacy"
+                width="0"
+                height="0"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
               >
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
@@ -1215,21 +1249,6 @@ export function ContentEditor({
                     onChange={(event) => updateForm('title', event.target.value)}
                   />
                   <FieldError id="content-title-error" message={fieldErrors['title']} />
-                  <div className="editor-permalink">
-                    {post ? (
-                      <>
-                        <span>https://example.com/</span>
-                        <code>{form.slug || post.slug}</code>
-                      </>
-                    ) : (
-                      <>
-                        <span>https://example.com/</span>
-                        <span className="permalink-edit">
-                          {form.slug || '(derived from title)'}
-                        </span>
-                      </>
-                    )}
-                  </div>
                 </div>
                 <Suspense fallback={<Skeleton label="Loading block editor…" lines={6} />}>
                   <BlockCanvas
@@ -1271,7 +1290,6 @@ export function ContentEditor({
                   {(
                     [
                       { id: 'post', label: 'Post' },
-                      { id: 'seo', label: 'SEO' },
                       { id: 'block', label: 'Block' },
                     ] as const
                   ).map((tab) => (
@@ -1299,14 +1317,199 @@ export function ContentEditor({
 
               <div className="editor-sidebar-body">
                 <div hidden={sideTab !== 'post'}>
+                  <section className="editor-panel editor-summary" aria-label="Document summary">
+                    <div className="editor-summary-title">
+                      <span>{form.title || 'No title'}</span>
+                      <span className="editor-summary-actions">
+                        <button
+                          type="button"
+                          className="editor-summary-edit"
+                          aria-label="Edit title"
+                          onClick={() => titleRef.current?.focus()}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.6"
+                            aria-hidden="true"
+                          >
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                          </svg>
+                        </button>
+                        <details className="editor-summary-menu">
+                          <summary aria-label="Options">⋮</summary>
+                          <div className="editor-summary-menu-panel">
+                            {post ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  void handlePreview();
+                                  document
+                                    .querySelectorAll<HTMLDetailsElement>('.editor-summary-menu')
+                                    .forEach((details) => {
+                                      details.open = false;
+                                    });
+                                }}
+                              >
+                                View
+                              </button>
+                            ) : null}
+                            {post && transitions.includes('trash') ? (
+                              <button
+                                type="button"
+                                className="is-danger"
+                                disabled={transitioning !== null || dirty}
+                                onClick={() => {
+                                  void runTransition('trash');
+                                  document
+                                    .querySelectorAll<HTMLDetailsElement>('.editor-summary-menu')
+                                    .forEach((details) => {
+                                      details.open = false;
+                                    });
+                                }}
+                              >
+                                Move to Trash
+                              </button>
+                            ) : null}
+                          </div>
+                        </details>
+                      </span>
+                    </div>
+                    {featuredMedia ? (
+                      <div className="editor-featured-current">
+                        <img
+                          src={featuredMedia.derivatives['300'] ?? featuredMedia.url}
+                          alt={featuredMedia.altText}
+                        />
+                        <div className="editor-featured-current-actions">
+                          <button
+                            type="button"
+                            className="editor-excerpt-link"
+                            onClick={() => setFeaturedPickerOpen((open) => !open)}
+                          >
+                            Replace image
+                          </button>
+                          <button
+                            type="button"
+                            className="editor-excerpt-link is-danger"
+                            onClick={() => setFeaturedMedia(null)}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="editor-featured-button"
+                        onClick={() => setFeaturedPickerOpen((open) => !open)}
+                      >
+                        Set featured image
+                      </button>
+                    )}
+                    {featuredPickerOpen ? (
+                      <div className="featured-picker">
+                        <div className="featured-picker-search">
+                          <label htmlFor="featured-picker-search" className="screen-reader-text">
+                            Search media
+                          </label>
+                          <input
+                            id="featured-picker-search"
+                            type="search"
+                            placeholder="Search media…"
+                            value={featuredPickerSearch}
+                            onChange={(event) => {
+                              const value = event.target.value;
+                              setFeaturedPickerSearch(value);
+                              setFeaturedPickerItems(null);
+                              listMedia({
+                                ...(value.trim() ? { search: value.trim() } : {}),
+                                perPage: 12,
+                              })
+                                .then((result) => setFeaturedPickerItems(result.items))
+                                .catch(() => setFeaturedPickerItems([]));
+                            }}
+                          />
+                        </div>
+                        {featuredPickerItems === null ? (
+                          <p className="field-help">Loading media…</p>
+                        ) : featuredPickerItems.length === 0 ? (
+                          <p className="field-help">
+                            No media found. Upload images in the Media Library first.
+                          </p>
+                        ) : (
+                          <div
+                            className="featured-picker-grid"
+                            role="listbox"
+                            aria-label="Media items"
+                          >
+                            {featuredPickerItems.map((item) => (
+                              <button
+                                key={item.id}
+                                type="button"
+                                role="option"
+                                aria-selected={featuredMedia?.id === item.id}
+                                className="featured-picker-item"
+                                title={item.originalName}
+                                onClick={() => {
+                                  setFeaturedMedia({
+                                    id: item.id,
+                                    url: item.url,
+                                    width: item.width,
+                                    height: item.height,
+                                    altText: item.altText,
+                                    derivatives: item.derivatives,
+                                  });
+                                  setFeaturedPickerOpen(false);
+                                }}
+                              >
+                                <img
+                                  src={item.derivatives['300'] ?? item.url}
+                                  alt={item.altText}
+                                  loading="lazy"
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="editor-excerpt-link"
+                      onClick={() => {
+                        const details =
+                          document.querySelector<HTMLDetailsElement>('.editor-seo-panel');
+                        if (details) {
+                          details.open = true;
+                          window.setTimeout(
+                            () => document.getElementById('content-excerpt')?.focus(),
+                            0,
+                          );
+                        }
+                      }}
+                    >
+                      {form.excerpt.trim() ? 'Edit excerpt' : 'Add an excerpt…'}
+                    </button>
+                    <p className="editor-last-edited">
+                      {post
+                        ? `Last edited ${formatDateTime(post.updatedAt)}.`
+                        : 'Last edited a moment ago.'}
+                    </p>
+                  </section>
+
                   <section className="editor-panel publish-panel" aria-labelledby="publish-heading">
-                    <h3 id="publish-heading">Publish</h3>
+                    <h3 id="publish-heading">Status &amp; visibility</h3>
                     {post ? (
                       <>
                         <div className="publish-field">
                           <span className="publish-label">Status</span>
                           <div className="publish-value">
-                            <StatusBadge status={post.status} />
+                            <EditorStatus status={post.status} />
                             {transitions.includes('publish') ||
                             transitions.includes('unpublish') ? (
                               <button
@@ -1424,10 +1627,28 @@ export function ContentEditor({
                         ) : null}
                       </>
                     ) : (
-                      <p className="field-help">
-                        The content is created as a draft. Publish it from the top bar when it is
-                        ready.
-                      </p>
+                      <>
+                        <div className="publish-field">
+                          <span className="publish-label">Status</span>
+                          <div className="publish-value">
+                            <EditorStatus status="DRAFT" />
+                          </div>
+                        </div>
+                        <div className="publish-field">
+                          <span className="publish-label">Publish</span>
+                          <div className="publish-value">
+                            <span className="editor-publish-link">Immediately</span>
+                          </div>
+                        </div>
+                        <div className="publish-field">
+                          <span className="publish-label">Author</span>
+                          <div className="publish-value">{user.username}</div>
+                        </div>
+                        <p className="field-help">
+                          The content is created as a draft. Publish it from the top bar when it is
+                          ready.
+                        </p>
+                      </>
                     )}
                   </section>
 
@@ -1458,113 +1679,6 @@ export function ContentEditor({
                       </p>
                       <FieldError id="content-slug-error" message={fieldErrors['slug']} />
                     </div>
-                  </section>
-
-                  <section className="editor-panel" aria-labelledby="featured-heading">
-                    <div className="revisions-panel-head">
-                      <h3 id="featured-heading">Featured image</h3>
-                      {featuredMedia ? (
-                        <button
-                          type="button"
-                          className="button secondary-button revisions-toggle"
-                          onClick={() => setFeaturedMedia(null)}
-                        >
-                          Remove
-                        </button>
-                      ) : null}
-                    </div>
-                    {featuredMedia ? (
-                      <button
-                        type="button"
-                        className="featured-current"
-                        onClick={() => setFeaturedPickerOpen((open) => !open)}
-                        aria-label="Replace featured image"
-                      >
-                        <img
-                          src={featuredMedia.derivatives['300'] ?? featuredMedia.url}
-                          alt={featuredMedia.altText}
-                        />
-                      </button>
-                    ) : (
-                      <>
-                        <p className="field-help">Shown in social previews and the public page.</p>
-                        <button
-                          type="button"
-                          className="button secondary-button"
-                          aria-expanded={featuredPickerOpen}
-                          onClick={() => setFeaturedPickerOpen((open) => !open)}
-                        >
-                          {featuredPickerOpen ? 'Close media picker' : 'Select image'}
-                        </button>
-                      </>
-                    )}
-                    {featuredPickerOpen ? (
-                      <div className="featured-picker">
-                        <div className="featured-picker-search">
-                          <label htmlFor="featured-picker-search" className="screen-reader-text">
-                            Search media
-                          </label>
-                          <input
-                            id="featured-picker-search"
-                            type="search"
-                            placeholder="Search media…"
-                            value={featuredPickerSearch}
-                            onChange={(event) => {
-                              const value = event.target.value;
-                              setFeaturedPickerSearch(value);
-                              setFeaturedPickerItems(null);
-                              listMedia({
-                                ...(value.trim() ? { search: value.trim() } : {}),
-                                perPage: 12,
-                              })
-                                .then((result) => setFeaturedPickerItems(result.items))
-                                .catch(() => setFeaturedPickerItems([]));
-                            }}
-                          />
-                        </div>
-                        {featuredPickerItems === null ? (
-                          <p className="field-help">Loading media…</p>
-                        ) : featuredPickerItems.length === 0 ? (
-                          <p className="field-help">
-                            No media found. Upload images in the Media Library first.
-                          </p>
-                        ) : (
-                          <div
-                            className="featured-picker-grid"
-                            role="listbox"
-                            aria-label="Media items"
-                          >
-                            {featuredPickerItems.map((item) => (
-                              <button
-                                key={item.id}
-                                type="button"
-                                role="option"
-                                aria-selected={featuredMedia?.id === item.id}
-                                className="featured-picker-item"
-                                title={item.originalName}
-                                onClick={() => {
-                                  setFeaturedMedia({
-                                    id: item.id,
-                                    url: item.url,
-                                    width: item.width,
-                                    height: item.height,
-                                    altText: item.altText,
-                                    derivatives: item.derivatives,
-                                  });
-                                  setFeaturedPickerOpen(false);
-                                }}
-                              >
-                                <img
-                                  src={item.derivatives['300'] ?? item.url}
-                                  alt={item.altText}
-                                  loading="lazy"
-                                />
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ) : null}
                   </section>
 
                   {post && !createdPost ? (
@@ -1650,18 +1764,188 @@ export function ContentEditor({
                     </section>
                   ) : null}
 
-                  <section className="editor-panel" aria-labelledby="terms-heading">
-                    <h3 id="terms-heading">Categories and tags</h3>
+                  <details className="editor-term-panel editor-seo-panel">
+                    <summary>SEO</summary>
+                    <div className="editor-seo-content">
+                      <section className="editor-panel" aria-labelledby="seo-heading">
+                        <h3 id="seo-heading">SEO</h3>
+                        <div className="field">
+                          <label htmlFor="content-excerpt">Excerpt</label>
+                          <textarea
+                            id="content-excerpt"
+                            name="excerpt"
+                            rows={3}
+                            maxLength={2000}
+                            value={form.excerpt}
+                            onChange={(event) => updateForm('excerpt', event.target.value)}
+                            aria-invalid={Boolean(fieldErrors['excerpt'])}
+                            aria-describedby={
+                              fieldErrors['excerpt']
+                                ? 'content-excerpt-error'
+                                : 'content-excerpt-help'
+                            }
+                          />
+                          <p id="content-excerpt-help" className="field-help">
+                            Shown as the meta description in search results.
+                          </p>
+                          <FieldError id="content-excerpt-error" message={fieldErrors['excerpt']} />
+                        </div>
+                        <div className="field">
+                          <label htmlFor="content-seo-title">SEO title</label>
+                          <input
+                            id="content-seo-title"
+                            name="seoTitle"
+                            type="text"
+                            maxLength={300}
+                            value={form.seoTitle}
+                            onChange={(event) => updateForm('seoTitle', event.target.value)}
+                            aria-invalid={Boolean(fieldErrors['seoTitle'])}
+                            aria-describedby={
+                              fieldErrors['seoTitle']
+                                ? 'content-seo-title-help content-seo-title-error'
+                                : 'content-seo-title-help'
+                            }
+                          />
+                          <p id="content-seo-title-help" className="field-help">
+                            Defaults to the post title when empty.
+                          </p>
+                          <FieldError
+                            id="content-seo-title-error"
+                            message={fieldErrors['seoTitle']}
+                          />
+                        </div>
+                        <div className="field">
+                          <label htmlFor="content-seo-description">SEO description</label>
+                          <textarea
+                            id="content-seo-description"
+                            name="seoDescription"
+                            rows={3}
+                            maxLength={500}
+                            value={form.seoDescription}
+                            onChange={(event) => updateForm('seoDescription', event.target.value)}
+                            aria-invalid={Boolean(fieldErrors['seoDescription'])}
+                            aria-describedby={
+                              fieldErrors['seoDescription']
+                                ? 'content-seo-description-help content-seo-description-error'
+                                : 'content-seo-description-help'
+                            }
+                          />
+                          <p id="content-seo-description-help" className="field-help">
+                            Defaults to the excerpt when empty.
+                          </p>
+                          <FieldError
+                            id="content-seo-description-error"
+                            message={fieldErrors['seoDescription']}
+                          />
+                        </div>
+                        <div className="field">
+                          <label htmlFor="content-canonical-url">Canonical URL</label>
+                          <input
+                            id="content-canonical-url"
+                            name="canonicalUrl"
+                            type="url"
+                            value={form.canonicalUrl}
+                            onChange={(event) => updateForm('canonicalUrl', event.target.value)}
+                            aria-invalid={Boolean(fieldErrors['canonicalUrl'])}
+                            aria-describedby={
+                              fieldErrors['canonicalUrl']
+                                ? 'content-canonical-url-help content-canonical-url-error'
+                                : 'content-canonical-url-help'
+                            }
+                          />
+                          <p id="content-canonical-url-help" className="field-help">
+                            Optional. Overrides the default public URL.
+                          </p>
+                          <FieldError
+                            id="content-canonical-url-error"
+                            message={fieldErrors['canonicalUrl']}
+                          />
+                        </div>
+                        <div className="field">
+                          <label htmlFor="content-robots">Robots</label>
+                          <select
+                            id="content-robots"
+                            name="robots"
+                            value={form.robots}
+                            onChange={(event) => updateForm('robots', event.target.value)}
+                            aria-invalid={Boolean(fieldErrors['robots'])}
+                            aria-describedby={
+                              fieldErrors['robots'] ? 'content-robots-error' : undefined
+                            }
+                          >
+                            <option value="">Site default (index, follow)</option>
+                            <option value="noindex, follow">noindex, follow</option>
+                            <option value="index, nofollow">index, nofollow</option>
+                            <option value="noindex, nofollow">noindex, nofollow</option>
+                          </select>
+                          <FieldError id="content-robots-error" message={fieldErrors['robots']} />
+                        </div>
+                        <div className="field">
+                          <label htmlFor="content-og-title">Social title</label>
+                          <input
+                            id="content-og-title"
+                            name="ogTitle"
+                            type="text"
+                            maxLength={300}
+                            value={form.ogTitle}
+                            onChange={(event) => updateForm('ogTitle', event.target.value)}
+                            aria-invalid={Boolean(fieldErrors['ogTitle'])}
+                            aria-describedby={
+                              fieldErrors['ogTitle']
+                                ? 'content-og-title-help content-og-title-error'
+                                : 'content-og-title-help'
+                            }
+                          />
+                          <p id="content-og-title-help" className="field-help">
+                            Defaults to the SEO title when empty.
+                          </p>
+                          <FieldError
+                            id="content-og-title-error"
+                            message={fieldErrors['ogTitle']}
+                          />
+                        </div>
+                        <div className="field">
+                          <label htmlFor="content-og-description">Social description</label>
+                          <textarea
+                            id="content-og-description"
+                            name="ogDescription"
+                            rows={2}
+                            maxLength={500}
+                            value={form.ogDescription}
+                            onChange={(event) => updateForm('ogDescription', event.target.value)}
+                            aria-invalid={Boolean(fieldErrors['ogDescription'])}
+                            aria-describedby={
+                              fieldErrors['ogDescription']
+                                ? 'content-og-description-error'
+                                : undefined
+                            }
+                          />
+                          <FieldError
+                            id="content-og-description-error"
+                            message={fieldErrors['ogDescription']}
+                          />
+                        </div>
+                      </section>
+                    </div>
+                  </details>
+
+                  <section className="editor-panel" aria-label="Taxonomies">
                     {!canAssign ? (
-                      <p className="field-help">Your role cannot assign taxonomy terms.</p>
+                      <>
+                        <h3>Categories and tags</h3>
+                        <p className="field-help">Your role cannot assign taxonomy terms.</p>
+                      </>
                     ) : termsError ? (
-                      <p className="field-help">
-                        Terms are unavailable. Content can still be saved.
-                      </p>
+                      <>
+                        <h3>Categories and tags</h3>
+                        <p className="field-help">
+                          Terms are unavailable. Content can still be saved.
+                        </p>
+                      </>
                     ) : (
                       <>
-                        <fieldset className="term-group">
-                          <legend>Categories</legend>
+                        <details className="editor-term-panel" open>
+                          <summary>Categories</summary>
                           {categories.length === 0 ? (
                             <p className="field-help">No categories exist yet.</p>
                           ) : (
@@ -1681,9 +1965,9 @@ export function ContentEditor({
                               </label>
                             ))
                           )}
-                        </fieldset>
-                        <fieldset className="term-group">
-                          <legend>Tags</legend>
+                        </details>
+                        <details className="editor-term-panel" open>
+                          <summary>Tags</summary>
                           {tags.length === 0 ? (
                             <p className="field-help">No tags exist yet.</p>
                           ) : (
@@ -1703,7 +1987,7 @@ export function ContentEditor({
                               </label>
                             ))
                           )}
-                        </fieldset>
+                        </details>
                       </>
                     )}
                   </section>
@@ -1750,158 +2034,6 @@ export function ContentEditor({
                   ) : null}
                 </div>
 
-                <div hidden={sideTab !== 'seo'}>
-                  <section className="editor-panel" aria-labelledby="seo-heading">
-                    <h3 id="seo-heading">SEO</h3>
-                    <div className="field">
-                      <label htmlFor="content-excerpt">Excerpt</label>
-                      <textarea
-                        id="content-excerpt"
-                        name="excerpt"
-                        rows={3}
-                        maxLength={2000}
-                        value={form.excerpt}
-                        onChange={(event) => updateForm('excerpt', event.target.value)}
-                        aria-invalid={Boolean(fieldErrors['excerpt'])}
-                        aria-describedby={
-                          fieldErrors['excerpt'] ? 'content-excerpt-error' : 'content-excerpt-help'
-                        }
-                      />
-                      <p id="content-excerpt-help" className="field-help">
-                        Shown as the meta description in search results.
-                      </p>
-                      <FieldError id="content-excerpt-error" message={fieldErrors['excerpt']} />
-                    </div>
-                    <div className="field">
-                      <label htmlFor="content-seo-title">SEO title</label>
-                      <input
-                        id="content-seo-title"
-                        name="seoTitle"
-                        type="text"
-                        maxLength={300}
-                        value={form.seoTitle}
-                        onChange={(event) => updateForm('seoTitle', event.target.value)}
-                        aria-invalid={Boolean(fieldErrors['seoTitle'])}
-                        aria-describedby={
-                          fieldErrors['seoTitle']
-                            ? 'content-seo-title-help content-seo-title-error'
-                            : 'content-seo-title-help'
-                        }
-                      />
-                      <p id="content-seo-title-help" className="field-help">
-                        Defaults to the post title when empty.
-                      </p>
-                      <FieldError id="content-seo-title-error" message={fieldErrors['seoTitle']} />
-                    </div>
-                    <div className="field">
-                      <label htmlFor="content-seo-description">SEO description</label>
-                      <textarea
-                        id="content-seo-description"
-                        name="seoDescription"
-                        rows={3}
-                        maxLength={500}
-                        value={form.seoDescription}
-                        onChange={(event) => updateForm('seoDescription', event.target.value)}
-                        aria-invalid={Boolean(fieldErrors['seoDescription'])}
-                        aria-describedby={
-                          fieldErrors['seoDescription']
-                            ? 'content-seo-description-help content-seo-description-error'
-                            : 'content-seo-description-help'
-                        }
-                      />
-                      <p id="content-seo-description-help" className="field-help">
-                        Defaults to the excerpt when empty.
-                      </p>
-                      <FieldError
-                        id="content-seo-description-error"
-                        message={fieldErrors['seoDescription']}
-                      />
-                    </div>
-                    <div className="field">
-                      <label htmlFor="content-canonical-url">Canonical URL</label>
-                      <input
-                        id="content-canonical-url"
-                        name="canonicalUrl"
-                        type="url"
-                        value={form.canonicalUrl}
-                        onChange={(event) => updateForm('canonicalUrl', event.target.value)}
-                        aria-invalid={Boolean(fieldErrors['canonicalUrl'])}
-                        aria-describedby={
-                          fieldErrors['canonicalUrl']
-                            ? 'content-canonical-url-help content-canonical-url-error'
-                            : 'content-canonical-url-help'
-                        }
-                      />
-                      <p id="content-canonical-url-help" className="field-help">
-                        Optional. Overrides the default public URL.
-                      </p>
-                      <FieldError
-                        id="content-canonical-url-error"
-                        message={fieldErrors['canonicalUrl']}
-                      />
-                    </div>
-                    <div className="field">
-                      <label htmlFor="content-robots">Robots</label>
-                      <select
-                        id="content-robots"
-                        name="robots"
-                        value={form.robots}
-                        onChange={(event) => updateForm('robots', event.target.value)}
-                        aria-invalid={Boolean(fieldErrors['robots'])}
-                        aria-describedby={
-                          fieldErrors['robots'] ? 'content-robots-error' : undefined
-                        }
-                      >
-                        <option value="">Site default (index, follow)</option>
-                        <option value="noindex, follow">noindex, follow</option>
-                        <option value="index, nofollow">index, nofollow</option>
-                        <option value="noindex, nofollow">noindex, nofollow</option>
-                      </select>
-                      <FieldError id="content-robots-error" message={fieldErrors['robots']} />
-                    </div>
-                    <div className="field">
-                      <label htmlFor="content-og-title">Social title</label>
-                      <input
-                        id="content-og-title"
-                        name="ogTitle"
-                        type="text"
-                        maxLength={300}
-                        value={form.ogTitle}
-                        onChange={(event) => updateForm('ogTitle', event.target.value)}
-                        aria-invalid={Boolean(fieldErrors['ogTitle'])}
-                        aria-describedby={
-                          fieldErrors['ogTitle']
-                            ? 'content-og-title-help content-og-title-error'
-                            : 'content-og-title-help'
-                        }
-                      />
-                      <p id="content-og-title-help" className="field-help">
-                        Defaults to the SEO title when empty.
-                      </p>
-                      <FieldError id="content-og-title-error" message={fieldErrors['ogTitle']} />
-                    </div>
-                    <div className="field">
-                      <label htmlFor="content-og-description">Social description</label>
-                      <textarea
-                        id="content-og-description"
-                        name="ogDescription"
-                        rows={2}
-                        maxLength={500}
-                        value={form.ogDescription}
-                        onChange={(event) => updateForm('ogDescription', event.target.value)}
-                        aria-invalid={Boolean(fieldErrors['ogDescription'])}
-                        aria-describedby={
-                          fieldErrors['ogDescription'] ? 'content-og-description-error' : undefined
-                        }
-                      />
-                      <FieldError
-                        id="content-og-description-error"
-                        message={fieldErrors['ogDescription']}
-                      />
-                    </div>
-                  </section>
-                </div>
-
                 <div hidden={sideTab !== 'block'}>
                   <section className="editor-panel" aria-labelledby="block-heading">
                     <h3 id="block-heading">Block</h3>
@@ -1922,6 +2054,7 @@ export function ContentEditor({
             </aside>
           </div>
         )}
+        <div className="editor-footer">{type === 'post' ? 'Post' : 'Page'}</div>
       </div>
 
       {viewingRevision ? (

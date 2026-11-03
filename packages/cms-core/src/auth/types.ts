@@ -49,9 +49,12 @@ export interface AuthConfig {
 }
 
 export interface LoginInput {
+  /** Username or email address, like WordPress. */
   username: string;
   password: string;
   ip: string;
+  /** Extends the session to the long-lived "Remember Me" window. */
+  remember?: boolean | undefined;
 }
 
 export interface LoginResult {

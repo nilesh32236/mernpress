@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { SCREEN_OPTIONS_EVENT, screenPerPage } from './screenOptions.js';
 import {
   actionErrorMessage,
   deleteMedia,
@@ -12,8 +13,7 @@ import {
 import { EmptyState, ErrorState, Notice, Skeleton, type NoticeMessage } from './components.js';
 import { formatDateTime, pluralize } from './format.js';
 
-const PER_PAGE = 24;
-const MAX_SEARCH_LENGTH = 200;
+const DEFAULT_PER_PAGE = 24;
 
 /** Mirrors the server-side allow list (JPEG, PNG, WebP, GIF). */
 const UPLOAD_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif';
@@ -36,32 +36,43 @@ function formatDimensions(item: MediaItem): string {
 }
 
 /** The 300px derivative when the server generated one, else the original. */
+function relativeMediaDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '—';
+  }
+  const diffMinutes = Math.round((date.getTime() - Date.now()) / 60_000);
+  const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+  if (Math.abs(diffMinutes) < 60) {
+    return formatter.format(diffMinutes, 'minute');
+  }
+  const diffHours = Math.round(diffMinutes / 60);
+  if (Math.abs(diffHours) < 24) {
+    return formatter.format(diffHours, 'hour');
+  }
+  const diffDays = Math.round(diffHours / 24);
+  return formatter.format(diffDays, 'day');
+}
+
+function monthOptions(): Array<{ value: string; label: string }> {
+  const now = new Date();
+  const options: Array<{ value: string; label: string }> = [];
+  for (let i = 0; i < 12; i += 1) {
+    const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+    options.push({
+      value: `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`,
+      label: date.toLocaleDateString(undefined, {
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+      }),
+    });
+  }
+  return options;
+}
+
 function thumbnailUrl(item: MediaItem): string {
   return item.derivatives['300'] ?? item.url;
-}
-
-function sanitizeSearch(value: string): string {
-  return value.trim().slice(0, MAX_SEARCH_LENGTH);
-}
-
-function ImageIcon({ size = 16 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-      <circle cx="8.5" cy="8.5" r="1.5" />
-      <polyline points="21 15 16 10 5 21" />
-    </svg>
-  );
 }
 
 interface UploadJob {
@@ -298,7 +309,7 @@ function MediaDrawer({ item, onClose, onSaved, onDeleted }: MediaDrawerProps) {
   );
 }
 
-export function MediaPage({ user }: { user: AuthUser }) {
+export function MediaPage({ user: _user }: { user: AuthUser }) {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -307,7 +318,11 @@ export function MediaPage({ user }: { user: AuthUser }) {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
   const [selected, setSelected] = useState<MediaItem | null>(null);
-  const [order, setOrder] = useState<'newest' | 'oldest'>('newest');
+  const [monthFilter, setMonthFilter] = useState('');
+  const [perPage, setPerPage] = useState(() => screenPerPage('media', DEFAULT_PER_PAGE));
+  const [bulkSelect, setBulkSelect] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
   // Media → Add New deep link opens the file picker once on mount.
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('upload') === '1') {
@@ -329,15 +344,33 @@ export function MediaPage({ user }: { user: AuthUser }) {
   }, [data]);
 
   useEffect(() => {
+    const handle = window.setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(1);
+    }, 400);
+    return () => window.clearTimeout(handle);
+  }, [searchInput]);
+
+  useEffect(() => {
+    function onOptions() {
+      setPerPage(screenPerPage('media', DEFAULT_PER_PAGE));
+    }
+    window.addEventListener(SCREEN_OPTIONS_EVENT, onOptions);
+    return () => window.removeEventListener(SCREEN_OPTIONS_EVENT, onOptions);
+  }, []);
+
+  useEffect(() => {
     let active = true;
     setLoading(true);
     setError(null);
 
     listMedia({
       page,
-      perPage: PER_PAGE,
+      perPage,
       type: 'image',
       ...(search ? { search } : {}),
+      ...(monthFilter ? { month: monthFilter } : {}),
+      order: 'newest',
     })
       .then((result) => {
         if (!active) return;
@@ -353,12 +386,27 @@ export function MediaPage({ user }: { user: AuthUser }) {
     return () => {
       active = false;
     };
-  }, [page, search, reloadKey]);
+  }, [page, search, monthFilter, reloadKey]);
 
-  function handleSearch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSearch(sanitizeSearch(searchInput));
-    setPage(1);
+  async function deleteSelected(): Promise<void> {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`Permanently delete ${selectedIds.size} media item(s)?`)) return;
+    const ids = [...selectedIds];
+    setBulkBusy(true);
+    setNotice(null);
+    try {
+      for (const id of ids) {
+        await deleteMedia(id);
+      }
+      setNotice({ tone: 'success', text: `${ids.length} media item(s) deleted.` });
+      setSelectedIds(new Set());
+      setBulkSelect(false);
+      setReloadKey((value) => value + 1);
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setBulkBusy(false);
+    }
   }
 
   function openPicker() {
@@ -378,11 +426,11 @@ export function MediaPage({ user }: { user: AuthUser }) {
       const items = [item, ...current.items.filter((entry) => entry.id !== item.id)];
       const total = current.pagination.total + 1;
       return {
-        items: items.slice(0, PER_PAGE),
+        items: items.slice(0, perPage),
         pagination: {
           ...current.pagination,
           total,
-          totalPages: Math.ceil(total / PER_PAGE),
+          totalPages: Math.ceil(total / perPage),
         },
       };
     });
@@ -454,7 +502,7 @@ export function MediaPage({ user }: { user: AuthUser }) {
         pagination: {
           ...current.pagination,
           total,
-          totalPages: Math.ceil(total / PER_PAGE),
+          totalPages: Math.ceil(total / perPage),
         },
       };
     });
@@ -470,10 +518,7 @@ export function MediaPage({ user }: { user: AuthUser }) {
   return (
     <>
       <div className="media-title-row">
-        <span className="title-badge" aria-hidden="true">
-          <ImageIcon size={17} />
-        </span>
-        <h1>Media Library ({total})</h1>
+        <h1>Media Library</h1>
         <button
           type="button"
           className="button secondary-button media-add-new"
@@ -494,7 +539,7 @@ export function MediaPage({ user }: { user: AuthUser }) {
             <polyline points="17 8 12 3 7 8" />
             <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
-          Add New Media File
+          Add Media File
         </button>
         <input
           ref={fileInputRef}
@@ -506,14 +551,6 @@ export function MediaPage({ user }: { user: AuthUser }) {
           aria-label="Upload media files"
           onChange={handleFiles}
         />
-      </div>
-
-      <div className="users-subheader">
-        <span className="sub-count">All Media ({total})</span>
-        <span className="sub-sep" aria-hidden="true">
-          |
-        </span>
-        <span className="sub-signed">Signed in as {user.username}</span>
       </div>
 
       {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
@@ -572,119 +609,143 @@ export function MediaPage({ user }: { user: AuthUser }) {
         </ul>
       ) : null}
 
-      <div className="tablenav media-toolbar">
-        <div className="alignleft">
-          <label htmlFor="media-type-filter" className="screen-reader-text">
-            Filter by media type
-          </label>
-          <select
-            id="media-type-filter"
-            className="bulk-select"
-            defaultValue="all"
-            onChange={() => {
-              // Only images exist in this phase; the filter mirrors the reference UI.
+      <div className="media-toolbar-bar">
+        <div className="media-view-toggle" role="group" aria-label="Media view">
+          <button
+            type="button"
+            className={`view-toggle-button${view === 'list' ? ' is-active' : ''}`}
+            aria-pressed={view === 'list'}
+            aria-label="List view"
+            title="List view"
+            onClick={() => setView('list')}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <line x1="8" y1="6" x2="21" y2="6" />
+              <line x1="8" y1="12" x2="21" y2="12" />
+              <line x1="8" y1="18" x2="21" y2="18" />
+              <line x1="3" y1="6" x2="3.01" y2="6" />
+              <line x1="3" y1="12" x2="3.01" y2="12" />
+              <line x1="3" y1="18" x2="3.01" y2="18" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className={`view-toggle-button${view === 'grid' ? ' is-active' : ''}`}
+            aria-pressed={view === 'grid'}
+            aria-label="Grid view"
+            title="Grid view"
+            onClick={() => setView('grid')}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+            </svg>
+          </button>
+        </div>
+        <select
+          id="media-type-filter"
+          className="bulk-select"
+          defaultValue="all"
+          aria-label="Filter by media type"
+          onChange={() => {
+            // Only images exist in this phase; the filter mirrors the WordPress UI.
+          }}
+        >
+          <option value="all">All media items</option>
+          <option value="image">Images</option>
+        </select>
+        <select
+          id="media-month-filter"
+          className="bulk-select"
+          aria-label="Filter by date"
+          value={monthFilter}
+          onChange={(event) => {
+            setMonthFilter(event.target.value);
+            setPage(1);
+          }}
+        >
+          <option value="">All dates</option>
+          {monthOptions().map((month) => (
+            <option key={month.value} value={month.value}>
+              {month.label}
+            </option>
+          ))}
+        </select>
+        {view === 'grid' ? (
+          <button
+            type="button"
+            className="button secondary-button"
+            aria-pressed={bulkSelect}
+            onClick={() => {
+              setBulkSelect((on) => !on);
+              setSelectedIds(new Set());
             }}
           >
-            <option value="all">All media items</option>
-            <option value="image">Images</option>
-          </select>
-          <label htmlFor="media-order" className="screen-reader-text">
-            Sort order
-          </label>
-          <select
-            id="media-order"
-            className="bulk-select"
-            value={order}
-            onChange={(event) => {
-              setOrder(event.target.value === 'oldest' ? 'oldest' : 'newest');
+            {bulkSelect ? 'Cancel selection' : 'Bulk select'}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="button secondary-button"
+            onClick={() => {
+              setSearch(searchInput.trim());
               setPage(1);
             }}
           >
-            <option value="newest">Newest first</option>
-            <option value="oldest">Oldest first</option>
-          </select>
-        </div>
-        <div className="alignright">
-          <form className="search-form" onSubmit={handleSearch} role="search">
-            <label htmlFor={searchId} className="screen-reader-text">
+            Filter
+          </button>
+        )}
+        {selectedIds.size > 0 ? (
+          <button
+            type="button"
+            className="button button-link-delete"
+            disabled={bulkBusy}
+            onClick={() => void deleteSelected()}
+          >
+            {bulkBusy ? 'Deleting…' : `Delete selected (${selectedIds.size})`}
+          </button>
+        ) : null}
+        <div className="media-search">
+          <label htmlFor={searchId} className={view === 'grid' ? undefined : 'screen-reader-text'}>
+            Search media
+          </label>
+          <input
+            id={searchId}
+            type="search"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            placeholder=""
+          />
+          {view === 'list' ? (
+            <button
+              type="button"
+              className="button secondary-button"
+              onClick={() => {
+                setSearch(searchInput.trim());
+                setPage(1);
+              }}
+            >
               Search Media
-            </label>
-            <span className="search-box">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <input
-                id={searchId}
-                type="search"
-                value={searchInput}
-                onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="Search media…"
-              />
-            </span>
-            <button type="submit" className="button secondary-button">
-              Search
             </button>
-          </form>
-          <span className="displaying-num media-count">{pluralize(total, 'item')}</span>
-          <div className="media-view-toggle" role="group" aria-label="Media view">
-            <button
-              type="button"
-              className={`view-toggle-button${view === 'grid' ? ' is-active' : ''}`}
-              aria-pressed={view === 'grid'}
-              onClick={() => setView('grid')}
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                aria-hidden="true"
-              >
-                <rect x="3" y="3" width="7" height="7" />
-                <rect x="14" y="3" width="7" height="7" />
-                <rect x="3" y="14" width="7" height="7" />
-                <rect x="14" y="14" width="7" height="7" />
-              </svg>
-              Grid
-            </button>
-            <button
-              type="button"
-              className={`view-toggle-button${view === 'list' ? ' is-active' : ''}`}
-              aria-pressed={view === 'list'}
-              onClick={() => setView('list')}
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                aria-hidden="true"
-              >
-                <line x1="8" y1="6" x2="21" y2="6" />
-                <line x1="8" y1="12" x2="21" y2="12" />
-                <line x1="8" y1="18" x2="21" y2="18" />
-                <line x1="3" y1="6" x2="3.01" y2="6" />
-                <line x1="3" y1="12" x2="3.01" y2="12" />
-                <line x1="3" y1="18" x2="3.01" y2="18" />
-              </svg>
-              List
-            </button>
-          </div>
+          ) : null}
         </div>
       </div>
 
@@ -723,105 +784,282 @@ export function MediaPage({ user }: { user: AuthUser }) {
                     <span className="media-thumb">
                       <img src={thumbnailUrl(item)} alt={item.altText || ''} loading="lazy" />
                     </span>
-                    <span className="media-card-body">
-                      <span className="media-name" title={item.originalName}>
-                        {item.originalName}
-                      </span>
-                      <span className="media-meta">
-                        {formatDimensions(item)} · {formatBytes(item.sizeBytes)}
-                      </span>
-                    </span>
                   </button>
                 </li>
               ))}
             </ul>
           ) : (
-            <div className="table-scroll">
-              <table className="content-table widefat fixed striped media-list">
-                <caption className="screen-reader-text">Media items</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">File</th>
-                    <th scope="col">Type</th>
-                    <th scope="col">Dimensions</th>
-                    <th scope="col">Size</th>
-                    <th scope="col">Date</th>
-                    <th scope="col">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.items.map((item) => (
-                    <tr key={item.id}>
-                      <td className="media-list-file">
-                        <button
-                          type="button"
-                          className="media-list-open"
-                          onClick={() => setSelected(item)}
-                        >
-                          <img src={thumbnailUrl(item)} alt="" loading="lazy" />
-                          <span>{item.originalName}</span>
-                        </button>
-                      </td>
-                      <td>{item.mimeType}</td>
-                      <td>{formatDimensions(item)}</td>
-                      <td>{formatBytes(item.sizeBytes)}</td>
-                      <td>{formatDateTime(item.createdAt)}</td>
-                      <td className="actions column-actions">
-                        <button
-                          type="button"
-                          className="row-action-icon"
-                          aria-label={`Edit ${item.originalName}`}
-                          title="Edit"
-                          onClick={() => setSelected(item)}
-                        >
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            aria-hidden="true"
-                          >
-                            <path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                          </svg>
-                        </button>
-                      </td>
+            <>
+              <div className="tablenav">
+                <div className="alignleft">
+                  <label htmlFor="media-bulk-action" className="screen-reader-text">
+                    Bulk actions
+                  </label>
+                  <select id="media-bulk-action" className="bulk-select" defaultValue="">
+                    <option value="">Bulk actions</option>
+                    <option value="delete">Delete permanently</option>
+                  </select>
+                  <button
+                    type="button"
+                    className="button secondary-button bulk-apply"
+                    disabled={bulkBusy || selectedIds.size === 0}
+                    onClick={() => void deleteSelected()}
+                  >
+                    {bulkBusy ? 'Applying…' : 'Apply'}
+                  </button>
+                </div>
+                <div className="alignright">
+                  <span className="displaying-num">
+                    {`${total} ${total === 1 ? 'item' : 'items'}`}
+                  </span>
+                </div>
+              </div>
+
+              <div className="table-scroll">
+                <table className="content-table widefat fixed striped media-list">
+                  <caption className="screen-reader-text">Media items</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col" className="check-column">
+                        <input
+                          type="checkbox"
+                          aria-label="Select all"
+                          checked={
+                            data.items.length > 0 &&
+                            data.items.every((item) => selectedIds.has(item.id))
+                          }
+                          onChange={() =>
+                            setSelectedIds((current) =>
+                              data.items.every((item) => current.has(item.id))
+                                ? new Set()
+                                : new Set(data.items.map((item) => item.id)),
+                            )
+                          }
+                        />
+                      </th>
+                      <th scope="col">File</th>
+                      <th scope="col">Author</th>
+                      <th scope="col">Uploaded to</th>
+                      <th scope="col">Date</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {data.items.map((item) => (
+                      <tr key={item.id}>
+                        <th scope="row" className="check-column">
+                          <input
+                            type="checkbox"
+                            aria-label={`Select ${item.originalName}`}
+                            checked={selectedIds.has(item.id)}
+                            onChange={() =>
+                              setSelectedIds((current) => {
+                                const next = new Set(current);
+                                if (next.has(item.id)) next.delete(item.id);
+                                else next.add(item.id);
+                                return next;
+                              })
+                            }
+                          />
+                        </th>
+                        <td className="media-list-file">
+                          <button
+                            type="button"
+                            className="media-list-open"
+                            onClick={() => setSelected(item)}
+                          >
+                            <img src={thumbnailUrl(item)} alt="" loading="lazy" />
+                            <span className="media-list-labels">
+                              <span className="media-list-title">
+                                {item.altText || item.originalName}
+                              </span>
+                              <span className="media-list-filename">{item.originalName}</span>
+                            </span>
+                          </button>
+                          <div className="row-actions">
+                            <button
+                              type="button"
+                              className="row-action-link"
+                              onClick={() => setSelected(item)}
+                            >
+                              Edit
+                            </button>
+                            <span className="row-action-sep" aria-hidden="true">
+                              {' '}
+                              |{' '}
+                            </span>
+                            <button
+                              type="button"
+                              className="row-action-link is-danger"
+                              onClick={() => {
+                                if (!window.confirm(`Permanently delete “${item.originalName}”?`)) {
+                                  return;
+                                }
+                                void deleteMedia(item.id)
+                                  .then(() => setReloadKey((value) => value + 1))
+                                  .catch((caught) =>
+                                    setNotice({ tone: 'error', text: actionErrorMessage(caught) }),
+                                  );
+                              }}
+                            >
+                              Delete Permanently
+                            </button>
+                            <span className="row-action-sep" aria-hidden="true">
+                              {' '}
+                              |{' '}
+                            </span>
+                            <button
+                              type="button"
+                              className="row-action-link"
+                              onClick={() => window.open(item.url, '_blank', 'noopener')}
+                            >
+                              View
+                            </button>
+                            <span className="row-action-sep" aria-hidden="true">
+                              {' '}
+                              |{' '}
+                            </span>
+                            <button
+                              type="button"
+                              className="row-action-link"
+                              onClick={() => {
+                                const absolute = item.url.startsWith('http')
+                                  ? item.url
+                                  : `${window.location.origin}${item.url}`;
+                                void navigator.clipboard?.writeText(absolute);
+                                setNotice({ tone: 'success', text: 'URL copied.' });
+                              }}
+                            >
+                              Copy URL
+                            </button>
+                            <span className="row-action-sep" aria-hidden="true">
+                              {' '}
+                              |{' '}
+                            </span>
+                            <a className="row-action-link" href={item.url} download>
+                              Download file
+                            </a>
+                          </div>
+                        </td>
+                        <td className="column-author">—</td>
+                        <td className="column-parent">
+                          <span className="media-unattached">(Unattached)</span>
+                          <button
+                            type="button"
+                            className="media-attach-link"
+                            onClick={() => setSelected(item)}
+                          >
+                            Attach
+                          </button>
+                        </td>
+                        <td className="column-date">{relativeMediaDate(item.createdAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <th scope="col" className="check-column" />
+                      <th scope="col">File</th>
+                      <th scope="col">Author</th>
+                      <th scope="col">Uploaded to</th>
+                      <th scope="col">Date</th>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              <div className="tablenav bottom">
+                <div className="alignleft">
+                  <label htmlFor="media-bulk-action-bottom" className="screen-reader-text">
+                    Bulk actions
+                  </label>
+                  <select id="media-bulk-action-bottom" className="bulk-select" defaultValue="">
+                    <option value="">Bulk actions</option>
+                    <option value="delete">Delete permanently</option>
+                  </select>
+                  <button
+                    type="button"
+                    className="button secondary-button bulk-apply"
+                    disabled={bulkBusy || selectedIds.size === 0}
+                    onClick={() => void deleteSelected()}
+                  >
+                    {bulkBusy ? 'Applying…' : 'Apply'}
+                  </button>
+                </div>
+                <div className="alignright">
+                  <span className="displaying-num">
+                    {`${total} ${total === 1 ? 'item' : 'items'}`}
+                  </span>
+                </div>
+              </div>
+            </>
           )}
 
-          <nav className="pagination" aria-label="Media pagination">
-            <div className="tablenav-pages">
-              <span className="displaying-num">{pluralize(total, 'media item')}</span>
-              <span className="pagination-links">
-                <button
-                  type="button"
-                  className="button secondary-button pagination-button prev"
-                  disabled={page <= 1}
-                  onClick={() => setPage((value) => Math.max(1, value - 1))}
-                >
-                  « Previous
-                </button>
-                <span className="page-numbers current">
-                  Page {page} of {totalPages}
+          {view === 'grid' ? (
+            <p className="media-showing">
+              {total === 0
+                ? 'No media items found.'
+                : (() => {
+                    const first = (page - 1) * perPage + 1;
+                    const last = Math.min(page * perPage, total);
+                    return first === last
+                      ? `Showing ${first} of ${total} media items`
+                      : `Showing ${first}–${last} of ${total} media items`;
+                  })()}
+            </p>
+          ) : null}
+
+          {totalPages > 1 ? (
+            <nav className="pagination" aria-label="Media pagination">
+              <div className="tablenav-pages">
+                <span className="displaying-num">{pluralize(total, 'media item')}</span>
+                <span className="pagination-links">
+                  <button
+                    type="button"
+                    className="button secondary-button pagination-button"
+                    aria-label="First page"
+                    title="First page"
+                    disabled={page <= 1}
+                    onClick={() => setPage(1)}
+                  >
+                    «
+                  </button>
+                  <button
+                    type="button"
+                    className="button secondary-button pagination-button"
+                    aria-label="Previous page"
+                    title="Previous page"
+                    disabled={page <= 1}
+                    onClick={() => setPage((value) => Math.max(1, value - 1))}
+                  >
+                    ‹
+                  </button>
+                  <span className="page-numbers current">
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    className="button secondary-button pagination-button"
+                    aria-label="Next page"
+                    title="Next page"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+                  >
+                    ›
+                  </button>
+                  <button
+                    type="button"
+                    className="button secondary-button pagination-button"
+                    aria-label="Last page"
+                    title="Last page"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage(totalPages)}
+                  >
+                    »
+                  </button>
                 </span>
-                <button
-                  type="button"
-                  className="button secondary-button pagination-button next"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((value) => value + 1)}
-                >
-                  Next »
-                </button>
-              </span>
-            </div>
-          </nav>
+              </div>
+            </nav>
+          ) : null}
         </>
       )}
 

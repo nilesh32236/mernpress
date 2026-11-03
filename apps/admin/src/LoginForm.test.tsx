@@ -37,14 +37,16 @@ describe('LoginForm', () => {
 
     render(<LoginForm onSuccess={onSuccess} />);
 
-    expect(screen.getByLabelText('Username')).toBeDefined();
+    expect(screen.getByLabelText('Username or Email Address')).toBeDefined();
     expect(screen.getByLabelText('Password')).toBeDefined();
 
-    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'admin' } });
+    fireEvent.change(screen.getByLabelText('Username or Email Address'), {
+      target: { value: 'admin' },
+    });
     fireEvent.change(screen.getByLabelText('Password'), {
       target: { value: 'correct horse battery staple' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Log In' }));
 
     await waitFor(() => {
       expect(onSuccess).toHaveBeenCalledWith(
@@ -71,9 +73,11 @@ describe('LoginForm', () => {
 
     render(<LoginForm onSuccess={vi.fn()} />);
 
-    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'admin' } });
+    fireEvent.change(screen.getByLabelText('Username or Email Address'), {
+      target: { value: 'admin' },
+    });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'wrong password' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Log In' }));
 
     expect((await screen.findByRole('alert')).textContent).toContain(
       'Invalid username or password.',
@@ -93,9 +97,11 @@ describe('LoginForm', () => {
 
     render(<LoginForm onSuccess={vi.fn()} />);
 
-    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'admin' } });
+    fireEvent.change(screen.getByLabelText('Username or Email Address'), {
+      target: { value: 'admin' },
+    });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'wrong password' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Log In' }));
 
     expect((await screen.findByRole('alert')).textContent).toContain('Too many attempts.');
   });

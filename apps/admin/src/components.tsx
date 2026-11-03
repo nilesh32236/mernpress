@@ -186,12 +186,12 @@ export function EmptyState({
 }
 
 export function PageHeader({
-  eyebrow,
   title,
   description,
   actions,
 }: {
-  eyebrow: string;
+  /** Legacy prop kept for callers; WordPress page headers have no eyebrow. */
+  eyebrow?: string;
   title: string;
   description?: string;
   actions?: ReactNode;
@@ -199,7 +199,6 @@ export function PageHeader({
   return (
     <div className="page-header">
       <div>
-        <p className="eyebrow">{eyebrow}</p>
         <h1>{title}</h1>
         {description ? <p className="lede">{description}</p> : null}
       </div>

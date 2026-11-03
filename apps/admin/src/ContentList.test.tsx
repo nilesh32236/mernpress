@@ -80,12 +80,12 @@ describe('content lists', () => {
     expect(await screen.findByRole('link', { name: 'First post' })).toBeDefined();
     expect(screen.getByText('Draft')).toBeDefined();
     expect(screen.getByText('Another user')).toBeDefined();
-    expect(screen.getByText('Oct 27, 2026, 11:00 AM')).toBeDefined();
-    expect(screen.getByText('11 Posts')).toBeDefined();
-    expect((screen.getByRole('button', { name: '« Previous' }) as HTMLButtonElement).disabled).toBe(
-      true,
-    );
-    expect((screen.getByRole('button', { name: 'Next »' }) as HTMLButtonElement).disabled).toBe(
+    expect(screen.getByText('2026/10/27 at 11:00 am')).toBeDefined();
+    expect(screen.getAllByText('11 items').length).toBeGreaterThan(0);
+    expect(
+      (screen.getByRole('button', { name: 'Previous page' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect((screen.getByRole('button', { name: 'Next page' }) as HTMLButtonElement).disabled).toBe(
       false,
     );
   });
@@ -180,16 +180,16 @@ describe('content lists', () => {
     await screen.findByText('No posts yet');
 
     fireEvent.change(screen.getByLabelText(/search posts/i), { target: { value: 'hello' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Search Posts' }));
 
     await waitFor(() =>
       expect(fetchMock.mock.calls.some(([url]) => String(url).includes('search=hello'))).toBe(true),
     );
 
-    // Change status via the status tab row.
-    fireEvent.click(screen.getByRole('button', { name: /^Trashed/ }));
+    // Change status via the status tab row (empty Drafts/Trashed tabs are hidden).
+    fireEvent.click(screen.getByRole('button', { name: /^Published/ }));
     await waitFor(() =>
-      expect(fetchMock.mock.calls.some(([url]) => String(url).includes('status=TRASHED'))).toBe(
+      expect(fetchMock.mock.calls.some(([url]) => String(url).includes('status=PUBLISHED'))).toBe(
         true,
       ),
     );
@@ -263,8 +263,8 @@ describe('content lists', () => {
     render(<ContentList user={admin} type="post" />);
     await screen.findByText('No posts yet');
 
-    fireEvent.click(screen.getByRole('button', { name: /^Drafts/ }));
-    await waitFor(() => expect(window.location.search).toContain('status=DRAFT'));
+    fireEvent.click(screen.getByRole('button', { name: /^Published/ }));
+    await waitFor(() => expect(window.location.search).toContain('status=PUBLISHED'));
     expect(window.location.search).not.toContain('page=');
   });
 
@@ -298,8 +298,10 @@ describe('content lists', () => {
 
     fireEvent.click(screen.getByLabelText('Select First post'));
     fireEvent.click(screen.getByLabelText('Select Second post'));
-    fireEvent.change(screen.getByLabelText('Bulk actions'), { target: { value: 'publish' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    fireEvent.change(screen.getAllByLabelText('Bulk actions')[0]!, {
+      target: { value: 'publish' },
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Apply' })[0]!);
 
     await waitFor(() => expect(bulkBody).not.toBeNull());
     expect(bulkBody).toEqual({
@@ -336,7 +338,7 @@ describe('content lists', () => {
     const foreignCheckbox = screen.getByLabelText('Select Foreign post') as HTMLInputElement;
     expect(foreignCheckbox.disabled).toBe(true);
 
-    fireEvent.click(screen.getByLabelText('Select all'));
+    fireEvent.click(screen.getAllByLabelText('Select all')[0]!);
     expect((screen.getByLabelText('Select Own post') as HTMLInputElement).checked).toBe(true);
     expect(foreignCheckbox.checked).toBe(false);
   });
@@ -363,7 +365,7 @@ describe('content lists', () => {
     render(<ContentList user={admin} type="post" />);
     await screen.findByRole('link', { name: 'Trashed post' });
 
-    const select = screen.getByLabelText('Bulk actions') as HTMLSelectElement;
+    const select = screen.getAllByLabelText('Bulk actions')[0]! as HTMLSelectElement;
     const options = Array.from(select.options).map((option) => option.value);
     expect(options).toContain('restore');
     expect(options).toContain('delete');
@@ -371,7 +373,7 @@ describe('content lists', () => {
 
     fireEvent.click(screen.getByLabelText('Select Trashed post'));
     fireEvent.change(select, { target: { value: 'delete' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Apply' })[0]!);
     expect(confirmSpy).toHaveBeenCalled();
   });
 });

@@ -89,12 +89,11 @@ describe('users page', () => {
     render(<UsersPage user={admin} />);
 
     expect(await screen.findByText('editor-b')).toBeDefined();
-    expect(screen.getByText('Editor')).toBeDefined();
-    expect(screen.getByText('Administrator')).toBeDefined();
-    expect(screen.getByText('3 posts')).toBeDefined();
+    expect(screen.getAllByText('Editor').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Administrator').length).toBeGreaterThan(0);
+    expect(screen.getByRole('cell', { name: '3' })).toBeDefined();
     expect(screen.getAllByText('Editor B').length).toBeGreaterThan(0);
     expect(screen.getAllByText('editor-b@example.com').length).toBeGreaterThan(0);
-    expect(screen.getByText('(You)')).toBeDefined();
   });
 
   it('submits a search term and resets to page one', async () => {
@@ -102,7 +101,7 @@ describe('users page', () => {
     await screen.findByText('editor-b');
 
     fireEvent.change(screen.getByLabelText('Search Users'), { target: { value: 'ali' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Search Users' }));
 
     await waitFor(() =>
       expect(vi.mocked(fetchUsers)).toHaveBeenLastCalledWith({
@@ -117,7 +116,7 @@ describe('users page', () => {
     render(<UsersPage user={admin} />);
     await screen.findByText('editor-b');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add New User' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add User' }));
     fireEvent.submit(screen.getByRole('form', { name: 'Add user' }));
 
     expect(await screen.findByText('Username is required.')).toBeDefined();
@@ -143,19 +142,21 @@ describe('users page', () => {
     await screen.findByText('editor-b');
 
     const selfRow = rowFor('admin');
-    expect(within(selfRow).queryByRole('button', { name: 'Delete…' })).toBeNull();
+    expect(within(selfRow).queryByRole('button', { name: 'Delete' })).toBeNull();
     expect(within(selfRow).queryByRole('button', { name: 'Disable' })).toBeNull();
-    expect(within(selfRow).getByRole('button', { name: 'Reset password' })).toBeDefined();
+    fireEvent.click(within(selfRow).getByRole('button', { name: 'Edit' }));
+    expect(await screen.findByRole('button', { name: 'Reset password' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     const otherRow = rowFor('editor-b');
-    expect(within(otherRow).getByRole('button', { name: 'Delete…' })).toBeDefined();
+    expect(within(otherRow).getByRole('button', { name: 'Delete' })).toBeDefined();
   });
 
   it('changes a role through the modal', async () => {
     render(<UsersPage user={admin} />);
     await screen.findByText('editor-b');
 
-    fireEvent.click(within(rowFor('author-c')).getByRole('button', { name: 'Change role' }));
+    fireEvent.click(within(rowFor('author-c')).getByRole('button', { name: 'Edit' }));
     const dialog = await screen.findByRole('dialog');
 
     fireEvent.change(within(dialog).getByLabelText('Role'), { target: { value: 'editor' } });
@@ -169,7 +170,7 @@ describe('users page', () => {
     render(<UsersPage user={admin} />);
     await screen.findByText('editor-b');
 
-    fireEvent.click(within(rowFor('editor-b')).getByRole('button', { name: 'Delete…' }));
+    fireEvent.click(within(rowFor('editor-b')).getByRole('button', { name: 'Delete' }));
     const dialog = await screen.findByRole('dialog');
 
     expect(within(dialog).getByText(/3 posts will be reassigned/i)).toBeDefined();
@@ -200,7 +201,7 @@ describe('users page', () => {
     render(<UsersPage user={admin} />);
     await screen.findByText('editor-b');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add New User' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add User' }));
     fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'new-user' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'secret-pass' } });
     fireEvent.submit(screen.getByRole('form', { name: 'Add user' }));
@@ -209,13 +210,14 @@ describe('users page', () => {
   });
 
   it('shows the no-access empty state when the API rejects with 403', async () => {
-    vi.mocked(fetchUsers).mockRejectedValueOnce(
+    // The page also fetches per-role counts, so every call must reject.
+    vi.mocked(fetchUsers).mockRejectedValue(
       new ApiError(403, 'FORBIDDEN', 'Insufficient capability'),
     );
 
     render(<UsersPage user={admin} />);
 
     expect(await screen.findByText('No user management access')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Add New User' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add User' })).toBeNull();
   });
 });

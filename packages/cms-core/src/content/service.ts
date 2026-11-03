@@ -676,6 +676,12 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     if (query.category) {
       conditions.push({ terms: { some: { termId: query.category } } });
     }
+    if (query.tag) {
+      conditions.push({ terms: { some: { termId: query.tag } } });
+    }
+    if (query.author) {
+      conditions.push({ authorId: query.author });
+    }
     if (query.month && /^\d{4}-\d{2}$/.test(query.month)) {
       const [year, month] = query.month.split('-').map(Number);
       const start = new Date(Date.UTC(year ?? 1970, (month ?? 1) - 1, 1));

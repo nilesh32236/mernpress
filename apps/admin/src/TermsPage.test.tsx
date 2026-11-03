@@ -72,8 +72,9 @@ describe('terms page', () => {
 
     render(<TermsPage user={admin} />);
 
-    expect(await screen.findByText('News')).toBeDefined();
-    fireEvent.click(screen.getByRole('tab', { name: 'Tags' }));
+    expect((await screen.findAllByText('News')).length).toBeGreaterThan(0);
+    window.history.pushState(null, '', '/terms?taxonomy=tag');
+    window.dispatchEvent(new PopStateEvent('popstate'));
 
     expect(await screen.findByText('Tech')).toBeDefined();
     expect(fetchMock.mock.calls[1]?.[0]).toContain('taxonomy=tag');
@@ -92,11 +93,11 @@ describe('terms page', () => {
 
     await screen.findByText(/no categories yet/i);
 
-    const input = screen.getByLabelText(/category name/i) as HTMLInputElement;
+    const input = screen.getByLabelText('Name') as HTMLInputElement;
     fireEvent.change(input, { target: { value: '   ' } });
     // bypass client empty check by setting a value then clearing via direct input
     fireEvent.change(input, { target: { value: '' } });
-    fireEvent.submit(screen.getByRole('form', { name: 'Create category' }));
+    fireEvent.submit(screen.getByRole('form', { name: 'Create Category' }));
 
     // client validation error shown without fetch
     expect(await screen.findByText('Name is required.')).toBeDefined();
@@ -116,7 +117,7 @@ describe('terms page', () => {
 
     render(<TermsPage user={admin} />);
 
-    const term = await screen.findByText('News');
+    const term = (await screen.findAllByText('News'))[0]!;
     expect(term).toBeDefined();
 
     const deleteButton = screen.getByRole('button', { name: 'Delete' });

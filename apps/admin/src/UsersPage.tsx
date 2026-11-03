@@ -31,8 +31,10 @@ import {
 } from './components.js';
 import { pluralize } from './format.js';
 import { roleLabel } from './roles.js';
+import { navigate, useLocation } from './router.js';
+import { SCREEN_OPTIONS_EVENT, screenPerPage } from './screenOptions.js';
 
-const PER_PAGE = 10;
+const DEFAULT_PER_PAGE = 10;
 const REASSIGN_LIMIT = 100;
 const MAX_SEARCH_LENGTH = 200;
 const ROLES: UserRole[] = ['administrator', 'editor', 'author', 'contributor', 'subscriber'];
@@ -74,7 +76,7 @@ function totalPagesFor(data: AdminUserList | null): number {
   if (!data) return 1;
   return Math.max(
     1,
-    Math.ceil(data.pagination.total / Math.max(1, data.pagination.perPage || PER_PAGE)),
+    Math.ceil(data.pagination.total / Math.max(1, data.pagination.perPage || DEFAULT_PER_PAGE)),
   );
 }
 
@@ -284,10 +286,14 @@ function ChangeRoleDialog({
   target,
   onCancel,
   onSuccess,
+  onResetPassword,
+  onToggleStatus,
 }: {
   target: AdminUser;
   onCancel: () => void;
   onSuccess: (message: string) => void;
+  onResetPassword: () => void;
+  onToggleStatus: () => void;
 }) {
   const [role, setRole] = useState<UserRole>(target.role);
   const [error, setError] = useState<string | null>(null);
@@ -331,6 +337,24 @@ function ChangeRoleDialog({
             {error}
           </p>
         ) : null}
+        <div className="dialog-secondary-actions">
+          <button
+            type="button"
+            className="button secondary-button"
+            onClick={onResetPassword}
+            disabled={saving}
+          >
+            Reset password
+          </button>
+          <button
+            type="button"
+            className="button secondary-button"
+            onClick={onToggleStatus}
+            disabled={saving}
+          >
+            {target.status === 'active' ? 'Disable user' : 'Enable user'}
+          </button>
+        </div>
         <DialogActions
           submitLabel="Update Role"
           busyLabel="Saving…"
@@ -512,9 +536,12 @@ function DeleteUserDialog({
 }
 
 export function UsersPage({ user }: { user: AuthUser }) {
+  const location = useLocation();
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [roleFilter, setRoleFilter] = useState<UserRole | ''>('');
+  const [roleCounts, setRoleCounts] = useState<Record<string, number>>({});
   const [data, setData] = useState<AdminUserList | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -523,16 +550,57 @@ export function UsersPage({ user }: { user: AuthUser }) {
   const [reloadKey, setReloadKey] = useState(0);
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [perPage, setPerPage] = useState(() => screenPerPage('users', DEFAULT_PER_PAGE));
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<'delete' | ''>('');
+  const [bulkRole, setBulkRole] = useState<UserRole | ''>('');
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  // "Users → Add User" navigates here with ?action=add, like WordPress user-new.php.
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('action') === 'add') {
+      setDialog({ kind: 'add', target: null });
+    }
+  }, [location.search]);
+
+  useEffect(() => {
+    if (denied) return;
+    let active = true;
+    const roles: UserRole[] = ['administrator', 'editor', 'author', 'contributor', 'subscriber'];
+    Promise.all(
+      roles.map((role) =>
+        fetchUsers({ ...(search ? { search } : {}), role, page: 1, perPage: 1 }).then(
+          (result) => [role, result.pagination.total] as const,
+        ),
+      ),
+    )
+      .then((entries) => {
+        if (!active) return;
+        setRoleCounts(Object.fromEntries(entries));
+      })
+      .catch(() => {
+        // Counts are cosmetic; a failure must not block the roster.
+      });
+    return () => {
+      active = false;
+    };
+  }, [denied, reloadKey, search]);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
     setError(null);
 
-    fetchUsers({ ...(search ? { search } : {}), page, perPage: PER_PAGE })
+    fetchUsers({
+      ...(search ? { search } : {}),
+      ...(roleFilter ? { role: roleFilter } : {}),
+      page,
+      perPage,
+    })
       .then((result) => {
         if (!active) return;
         setData(result);
+        setSelected(new Set());
         setLoading(false);
       })
       .catch((caught) => {
@@ -548,7 +616,15 @@ export function UsersPage({ user }: { user: AuthUser }) {
     return () => {
       active = false;
     };
-  }, [search, page, reloadKey]);
+  }, [search, page, roleFilter, perPage, reloadKey]);
+
+  useEffect(() => {
+    function onOptions() {
+      setPerPage(screenPerPage('users', DEFAULT_PER_PAGE));
+    }
+    window.addEventListener(SCREEN_OPTIONS_EVENT, onOptions);
+    return () => window.removeEventListener(SCREEN_OPTIONS_EVENT, onOptions);
+  }, []);
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -565,6 +641,77 @@ export function UsersPage({ user }: { user: AuthUser }) {
     setDialog(null);
     setNotice({ tone: 'success', text: message });
     setReloadKey((value) => value + 1);
+  }
+
+  function toggleSelected(id: string): void {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function toggleSelectAll(): void {
+    if (!data) return;
+    const ids = data.items.map((item) => item.id);
+    setSelected((current) => (ids.every((id) => current.has(id)) ? new Set() : new Set(ids)));
+  }
+
+  async function runBulkAction(): Promise<void> {
+    if (bulkAction !== 'delete' || selected.size === 0) return;
+    const targets = (data?.items ?? []).filter(
+      (item) => selected.has(item.id) && item.id !== user.id,
+    );
+    if (targets.length === 0) {
+      setNotice({ tone: 'error', text: 'You cannot delete your own account.' });
+      return;
+    }
+    if (!window.confirm(`Delete ${targets.length} user(s)? This cannot be undone.`)) {
+      return;
+    }
+    setBulkBusy(true);
+    setNotice(null);
+    try {
+      for (const target of targets) {
+        await deleteUser(target.id);
+      }
+      setNotice({ tone: 'success', text: `${targets.length} user(s) deleted.` });
+      setSelected(new Set());
+      setBulkAction('');
+      setReloadKey((value) => value + 1);
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
+  async function runBulkRoleChange(): Promise<void> {
+    if (bulkRole === '' || selected.size === 0) return;
+    const targets = (data?.items ?? []).filter((item) => selected.has(item.id));
+    if (targets.length === 0) return;
+    setBulkBusy(true);
+    setNotice(null);
+    try {
+      for (const target of targets) {
+        await updateUserRole(target.id, bulkRole);
+      }
+      setNotice({
+        tone: 'success',
+        text: `Role for ${targets.length} user(s) changed to ${roleLabel(bulkRole)}.`,
+      });
+      setSelected(new Set());
+      setBulkRole('');
+      setReloadKey((value) => value + 1);
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setBulkBusy(false);
+    }
   }
 
   async function toggleStatus(target: AdminUser) {
@@ -613,62 +760,124 @@ export function UsersPage({ user }: { user: AuthUser }) {
   return (
     <>
       <div className="list-title-row">
-        <span className="title-badge" aria-hidden="true">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-          </svg>
-        </span>
         <h1>Users</h1>
         <button
           type="button"
-          className="button primary-button list-add-new"
+          className="button page-title-action"
           onClick={() => openDialog('add', null)}
         >
-          <span aria-hidden="true">+</span> Add New User
+          Add User
         </button>
       </div>
-      <div className="users-subheader">
-        <span className="sub-count">All Users ({total})</span>
-        <span className="sub-sep" aria-hidden="true">
-          |
-        </span>
-        <span className="sub-signed">
-          You are signed in as {user.username} ({user.role.toUpperCase()})
-        </span>
-      </div>
+      <ul className="subsubsub" aria-label="User role filter">
+        <li>
+          <button
+            type="button"
+            className="subsubsub-tab"
+            aria-current={roleFilter === '' ? 'true' : undefined}
+            onClick={() => {
+              setRoleFilter('');
+              setPage(1);
+            }}
+          >
+            All <span className="count">({total})</span>
+          </button>
+        </li>
+        {(
+          [
+            ['administrator', 'Administrator'],
+            ['editor', 'Editor'],
+            ['author', 'Author'],
+            ['contributor', 'Contributor'],
+            ['subscriber', 'Subscriber'],
+          ] as const
+        )
+          .filter(([role]) => (roleCounts[role] ?? 0) > 0 || roleFilter === role)
+          .map(([role, label]) => (
+            <li key={role}>
+              <button
+                type="button"
+                className="subsubsub-tab"
+                aria-current={roleFilter === role ? 'true' : undefined}
+                onClick={() => {
+                  setRoleFilter(role);
+                  setPage(1);
+                }}
+              >
+                {label} <span className="count">({roleCounts[role] ?? 0})</span>
+              </button>
+            </li>
+          ))}
+      </ul>
 
       {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
 
+      <div className="search-row">
+        <form className="search-form" onSubmit={handleSearch} role="search">
+          <label htmlFor="user-search" className="screen-reader-text">
+            Search Users
+          </label>
+          <input
+            id="user-search"
+            type="search"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+          />
+          <button type="submit" className="button secondary-button">
+            Search Users
+          </button>
+        </form>
+      </div>
+
       <div className="tablenav">
         <div className="alignleft">
-          <span className="displaying-num">{pluralize(total, 'user')}</span>
+          <label htmlFor="users-bulk-action" className="screen-reader-text">
+            Bulk actions
+          </label>
+          <select
+            id="users-bulk-action"
+            className="bulk-select"
+            value={bulkAction}
+            onChange={(event) => setBulkAction(event.target.value as 'delete' | '')}
+          >
+            <option value="">Bulk actions</option>
+            <option value="delete">Delete</option>
+          </select>
+          <button
+            type="button"
+            className="button secondary-button bulk-apply"
+            disabled={bulkBusy || bulkAction === '' || selected.size === 0}
+            onClick={() => void runBulkAction()}
+          >
+            {bulkBusy ? 'Applying…' : 'Apply'}
+          </button>
+          <label htmlFor="users-role-action" className="screen-reader-text">
+            Change role to
+          </label>
+          <select
+            id="users-role-action"
+            className="bulk-select"
+            value={bulkRole}
+            onChange={(event) => setBulkRole(event.target.value as UserRole | '')}
+          >
+            <option value="">Change role to…</option>
+            <option value="administrator">Administrator</option>
+            <option value="editor">Editor</option>
+            <option value="author">Author</option>
+            <option value="contributor">Contributor</option>
+            <option value="subscriber">Subscriber</option>
+          </select>
+          <button
+            type="button"
+            className="button secondary-button bulk-apply"
+            disabled={bulkBusy || bulkRole === '' || selected.size === 0}
+            onClick={() => void runBulkRoleChange()}
+          >
+            Change
+          </button>
         </div>
         <div className="alignright">
-          <form className="search-form" onSubmit={handleSearch} role="search">
-            <label htmlFor="user-search">Search Users</label>
-            <input
-              id="user-search"
-              type="search"
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Username"
-            />
-            <button type="submit" className="button secondary-button">
-              Search
-            </button>
-          </form>
+          <span className="displaying-num">{`${total} ${total === 1 ? 'item' : 'items'}`}</span>
         </div>
       </div>
 
@@ -706,14 +915,20 @@ export function UsersPage({ user }: { user: AuthUser }) {
               <thead>
                 <tr>
                   <th scope="col" className="check-column">
-                    <input type="checkbox" />
+                    <input
+                      type="checkbox"
+                      aria-label="Select all"
+                      checked={
+                        data.items.length > 0 && data.items.every((item) => selected.has(item.id))
+                      }
+                      onChange={() => toggleSelectAll()}
+                    />
                   </th>
                   <th scope="col">Username</th>
                   <th scope="col">Name</th>
                   <th scope="col">Email</th>
                   <th scope="col">Role</th>
                   <th scope="col">Posts</th>
-                  <th scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -722,186 +937,174 @@ export function UsersPage({ user }: { user: AuthUser }) {
                   return (
                     <tr key={item.id}>
                       <th scope="row" className="check-column">
-                        <input type="checkbox" />
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${item.username}`}
+                          checked={selected.has(item.id)}
+                          onChange={() => toggleSelected(item.id)}
+                        />
                       </th>
                       <td className="username column-username">
                         <span className="user-cell">
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            aria-hidden="true"
-                          >
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                            <circle cx="12" cy="7" r="4" />
-                          </svg>
+                          <span className="user-avatar" aria-hidden="true">
+                            <svg width="32" height="32" viewBox="0 0 32 32">
+                              <rect width="32" height="32" rx="16" fill="#dcdcde" />
+                              <circle cx="16" cy="12" r="5" fill="#a7aaad" />
+                              <path d="M6 30c0-5.5 4.5-9 10-9s10 3.5 10 9" fill="#a7aaad" />
+                            </svg>
+                          </span>
                           <span className="row-title">{item.username}</span>
-                          {isSelf ? <span className="you-badge">you</span> : null}
-                          {isSelf ? <span className="no-terms"> (You)</span> : null}
                         </span>
                         {item.status === 'disabled' ? (
                           <span className="status-badge status-draft disabled-badge">Disabled</span>
                         ) : null}
+                        <div className="row-actions">
+                          <button
+                            type="button"
+                            className="row-action-link"
+                            onClick={() => openDialog('role', item)}
+                          >
+                            Edit
+                          </button>
+                          {!isSelf ? (
+                            <>
+                              <span className="row-action-sep" aria-hidden="true">
+                                {' '}
+                                |{' '}
+                              </span>
+                              <button
+                                type="button"
+                                className="row-action-link is-danger"
+                                onClick={() => openDialog('delete', item)}
+                              >
+                                Delete
+                              </button>
+                            </>
+                          ) : null}
+                          <span className="row-action-sep" aria-hidden="true">
+                            {' '}
+                            |{' '}
+                          </span>
+                          <button
+                            type="button"
+                            className="row-action-link"
+                            onClick={() => navigate(`/posts?author=${item.id}`)}
+                          >
+                            View
+                          </button>
+                        </div>
                       </td>
                       <td className="column-name">{item.displayName ?? '—'}</td>
                       <td className="column-email">{item.email ?? '—'}</td>
                       <td className="role column-role">{roleLabel(item.role)}</td>
-                      <td className="posts column-posts">{pluralize(item.postCount, 'post')}</td>
-                      <td className="actions column-actions">
-                        <div className="row-actions">
-                          {!isSelf ? (
-                            <button
-                              type="button"
-                              className="icon-action"
-                              aria-label="Change role"
-                              title="Change role"
-                              onClick={() => openDialog('role', item)}
-                            >
-                              <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                aria-hidden="true"
-                              >
-                                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                              </svg>
-                            </button>
-                          ) : null}
-                          <button
-                            type="button"
-                            className="icon-action"
-                            aria-label="Reset password"
-                            title="Reset password"
-                            onClick={() => openDialog('password', item)}
-                          >
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              aria-hidden="true"
-                            >
-                              <circle cx="7.5" cy="15.5" r="4.5" />
-                              <path d="m11 12 10-10" />
-                              <path d="m15 8 3 3" />
-                            </svg>
-                          </button>
-                          {!isSelf ? (
-                            <>
-                              <button
-                                type="button"
-                                className="icon-action"
-                                aria-label={item.status === 'active' ? 'Disable' : 'Enable'}
-                                title={item.status === 'active' ? 'Disable' : 'Enable'}
-                                disabled={pendingAction !== null}
-                                aria-busy={pendingAction === `status:${item.id}`}
-                                onClick={() => void toggleStatus(item)}
-                              >
-                                {item.status === 'active' ? (
-                                  <svg
-                                    width="14"
-                                    height="14"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    aria-hidden="true"
-                                  >
-                                    <circle cx="12" cy="12" r="10" />
-                                    <line x1="4.9" y1="4.9" x2="19.1" y2="19.1" />
-                                  </svg>
-                                ) : (
-                                  <svg
-                                    width="14"
-                                    height="14"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    aria-hidden="true"
-                                  >
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                    <polyline points="22 4 12 14.01 9 11.01" />
-                                  </svg>
-                                )}
-                              </button>
-                              <button
-                                type="button"
-                                className="icon-action danger"
-                                aria-label="Delete…"
-                                title="Delete user"
-                                onClick={() => openDialog('delete', item)}
-                              >
-                                <svg
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  aria-hidden="true"
-                                >
-                                  <polyline points="3 6 5 6 21 6" />
-                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                </svg>
-                              </button>
-                            </>
-                          ) : null}
-                        </div>
-                      </td>
+                      <td className="posts column-posts">{item.postCount}</td>
                     </tr>
                   );
                 })}
               </tbody>
+
+              <tfoot>
+                <tr>
+                  <th scope="col" className="check-column">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all"
+                      checked={
+                        data.items.length > 0 && data.items.every((item) => selected.has(item.id))
+                      }
+                      onChange={() => toggleSelectAll()}
+                    />
+                  </th>
+                  <th scope="col">Username</th>
+                  <th scope="col">Name</th>
+                  <th scope="col">Email</th>
+                  <th scope="col">Role</th>
+                  <th scope="col">Posts</th>
+                </tr>
+              </tfoot>
             </table>
           </div>
 
-          <nav className="pagination" aria-label="Users pagination">
-            <div className="tablenav-pages">
-              <span className="displaying-num">{pluralize(total, 'user')}</span>
-              <span className="pagination-links">
-                <button
-                  type="button"
-                  className="button secondary-button pagination-button prev"
-                  disabled={page <= 1}
-                  onClick={() => setPage((value) => Math.max(1, value - 1))}
-                >
-                  « Previous
-                </button>
-                <span className="page-numbers current">
-                  Page {page} of {totalPages}
-                </span>
-                <button
-                  type="button"
-                  className="button secondary-button pagination-button next"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((value) => value + 1)}
-                >
-                  Next »
-                </button>
-              </span>
+          <div className="tablenav bottom">
+            <div className="alignleft">
+              <label htmlFor="users-bulk-action-bottom" className="screen-reader-text">
+                Bulk actions
+              </label>
+              <select
+                id="users-bulk-action-bottom"
+                className="bulk-select"
+                value={bulkAction}
+                onChange={(event) => setBulkAction(event.target.value as 'delete' | '')}
+              >
+                <option value="">Bulk actions</option>
+                <option value="delete">Delete</option>
+              </select>
+              <button
+                type="button"
+                className="button secondary-button bulk-apply"
+                disabled={bulkBusy || bulkAction === '' || selected.size === 0}
+                onClick={() => void runBulkAction()}
+              >
+                {bulkBusy ? 'Applying…' : 'Apply'}
+              </button>
             </div>
-          </nav>
+            <div className="alignright">
+              <span className="displaying-num">{`${total} ${total === 1 ? 'item' : 'items'}`}</span>
+            </div>
+          </div>
+
+          {totalPages > 1 ? (
+            <nav className="pagination" aria-label="Users pagination">
+              <div className="tablenav-pages">
+                <span className="displaying-num">{pluralize(total, 'user')}</span>
+                <span className="pagination-links">
+                  <button
+                    type="button"
+                    className="button secondary-button pagination-button"
+                    aria-label="First page"
+                    title="First page"
+                    disabled={page <= 1}
+                    onClick={() => setPage(1)}
+                  >
+                    «
+                  </button>
+                  <button
+                    type="button"
+                    className="button secondary-button pagination-button"
+                    aria-label="Previous page"
+                    title="Previous page"
+                    disabled={page <= 1}
+                    onClick={() => setPage((value) => Math.max(1, value - 1))}
+                  >
+                    ‹
+                  </button>
+                  <span className="page-numbers current">
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    className="button secondary-button pagination-button"
+                    aria-label="Next page"
+                    title="Next page"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((value) => value + 1)}
+                  >
+                    ›
+                  </button>
+                  <button
+                    type="button"
+                    className="button secondary-button pagination-button"
+                    aria-label="Last page"
+                    title="Last page"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage(totalPages)}
+                  >
+                    »
+                  </button>
+                </span>
+              </div>
+            </nav>
+          ) : null}
         </>
       )}
 
@@ -913,6 +1116,12 @@ export function UsersPage({ user }: { user: AuthUser }) {
           target={dialog.target}
           onCancel={() => setDialog(null)}
           onSuccess={finishDialog}
+          onResetPassword={() => setDialog({ kind: 'password', target: dialog.target })}
+          onToggleStatus={() => {
+            const target = dialog.target;
+            setDialog(null);
+            if (target) void toggleStatus(target);
+          }}
         />
       ) : null}
       {dialog?.kind === 'password' && dialog.target ? (

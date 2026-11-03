@@ -45,16 +45,16 @@ test('signs in with the login form and signs out without browser token storage',
   await page.goto(ADMIN_URL);
 
   await expect(page.getByRole('heading', { level: 1, name: 'MERNPress admin' })).toBeVisible();
-  await expect(page.getByLabel('Username')).toBeVisible();
-  await expect(page.getByLabel('Password')).toBeVisible();
+  await expect(page.getByLabel('Username or Email Address')).toBeVisible();
+  await expect(page.getByLabel('Password', { exact: true })).toBeVisible();
 
-  await page.getByLabel('Username').fill(username);
-  await page.getByLabel('Password').fill(password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByLabel('Username or Email Address').fill(username);
+  await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Log In' }).click();
 
   await page.getByRole('button', { name: 'User profile menu' }).click();
   await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
-  await expect(page.getByText(username, { exact: true })).toBeVisible();
+  await expect(page.getByText(`Howdy, ${username}`)).toBeVisible();
 
   const storage = await page.evaluate(() => ({
     local: Object.keys(localStorage),
@@ -64,24 +64,24 @@ test('signs in with the login form and signs out without browser token storage',
 
   // The user menu is still open from the assertion above.
   await page.getByRole('button', { name: 'Sign out' }).click();
-  await expect(page.getByLabel('Username')).toBeVisible();
+  await expect(page.getByLabel('Username or Email Address')).toBeVisible();
 });
 
 test('shows a generic error for an invalid password', async ({ page }) => {
   await page.goto(ADMIN_URL);
 
-  await page.getByLabel('Username').fill(username);
-  await page.getByLabel('Password').fill('definitely the wrong password');
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByLabel('Username or Email Address').fill(username);
+  await page.getByLabel('Password', { exact: true }).fill('definitely the wrong password');
+  await page.getByRole('button', { name: 'Log In' }).click();
 
   await expect(page.getByRole('alert')).toContainText('Invalid username or password.');
-  await expect(page.getByLabel('Username')).toBeVisible();
+  await expect(page.getByLabel('Username or Email Address')).toBeVisible();
 });
 
 test('supports keyboard-only sign-in', async ({ page }) => {
   await page.goto(ADMIN_URL);
 
-  await page.getByLabel('Username').focus();
+  await page.getByLabel('Username or Email Address').focus();
   await page.keyboard.type(username);
   await page.keyboard.press('Tab');
   await page.keyboard.type(password);
@@ -97,13 +97,13 @@ test('refreshing the pre-auth CSRF token preserves logout over the same-origin p
   await page.goto(ADMIN_URL);
 
   await expect(page.getByRole('heading', { level: 1, name: 'MERNPress admin' })).toBeVisible();
-  await page.getByLabel('Username').fill(username);
-  await page.getByLabel('Password').fill(password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByLabel('Username or Email Address').fill(username);
+  await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Log In' }).click();
 
   await page.getByRole('button', { name: 'User profile menu' }).click();
   await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
-  await expect(page.getByText(username, { exact: true })).toBeVisible();
+  await expect(page.getByText(`Howdy, ${username}`)).toBeVisible();
 
   const readCsrfCookies = async () => {
     const cookies = await page.context().cookies();
@@ -144,6 +144,6 @@ test('refreshing the pre-auth CSRF token preserves logout over the same-origin p
 
   // The user menu is still open from the assertion above.
   await page.getByRole('button', { name: 'Sign out' }).click();
-  await expect(page.getByLabel('Username')).toBeVisible();
+  await expect(page.getByLabel('Username or Email Address')).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
