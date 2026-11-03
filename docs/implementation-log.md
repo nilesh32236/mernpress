@@ -1973,3 +1973,42 @@ port 4000); spec discovery checked via `npx playwright test --list`.
 
 **Known limitations:** sidebar collapse preference not persisted across reloads.
 No Phase 5 or further work started.
+
+## 2026-11-03 — WordPress 7.1 admin parity pass
+
+The owner rejected the earlier approximation and asked for a page-by-page match
+against real WordPress. Ground truth: WordPress 7.1.4 at `/tmp/opencode/wp-site`
+(PHP 8.4, MariaDB) plus the mirrored core CSS in `/tmp/opencode/wp68`. Every
+page was measured with Playwright and rebuilt against the measured values.
+
+**Screens rebuilt:** admin bar/sidebar/Screen Options tabs; Dashboard welcome
+panel, Site Health, At a Glance and postboxes; Posts/Pages lists (title, tabs,
+search, toolbar, fixed columns, sort indicators, WP row actions and View/
+Preview, quick edit, bulk edit); Media grid and list view plus the Attachment
+details modal; Users (sortable Username/Email, role tabs, WP table); Terms
+(sortable Name/Description/Slug/Count, WP add form); Settings General/Writing/
+Reading (form-table geometry, WP field order, 40px submits); Profile (nine
+colour schemes, section typography, bio width); Tools (Available Tools cards,
+Export and Site Health screens); Updates; the block editor (admin-bar shell,
+64px header, 45.6px title, WP action order, sidebar order, inline slug, empty
+canvas appender); and the login screen.
+
+**API/UI additions:** users list sort (`sort=username|email&order=`), terms list
+sort (`sort=name|description|slug|count`), and the WordPress media modal.
+
+**Validation:** `pnpm format`, `pnpm lint`, `pnpm typecheck`, `pnpm test`
+(537: API 337, admin 122, block-system 65, web 13), `pnpm build`, and all 23
+Playwright E2E tests, run per spec after the suite exceeded the 30-minute
+command timeout. Typecheck/lint/build green on the deployed commit.
+
+**Releases:** `20261103T140623Z-97e9053` (first parity pass) and
+`20261103T225305Z-5b5a655` (media modal, Writing/Reading settings, editor
+appender), both symlinked at `/opt/mernpress/current` and verified 200 on `/`,
+`/admin/` and `/api/health`.
+
+**Known limitations:** Comments, Appearance, Plugins and update-checking remain
+out of MVP scope (no fake screens). Writing Settings exposes only options the
+backend supports (default category/author); post formats, posting by email and
+update services are not implemented. Media has no server-side image editor, so
+the WordPress "Edit Image" action is omitted. The admin menu uses MERNPress SVG
+icons rather than the WordPress Dashicons font.

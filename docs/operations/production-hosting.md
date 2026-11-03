@@ -266,3 +266,20 @@ Rollback (code-only; no DB change involved):
 Media, Gutenberg editor, revisions, scheduled publishing, preview, plugin
 runtime, public rendering/themes and user administration remain future phases.
 The public site is not rendered by this deployment; `/` is the admin SPA.
+
+### 2026-11-03 — WordPress parity releases
+
+Two code-only releases were published after backup/migration checks:
+
+- `20261103T140623Z-97e9053` — WordPress 7.1 parity pass across lists, media,
+  users, terms, settings, profile, dashboard and editor. Prod migrations were
+  confirmed up to date (10 applied, none pending).
+- `20261103T225305Z-5b5a655` — Attachment-details media modal, Writing/Reading
+  settings rebuild, editor empty-canvas appender and sidebar order.
+
+Both releases: `pnpm install --frozen-lockfile`, `pnpm build` with
+`DATABASE_URL` (prod), `MERNPRESS_SITE_URL=https://mernpress.duckdns.org`,
+`MERNPRESS_API_URL=http://127.0.0.1:4000`; `BUILD-INFO` written; symlink
+switched; `mernpress-api`/`mernpress-web` restarted; `/`, `/admin/` and
+`/api/health` verified 200. Rollback: repoint `/opt/mernpress/current` to the
+previous release and restart both services (no schema change in either).
