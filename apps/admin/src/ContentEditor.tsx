@@ -12,6 +12,9 @@ import {
   restoreRevision,
   rotatePreviewToken,
   saveAutosave,
+  fetchSchedule,
+  schedulePost,
+  unschedulePost,
   transitionPost,
   updatePost,
   ApiError,
@@ -182,6 +185,10 @@ export function ContentEditor({
   const [viewingRevision, setViewingRevision] = useState<AdminRevisionDetail | null>(null);
   const [revisionBusy, setRevisionBusy] = useState(false);
   const [previewBusy, setPreviewBusy] = useState(false);
+  const [scheduledAt, setScheduledAt] = useState<string | null>(null);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleInput, setScheduleInput] = useState('');
+  const [scheduleBusy, setScheduleBusy] = useState(false);
   const [recoveryAutosave, setRecoveryAutosave] = useState<AutosaveState | null>(null);
   const canvasRef = useRef<BlockCanvasHandle>(null);
   const titleRef = useRef<HTMLTextAreaElement>(null);
@@ -426,6 +433,27 @@ export function ContentEditor({
     }
   }
 
+  // Load any pending first-publish schedule for drafts (P8-04).
+  useEffect(() => {
+    if (!post || createdPost || post.status !== 'DRAFT') {
+      setScheduledAt(null);
+      return;
+    }
+    let active = true;
+    fetchSchedule(post.id)
+      .then((state) => {
+        if (active) {
+          setScheduledAt(state.scheduledAt);
+        }
+      })
+      .catch(() => {
+        // Scheduling is optional; failure must not block editing.
+      });
+    return () => {
+      active = false;
+    };
+  }, [post?.id, post?.status, post?.version, createdPost]);
+
   // Load picker items when the featured-image picker opens.
   useEffect(() => {
     if (!featuredPickerOpen) {
@@ -547,6 +575,60 @@ export function ContentEditor({
     }
     setRecoveryAutosave(null);
     discardAutosave(post.id).catch(() => undefined);
+  }
+
+  function toLocalDateTimeInput(iso: string | null): string {
+    if (!iso) return '';
+    const date = new Date(iso);
+    const pad = (value: number) => String(value).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
+      date.getHours(),
+    )}:${pad(date.getMinutes())}`;
+  }
+
+  async function handleScheduleSave(): Promise<void> {
+    if (!post || !scheduleInput) {
+      return;
+    }
+    setScheduleBusy(true);
+    setNotice(null);
+    try {
+      const state = await schedulePost(
+        post.id,
+        new Date(scheduleInput).toISOString(),
+        post.version,
+      );
+      setScheduledAt(state.scheduledAt);
+      setScheduleOpen(false);
+      setNotice({
+        tone: 'success',
+        text: `Scheduled for ${formatDateTime(state.scheduledAt ?? '')}. The post publishes automatically.`,
+      });
+      setReloadKey((value) => value + 1);
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setScheduleBusy(false);
+    }
+  }
+
+  async function handleUnschedule(): Promise<void> {
+    if (!post) {
+      return;
+    }
+    setScheduleBusy(true);
+    setNotice(null);
+    try {
+      await unschedulePost(post.id, post.version);
+      setScheduledAt(null);
+      setScheduleOpen(false);
+      setNotice({ tone: 'success', text: 'Schedule cancelled.' });
+      setReloadKey((value) => value + 1);
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setScheduleBusy(false);
+    }
   }
 
   async function handlePreview(): Promise<void> {
@@ -1238,12 +1320,73 @@ export function ContentEditor({
                         <span className="publish-label">Visibility</span>
                         <div className="publish-value">Public</div>
                       </div>
-                      <div className="publish-field">
-                        <span className="publish-label">Publish immediately</span>
-                        <div className="publish-value">
-                          {formatDateTime(post.publishedAt ?? post.updatedAt)}
+                      {post.status === 'DRAFT' ? (
+                        <div className="publish-field">
+                          <span className="publish-label">
+                            {scheduledAt ? 'Scheduled for' : 'Publish'}
+                          </span>
+                          <div className="publish-value publish-schedule">
+                            <span>{scheduledAt ? formatDateTime(scheduledAt) : 'Immediately'}</span>
+                            <button
+                              type="button"
+                              className="button small-button edit-link"
+                              aria-label="Edit schedule"
+                              aria-expanded={scheduleOpen}
+                              disabled={scheduleBusy || dirty}
+                              onClick={() => {
+                                setScheduleInput(toLocalDateTimeInput(scheduledAt));
+                                setScheduleOpen((open) => !open);
+                              }}
+                            >
+                              Edit
+                            </button>
+                          </div>
+                          {scheduleOpen ? (
+                            <div className="schedule-editor">
+                              <label htmlFor="schedule-at" className="screen-reader-text">
+                                Schedule date and time
+                              </label>
+                              <input
+                                id="schedule-at"
+                                type="datetime-local"
+                                value={scheduleInput}
+                                onChange={(event) => setScheduleInput(event.target.value)}
+                              />
+                              <div className="schedule-actions">
+                                <button
+                                  type="button"
+                                  className="button primary-button small-button"
+                                  disabled={scheduleBusy || !scheduleInput}
+                                  onClick={() => void handleScheduleSave()}
+                                >
+                                  {scheduleBusy ? 'Scheduling…' : 'Schedule'}
+                                </button>
+                                {scheduledAt ? (
+                                  <button
+                                    type="button"
+                                    className="button secondary-button small-button"
+                                    disabled={scheduleBusy}
+                                    onClick={() => void handleUnschedule()}
+                                  >
+                                    Cancel schedule
+                                  </button>
+                                ) : null}
+                              </div>
+                              <p className="field-help">
+                                At least one minute in the future. The post stays a draft until the
+                                scheduler publishes it.
+                              </p>
+                            </div>
+                          ) : null}
                         </div>
-                      </div>
+                      ) : (
+                        <div className="publish-field">
+                          <span className="publish-label">Published</span>
+                          <div className="publish-value">
+                            {formatDateTime(post.publishedAt ?? post.updatedAt)}
+                          </div>
+                        </div>
+                      )}
                       {post.status !== 'TRASHED' && transitions.includes('trash') ? (
                         <div className="publish-field">
                           <button

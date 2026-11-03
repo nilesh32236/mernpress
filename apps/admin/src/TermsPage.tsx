@@ -47,6 +47,10 @@ function singularLabel(taxonomy: TaxonomyType): string {
   return taxonomy === 'category' ? 'category' : 'tag';
 }
 
+function taxonomyPlural(taxonomy: TaxonomyType): string {
+  return taxonomy === 'category' ? 'categories' : 'tags';
+}
+
 export function TermsPage({ user }: { user: AuthUser }) {
   const allowed = canManageTerms(user);
 
@@ -379,7 +383,7 @@ export function TermsPage({ user }: { user: AuthUser }) {
             <>
               <div className="table-scroll">
                 <table className="content-table widefat fixed striped terms">
-                  <caption className="screen-reader-text">{taxonomyLabel(taxonomy)}</caption>
+                  <caption className="screen-reader-text">{taxonomyPlural(taxonomy)}</caption>
                   <thead>
                     <tr>
                       <th scope="col" className="check-column">
@@ -484,11 +488,13 @@ export function TermsPage({ user }: { user: AuthUser }) {
                 </table>
               </div>
 
-              <nav className="pagination" aria-label={`${taxonomyLabel(taxonomy)} pagination`}>
+              <nav className="pagination" aria-label={`${taxonomyPlural(taxonomy)} pagination`}>
                 <div className="tablenav-pages">
                   <span className="displaying-num">
-                    {data.pagination.total} {taxonomyLabel(taxonomy)}
-                    {data.pagination.total !== 1 ? 's' : ''}
+                    {data.pagination.total}{' '}
+                    {data.pagination.total === 1
+                      ? taxonomyLabel(taxonomy)
+                      : taxonomyPlural(taxonomy)}
                   </span>
                   <span className="pagination-links">
                     <button

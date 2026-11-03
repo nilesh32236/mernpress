@@ -757,6 +757,78 @@ describe('editor preview', () => {
   });
 });
 
+describe('editor schedule (P8-04)', () => {
+  function scheduleMock(options: { scheduledAt?: string | null } = {}) {
+    const calls: Array<{ url: string; method: string; body?: unknown }> = [];
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input, init) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+      if (url.endsWith('/schedule')) {
+        calls.push({
+          url,
+          method,
+          ...(init?.body ? { body: JSON.parse(String(init.body)) } : {}),
+        });
+        if (method === 'GET') {
+          return response({ scheduledAt: options.scheduledAt ?? null });
+        }
+        if (method === 'PUT') {
+          return response({ scheduledAt: JSON.parse(String(init?.body ?? '{}')).scheduledAt });
+        }
+        return response({ scheduledAt: null });
+      }
+      if (url.endsWith('/autosave')) {
+        return response({ autosave: null, postUpdatedAt: makePost().updatedAt });
+      }
+      if (url.includes('/api/admin/terms')) {
+        return response(termsPage());
+      }
+      return response(makePost());
+    });
+    return { fetchMock, calls };
+  }
+
+  it('schedules a draft and shows the scheduled time', async () => {
+    const { fetchMock, calls } = scheduleMock();
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA, 'post-1');
+    await screen.findByLabelText('Title');
+
+    // The Publish row shows "Immediately" + Edit for drafts.
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit schedule' }));
+    const input = (await screen.findByLabelText('Schedule date and time')) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '2026-12-01T09:30' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Schedule' }));
+
+    expect(await screen.findByText(/The post publishes automatically/)).toBeDefined();
+    expect(screen.getByText('Scheduled for', { selector: '.publish-label' })).toBeDefined();
+    const put = calls.find((call) => call.method === 'PUT');
+    expect(put?.body).toMatchObject({ baseVersion: 1 });
+    expect(new Date(String((put?.body as { scheduledAt: string }).scheduledAt)).getTime()).toBe(
+      new Date('2026-12-01T09:30').getTime(),
+    );
+  });
+
+  it('shows an existing schedule and cancels it', async () => {
+    const scheduledAt = '2026-12-05T10:00:00.000Z';
+    const { fetchMock, calls } = scheduleMock({ scheduledAt });
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA, 'post-1');
+    await screen.findByLabelText('Title');
+
+    await waitFor(() =>
+      expect(screen.getByText('Scheduled for', { selector: '.publish-label' })).toBeDefined(),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit schedule' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel schedule' }));
+
+    expect(await screen.findByText('Schedule cancelled.')).toBeDefined();
+    expect(calls.some((call) => call.method === 'DELETE')).toBe(true);
+  });
+});
+
 describe('editor featured image', () => {
   it('selects an image from the picker and includes it in the save payload', async () => {
     const post = makePost();

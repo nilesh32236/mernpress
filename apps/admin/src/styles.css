@@ -1329,6 +1329,7 @@ a.delete-link,
 .list-filters input[type='search'],
 .search-box input[type='search'],
 .bulk-actions select,
+.tablenav .bulk-select,
 .status-filter select {
   width: 100%;
   padding: 3px 8px;
@@ -1520,9 +1521,17 @@ a.delete-link,
   gap: 6px;
 }
 
-.bulk-actions select {
+.bulk-actions select,
+.tablenav .bulk-select {
   width: auto;
   min-width: 10rem;
+}
+
+.bulk-selection-count {
+  align-self: center;
+  padding-bottom: 6px;
+  color: var(--wp-muted);
+  font-size: 12px;
 }
 
 .status-filter {
@@ -3640,4 +3649,78 @@ a.glance-chip:hover {
 
 .featured-picker-item[aria-selected='true'] {
   border-color: var(--wp-blue, #2271b1);
+}
+
+/* Dashboard activity list (recently published) */
+.activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.activity-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f1;
+}
+
+.activity-list li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.activity-link {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--wp-blue);
+  text-decoration: none;
+}
+
+.activity-link:hover {
+  color: var(--wp-blue-hover);
+  text-decoration: underline;
+}
+
+.activity-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--wp-muted);
+  font-size: 12px;
+}
+
+/* Schedule editor (P8-04) */
+.publish-schedule {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.schedule-editor {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.schedule-editor input[type='datetime-local'] {
+  width: 100%;
+  padding: 3px 8px;
+  min-height: 30px;
+  border: 1px solid var(--wp-input-border);
+  border-radius: 3px;
+  background: #ffffff;
+  color: var(--wp-text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.schedule-actions {
+  display: flex;
+  gap: 6px;
 }

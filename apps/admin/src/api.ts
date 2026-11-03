@@ -580,6 +580,53 @@ export async function transitionPost(
   return readJson<AdminPost>(response);
 }
 
+export interface ScheduleState {
+  scheduledAt: string | null;
+}
+
+export async function fetchSchedule(id: string): Promise<ScheduleState> {
+  const response = await fetch(`/api/admin/posts/${encodeURIComponent(id)}/schedule`, {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<ScheduleState>(response);
+}
+
+export async function schedulePost(
+  id: string,
+  scheduledAt: string,
+  baseVersion: number,
+): Promise<ScheduleState> {
+  const response = await fetch(`/api/admin/posts/${encodeURIComponent(id)}/schedule`, {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ scheduledAt, baseVersion }),
+  });
+  return readJson<ScheduleState>(response);
+}
+
+export async function unschedulePost(id: string, baseVersion: number): Promise<ScheduleState> {
+  const response = await fetch(`/api/admin/posts/${encodeURIComponent(id)}/schedule`, {
+    method: 'DELETE',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ baseVersion }),
+  });
+  return readJson<ScheduleState>(response);
+}
+
 export type BulkAction = TransitionAction | 'delete';
 
 export interface BulkItemResult {

@@ -338,6 +338,37 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
 
       <div className="tablenav">
         <div className="alignleft">
+          {data && data.items.length > 0 ? (
+            <>
+              <label htmlFor="bulk-action" className="screen-reader-text">
+                Bulk actions
+              </label>
+              <select
+                id="bulk-action"
+                className="bulk-select"
+                value={bulkAction}
+                onChange={(event) => setBulkAction(event.target.value as BulkAction | '')}
+              >
+                <option value="">Bulk actions</option>
+                {bulkOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="button secondary-button bulk-apply"
+                disabled={bulkBusy || bulkAction === '' || selected.size === 0}
+                onClick={() => void runBulkAction()}
+              >
+                {bulkBusy ? 'Applying…' : 'Apply'}
+              </button>
+              <span className="bulk-selection-count" aria-live="polite">
+                {selected.size > 0 ? `${selected.size} selected` : ''}
+              </span>
+            </>
+          ) : null}
           <span className="funnel-icon" aria-hidden="true">
             <svg
               width="14"
@@ -353,7 +384,9 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
             </svg>
           </span>
           <div className="status-filter">
-            <label htmlFor={`${type}-status-filter`}>Filter by status</label>
+            <label htmlFor={`${type}-status-filter`} className="screen-reader-text">
+              Filter by status
+            </label>
             <select
               id={`${type}-status-filter`}
               value={status}
@@ -449,33 +482,6 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
         />
       ) : (
         <>
-          <div className="bulk-actions">
-            <label htmlFor="bulk-action">Bulk actions</label>
-            <select
-              id="bulk-action"
-              value={bulkAction}
-              onChange={(event) => setBulkAction(event.target.value as BulkAction | '')}
-            >
-              <option value="">Bulk actions</option>
-              {bulkOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className="button secondary-button bulk-apply"
-              disabled={bulkBusy || bulkAction === '' || selected.size === 0}
-              onClick={() => void runBulkAction()}
-            >
-              {bulkBusy ? 'Applying…' : 'Apply'}
-            </button>
-            <span className="bulk-selection-count" aria-live="polite">
-              {selected.size > 0 ? `${selected.size} selected` : ''}
-            </span>
-          </div>
-
           <div className="table-scroll">
             <table className="content-table widefat fixed striped posts">
               <caption className="screen-reader-text">{label}</caption>

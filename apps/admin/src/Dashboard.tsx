@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'react';
-import { fetchPosts, type AuthUser, type ContentType, type PostStatus } from './api.js';
+import {
+  fetchPosts,
+  type AdminPost,
+  type AuthUser,
+  type ContentType,
+  type PostStatus,
+} from './api.js';
 import { EmptyState, ErrorState, Skeleton } from './components.js';
 import { canCreateContent, canManageTerms, canReadContent } from './roles.js';
-import { listPath, navigate, newContentPath } from './router.js';
+import { editContentPath, listPath, navigate, newContentPath } from './router.js';
 
 type Counts = Record<ContentType, Record<PostStatus, number>>;
 
@@ -73,6 +79,7 @@ function ChipIcon({ kind }: { kind: string }) {
 
 export function Dashboard({ user }: { user: AuthUser }) {
   const [counts, setCounts] = useState<Counts>(EMPTY_COUNTS);
+  const [recent, setRecent] = useState<AdminPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -92,10 +99,20 @@ export function Dashboard({ user }: { user: AuthUser }) {
 
     const requests = (['post', 'page'] as ContentType[]).flatMap((type) =>
       STATUSES.map((status) =>
-        fetchPosts({ type, status, page: 1, perPage: 1 }).then((result) => ({
+        fetchPosts({
+          type,
+          status,
+          page: 1,
+          // One query doubles as the Activity feed: the newest published posts.
+          perPage: type === 'post' && status === 'PUBLISHED' ? 5 : 1,
+          ...(type === 'post' && status === 'PUBLISHED'
+            ? { sort: 'publishedAt' as const, order: 'desc' as const }
+            : {}),
+        }).then((result) => ({
           type,
           status,
           total: result.pagination.total,
+          items: result.items,
         })),
       ),
     );
@@ -109,6 +126,9 @@ export function Dashboard({ user }: { user: AuthUser }) {
         };
         for (const result of results) {
           next[result.type][result.status] = result.total;
+          if (result.type === 'post' && result.status === 'PUBLISHED') {
+            setRecent(result.items);
+          }
         }
         setCounts(next);
         setLoading(false);
@@ -362,12 +382,38 @@ export function Dashboard({ user }: { user: AuthUser }) {
               </a>
             </div>
             <div className="dash-card-body">
-              <h3 className="activity-title">What you can do here</h3>
-              <p className="activity-text">
-                Create posts and pages, edit drafts, publish or unpublish saved content, move
-                content to the trash, restore it, and assign existing categories and tags. The block
-                editor is available for posts and pages.
-              </p>
+              {recent.length === 0 ? (
+                <p className="activity-text">
+                  Nothing published yet. Publish your first post to see it here.
+                </p>
+              ) : (
+                <ul className="activity-list">
+                  {recent.map((post) => (
+                    <li key={post.id}>
+                      <a
+                        className="activity-link"
+                        href={editContentPath('post', post.id)}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          navigate(editContentPath('post', post.id));
+                        }}
+                      >
+                        {post.title}
+                      </a>
+                      <span className="activity-meta">
+                        <span className="status-badge status-published">Published</span>
+                        <time dateTime={post.publishedAt ?? undefined}>
+                          {post.publishedAt
+                            ? new Date(post.publishedAt).toLocaleDateString(undefined, {
+                                dateStyle: 'medium',
+                              })
+                            : ''}
+                        </time>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </section>
         </div>

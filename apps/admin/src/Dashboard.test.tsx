@@ -49,7 +49,18 @@ describe('dashboard', () => {
     expect(urls.some((url) => url.includes('type=page') && url.includes('status=TRASHED'))).toBe(
       true,
     );
-    expect(urls.every((url) => url.includes('perPage=1'))).toBe(true);
+    // Five count queries plus one 5-item published query that feeds the
+    // Activity card (newest published posts).
+    expect(urls.filter((url) => url.includes('perPage=1'))).toHaveLength(5);
+    expect(
+      urls.some(
+        (url) =>
+          url.includes('type=post') &&
+          url.includes('status=PUBLISHED') &&
+          url.includes('perPage=5') &&
+          url.includes('sort=publishedAt'),
+      ),
+    ).toBe(true);
   });
 
   it('shows a retryable error instead of false zeros', async () => {
