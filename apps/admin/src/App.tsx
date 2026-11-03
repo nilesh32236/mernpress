@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { fetchSession, setUnauthorizedHandler, type AuthUser } from './api.js';
 import { ContentEditor } from './ContentEditor.js';
+import { ToolsPage } from './ToolsPage.js';
+import { UpdatesPage } from './UpdatesPage.js';
 import { ContentList } from './ContentList.js';
 import { TermsPage } from './TermsPage.js';
 import { MediaPage } from './MediaPage.js';
@@ -167,6 +169,10 @@ function pageTitle(route: Route): string {
       return 'MERNPress admin · Profile';
     case 'settings':
       return 'MERNPress admin · Settings';
+    case 'tools':
+      return 'MERNPress admin · Tools';
+    case 'updates':
+      return 'MERNPress admin · Updates';
     case 'notFound':
       return 'MERNPress admin · Not found';
   }
@@ -209,6 +215,10 @@ function RouteView({
       return <ProfilePage user={user} onProfileUpdated={onUserUpdated} />;
     case 'settings':
       return user.role === 'administrator' ? <SettingsPage user={user} /> : <Forbidden />;
+    case 'tools':
+      return user.role === 'administrator' ? <ToolsPage /> : <Forbidden />;
+    case 'updates':
+      return user.role === 'administrator' ? <UpdatesPage /> : <Forbidden />;
     case 'notFound':
       return (
         <div className="content-card">

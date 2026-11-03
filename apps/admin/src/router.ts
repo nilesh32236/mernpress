@@ -13,6 +13,8 @@ export type Route =
   | { name: 'users' }
   | { name: 'profile' }
   | { name: 'settings' }
+  | { name: 'tools' }
+  | { name: 'updates' }
   | { name: 'notFound' };
 
 export interface LocationState {
@@ -62,6 +64,12 @@ export function parseRoute(pathname: string): Route {
   }
   if (typeSegment === 'settings' && parts.length === 1) {
     return { name: 'settings' };
+  }
+  if (typeSegment === 'tools' && parts.length === 1) {
+    return { name: 'tools' };
+  }
+  if (typeSegment === 'updates' && parts.length === 1) {
+    return { name: 'updates' };
   }
   if (typeSegment !== 'posts' && typeSegment !== 'pages') {
     return { name: 'notFound' };
@@ -164,6 +172,10 @@ export function breadcrumbs(route: Route): Array<{ label: string; to?: string }>
       return [{ label: 'Dashboard', to: '/' }, { label: 'Profile' }];
     case 'settings':
       return [{ label: 'Dashboard', to: '/' }, { label: 'Settings' }];
+    case 'tools':
+      return [{ label: 'Dashboard', to: '/' }, { label: 'Tools' }];
+    case 'updates':
+      return [{ label: 'Dashboard', to: '/' }, { label: 'Updates' }];
     case 'notFound':
       return [{ label: 'Not found' }];
   }

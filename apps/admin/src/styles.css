@@ -6505,3 +6505,35 @@ a.glance-chip:hover {
   margin: 16px 0 0;
   text-align: center;
 }
+
+/* WordPress Tools screens. */
+.tools-section {
+  margin-bottom: 16px;
+}
+
+.tools-section h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 400;
+  color: #1d2327;
+}
+
+.tools-choice {
+  margin: 12px 0;
+  padding: 0;
+  border: 0;
+}
+
+.tools-choice legend {
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: #1d2327;
+}
+
+.tools-health td {
+  padding: 8px 10px;
+}
+
+.tools-health td:last-child {
+  width: 120px;
+}

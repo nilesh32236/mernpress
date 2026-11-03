@@ -280,6 +280,24 @@ function SettingsIcon() {
   );
 }
 
+function ToolsIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.3 2.3-2.3-2.3 2.6-3z" />
+    </svg>
+  );
+}
+
 function ChevronDownIcon() {
   return (
     <svg
@@ -495,7 +513,12 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       active: route.name === 'dashboard',
       show: true,
       icon: <DashboardIcon />,
-      subs: [{ label: 'Home', to: '/', active: route.name === 'dashboard' }],
+      subs: [
+        { label: 'Home', to: '/', active: route.name === 'dashboard' },
+        ...(isAdmin
+          ? [{ label: 'Updates', to: '/updates', active: route.name === 'updates' }]
+          : []),
+      ],
     },
     {
       to: '/posts',
@@ -582,6 +605,25 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
         { label: 'All Users', to: '/users', active: route.name === 'users' },
         { label: 'Add User', to: '/users?action=add', active: false },
         { label: 'Profile', to: '/profile', active: route.name === 'profile' },
+      ],
+    },
+    {
+      to: '/tools',
+      label: 'Tools',
+      active: route.name === 'tools',
+      show: isAdmin,
+      icon: <ToolsIcon />,
+      subs: [
+        {
+          label: 'Export',
+          to: '/tools',
+          active: route.name === 'tools' && searchParams.get('section') !== 'health',
+        },
+        {
+          label: 'Site Health',
+          to: '/tools?section=health',
+          active: route.name === 'tools' && searchParams.get('section') === 'health',
+        },
       ],
     },
     {
