@@ -100,6 +100,8 @@ interface MediaDrawerProps {
   onClose: () => void;
   onSaved: (item: MediaItem) => void;
   onDeleted: (item: MediaItem) => void;
+  onPrev?: (() => void) | undefined;
+  onNext?: (() => void) | undefined;
 }
 
 /**
@@ -107,7 +109,7 @@ interface MediaDrawerProps {
  * It is an overlay (not a routed page) so the grid keeps its scroll position,
  * matching the editor sidebar's editing-in-place feel.
  */
-function MediaDrawer({ item, onClose, onSaved, onDeleted }: MediaDrawerProps) {
+function MediaDrawer({ item, onClose, onSaved, onDeleted, onPrev, onNext }: MediaDrawerProps) {
   const titleId = useId();
   const drawerRef = useRef<HTMLElement>(null);
   const [altText, setAltText] = useState(item.altText);
@@ -199,21 +201,68 @@ function MediaDrawer({ item, onClose, onSaved, onDeleted }: MediaDrawerProps) {
       >
         <header className="media-drawer-head">
           <h2 id={titleId}>Attachment details</h2>
-          <button type="button" className="media-drawer-close" onClick={onClose} aria-label="Close">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              aria-hidden="true"
+          <div className="media-drawer-head-actions">
+            <button
+              type="button"
+              className="media-drawer-nav"
+              onClick={onPrev}
+              disabled={!onPrev}
+              aria-label="Edit previous media item"
+              title="Previous"
             >
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                aria-hidden="true"
+              >
+                <path d="M14.5 6 8.5 12l6 6" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="media-drawer-nav"
+              onClick={onNext}
+              disabled={!onNext}
+              aria-label="Edit next media item"
+              title="Next"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                aria-hidden="true"
+              >
+                <path d="m9.5 6 6 6-6 6" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="media-drawer-close"
+              onClick={onClose}
+              aria-label="Close"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
         </header>
 
         <div className="media-drawer-body">
@@ -1159,6 +1208,24 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
           onClose={() => setSelected(null)}
           onSaved={handleSaved}
           onDeleted={handleDeleted}
+          onPrev={
+            data && data.items.findIndex((entry) => entry.id === selected.id) > 0
+              ? () => {
+                  const index = data.items.findIndex((entry) => entry.id === selected.id);
+                  setSelected(data.items[index - 1] ?? null);
+                }
+              : undefined
+          }
+          onNext={
+            data &&
+            data.items.findIndex((entry) => entry.id === selected.id) >= 0 &&
+            data.items.findIndex((entry) => entry.id === selected.id) < data.items.length - 1
+              ? () => {
+                  const index = data.items.findIndex((entry) => entry.id === selected.id);
+                  setSelected(data.items[index + 1] ?? null);
+                }
+              : undefined
+          }
         />
       ) : null}
     </div>

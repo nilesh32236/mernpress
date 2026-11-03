@@ -8512,3 +8512,71 @@ a.glance-chip:hover {
   padding-top: 4px;
   padding-bottom: 4px;
 }
+
+/* Dashboard widget tuning against wp-admin. */
+#dashboard_quick_press form {
+  margin: 10px;
+}
+
+#dashboard_quick_press .input-text-wrap {
+  margin-bottom: 8px;
+}
+
+#dashboard_quick_press .submit {
+  margin-top: 6px;
+}
+
+#dashboard_quick_press label {
+  margin-bottom: 2px;
+}
+
+#dashboard_site_health .health-check-widget-title-section {
+  height: 20px;
+}
+
+#dashboard_site_health .site-health-details li {
+  margin-bottom: 2px;
+  line-height: 1.4;
+}
+
+#dashboard_right_now .inside {
+  padding-bottom: 17px;
+}
+
+/* WordPress media modal header navigation. */
+.media-drawer-head-actions {
+  display: flex;
+  align-items: center;
+}
+
+.media-drawer-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid #dcdcde;
+  background: transparent;
+  color: #50575e;
+  cursor: pointer;
+}
+
+.media-drawer-nav:hover:not(:disabled) {
+  color: #135e96;
+}
+
+.media-drawer-nav:disabled {
+  color: #c3c4c7;
+  cursor: default;
+}
+
+.media-drawer-head-actions .media-drawer-close {
+  border-left: 1px solid #dcdcde;
+}
+
+/* Sidebar icons use WordPress's slightly bolder stroke. */
+.nav-icon svg {
+  stroke-width: 1.8;
+}

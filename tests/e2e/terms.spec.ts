@@ -74,7 +74,7 @@ test('editor can create, rename and delete a category', async ({ page }) => {
 
   await login(page, editorUsername);
   await page.goto(`${ADMIN_URL}terms?taxonomy=category`);
-  await expect(page.getByRole('heading', { name: 'Categories' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Categories', exact: true })).toBeVisible();
 
   await page.getByLabel('Name').fill(termName);
   await page

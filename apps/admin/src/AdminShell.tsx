@@ -1,4 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
+import {
+  dashboard,
+  media as mediaIcon,
+  page as pageIcon,
+  people,
+  post as postIcon,
+  settings as settingsIcon,
+  tool,
+} from '@wordpress/icons';
 import { fetchPosts, logout, type AdminPost, type AuthUser } from './api.js';
 import type { Route } from './router.js';
 import { navigate, newContentPath } from './router.js';
@@ -172,23 +181,21 @@ function initials(name: string): string {
   return trimmed.substring(0, 2).toUpperCase();
 }
 
-function DashboardIcon() {
+function DashboardGaugeIcon() {
   return (
     <svg
-      width="17"
-      height="17"
+      width="20"
+      height="20"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="1.8"
       strokeLinecap="round"
-      strokeLinejoin="round"
       aria-hidden="true"
     >
-      <rect x="3" y="3" width="7" height="9" />
-      <rect x="14" y="3" width="7" height="5" />
-      <rect x="14" y="12" width="7" height="9" />
-      <rect x="3" y="16" width="7" height="5" />
+      <path d="M3.5 17a8.5 8.5 0 1 1 17 0" />
+      <path d="M12 17l4.2-5.2" />
+      <circle cx="12" cy="17" r="1.4" fill="currentColor" stroke="none" />
     </svg>
   );
 }
@@ -248,63 +255,6 @@ function UsersIcon() {
       <circle cx="9" cy="7" r="4" />
       <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  );
-}
-
-function MediaIcon() {
-  return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-      <circle cx="8.5" cy="8.5" r="1.5" />
-      <polyline points="21 15 16 10 5 21" />
-    </svg>
-  );
-}
-
-function SettingsIcon() {
-  return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </svg>
-  );
-}
-
-function ToolsIcon() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.3 2.3-2.3-2.3 2.6-3z" />
     </svg>
   );
 }
@@ -549,7 +499,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       label: 'Dashboard',
       active: route.name === 'dashboard',
       show: true,
-      icon: <DashboardIcon />,
+      icon: <DashboardGaugeIcon />,
       subs: [
         { label: 'Home', to: '/', active: route.name === 'dashboard' },
         ...(isAdmin
@@ -562,7 +512,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       label: 'Posts',
       active: isPostRoute,
       show: canReadContent(user),
-      icon: <PostIcon />,
+      icon: postIcon,
       subs: [
         {
           label: 'All Posts',
@@ -599,7 +549,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       label: 'Media',
       active: route.name === 'media',
       show: canReadContent(user),
-      icon: <MediaIcon />,
+      icon: mediaIcon,
       subs: [
         { label: 'Library', to: '/media', active: route.name === 'media' },
         {
@@ -614,7 +564,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       label: 'Pages',
       active: isPageRoute,
       show: canReadContent(user),
-      icon: <PageIcon />,
+      icon: pageIcon,
       subs: [
         {
           label: 'All Pages',
@@ -637,7 +587,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       label: 'Users',
       active: route.name === 'users' || route.name === 'profile',
       show: isAdmin,
-      icon: <UsersIcon />,
+      icon: people,
       subs: [
         { label: 'All Users', to: '/users', active: route.name === 'users' },
         { label: 'Add User', to: '/users?action=add', active: false },
@@ -649,7 +599,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       label: 'Tools',
       active: route.name === 'tools',
       show: isAdmin,
-      icon: <ToolsIcon />,
+      icon: tool,
       subs: [
         {
           label: 'Available Tools',
@@ -675,7 +625,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       label: 'Settings',
       active: route.name === 'settings',
       show: isAdmin,
-      icon: <SettingsIcon />,
+      icon: settingsIcon,
       subs: [
         {
           label: 'General',
