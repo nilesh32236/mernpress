@@ -2026,3 +2026,15 @@ icons rather than the WordPress Dashicons font.
   20px menu icons, 52px users rows, 90px Quick Draft content and a 40px Save
   Draft button.
 - Docs: release `20261103T231210Z-61be777`.
+
+### 2026-11-03 — Screen Options, WordPress icons and media navigation
+
+- Screen Options now mirrors wp-admin on every list screen: Columns checkboxes,
+  Pagination (per-page Apply) and Compact/Extended view mode for posts/pages.
+  Column preferences persist per screen and apply live; Screen Options is also
+  available on Media.
+- Sidebar uses `@wordpress/icons` (with a WordPress-style gauge for Dashboard).
+- Dashboard Site Health, Quick Draft and At a Glance heights/insets now match
+  wp-admin (134/314/155px widgets, 76/97px insides).
+- Attachment details modal gained previous/next navigation and WordPress
+  header buttons.

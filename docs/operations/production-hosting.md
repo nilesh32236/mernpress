@@ -288,3 +288,9 @@ previous release and restart both services (no schema change in either).
   Quick Draft/At a Glance tuning and users/terms table parity. Built and
   verified 200 on `/`, `/admin/` and `/api/health`; no schema change (website
   already existed).
+
+- `20261103T232157Z-9c167d2` — WordPress Screen Options (columns, pagination,
+  view mode) across list screens.
+- `20261103T233411Z-d987dce` — WordPress sidebar icons, dashboard widget
+  metrics and media modal navigation.
+Both verified 200 on `/`, `/admin/` and `/api/health`; no schema changes.
