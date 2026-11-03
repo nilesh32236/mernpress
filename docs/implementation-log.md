@@ -2038,3 +2038,11 @@ icons rather than the WordPress Dashicons font.
   wp-admin (134/314/155px widgets, 76/97px insides).
 - Attachment details modal gained previous/next navigation and WordPress
   header buttons.
+
+### 2026-11-03 — Dashboard Screen Options and WordPress pagination
+
+- Dashboard Screen Options now offers WordPress Boxes (Welcome, Site Health,
+  At a Glance, Activity, Quick Draft) and Layout 1-4; both persist per browser
+  and apply live, including a 1-4 column postbox grid.
+- All list screens use a shared WordPress pagination component: « ‹ [page] of N
+  › » with a current-page input, total pages and displaying-num.

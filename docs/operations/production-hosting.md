@@ -294,3 +294,7 @@ previous release and restart both services (no schema change in either).
 - `20261103T233411Z-d987dce` — WordPress sidebar icons, dashboard widget
   metrics and media modal navigation.
 Both verified 200 on `/`, `/admin/` and `/api/health`; no schema changes.
+
+- `20261103T234032Z-a6a8aff` — dashboard Screen Options (boxes + layout).
+- `20261103T234540Z-d76eeec` — WordPress tablenav pagination across lists.
+Both verified 200 on `/`, `/admin/` and `/api/health`; no schema changes.
