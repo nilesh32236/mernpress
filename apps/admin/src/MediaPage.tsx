@@ -319,6 +319,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
   const [selected, setSelected] = useState<MediaItem | null>(null);
   const [monthFilter, setMonthFilter] = useState('');
+  const [order, setOrder] = useState<'newest' | 'oldest'>('newest');
   const [perPage, setPerPage] = useState(() => screenPerPage('media', DEFAULT_PER_PAGE));
   const [bulkSelect, setBulkSelect] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -370,7 +371,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
       type: 'image',
       ...(search ? { search } : {}),
       ...(monthFilter ? { month: monthFilter } : {}),
-      order: 'newest',
+      order,
     })
       .then((result) => {
         if (!active) return;
@@ -386,7 +387,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
     return () => {
       active = false;
     };
-  }, [page, search, monthFilter, reloadKey]);
+  }, [page, search, monthFilter, order, reloadKey]);
 
   async function deleteSelected(): Promise<void> {
     if (selectedIds.size === 0) return;
@@ -840,7 +841,22 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
                       <th scope="col">File</th>
                       <th scope="col">Author</th>
                       <th scope="col">Uploaded to</th>
-                      <th scope="col">Date</th>
+                      <th scope="col">
+                        <button
+                          type="button"
+                          className="sortable-column"
+                          aria-label={`Sort by date${order === 'newest' ? ', descending' : ''}`}
+                          onClick={() => {
+                            setOrder((value) => (value === 'newest' ? 'oldest' : 'newest'));
+                            setPage(1);
+                          }}
+                        >
+                          Date
+                          <span className="sort-indicator" aria-hidden="true">
+                            {order === 'newest' ? '▼' : '▲'}
+                          </span>
+                        </button>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -961,7 +977,22 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
                       <th scope="col">File</th>
                       <th scope="col">Author</th>
                       <th scope="col">Uploaded to</th>
-                      <th scope="col">Date</th>
+                      <th scope="col">
+                        <button
+                          type="button"
+                          className="sortable-column"
+                          aria-label={`Sort by date${order === 'newest' ? ', descending' : ''}`}
+                          onClick={() => {
+                            setOrder((value) => (value === 'newest' ? 'oldest' : 'newest'));
+                            setPage(1);
+                          }}
+                        >
+                          Date
+                          <span className="sort-indicator" aria-hidden="true">
+                            {order === 'newest' ? '▼' : '▲'}
+                          </span>
+                        </button>
+                      </th>
                     </tr>
                   </tfoot>
                 </table>

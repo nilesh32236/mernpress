@@ -707,12 +707,21 @@ export async function assignTerms(
 }
 
 export async function fetchTerms(
-  params: { taxonomy?: TaxonomyType; search?: string; page?: number; perPage?: number } = {},
+  params: {
+    taxonomy?: TaxonomyType;
+    search?: string;
+    page?: number;
+    perPage?: number;
+    sort?: 'name' | 'createdAt' | 'updatedAt';
+    order?: 'asc' | 'desc';
+  } = {},
 ): Promise<Paged<AdminTerm>> {
   const response = await fetch(
     `/api/admin/terms${queryString({
       taxonomy: params.taxonomy,
       search: params.search,
+      sort: params.sort,
+      order: params.order,
       page: params.page,
       perPage: params.perPage,
     })}`,

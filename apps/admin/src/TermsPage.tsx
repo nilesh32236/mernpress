@@ -66,6 +66,8 @@ export function TermsPage({ user }: { user: AuthUser }) {
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [perPage, setPerPage] = useState(() => screenPerPage('terms', DEFAULT_PER_PAGE));
+  const [sort, setSort] = useState<'name' | 'createdAt' | 'updatedAt'>('name');
+  const [order, setOrder] = useState<'asc' | 'desc'>('asc');
 
   const [newName, setNewName] = useState('');
   const [newSlug, setNewSlug] = useState('');
@@ -134,6 +136,8 @@ export function TermsPage({ user }: { user: AuthUser }) {
       ...(search ? { search } : {}),
       page,
       perPage,
+      sort,
+      order,
     })
       .then((result) => {
         if (!active) return;
@@ -499,7 +503,23 @@ export function TermsPage({ user }: { user: AuthUser }) {
                           }
                         />
                       </th>
-                      <th scope="col">Name</th>
+                      <th scope="col">
+                        <button
+                          type="button"
+                          className="sortable-column"
+                          aria-label={`Sort by name${order === 'asc' ? ', ascending' : ''}`}
+                          onClick={() => {
+                            setSort('name');
+                            setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
+                            setPage(1);
+                          }}
+                        >
+                          Name
+                          <span className="sort-indicator" aria-hidden="true">
+                            {sort === 'name' ? (order === 'asc' ? '▲' : '▼') : '▲▼'}
+                          </span>
+                        </button>
+                      </th>
                       <th scope="col">Description</th>
                       <th scope="col">Slug</th>
                       <th scope="col">Count</th>
@@ -641,7 +661,23 @@ export function TermsPage({ user }: { user: AuthUser }) {
                           }
                         />
                       </th>
-                      <th scope="col">Name</th>
+                      <th scope="col">
+                        <button
+                          type="button"
+                          className="sortable-column"
+                          aria-label={`Sort by name${order === 'asc' ? ', ascending' : ''}`}
+                          onClick={() => {
+                            setSort('name');
+                            setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
+                            setPage(1);
+                          }}
+                        >
+                          Name
+                          <span className="sort-indicator" aria-hidden="true">
+                            {sort === 'name' ? (order === 'asc' ? '▲' : '▼') : '▲▼'}
+                          </span>
+                        </button>
+                      </th>
                       <th scope="col">Description</th>
                       <th scope="col">Slug</th>
                       <th scope="col">Count</th>

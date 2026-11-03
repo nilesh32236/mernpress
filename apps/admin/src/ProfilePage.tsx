@@ -243,6 +243,23 @@ export function ProfilePage({
                 </p>
               </div>
             </div>
+            <div className="field">
+              <span className="field-label">Profile Picture</span>
+              <div className="profile-picture">
+                <svg width="96" height="96" viewBox="0 0 96 96" aria-hidden="true">
+                  <rect width="96" height="96" fill="#dcdcde" />
+                  <circle cx="48" cy="36" r="15" fill="#a7aaad" />
+                  <path d="M18 90c0-16.5 13.5-27 30-27s30 10.5 30 27" fill="#a7aaad" />
+                </svg>
+                <p className="field-help">
+                  You can change your profile picture on{' '}
+                  <a href="https://gravatar.com" target="_blank" rel="noreferrer">
+                    Gravatar
+                  </a>
+                  .
+                </p>
+              </div>
+            </div>
 
             {accountError ? (
               <p className="form-error" role="alert">
