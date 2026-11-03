@@ -457,7 +457,8 @@ export function TermsPage({ user }: { user: AuthUser }) {
                   <label htmlFor="terms-bulk-action" className="screen-reader-text">
                     Bulk actions
                   </label>
-                  <select id="terms-bulk-action" className="bulk-select" defaultValue="delete">
+                  <select id="terms-bulk-action" className="bulk-select" defaultValue="">
+                    <option value="">Bulk actions</option>
                     <option value="delete">Delete</option>
                   </select>
                   <button

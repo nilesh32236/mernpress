@@ -151,31 +151,6 @@ interface NavEntry {
   subs: SubItem[];
 }
 
-function topBarTitle(route: Route): string {
-  switch (route.name) {
-    case 'dashboard':
-      return 'Dashboard';
-    case 'list':
-      return route.type === 'post' ? 'Posts' : 'Pages';
-    case 'new':
-      return `New ${route.type}`;
-    case 'edit':
-      return `Edit ${route.type}`;
-    case 'terms':
-      return 'Categories & Tags';
-    case 'media':
-      return 'Media';
-    case 'users':
-      return 'Users';
-    case 'profile':
-      return 'Profile';
-    case 'settings':
-      return 'Settings';
-    case 'notFound':
-      return 'Not found';
-  }
-}
-
 function initials(name: string): string {
   const trimmed = name.trim();
   if (!trimmed) return '••';
@@ -572,14 +547,14 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
           active: route.name === 'settings' && (hash === '' || hash === '#general'),
         },
         {
-          label: 'Reading',
-          to: '/settings#reading',
-          active: route.name === 'settings' && hash === '#reading',
-        },
-        {
           label: 'Writing',
           to: '/settings#writing',
           active: route.name === 'settings' && hash === '#writing',
+        },
+        {
+          label: 'Reading',
+          to: '/settings#reading',
+          active: route.name === 'settings' && hash === '#reading',
         },
       ],
     },
@@ -717,7 +692,6 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
               </div>
             </div>
           ) : null}
-          {isEditorRoute ? null : <span className="top-bar-title">{topBarTitle(route)}</span>}
         </div>
         <div className="admin-bar-right">
           <div className={`admin-bar-menu user-menu${userMenuOpen ? ' is-open' : ''}`}>

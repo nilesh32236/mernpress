@@ -5322,12 +5322,12 @@ a.glance-chip:hover {
 
 /* WordPress fixed list-table column widths. */
 .content-table .column-author {
-  width: 10%;
+  width: 11.6%;
 }
 
 .content-table .column-categories,
 .content-table .column-tags {
-  width: 15%;
+  width: 16.6%;
 }
 
 .content-table .column-comments {
@@ -5346,11 +5346,11 @@ a.glance-chip:hover {
 
 /* WordPress users list column widths. */
 .content-table.users .column-role {
-  width: 15%;
+  width: 16.6%;
 }
 
 .content-table.users .column-posts {
-  width: 74px;
+  width: 7.6%;
 }
 
 /* WordPress tfoot repeats the list-table header. */
@@ -5624,6 +5624,10 @@ a.glance-chip:hover {
 
 .content-table.terms .column-posts {
   width: 10%;
+}
+
+.terms-add-form .field.actions {
+  align-items: flex-start;
 }
 
 .terms-add-form .field.actions .button {
@@ -5924,4 +5928,22 @@ a.glance-chip:hover {
 .media-attach-link:hover {
   color: #135e96;
   text-decoration: underline;
+}
+
+/* WordPress media list column widths. */
+.content-table.media-list .column-author {
+  width: 10%;
+}
+
+.content-table.media-list .column-parent {
+  width: 15%;
+}
+
+.content-table.media-list .column-date {
+  width: 14%;
+}
+
+/* Terms list column widths. */
+.content-table.terms .column-name {
+  width: 30%;
 }

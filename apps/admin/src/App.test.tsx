@@ -77,7 +77,6 @@ describe('admin application shell', () => {
       'page',
     );
     expect(screen.queryByLabelText('Password')).toBeNull();
-    expect(screen.getByText('Dashboard', { selector: '.top-bar-title' })).toBeDefined();
   });
 
   it('hides content navigation from subscribers and explains the permission boundary', async () => {
