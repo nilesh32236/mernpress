@@ -37,6 +37,7 @@ export function ProfilePage({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -213,6 +214,17 @@ export function ProfilePage({
                 </p>
               </div>
             </div>
+            <div className="field">
+              <label htmlFor="profile-website">Website</label>
+              <input
+                id="profile-website"
+                type="url"
+                maxLength={2048}
+                value={website}
+                onChange={(event) => setWebsite(event.target.value)}
+                disabled={savingAccount}
+              />
+            </div>
 
             <h2 className="profile-section-title">About Yourself</h2>
             <div className="field">
@@ -230,17 +242,6 @@ export function ProfilePage({
                   Share a little biographical information to fill out your profile.
                 </p>
               </div>
-            </div>
-            <div className="field">
-              <label htmlFor="profile-website">Website</label>
-              <input
-                id="profile-website"
-                type="url"
-                maxLength={2048}
-                value={website}
-                onChange={(event) => setWebsite(event.target.value)}
-                disabled={savingAccount}
-              />
             </div>
 
             {accountError ? (
@@ -263,64 +264,78 @@ export function ProfilePage({
 
           <form onSubmit={handlePasswordSubmit} aria-label="Change password">
             <h2 className="profile-section-title">Account Management</h2>
-            <div className="field">
-              <label htmlFor="profile-current-password">Current password</label>
-              <input
-                id="profile-current-password"
-                type="password"
-                value={currentPassword}
-                onChange={(event) => setCurrentPassword(event.target.value)}
-                disabled={savingPassword}
-                autoComplete="current-password"
-                required
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="profile-new-password">New password</label>
-              <div>
-                <input
-                  id="profile-new-password"
-                  type="password"
-                  value={newPassword}
-                  onChange={(event) => setNewPassword(event.target.value)}
-                  disabled={savingPassword}
-                  autoComplete="new-password"
-                  required
-                />
-                <p className="field-help">
-                  At least {MIN_PASSWORD_LENGTH} characters. The server may require more.
-                </p>
-              </div>
-            </div>
-            <div className="field">
-              <label htmlFor="profile-confirm-password">Confirm new password</label>
-              <input
-                id="profile-confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                disabled={savingPassword}
-                autoComplete="new-password"
-                required
-              />
-            </div>
-
-            {passwordError ? (
-              <p className="form-error" role="alert">
-                {passwordError}
+            {!passwordOpen ? (
+              <p className="profile-submit">
+                <button
+                  type="button"
+                  className="button secondary-button"
+                  onClick={() => setPasswordOpen(true)}
+                >
+                  Set New Password
+                </button>
               </p>
-            ) : null}
+            ) : (
+              <>
+                <div className="field">
+                  <label htmlFor="profile-current-password">Current password</label>
+                  <input
+                    id="profile-current-password"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(event) => setCurrentPassword(event.target.value)}
+                    disabled={savingPassword}
+                    autoComplete="current-password"
+                    required
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="profile-new-password">New password</label>
+                  <div>
+                    <input
+                      id="profile-new-password"
+                      type="password"
+                      value={newPassword}
+                      onChange={(event) => setNewPassword(event.target.value)}
+                      disabled={savingPassword}
+                      autoComplete="new-password"
+                      required
+                    />
+                    <p className="field-help">
+                      At least {MIN_PASSWORD_LENGTH} characters. The server may require more.
+                    </p>
+                  </div>
+                </div>
+                <div className="field">
+                  <label htmlFor="profile-confirm-password">Confirm new password</label>
+                  <input
+                    id="profile-confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    disabled={savingPassword}
+                    autoComplete="new-password"
+                    required
+                  />
+                </div>
 
-            <p className="profile-submit">
-              <button
-                type="submit"
-                className="button primary-button"
-                disabled={savingPassword}
-                aria-busy={savingPassword}
-              >
-                {savingPassword ? 'Updating…' : 'Update Password'}
-              </button>
-            </p>
+                {passwordError ? (
+                  <p className="form-error" role="alert">
+                    {passwordError}
+                  </p>
+                ) : null}
+
+                <p className="profile-submit">
+                  <button
+                    type="submit"
+                    className="button primary-button"
+                    disabled={savingPassword}
+                    aria-busy={savingPassword}
+                  >
+                    {savingPassword ? 'Updating…' : 'Update Password'}
+                  </button>
+                </p>
+              </>
+            )}
           </form>
         </div>
       ) : null}

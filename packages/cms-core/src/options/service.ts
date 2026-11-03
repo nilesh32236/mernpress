@@ -173,6 +173,17 @@ const SPECS: Record<string, OptionSpec> = {
       return value;
     },
   },
+  site_icon: {
+    group: 'general',
+    defaultValue: null,
+    validate: (value) => {
+      if (value === null) return null;
+      if (typeof value !== 'string' || !isUuid(value)) {
+        throwValidation('site_icon must be a media UUID or null.');
+      }
+      return value;
+    },
+  },
   homepage_mode: {
     group: 'reading',
     defaultValue: 'latest_posts',

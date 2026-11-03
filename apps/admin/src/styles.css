@@ -2134,7 +2134,8 @@ a.glance-chip:hover {
   border: 0;
 }
 
-.settings-panel .field > label {
+.settings-panel .field > label,
+.settings-panel .field > .field-label {
   grid-column: 1;
   padding: 10px 10px 0 0;
   font-size: 14px;
@@ -6173,4 +6174,78 @@ a.glance-chip:hover {
 .format-option code {
   color: #50575e;
   font-size: 12px;
+}
+
+/* WordPress Site Icon setting and media picker. */
+.site-icon-current {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.site-icon-current img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border: 1px solid #c3c4c7;
+}
+
+.site-icon-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.site-icon-dialog {
+  width: 640px;
+  max-width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 4px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.site-icon-dialog h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 400;
+}
+
+.site-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+  margin: 12px 0 16px;
+}
+
+.site-icon-item {
+  padding: 4px;
+  border: 1px solid #c3c4c7;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.site-icon-item:hover,
+.site-icon-item:focus-visible {
+  border-color: #2271b1;
+  box-shadow: 0 0 0 1px #2271b1;
+}
+
+.site-icon-item img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
+.site-icon-actions {
+  display: flex;
+  justify-content: flex-end;
 }

@@ -2,8 +2,11 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import {
   actionErrorMessage,
   fetchOptions,
+  getMedia,
+  listMedia,
   updateOptions,
   type AuthUser,
+  type MediaItem,
   type OptionGroup,
   type OptionValues,
 } from './api.js';
@@ -151,6 +154,10 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
   const [siteTagline, setSiteTagline] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [siteUrl, setSiteUrl] = useState('');
+  const [siteIcon, setSiteIcon] = useState<string | null>(null);
+  const [siteIconMedia, setSiteIconMedia] = useState<MediaItem | null>(null);
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
+  const [iconItems, setIconItems] = useState<MediaItem[] | null>(null);
   const [usersCanRegister, setUsersCanRegister] = useState(false);
   const [defaultRole, setDefaultRole] = useState('subscriber');
   const [siteLanguage, setSiteLanguage] = useState('en_US');
@@ -180,6 +187,15 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
         setSiteTagline(textValue(values.site_tagline));
         setAdminEmail(textValue(values.admin_email));
         setSiteUrl(textValue(values.site_url));
+        const iconId = typeof values.site_icon === 'string' ? values.site_icon : null;
+        setSiteIcon(iconId);
+        if (iconId) {
+          getMedia(iconId)
+            .then((item) => setSiteIconMedia(item))
+            .catch(() => setSiteIconMedia(null));
+        } else {
+          setSiteIconMedia(null);
+        }
         setUsersCanRegister(values.users_can_register === true);
         setDefaultRole(textValue(values.default_role) || 'subscriber');
         setSiteLanguage(textValue(values.site_language) || 'en_US');
@@ -251,6 +267,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
         site_tagline: siteTagline,
         admin_email: adminEmail,
         site_url: siteUrl,
+        site_icon: siteIcon,
         users_can_register: usersCanRegister,
         default_role: defaultRole,
         site_language: siteLanguage,
@@ -352,6 +369,59 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
                 disabled={saving.general}
               />
               <p className="field-help">In a few words, explain what this site is about.</p>
+            </div>
+
+            <div className="field">
+              <span className="field-label">Site Icon</span>
+              <div>
+                {siteIconMedia ? (
+                  <div className="site-icon-current">
+                    <img src={siteIconMedia.derivatives['300'] ?? siteIconMedia.url} alt="" />
+                    <button
+                      type="button"
+                      className="button secondary-button"
+                      onClick={() => {
+                        setIconPickerOpen(true);
+                        setIconItems(null);
+                        void listMedia({ type: 'image', perPage: 24 })
+                          .then((result) => setIconItems(result.items))
+                          .catch(() => setIconItems([]));
+                      }}
+                    >
+                      Change Site Icon
+                    </button>
+                    <button
+                      type="button"
+                      className="button-link-delete"
+                      onClick={() => {
+                        setSiteIcon(null);
+                        setSiteIconMedia(null);
+                        setGeneralDirty(true);
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="button secondary-button"
+                    onClick={() => {
+                      setIconPickerOpen(true);
+                      setIconItems(null);
+                      void listMedia({ type: 'image', perPage: 24 })
+                        .then((result) => setIconItems(result.items))
+                        .catch(() => setIconItems([]));
+                    }}
+                  >
+                    Choose a Site Icon
+                  </button>
+                )}
+                <p className="field-help">
+                  The Site Icon is used as a browser and app icon for your site. It must be square
+                  and at least 512 × 512 pixels.
+                </p>
+              </div>
             </div>
             <div className="field">
               <label htmlFor="admin_email">
@@ -566,6 +636,60 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
               </button>
             </div>
           </form>
+
+          {iconPickerOpen ? (
+            <div
+              className="site-icon-overlay"
+              role="presentation"
+              onClick={(event) => {
+                if (event.target === event.currentTarget) setIconPickerOpen(false);
+              }}
+            >
+              <div
+                className="site-icon-dialog"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Choose a Site Icon"
+              >
+                <h2>Choose a Site Icon</h2>
+                {iconItems === null ? (
+                  <p className="field-help">Loading media…</p>
+                ) : iconItems.length === 0 ? (
+                  <p className="field-help">No images found. Upload one in the Media Library.</p>
+                ) : (
+                  <div className="site-icon-grid">
+                    {iconItems.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className="site-icon-item"
+                        onClick={() => {
+                          setSiteIcon(item.id);
+                          setSiteIconMedia(item);
+                          setIconPickerOpen(false);
+                          setGeneralDirty(true);
+                        }}
+                      >
+                        <img
+                          src={item.derivatives['300'] ?? item.url}
+                          alt={item.altText || item.originalName}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="site-icon-actions">
+                  <button
+                    type="button"
+                    className="button secondary-button"
+                    onClick={() => setIconPickerOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       );
     }

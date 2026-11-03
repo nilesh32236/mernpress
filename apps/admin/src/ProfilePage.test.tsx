@@ -82,6 +82,7 @@ describe('profile page', () => {
   it('rejects a password confirmation mismatch on the client', async () => {
     render(<ProfilePage user={admin} />);
     await screen.findByLabelText('Username');
+    fireEvent.click(screen.getByRole('button', { name: 'Set New Password' }));
 
     fireEvent.change(screen.getByLabelText('Current password'), {
       target: { value: 'old-password' },
@@ -101,6 +102,7 @@ describe('profile page', () => {
   it('changes the password and clears the fields on success', async () => {
     render(<ProfilePage user={admin} />);
     await screen.findByLabelText('Username');
+    fireEvent.click(screen.getByRole('button', { name: 'Set New Password' }));
 
     fireEvent.change(screen.getByLabelText('Current password'), {
       target: { value: 'old-password' },
@@ -135,6 +137,7 @@ describe('profile page', () => {
 
     render(<ProfilePage user={admin} />);
     await screen.findByLabelText('Username');
+    fireEvent.click(screen.getByRole('button', { name: 'Set New Password' }));
 
     fireEvent.change(screen.getByLabelText('Current password'), {
       target: { value: 'old-password' },
