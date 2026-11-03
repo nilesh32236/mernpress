@@ -473,44 +473,64 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
 
             <div className="field">
               <label htmlFor="date_format">Date Format</label>
-              <div>
-                <select
-                  id="date_format"
-                  value={dateFormat}
-                  onChange={(event) => {
-                    setDateFormat(event.target.value);
-                    setGeneralDirty(true);
-                  }}
-                  disabled={saving.general}
-                >
-                  <option value="Y/m/d">2026/11/03</option>
-                  <option value="F j, Y">November 3, 2026</option>
-                  <option value="Y-m-d">2026-11-03</option>
-                  <option value="m/d/Y">11/03/2026</option>
-                  <option value="d/m/Y">03/11/2026</option>
-                  <option value="d.m.Y">03.11.2026</option>
-                </select>
-                <p className="field-help">Preview: {formatSettingsDate(new Date())}</p>
+              <div className="format-options" role="radiogroup" aria-label="Date Format">
+                {[
+                  ['Y/m/d', '2026/11/03'],
+                  ['F j, Y', 'November 3, 2026'],
+                  ['Y-m-d', '2026-11-03'],
+                  ['m/d/Y', '11/03/2026'],
+                  ['d/m/Y', '03/11/2026'],
+                  ['d.m.Y', '03.11.2026'],
+                ].map(([value, label]) => (
+                  <label key={value} className="format-option">
+                    <input
+                      id={value === 'Y/m/d' ? 'date_format' : undefined}
+                      type="radio"
+                      name="date_format"
+                      value={value}
+                      checked={dateFormat === value}
+                      onChange={() => {
+                        setDateFormat(value!);
+                        cacheSiteFormats(value!, timeFormat);
+                        setGeneralDirty(true);
+                      }}
+                      disabled={saving.general}
+                    />
+                    <span className="format-preview">{label}</span>
+                    <code>{value}</code>
+                  </label>
+                ))}
+                <p className="field-help">Preview: {formatSettingsDate(new Date(), dateFormat)}</p>
               </div>
             </div>
 
             <div className="field">
               <label htmlFor="time_format">Time Format</label>
-              <div>
-                <select
-                  id="time_format"
-                  value={timeFormat}
-                  onChange={(event) => {
-                    setTimeFormat(event.target.value);
-                    setGeneralDirty(true);
-                  }}
-                  disabled={saving.general}
-                >
-                  <option value="g:i a">8:15 am</option>
-                  <option value="g:i A">8:15 AM</option>
-                  <option value="H:i">08:15</option>
-                </select>
-                <p className="field-help">Preview: {formatSettingsTime(new Date())}</p>
+              <div className="format-options" role="radiogroup" aria-label="Time Format">
+                {[
+                  ['g:i a', '8:15 am'],
+                  ['g:i A', '8:15 AM'],
+                  ['H:i', '08:15'],
+                ].map(([value, label]) => (
+                  <label key={value} className="format-option">
+                    <input
+                      id={value === 'g:i a' ? 'time_format' : undefined}
+                      type="radio"
+                      name="time_format"
+                      value={value}
+                      checked={timeFormat === value}
+                      onChange={() => {
+                        setTimeFormat(value!);
+                        cacheSiteFormats(dateFormat, value!);
+                        setGeneralDirty(true);
+                      }}
+                      disabled={saving.general}
+                    />
+                    <span className="format-preview">{label}</span>
+                    <code>{value}</code>
+                  </label>
+                ))}
+                <p className="field-help">Preview: {formatSettingsTime(new Date(), timeFormat)}</p>
               </div>
             </div>
 

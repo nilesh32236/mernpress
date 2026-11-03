@@ -2129,32 +2129,51 @@ a.glance-chip:hover {
   grid-template-columns: 200px minmax(0, 1fr);
   gap: 0 20px;
   align-items: start;
-  padding: 20px 0;
-  margin: 10px 0 0;
+  padding: 15px 0;
+  margin: 0;
   border: 0;
 }
 
 .settings-panel .field > label {
   grid-column: 1;
-  padding: 0 10px 0 0;
+  padding: 10px 10px 0 0;
   font-size: 14px;
-  font-weight: 400;
+  font-weight: 600;
   color: #1d2327;
+}
+
+.settings-panel .field input:not([type='checkbox']):not([type='radio']),
+.settings-panel .field select,
+.settings-panel .field textarea {
+  width: 350px;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: 14px;
 }
 
 .settings-panel .field > input,
 .settings-panel .field > select,
 .settings-panel .field > textarea {
   grid-column: 2;
-  width: 25em;
-  max-width: 100%;
+}
+
+.settings-panel .field > div > select,
+.settings-panel .field > div > input {
+  margin-top: 0;
+}
+
+.settings-panel .field textarea {
+  min-height: 80px;
+  padding: 8px 12px;
 }
 
 .settings-panel .field > .field-help {
   grid-column: 2;
-  margin: 4px 0 0;
+  margin: 6px 0 0;
   font-style: normal;
   font-size: 13px;
+  max-width: 66em;
 }
 
 .settings-panel .field > .field-error {
@@ -5551,11 +5570,11 @@ a.glance-chip:hover {
 
 .profile-submit {
   margin: 16px 0 0;
-  padding-left: 210px;
+  padding-left: 0;
 }
 
 .profile-panel .form-error {
-  margin-left: 210px;
+  margin-left: 0;
 }
 
 /* WordPress footer: left credit, right version. */
@@ -6124,5 +6143,34 @@ a.glance-chip:hover {
   padding: 8px 16px;
   border-top: 1px solid #dcdcde;
   color: #757575;
+  font-size: 12px;
+}
+
+/* WordPress date/time format radio lists. */
+.format-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.format-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #1d2327;
+  cursor: pointer;
+}
+
+.format-option input[type='radio'] {
+  margin: 0;
+}
+
+.format-preview {
+  min-width: 140px;
+}
+
+.format-option code {
+  color: #50575e;
   font-size: 12px;
 }
