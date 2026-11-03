@@ -1,5 +1,88 @@
 # Implementation log
 
+## 2026-11-03 (evening) — WordPress 6.8 parity pass (side-by-side against a real WordPress install)
+
+**Status:** implemented, verified, committed to `master` (`ba2360f`) and
+deployed (release `20261103T095101Z-ba2360f`).
+
+The owner reported the admin still did not match WordPress. This pass installed
+a real WordPress 6.8.3 stack (PHP 8.4, MariaDB, WP-CLI at
+`/tmp/opencode/wp-site`, served on `127.0.0.1:8080`) and compared every admin
+screen side by side, then fixed each divergence.
+
+### Chrome and chrome-level features
+
+- Admin bar: 32px, site name with the hidden “Visit Site” submenu, + New,
+  Howdy menu; footer credit left and version right; active-menu notch.
+- Screen Options / Help buttons float at the top right like WordPress and open
+  working panels. Screen Options changes the per-page item count for posts,
+  pages, users, terms and media (persisted in `localStorage`); Help shows
+  screen-specific documentation.
+- Users submenu now includes Add User (`/users?action=add` opens the dialog).
+
+### Dashboard
+
+- WordPress welcome panel: dark 226px hero with gradient lines, 48px heading,
+  Dismiss, and the three white feature columns at 24px padding.
+- Collapsible postboxes with WordPress order arrows: Site Health Status, At a
+  Glance (icon list + site line), Activity (Recently Published), Quick Draft
+  (Title/Content/Save Draft).
+- Fluid content width and WordPress list-table spacing.
+
+### Lists (posts, pages, users, terms)
+
+- WordPress subsubsub tabs: All / Mine / Published and non-empty Drafts /
+  Trashed; counts from the server; “Mine” and author/tag links filter the list.
+- Title | Author | Categories | Tags | Comments | Date columns with WordPress
+  fixed widths; status prefix inside the Date column; comments column and
+  tfoot header; row actions appear on row hover.
+- Bottom tablenav with bulk actions and item count; pagination hidden on a
+  single page.
+- Users: text row actions Edit | Delete | View, WordPress role tabs, numeric
+  Posts count, 32px avatar floated beside the name.
+- Terms: WordPress add form (Name / Slug / Parent Category / Description),
+  search row, bulk actions, tfoot, Count links and the category/tag footnotes.
+
+### Media
+
+- Grid shows only thumbnails in transparent 8px-padded cells; “Showing X of Y
+  media items”.
+- List view uses WordPress columns (File with title + filename, Author,
+  Uploaded to, Date) with row actions Edit | Delete Permanently | View | Copy
+  URL | Download file and relative dates; media supports only Help (no Screen
+  Options).
+
+### Editor
+
+- Full-screen Gutenberg shell: no admin bar/menu, 60px white header with the
+  black logo box, plus/undo/redo/document-overview tools, centered document
+  pill (title · Post, Ctrl+K), Save draft / preview eye / Publish / ⋮.
+- White canvas at 646px with a 48px placeholder title and WordPress footer
+  (“Post” / “Page”).
+- 280px sidebar with Post | Block tabs. Post tab: summary (title, edit, ⋮,
+  Set featured image, Add an excerpt, Last edited), Status & visibility rows
+  with the blue status dot, Publish Immediately, Author, permalink, and
+  collapsible Categories/Tags plus an SEO panel. Block settings remain in the
+  Block tab.
+
+### Login, profile, settings
+
+- wp-login.php-style card: 84px logo mark, Username or Email Address, password
+  reveal, Remember Me, right-aligned Log In, “← Go to MERNPress”. The API now
+  accepts email logins and issues a 14-day session when Remember Me is used.
+- Profile: WordPress form-table sections (Name, Contact Info, Account
+  Management) with Update Profile / Update Password.
+- Settings: General | Writing | Reading tabs in WordPress order, form-table
+  rows, solid primary Save Changes.
+
+### Verification
+
+- `pnpm format`, `pnpm lint`, `pnpm typecheck`, `pnpm test` (537 tests:
+  337 API, 122 admin, 65 block-system, 13 web), `pnpm build` and
+  `pnpm test:e2e` (23/23) all pass.
+- Deployed as release `20261103T095101Z-ba2360f`; `/`, `/admin/` and
+  `/api/health` return 200.
+
 ## 2026-11-03 (PM) — Reference-matched design pass (side-by-side against the running qrolichealth CMS)
 
 **Status:** implemented, verified, pushed to `master` (`dadce21`) and deployed

@@ -49,7 +49,14 @@ no DuckDNS token is stored in the Caddyfile.
 
 ## Release
 
-- Current release: `/opt/mernpress/releases/20261103T074100Z-dadce21`
+- Current release: `/opt/mernpress/releases/20261103T095101Z-ba2360f`
+  (switched 2026-11-03, WordPress 6.8 parity pass): full-screen Gutenberg
+  editor, WordPress welcome panel + postboxes, list screens with
+  subsubsub tabs/comments column/tfoot/hover actions, WordPress media grid and
+  list views, users text row actions, Screen Options/Help panels with working
+  per-page pagination, wp-login card with Remember Me, profile/terms/settings
+  form-table layouts. All tests green (537 unit/integration, 23 E2E).
+- Previous release: `/opt/mernpress/releases/20261103T074100Z-dadce21`
   (switched 2026-11-03, design pass): reference-matched editor top bar +
   sidebar, list toolbars with category/date filters, dashboard Quick Draft +
   Site Health (new `/api/admin/health`), media toolbar + list view, users
