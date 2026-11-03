@@ -102,11 +102,11 @@ test('editor can upload, browse, edit metadata and delete media', async ({ page 
 
   // Detail drawer: edit alt text and save, then close the drawer.
   await page.getByRole('button', { name: /^View e2e-upload-/ }).click();
-  await expect(page.getByLabel('Alt text')).toBeVisible();
-  await page.getByLabel('Alt text').fill('E2E alt text');
+  await expect(page.getByLabel('Alternative Text')).toBeVisible();
+  await page.getByLabel('Alternative Text').fill('E2E alt text');
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText(/saved/i).first()).toBeVisible({ timeout: 10_000 });
-  await page.getByLabel('Close media details').click();
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
 
   // Search finds the item; a nonsense search empties the grid.
   await page.getByLabel('Search media').fill('e2e-upload');
@@ -118,6 +118,6 @@ test('editor can upload, browse, edit metadata and delete media', async ({ page 
   page.on('dialog', (dialog) => void dialog.accept());
   await page.getByLabel('Search media').fill('e2e-upload');
   await page.getByRole('button', { name: /^View e2e-upload-/ }).click();
-  await page.getByRole('button', { name: 'Delete' }).click();
+  await page.getByRole('button', { name: 'Delete permanently' }).click();
   await expect(page.getByText(/160 × 90/)).toHaveCount(0, { timeout: 10_000 });
 });

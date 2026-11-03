@@ -187,10 +187,10 @@ describe('media library page', () => {
     expect(within(drawer).getByText('a1b2c3d4.webp')).toBeDefined();
     expect(within(drawer).getByText('image/png')).toBeDefined();
 
-    fireEvent.change(within(drawer).getByLabelText('Alt text'), {
+    fireEvent.change(within(drawer).getByLabelText('Alternative Text'), {
       target: { value: 'Sunset over the bay' },
     });
-    fireEvent.change(within(drawer).getByLabelText('Caption'), {
+    fireEvent.change(within(drawer).getByLabelText('Image Caption'), {
       target: { value: 'Golden hour' },
     });
     fireEvent.change(within(drawer).getByLabelText('Description'), {

@@ -193,17 +193,16 @@ function MediaDrawer({ item, onClose, onSaved, onDeleted }: MediaDrawerProps) {
         ref={drawerRef}
       >
         <header className="media-drawer-head">
-          <h2 id={titleId}>{item.originalName}</h2>
+          <h2 id={titleId}>Attachment details</h2>
           <button type="button" className="media-drawer-close" onClick={onClose} aria-label="Close">
             <svg
-              width="16"
-              height="16"
+              width="20"
+              height="20"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="1.8"
               strokeLinecap="round"
-              strokeLinejoin="round"
               aria-hidden="true"
             >
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -212,104 +211,118 @@ function MediaDrawer({ item, onClose, onSaved, onDeleted }: MediaDrawerProps) {
           </button>
         </header>
 
-        <div className="media-drawer-preview">
-          <img src={item.url} alt={item.altText || ''} />
-        </div>
+        <div className="media-drawer-body">
+          <div className="media-drawer-preview">
+            <img src={item.url} alt={item.altText || ''} />
+          </div>
 
-        {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
+          <div className="media-drawer-sidebar">
+            {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
 
-        <form className="media-drawer-form" onSubmit={handleSave} aria-label="Media details">
-          <div className="field">
-            <label htmlFor="media-alt-text">Alt text</label>
-            <input
-              id="media-alt-text"
-              type="text"
-              value={altText}
-              maxLength={500}
-              onChange={(event) => setAltText(event.target.value)}
-              disabled={saving || deleting}
-            />
-            <p className="field-help">Describe the image for screen readers and search engines.</p>
-          </div>
-          <div className="field">
-            <label htmlFor="media-caption">Caption</label>
-            <textarea
-              id="media-caption"
-              rows={3}
-              value={caption}
-              maxLength={2000}
-              onChange={(event) => setCaption(event.target.value)}
-              disabled={saving || deleting}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="media-description">Description</label>
-            <textarea
-              id="media-description"
-              rows={4}
-              value={description}
-              maxLength={10000}
-              onChange={(event) => setDescription(event.target.value)}
-              disabled={saving || deleting}
-            />
-          </div>
-          <div className="side-actions">
-            <button
-              type="submit"
-              className="button primary-button"
-              disabled={saving || deleting}
-              aria-busy={saving}
-            >
-              {saving ? 'Saving…' : 'Save'}
-            </button>
-            <button
-              type="button"
-              className="button secondary-button"
-              onClick={() => void handleCopy()}
-            >
-              Copy URL
-            </button>
-          </div>
-        </form>
+            <div className="media-meta-list">
+              <div>
+                <span>Uploaded on:</span> {formatDateTime(item.createdAt)}
+              </div>
+              <div>
+                <span>Uploaded by:</span> —
+              </div>
+              <div>
+                <span>File name:</span> {item.fileName}
+              </div>
+              <div>
+                <span>File type:</span> {item.mimeType}
+              </div>
+              <div>
+                <span>File size:</span> {formatBytes(item.sizeBytes)}
+              </div>
+              <div>
+                <span>Dimensions:</span> {formatDimensions(item)}
+              </div>
+            </div>
 
-        <div className="field">
-          <label htmlFor="media-file-url">File URL</label>
-          <input id="media-file-url" type="text" value={item.url} readOnly />
-        </div>
+            <form className="media-drawer-form" onSubmit={handleSave} aria-label="Media details">
+              <div className="field">
+                <label htmlFor="media-alt-text">Alternative Text</label>
+                <textarea
+                  id="media-alt-text"
+                  rows={3}
+                  value={altText}
+                  maxLength={500}
+                  onChange={(event) => setAltText(event.target.value)}
+                  disabled={saving || deleting}
+                />
+                <p className="field-help">
+                  Describe the purpose of the image. Leave empty if the image is purely decorative.
+                </p>
+              </div>
+              <div className="field">
+                <label htmlFor="media-caption">Image Caption</label>
+                <textarea
+                  id="media-caption"
+                  rows={3}
+                  value={caption}
+                  maxLength={2000}
+                  onChange={(event) => setCaption(event.target.value)}
+                  disabled={saving || deleting}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="media-description">Description</label>
+                <textarea
+                  id="media-description"
+                  rows={4}
+                  value={description}
+                  maxLength={10000}
+                  onChange={(event) => setDescription(event.target.value)}
+                  disabled={saving || deleting}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="media-file-url">File URL:</label>
+                <input id="media-file-url" type="text" value={item.url} readOnly />
+                <button
+                  type="button"
+                  className="button secondary-button media-copy-button"
+                  onClick={() => void handleCopy()}
+                >
+                  Copy URL to clipboard
+                </button>
+              </div>
+              <div className="media-drawer-actions">
+                <button
+                  type="submit"
+                  className="button primary-button"
+                  disabled={saving || deleting}
+                  aria-busy={saving}
+                >
+                  {saving ? 'Saving…' : 'Save'}
+                </button>
+                <button type="button" className="button secondary-button" onClick={onClose}>
+                  Cancel
+                </button>
+              </div>
+            </form>
 
-        <dl className="media-meta-list">
-          <div>
-            <dt>File name</dt>
-            <dd>{item.fileName}</dd>
+            <div className="media-drawer-links">
+              <a href={item.url} target="_blank" rel="noreferrer">
+                View media file
+              </a>
+              <span aria-hidden="true">|</span>
+              <a href={item.url} download>
+                Download file
+              </a>
+              <span aria-hidden="true">|</span>
+              <button
+                type="button"
+                className="button-link-delete"
+                onClick={() => void handleDelete()}
+                disabled={deleting || saving}
+                aria-busy={deleting}
+              >
+                {deleting ? 'Deleting…' : 'Delete permanently'}
+              </button>
+            </div>
           </div>
-          <div>
-            <dt>File type</dt>
-            <dd>{item.mimeType}</dd>
-          </div>
-          <div>
-            <dt>File size</dt>
-            <dd>{formatBytes(item.sizeBytes)}</dd>
-          </div>
-          <div>
-            <dt>Dimensions</dt>
-            <dd>{formatDimensions(item)}</dd>
-          </div>
-          <div>
-            <dt>Uploaded</dt>
-            <dd>{formatDateTime(item.createdAt)}</dd>
-          </div>
-        </dl>
-
-        <div className="media-drawer-danger">
-          <button
-            type="button"
-            className="button secondary-button media-delete-button"
-            onClick={() => void handleDelete()}
-            disabled={deleting || saving}
-            aria-busy={deleting}
-          >
-            {deleting ? 'Deleting…' : 'Delete permanently'}
-          </button>
         </div>
       </aside>
     </div>

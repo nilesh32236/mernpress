@@ -115,7 +115,8 @@ describe('settings page', () => {
     await screen.findByDisplayValue('10');
 
     const saveButton = screen.getByRole('button', { name: /save/i }) as HTMLButtonElement;
-    expect(saveButton.disabled).toBe(true);
+    // WordPress keeps Save Changes enabled even before an edit.
+    expect(saveButton.disabled).toBe(false);
 
     fireEvent.change(screen.getByDisplayValue('10'), { target: { value: '5' } });
     expect(saveButton.disabled).toBe(false);

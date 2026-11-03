@@ -387,6 +387,22 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
                       </ObserveTyping>
                     </WritingFlow>
                   </BlockTools>
+                  <div className="block-canvas-appender">
+                    <InserterControl
+                      renderToggle={({ onToggle, disabled }) => (
+                        <button
+                          type="button"
+                          className="block-canvas-appender-button"
+                          onClick={onToggle}
+                          disabled={disabled}
+                          aria-label="Add block"
+                          title="Add block"
+                        >
+                          <Icon icon={plus} size={24} />
+                        </button>
+                      )}
+                    />
+                  </div>
                 </div>
               </div>
 

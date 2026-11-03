@@ -2,6 +2,9 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import {
   actionErrorMessage,
   fetchOptions,
+  fetchPosts,
+  fetchTerms,
+  fetchUsers,
   getMedia,
   listMedia,
   updateOptions,
@@ -146,11 +149,20 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
   const [homepageId, setHomepageId] = useState('');
   const [postsPageId, setPostsPageId] = useState('');
   const [postsPerPage, setPostsPerPage] = useState('10');
-  const [readingDirty, setReadingDirty] = useState(false);
+  const [, setReadingDirty] = useState(false);
 
   const [defaultCategory, setDefaultCategory] = useState('');
   const [defaultAuthor, setDefaultAuthor] = useState('');
-  const [writingDirty, setWritingDirty] = useState(false);
+  const [, setWritingDirty] = useState(false);
+  const [categoryOptions, setCategoryOptions] = useState<Array<{
+    id: string;
+    name: string;
+    slug: string;
+  }> | null>(null);
+  const [pageOptions, setPageOptions] = useState<Array<{ id: string; title: string }> | null>(null);
+  const [userOptions, setUserOptions] = useState<Array<{ id: string; username: string }> | null>(
+    null,
+  );
 
   async function loadGroup(group: OptionGroup) {
     setLoading((prev) => ({ ...prev, [group]: true }));
@@ -223,6 +235,33 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
     }
   }, [location]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (activeTab === 'writing' && categoryOptions === null) {
+      fetchTerms({ taxonomy: 'category', perPage: 100, sort: 'name', order: 'asc' })
+        .then((result) =>
+          setCategoryOptions(result.items.map((t) => ({ id: t.id, name: t.name, slug: t.slug }))),
+        )
+        .catch(() => setCategoryOptions([]));
+    }
+    if (activeTab === 'writing' && userOptions === null) {
+      fetchUsers({ perPage: 100 })
+        .then((result) =>
+          setUserOptions(result.items.map((u) => ({ id: u.id, username: u.username }))),
+        )
+        .catch(() => setUserOptions([]));
+    }
+  }, [activeTab, categoryOptions, userOptions]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (homepageMode === 'static_page' && pageOptions === null) {
+      fetchPosts({ type: 'page', status: 'PUBLISHED', page: 1, perPage: 100 })
+        .then((result) => setPageOptions(result.items.map((p) => ({ id: p.id, title: p.title }))))
+        .catch(() => setPageOptions([]));
+    }
+  }, [homepageMode, pageOptions]);
+
   async function saveGeneral(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (saving.general || !generalDirty) return;
@@ -260,7 +299,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
 
   async function saveReading(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (saving.reading || !readingDirty) return;
+    if (saving.reading) return;
     setSaving((prev) => ({ ...prev, reading: true }));
     setNotice(null);
     try {
@@ -281,7 +320,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
 
   async function saveWriting(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (saving.writing || !writingDirty) return;
+    if (saving.writing) return;
     setSaving((prev) => ({ ...prev, writing: true }));
     setNotice(null);
     try {
@@ -666,9 +705,9 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
         <div className="content-card">
           <form onSubmit={saveReading} aria-label="Reading settings">
             <div className="field">
-              <fieldset>
-                <legend>Homepage (homepage_mode)</legend>
-                <div>
+              <span className="field-label">Homepage displays</span>
+              <div>
+                <p className="radio-line">
                   <label>
                     <input
                       type="radio"
@@ -681,10 +720,10 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
                       }}
                       disabled={saving.reading}
                     />{' '}
-                    Your latest posts (latest_posts)
+                    Your latest posts
                   </label>
-                </div>
-                <div>
+                </p>
+                <p className="radio-line">
                   <label>
                     <input
                       type="radio"
@@ -697,62 +736,73 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
                       }}
                       disabled={saving.reading}
                     />{' '}
-                    A static page (static_page)
+                    A static page (select below)
                   </label>
-                </div>
-              </fieldset>
+                </p>
+                <p className="radio-line">
+                  <label htmlFor="homepage_id">Homepage:</label>{' '}
+                  <select
+                    id="homepage_id"
+                    value={homepageId}
+                    onChange={(event) => {
+                      setHomepageId(event.target.value);
+                      setReadingDirty(true);
+                    }}
+                    disabled={saving.reading || homepageMode !== 'static_page'}
+                  >
+                    <option value="">— Select —</option>
+                    {(pageOptions ?? []).map((page) => (
+                      <option key={page.id} value={page.id}>
+                        {page.title || '(no title)'}
+                      </option>
+                    ))}
+                  </select>
+                </p>
+                <p className="radio-line">
+                  <label htmlFor="posts_page_id">Posts page:</label>{' '}
+                  <select
+                    id="posts_page_id"
+                    value={postsPageId}
+                    onChange={(event) => {
+                      setPostsPageId(event.target.value);
+                      setReadingDirty(true);
+                    }}
+                    disabled={saving.reading || homepageMode !== 'static_page'}
+                  >
+                    <option value="">— Select —</option>
+                    {(pageOptions ?? []).map((page) => (
+                      <option key={page.id} value={page.id}>
+                        {page.title || '(no title)'}
+                      </option>
+                    ))}
+                  </select>
+                </p>
+              </div>
             </div>
             <div className="field">
-              <label htmlFor="homepage_id">Homepage (homepage_id)</label>
-              <input
-                id="homepage_id"
-                type="text"
-                value={homepageId}
-                onChange={(event) => {
-                  setHomepageId(event.target.value);
-                  setReadingDirty(true);
-                }}
-                disabled={saving.reading}
-                placeholder="Paste the page ID"
-              />
-              <p className="field-help">Paste the page ID.</p>
-            </div>
-            <div className="field">
-              <label htmlFor="posts_page_id">Posts page (posts_page_id)</label>
-              <input
-                id="posts_page_id"
-                type="text"
-                value={postsPageId}
-                onChange={(event) => {
-                  setPostsPageId(event.target.value);
-                  setReadingDirty(true);
-                }}
-                disabled={saving.reading}
-                placeholder="Paste the page ID"
-              />
-              <p className="field-help">Paste the page ID.</p>
-            </div>
-            <div className="field">
-              <label htmlFor="posts_per_page">Blog pages show at most (posts_per_page)</label>
-              <input
-                id="posts_per_page"
-                type="number"
-                min={1}
-                max={100}
-                value={postsPerPage}
-                onChange={(event) => {
-                  setPostsPerPage(event.target.value);
-                  setReadingDirty(true);
-                }}
-                disabled={saving.reading}
-              />
-              <p className="field-help">posts per page (1–100).</p>
+              <label htmlFor="posts_per_page">Blog pages show at most</label>
+              <div>
+                <input
+                  id="posts_per_page"
+                  className="small-text"
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={postsPerPage}
+                  onChange={(event) => {
+                    setPostsPerPage(event.target.value);
+                    setReadingDirty(true);
+                  }}
+                  disabled={saving.reading}
+                />{' '}
+                posts
+              </div>
             </div>
             <div className="field actions">
               <button
                 type="submit"
                 className="button primary-button"
-                disabled={!readingDirty || saving.reading}
+                disabled={saving.reading}
                 aria-busy={saving.reading}
               >
                 {saving.reading ? 'Saving…' : 'Save Changes'}
@@ -767,40 +817,52 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
       <div className="content-card">
         <form onSubmit={saveWriting} aria-label="Writing settings">
           <div className="field">
-            <label htmlFor="default_post_category">
-              Default post category (default_post_category)
-            </label>
-            <input
+            <label htmlFor="default_post_category">Default Post Category</label>
+            <select
               id="default_post_category"
-              type="text"
               value={defaultCategory}
               onChange={(event) => {
                 setDefaultCategory(event.target.value);
                 setWritingDirty(true);
               }}
               disabled={saving.writing}
-            />
-            <p className="field-help">Slug of the default category, or empty for none.</p>
+            >
+              <option value="">Uncategorized</option>
+              {(categoryOptions ?? []).map((term) => (
+                <option key={term.id} value={term.slug}>
+                  {term.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="field">
-            <label htmlFor="default_author">Default author (default_author)</label>
-            <input
+            <label htmlFor="default_author">Default Author</label>
+            <select
               id="default_author"
-              type="text"
               value={defaultAuthor}
               onChange={(event) => {
                 setDefaultAuthor(event.target.value);
                 setWritingDirty(true);
               }}
               disabled={saving.writing}
-            />
-            <p className="field-help">UUID of the default author, or empty for none.</p>
+            >
+              <option value="">— None —</option>
+              {(userOptions ?? []).map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.username}
+                </option>
+              ))}
+            </select>
+            <p className="field-help">Used when content is created without an explicit author.</p>
           </div>
+          <p className="field-help">
+            Post formats, posting by email and update services are not part of this build.
+          </p>
           <div className="field actions">
             <button
               type="submit"
               className="button primary-button"
-              disabled={!writingDirty || saving.writing}
+              disabled={saving.writing}
               aria-busy={saving.writing}
             >
               {saving.writing ? 'Saving…' : 'Save Changes'}
