@@ -21,7 +21,12 @@ import {
 } from './components.js';
 import { canManageTerms } from './roles.js';
 import { replace, useLocation } from './router.js';
-import { SCREEN_OPTIONS_EVENT, screenPerPage } from './screenOptions.js';
+import {
+  SCREEN_COLUMNS_EVENT,
+  SCREEN_OPTIONS_EVENT,
+  screenHiddenColumns,
+  screenPerPage,
+} from './screenOptions.js';
 
 const DEFAULT_PER_PAGE = 10;
 
@@ -67,6 +72,17 @@ export function TermsPage({ user }: { user: AuthUser }) {
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [perPage, setPerPage] = useState(() => screenPerPage('terms', DEFAULT_PER_PAGE));
+  const [hiddenColumns, setHiddenColumns] = useState(() => screenHiddenColumns('terms'));
+
+  useEffect(() => {
+    const sync = () => setHiddenColumns(screenHiddenColumns('terms'));
+    window.addEventListener(SCREEN_COLUMNS_EVENT, sync);
+    return () => window.removeEventListener(SCREEN_COLUMNS_EVENT, sync);
+  }, []);
+
+  const showDescription = !hiddenColumns.has('description');
+  const showSlug = !hiddenColumns.has('slug');
+  const showCount = !hiddenColumns.has('count');
   const [sort, setSort] = useState<
     'name' | 'description' | 'slug' | 'count' | 'createdAt' | 'updatedAt'
   >('name');
@@ -522,63 +538,69 @@ export function TermsPage({ user }: { user: AuthUser }) {
                           <SortIndicator direction={sort === 'name' ? order : null} />
                         </button>
                       </th>
-                      <th scope="col" className="column-description">
-                        <button
-                          type="button"
-                          className="sortable-column"
-                          aria-label={`Sort by description${sort === 'description' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
-                          onClick={() => {
-                            if (sort === 'description') {
-                              setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
-                            } else {
-                              setSort('description');
-                              setOrder('asc');
-                            }
-                            setPage(1);
-                          }}
-                        >
-                          Description
-                          <SortIndicator direction={sort === 'description' ? order : null} />
-                        </button>
-                      </th>
-                      <th scope="col" className="column-slug">
-                        <button
-                          type="button"
-                          className="sortable-column"
-                          aria-label={`Sort by slug${sort === 'slug' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
-                          onClick={() => {
-                            if (sort === 'slug') {
-                              setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
-                            } else {
-                              setSort('slug');
-                              setOrder('asc');
-                            }
-                            setPage(1);
-                          }}
-                        >
-                          Slug
-                          <SortIndicator direction={sort === 'slug' ? order : null} />
-                        </button>
-                      </th>
-                      <th scope="col" className="column-posts">
-                        <button
-                          type="button"
-                          className="sortable-column"
-                          aria-label={`Sort by count${sort === 'count' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
-                          onClick={() => {
-                            if (sort === 'count') {
-                              setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
-                            } else {
-                              setSort('count');
-                              setOrder('asc');
-                            }
-                            setPage(1);
-                          }}
-                        >
-                          Count
-                          <SortIndicator direction={sort === 'count' ? order : null} />
-                        </button>
-                      </th>
+                      {showDescription ? (
+                        <th scope="col" className="column-description">
+                          <button
+                            type="button"
+                            className="sortable-column"
+                            aria-label={`Sort by description${sort === 'description' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
+                            onClick={() => {
+                              if (sort === 'description') {
+                                setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
+                              } else {
+                                setSort('description');
+                                setOrder('asc');
+                              }
+                              setPage(1);
+                            }}
+                          >
+                            Description
+                            <SortIndicator direction={sort === 'description' ? order : null} />
+                          </button>
+                        </th>
+                      ) : null}
+                      {showSlug ? (
+                        <th scope="col" className="column-slug">
+                          <button
+                            type="button"
+                            className="sortable-column"
+                            aria-label={`Sort by slug${sort === 'slug' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
+                            onClick={() => {
+                              if (sort === 'slug') {
+                                setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
+                              } else {
+                                setSort('slug');
+                                setOrder('asc');
+                              }
+                              setPage(1);
+                            }}
+                          >
+                            Slug
+                            <SortIndicator direction={sort === 'slug' ? order : null} />
+                          </button>
+                        </th>
+                      ) : null}
+                      {showCount ? (
+                        <th scope="col" className="column-posts">
+                          <button
+                            type="button"
+                            className="sortable-column"
+                            aria-label={`Sort by count${sort === 'count' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
+                            onClick={() => {
+                              if (sort === 'count') {
+                                setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
+                              } else {
+                                setSort('count');
+                                setOrder('asc');
+                              }
+                              setPage(1);
+                            }}
+                          >
+                            Count
+                            <SortIndicator direction={sort === 'count' ? order : null} />
+                          </button>
+                        </th>
+                      ) : null}
                     </tr>
                   </thead>
                   <tbody>
@@ -668,31 +690,37 @@ export function TermsPage({ user }: { user: AuthUser }) {
                               </>
                             )}
                           </td>
-                          <td className="description column-description">
-                            {term.description ?? '—'}
-                          </td>
-                          <td className="slug column-slug">
-                            <code>{term.slug}</code>
-                          </td>
-                          <td className="posts column-posts">
-                            <a
-                              href={
-                                taxonomy === 'category'
-                                  ? `/posts?category=${term.id}`
-                                  : `/posts?tag=${term.id}`
-                              }
-                              onClick={(event) => {
-                                event.preventDefault();
-                                window.location.assign(
+                          {showDescription ? (
+                            <td className="description column-description">
+                              {term.description ?? '—'}
+                            </td>
+                          ) : null}
+                          {showSlug ? (
+                            <td className="slug column-slug">
+                              <code>{term.slug}</code>
+                            </td>
+                          ) : null}
+                          {showCount ? (
+                            <td className="posts column-posts">
+                              <a
+                                href={
                                   taxonomy === 'category'
-                                    ? `/admin/posts?category=${term.id}`
-                                    : `/admin/posts?tag=${term.id}`,
-                                );
-                              }}
-                            >
-                              {term.postCount}
-                            </a>
-                          </td>
+                                    ? `/posts?category=${term.id}`
+                                    : `/posts?tag=${term.id}`
+                                }
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  window.location.assign(
+                                    taxonomy === 'category'
+                                      ? `/admin/posts?category=${term.id}`
+                                      : `/admin/posts?tag=${term.id}`,
+                                  );
+                                }}
+                              >
+                                {term.postCount}
+                              </a>
+                            </td>
+                          ) : null}
                         </tr>
                       );
                     })}
@@ -732,63 +760,69 @@ export function TermsPage({ user }: { user: AuthUser }) {
                           <SortIndicator direction={sort === 'name' ? order : null} />
                         </button>
                       </th>
-                      <th scope="col" className="column-description">
-                        <button
-                          type="button"
-                          className="sortable-column"
-                          aria-label={`Sort by description${sort === 'description' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
-                          onClick={() => {
-                            if (sort === 'description') {
-                              setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
-                            } else {
-                              setSort('description');
-                              setOrder('asc');
-                            }
-                            setPage(1);
-                          }}
-                        >
-                          Description
-                          <SortIndicator direction={sort === 'description' ? order : null} />
-                        </button>
-                      </th>
-                      <th scope="col" className="column-slug">
-                        <button
-                          type="button"
-                          className="sortable-column"
-                          aria-label={`Sort by slug${sort === 'slug' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
-                          onClick={() => {
-                            if (sort === 'slug') {
-                              setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
-                            } else {
-                              setSort('slug');
-                              setOrder('asc');
-                            }
-                            setPage(1);
-                          }}
-                        >
-                          Slug
-                          <SortIndicator direction={sort === 'slug' ? order : null} />
-                        </button>
-                      </th>
-                      <th scope="col" className="column-posts">
-                        <button
-                          type="button"
-                          className="sortable-column"
-                          aria-label={`Sort by count${sort === 'count' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
-                          onClick={() => {
-                            if (sort === 'count') {
-                              setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
-                            } else {
-                              setSort('count');
-                              setOrder('asc');
-                            }
-                            setPage(1);
-                          }}
-                        >
-                          Count
-                          <SortIndicator direction={sort === 'count' ? order : null} />
-                        </button>
-                      </th>
+                      {showDescription ? (
+                        <th scope="col" className="column-description">
+                          <button
+                            type="button"
+                            className="sortable-column"
+                            aria-label={`Sort by description${sort === 'description' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
+                            onClick={() => {
+                              if (sort === 'description') {
+                                setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
+                              } else {
+                                setSort('description');
+                                setOrder('asc');
+                              }
+                              setPage(1);
+                            }}
+                          >
+                            Description
+                            <SortIndicator direction={sort === 'description' ? order : null} />
+                          </button>
+                        </th>
+                      ) : null}
+                      {showSlug ? (
+                        <th scope="col" className="column-slug">
+                          <button
+                            type="button"
+                            className="sortable-column"
+                            aria-label={`Sort by slug${sort === 'slug' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
+                            onClick={() => {
+                              if (sort === 'slug') {
+                                setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
+                              } else {
+                                setSort('slug');
+                                setOrder('asc');
+                              }
+                              setPage(1);
+                            }}
+                          >
+                            Slug
+                            <SortIndicator direction={sort === 'slug' ? order : null} />
+                          </button>
+                        </th>
+                      ) : null}
+                      {showCount ? (
+                        <th scope="col" className="column-posts">
+                          <button
+                            type="button"
+                            className="sortable-column"
+                            aria-label={`Sort by count${sort === 'count' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
+                            onClick={() => {
+                              if (sort === 'count') {
+                                setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
+                              } else {
+                                setSort('count');
+                                setOrder('asc');
+                              }
+                              setPage(1);
+                            }}
+                          >
+                            Count
+                            <SortIndicator direction={sort === 'count' ? order : null} />
+                          </button>
+                        </th>
+                      ) : null}
                     </tr>
                   </tfoot>
                 </table>

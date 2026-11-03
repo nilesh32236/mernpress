@@ -5,7 +5,18 @@ import { navigate, newContentPath } from './router.js';
 import { ADMIN_BASE } from './router.js';
 import { useNavigationGuard } from './navigation-guard.js';
 import { canCreateContent, canManageTerms, canReadContent } from './roles.js';
-import { screenPerPage, setScreenPerPage } from './screenOptions.js';
+import {
+  SCREEN_COLUMNS,
+  SCREEN_COLUMNS_EVENT,
+  SCREEN_VIEW_MODE_EVENT,
+  screenHiddenColumns,
+  screenPerPage,
+  screenViewMode,
+  setScreenColumnHidden,
+  setScreenPerPage,
+  setScreenViewMode,
+  type ScreenViewMode,
+} from './screenOptions.js';
 import type { ReactNode } from 'react';
 
 function screenKey(route: Route): string {
@@ -431,6 +442,32 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
   const isEditorRoute = route.name === 'new' || route.name === 'edit';
   const currentScreen = screenKey(route);
   const supportsPerPage = ['posts', 'pages', 'users', 'terms', 'media'].includes(currentScreen);
+  const screenColumns = SCREEN_COLUMNS[currentScreen] ?? [];
+  const supportsViewMode = ['posts', 'pages'].includes(currentScreen);
+  const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(() =>
+    screenHiddenColumns(currentScreen),
+  );
+  const [viewMode, setViewModeChoice] = useState<ScreenViewMode>(() =>
+    screenViewMode(currentScreen),
+  );
+
+  useEffect(() => {
+    setHiddenColumns(screenHiddenColumns(currentScreen));
+    setViewModeChoice(screenViewMode(currentScreen));
+  }, [currentScreen]);
+
+  useEffect(() => {
+    const sync = () => {
+      setHiddenColumns(screenHiddenColumns(currentScreen));
+      setViewModeChoice(screenViewMode(currentScreen));
+    };
+    window.addEventListener(SCREEN_COLUMNS_EVENT, sync);
+    window.addEventListener(SCREEN_VIEW_MODE_EVENT, sync);
+    return () => {
+      window.removeEventListener(SCREEN_COLUMNS_EVENT, sync);
+      window.removeEventListener(SCREEN_VIEW_MODE_EVENT, sync);
+    };
+  }, [currentScreen]);
 
   useEffect(() => {
     setMetaPanel(null);
@@ -1035,19 +1072,17 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
             ) : (
               <div className="main-content-inner">
                 <div id="screen-meta-links" className="screen-meta-links">
-                  {currentScreen !== 'media' ? (
-                    <button
-                      type="button"
-                      className={`button show-settings${metaPanel === 'options' ? ' is-active' : ''}`}
-                      aria-expanded={metaPanel === 'options'}
-                      aria-controls="screen-options-wrap"
-                      onClick={() =>
-                        setMetaPanel((current) => (current === 'options' ? null : 'options'))
-                      }
-                    >
-                      Screen Options
-                    </button>
-                  ) : null}
+                  <button
+                    type="button"
+                    className={`button show-settings${metaPanel === 'options' ? ' is-active' : ''}`}
+                    aria-expanded={metaPanel === 'options'}
+                    aria-controls="screen-options-wrap"
+                    onClick={() =>
+                      setMetaPanel((current) => (current === 'options' ? null : 'options'))
+                    }
+                  >
+                    Screen Options
+                  </button>
                   <button
                     type="button"
                     className={`button show-settings${metaPanel === 'help' ? ' is-active' : ''}`}
@@ -1067,8 +1102,30 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
                     aria-label="Screen Options"
                   >
                     <h2>Screen Options</h2>
+                    {screenColumns.length > 0 ? (
+                      <fieldset className="metabox-prefs">
+                        <legend>Columns</legend>
+                        {screenColumns.map((column) => (
+                          <label key={column.id}>
+                            <input
+                              type="checkbox"
+                              checked={!hiddenColumns.has(column.id)}
+                              onChange={(event) =>
+                                setScreenColumnHidden(
+                                  currentScreen,
+                                  column.id,
+                                  !event.target.checked,
+                                )
+                              }
+                            />
+                            {column.label}
+                          </label>
+                        ))}
+                      </fieldset>
+                    ) : null}
                     {supportsPerPage ? (
-                      <div className="screen-options-row">
+                      <fieldset className="screen-options">
+                        <legend>Pagination</legend>
                         <label htmlFor="screen-per-page">Number of items per page:</label>
                         <input
                           id="screen-per-page"
@@ -1092,12 +1149,42 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
                         >
                           Apply
                         </button>
-                      </div>
-                    ) : (
+                      </fieldset>
+                    ) : null}
+                    {supportsViewMode ? (
+                      <fieldset className="screen-options-view-mode">
+                        <legend>View mode</legend>
+                        <label>
+                          <input
+                            type="radio"
+                            name="screen-view-mode"
+                            checked={viewMode === 'compact'}
+                            onChange={() => {
+                              setScreenViewMode(currentScreen, 'compact');
+                              setViewModeChoice('compact');
+                            }}
+                          />
+                          Compact view
+                        </label>
+                        <label>
+                          <input
+                            type="radio"
+                            name="screen-view-mode"
+                            checked={viewMode === 'extended'}
+                            onChange={() => {
+                              setScreenViewMode(currentScreen, 'extended');
+                              setViewModeChoice('extended');
+                            }}
+                          />
+                          Extended view
+                        </label>
+                      </fieldset>
+                    ) : null}
+                    {screenColumns.length === 0 && !supportsPerPage && !supportsViewMode ? (
                       <p className="screen-options-note">
                         This screen has no configurable options.
                       </p>
-                    )}
+                    ) : null}
                   </div>
                 ) : null}
 

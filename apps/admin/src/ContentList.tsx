@@ -34,7 +34,14 @@ import {
   replace,
   useLocation,
 } from './router.js';
-import { SCREEN_OPTIONS_EVENT, screenPerPage } from './screenOptions.js';
+import {
+  SCREEN_COLUMNS_EVENT,
+  SCREEN_OPTIONS_EVENT,
+  SCREEN_VIEW_MODE_EVENT,
+  screenHiddenColumns,
+  screenPerPage,
+  screenViewMode,
+} from './screenOptions.js';
 import { formatSettingsDate, formatSettingsTime } from './format.js';
 
 const MAX_SEARCH_LENGTH = 200;
@@ -101,6 +108,35 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
   const [bulkEditStatus, setBulkEditStatus] = useState<'DRAFT' | 'PUBLISHED'>('DRAFT');
   const [bulkBusy, setBulkBusy] = useState(false);
   const [previewBusyId, setPreviewBusyId] = useState<string | null>(null);
+  const screen = type === 'post' ? 'posts' : 'pages';
+  const [hiddenColumns, setHiddenColumns] = useState(() => screenHiddenColumns(screen));
+  const [viewMode, setViewMode] = useState(() => screenViewMode(screen));
+
+  useEffect(() => {
+    const sync = () => {
+      setHiddenColumns(screenHiddenColumns(screen));
+      setViewMode(screenViewMode(screen));
+    };
+    window.addEventListener(SCREEN_COLUMNS_EVENT, sync);
+    window.addEventListener(SCREEN_VIEW_MODE_EVENT, sync);
+    return () => {
+      window.removeEventListener(SCREEN_COLUMNS_EVENT, sync);
+      window.removeEventListener(SCREEN_VIEW_MODE_EVENT, sync);
+    };
+  }, [screen]);
+
+  const showAuthor = !hiddenColumns.has('author');
+  const showCategories = type === 'post' && !hiddenColumns.has('categories');
+  const showTags = type === 'post' && !hiddenColumns.has('tags');
+  const showComments = !hiddenColumns.has('comments');
+  const showDate = !hiddenColumns.has('date');
+  const visibleColumnCount =
+    2 +
+    (showAuthor ? 1 : 0) +
+    (showCategories ? 1 : 0) +
+    (showTags ? 1 : 0) +
+    (showComments ? 1 : 0) +
+    (showDate ? 1 : 0);
   const [sort, setSort] = useState<'updatedAt' | 'title'>('updatedAt');
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -524,7 +560,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
   const totalPages = Math.max(data?.pagination.totalPages ?? 1, 1);
 
   return (
-    <div className="wp-list-screen">
+    <div className={`wp-list-screen${viewMode === 'compact' ? ' compact-view' : ''}`}>
       <div className="list-title-row">
         <h1>{label}</h1>
         {canCreateContent(user) ? (
@@ -829,41 +865,47 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                       <SortIndicator direction={sort === 'title' ? order : null} />
                     </button>
                   </th>
-                  <th scope="col" className="column-author">
-                    Author
-                  </th>
-                  {type === 'post' ? (
-                    <>
-                      <th scope="col" className="column-categories">
-                        Categories
-                      </th>
-                      <th scope="col" className="column-tags">
-                        Tags
-                      </th>
-                    </>
+                  {showAuthor ? (
+                    <th scope="col" className="column-author">
+                      Author
+                    </th>
                   ) : null}
-                  <th scope="col" className="column-comments">
-                    <span className="screen-reader-text">Comments</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        d="M4 4h16v12H8l-4 4V4z"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.6"
-                      />
-                    </svg>
-                  </th>
-                  <th scope="col" className="column-date">
-                    <button
-                      type="button"
-                      className="sortable-column"
-                      aria-label={`Sort by date${sort === 'updatedAt' && order === 'desc' ? ', descending' : ''}`}
-                      onClick={() => toggleSort('updatedAt')}
-                    >
-                      Date
-                      <SortIndicator direction={sort === 'updatedAt' ? order : null} />
-                    </button>
-                  </th>
+                  {showCategories ? (
+                    <th scope="col" className="column-categories">
+                      Categories
+                    </th>
+                  ) : null}
+                  {showTags ? (
+                    <th scope="col" className="column-tags">
+                      Tags
+                    </th>
+                  ) : null}
+                  {showComments ? (
+                    <th scope="col" className="column-comments">
+                      <span className="screen-reader-text">Comments</span>
+                      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          d="M4 4h16v12H8l-4 4V4z"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                        />
+                      </svg>
+                    </th>
+                  ) : null}
+                  {showDate ? (
+                    <th scope="col" className="column-date">
+                      <button
+                        type="button"
+                        className="sortable-column"
+                        aria-label={`Sort by date${sort === 'updatedAt' && order === 'desc' ? ', descending' : ''}`}
+                        onClick={() => toggleSort('updatedAt')}
+                      >
+                        Date
+                        <SortIndicator direction={sort === 'updatedAt' ? order : null} />
+                      </button>
+                    </th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody>
@@ -1006,78 +1048,82 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                             ) : null}
                           </div>
                         </td>
-                        <td className="author column-author">
-                          <button
-                            type="button"
-                            className="term-link"
-                            onClick={() => {
-                              if (!post.authorId) return;
-                              setMine(false);
-                              setAuthorFilter(post.authorId);
-                              setPage(1);
-                            }}
-                          >
-                            {post.author?.username ??
-                              (post.authorId === user.id ? 'You' : 'Another user')}
-                          </button>
-                        </td>
-                        {type === 'post' ? (
-                          <>
-                            <td className="categories column-categories">
-                              {post.terms.categories.map((term) => (
-                                <button
-                                  key={term.id}
-                                  type="button"
-                                  className="term-link"
-                                  onClick={() => {
-                                    setCategoryFilter(term.id);
-                                    setPendingCategory(term.id);
-                                    setPage(1);
-                                  }}
-                                >
-                                  {term.name}
-                                </button>
-                              ))}
-                              {post.terms.categories.length === 0 && (
-                                <span className="no-terms">—</span>
-                              )}
-                            </td>
-                            <td className="tags column-tags">
-                              {post.terms.tags.map((term) => (
-                                <button
-                                  key={term.id}
-                                  type="button"
-                                  className="term-link"
-                                  onClick={() => {
-                                    setTagFilter(term.id);
-                                    setPage(1);
-                                  }}
-                                >
-                                  {term.name}
-                                </button>
-                              ))}
-                              {post.terms.tags.length === 0 && <span className="no-terms">—</span>}
-                            </td>
-                          </>
+                        {showAuthor ? (
+                          <td className="author column-author">
+                            <button
+                              type="button"
+                              className="term-link"
+                              onClick={() => {
+                                if (!post.authorId) return;
+                                setMine(false);
+                                setAuthorFilter(post.authorId);
+                                setPage(1);
+                              }}
+                            >
+                              {post.author?.username ??
+                                (post.authorId === user.id ? 'You' : 'Another user')}
+                            </button>
+                          </td>
                         ) : null}
-                        <td className="comments column-comments" />
-                        <td className="date column-date">
-                          <span className={`wp-status-prefix is-${post.status.toLowerCase()}`}>
-                            {post.status === 'PUBLISHED'
-                              ? 'Published'
-                              : post.status === 'DRAFT'
-                                ? 'Draft'
-                                : 'Trashed'}
-                          </span>
-                          <br />
-                          {formatWpDate(
-                            post.status === 'PUBLISHED' ? post.publishedAt : post.updatedAt,
-                          )}
-                        </td>
+                        {showCategories ? (
+                          <td className="categories column-categories">
+                            {post.terms.categories.map((term) => (
+                              <button
+                                key={term.id}
+                                type="button"
+                                className="term-link"
+                                onClick={() => {
+                                  setCategoryFilter(term.id);
+                                  setPendingCategory(term.id);
+                                  setPage(1);
+                                }}
+                              >
+                                {term.name}
+                              </button>
+                            ))}
+                            {post.terms.categories.length === 0 && (
+                              <span className="no-terms">—</span>
+                            )}
+                          </td>
+                        ) : null}
+                        {showTags ? (
+                          <td className="tags column-tags">
+                            {post.terms.tags.map((term) => (
+                              <button
+                                key={term.id}
+                                type="button"
+                                className="term-link"
+                                onClick={() => {
+                                  setTagFilter(term.id);
+                                  setPage(1);
+                                }}
+                              >
+                                {term.name}
+                              </button>
+                            ))}
+                            {post.terms.tags.length === 0 && <span className="no-terms">—</span>}
+                          </td>
+                        ) : null}
+                        {showComments ? <td className="comments column-comments" /> : null}
+                        {showDate ? (
+                          <td className="date column-date">
+                            <span className={`wp-status-prefix is-${post.status.toLowerCase()}`}>
+                              {post.status === 'PUBLISHED'
+                                ? 'Published'
+                                : post.status === 'DRAFT'
+                                  ? 'Draft'
+                                  : 'Trashed'}
+                            </span>
+                            <br />
+                            {formatWpDate(
+                              post.status === 'PUBLISHED' ? post.publishedAt : post.updatedAt,
+                            )}
+                          </td>
+                        ) : null}
                       </tr>
                       {quickId === post.id ? (
                         <tr className="quick-edit-row">
-                          <td colSpan={type === 'post' ? 7 : 5} className="colspanchange">
+                          <td colSpan={visibleColumnCount} className="colspanchange">
                             <div
                               className="inline-edit-wrapper"
                               role="region"
@@ -1197,41 +1243,47 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                       <SortIndicator direction={sort === 'title' ? order : null} />
                     </button>
                   </th>
-                  <th scope="col" className="column-author">
-                    Author
-                  </th>
-                  {type === 'post' ? (
-                    <>
-                      <th scope="col" className="column-categories">
-                        Categories
-                      </th>
-                      <th scope="col" className="column-tags">
-                        Tags
-                      </th>
-                    </>
+                  {showAuthor ? (
+                    <th scope="col" className="column-author">
+                      Author
+                    </th>
                   ) : null}
-                  <th scope="col" className="column-comments">
-                    <span className="screen-reader-text">Comments</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        d="M4 4h16v12H8l-4 4V4z"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.6"
-                      />
-                    </svg>
-                  </th>
-                  <th scope="col" className="column-date">
-                    <button
-                      type="button"
-                      className="sortable-column"
-                      aria-label={`Sort by date${sort === 'updatedAt' && order === 'desc' ? ', descending' : ''}`}
-                      onClick={() => toggleSort('updatedAt')}
-                    >
-                      Date
-                      <SortIndicator direction={sort === 'updatedAt' ? order : null} />
-                    </button>
-                  </th>
+                  {showCategories ? (
+                    <th scope="col" className="column-categories">
+                      Categories
+                    </th>
+                  ) : null}
+                  {showTags ? (
+                    <th scope="col" className="column-tags">
+                      Tags
+                    </th>
+                  ) : null}
+                  {showComments ? (
+                    <th scope="col" className="column-comments">
+                      <span className="screen-reader-text">Comments</span>
+                      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          d="M4 4h16v12H8l-4 4V4z"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                        />
+                      </svg>
+                    </th>
+                  ) : null}
+                  {showDate ? (
+                    <th scope="col" className="column-date">
+                      <button
+                        type="button"
+                        className="sortable-column"
+                        aria-label={`Sort by date${sort === 'updatedAt' && order === 'desc' ? ', descending' : ''}`}
+                        onClick={() => toggleSort('updatedAt')}
+                      >
+                        Date
+                        <SortIndicator direction={sort === 'updatedAt' ? order : null} />
+                      </button>
+                    </th>
+                  ) : null}
                 </tr>
               </tfoot>
             </table>

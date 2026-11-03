@@ -33,7 +33,12 @@ import {
 import { pluralize } from './format.js';
 import { roleLabel } from './roles.js';
 import { navigate, replace, useLocation } from './router.js';
-import { SCREEN_OPTIONS_EVENT, screenPerPage } from './screenOptions.js';
+import {
+  SCREEN_COLUMNS_EVENT,
+  SCREEN_OPTIONS_EVENT,
+  screenHiddenColumns,
+  screenPerPage,
+} from './screenOptions.js';
 
 const DEFAULT_PER_PAGE = 10;
 const REASSIGN_LIMIT = 100;
@@ -667,6 +672,18 @@ export function UsersPage({ user }: { user: AuthUser }) {
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [perPage, setPerPage] = useState(() => screenPerPage('users', DEFAULT_PER_PAGE));
+  const [hiddenColumns, setHiddenColumns] = useState(() => screenHiddenColumns('users'));
+
+  useEffect(() => {
+    const sync = () => setHiddenColumns(screenHiddenColumns('users'));
+    window.addEventListener(SCREEN_COLUMNS_EVENT, sync);
+    return () => window.removeEventListener(SCREEN_COLUMNS_EVENT, sync);
+  }, []);
+
+  const showName = !hiddenColumns.has('name');
+  const showEmail = !hiddenColumns.has('email');
+  const showRole = !hiddenColumns.has('role');
+  const showPosts = !hiddenColumns.has('posts');
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<'delete' | ''>('');
   const [bulkRole, setBulkRole] = useState<UserRole | ''>('');
@@ -1073,34 +1090,42 @@ export function UsersPage({ user }: { user: AuthUser }) {
                       <SortIndicator direction={sort === 'username' ? order : null} />
                     </button>
                   </th>
-                  <th scope="col" className="column-name">
-                    Name
-                  </th>
-                  <th scope="col" className="column-email">
-                    <button
-                      type="button"
-                      className="sortable-column"
-                      aria-label={`Sort by email${sort === 'email' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
-                      onClick={() => {
-                        if (sort === 'email') {
-                          setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
-                        } else {
-                          setSort('email');
-                          setOrder('asc');
-                        }
-                        setPage(1);
-                      }}
-                    >
-                      Email
-                      <SortIndicator direction={sort === 'email' ? order : null} />
-                    </button>
-                  </th>
-                  <th scope="col" className="column-role">
-                    Role
-                  </th>
-                  <th scope="col" className="column-posts">
-                    Posts
-                  </th>
+                  {showName ? (
+                    <th scope="col" className="column-name">
+                      Name
+                    </th>
+                  ) : null}
+                  {showEmail ? (
+                    <th scope="col" className="column-email">
+                      <button
+                        type="button"
+                        className="sortable-column"
+                        aria-label={`Sort by email${sort === 'email' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
+                        onClick={() => {
+                          if (sort === 'email') {
+                            setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
+                          } else {
+                            setSort('email');
+                            setOrder('asc');
+                          }
+                          setPage(1);
+                        }}
+                      >
+                        Email
+                        <SortIndicator direction={sort === 'email' ? order : null} />
+                      </button>
+                    </th>
+                  ) : null}
+                  {showRole ? (
+                    <th scope="col" className="column-role">
+                      Role
+                    </th>
+                  ) : null}
+                  {showPosts ? (
+                    <th scope="col" className="column-posts">
+                      Posts
+                    </th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody>
@@ -1166,10 +1191,12 @@ export function UsersPage({ user }: { user: AuthUser }) {
                           </button>
                         </div>
                       </td>
-                      <td className="column-name">{item.displayName ?? '—'}</td>
-                      <td className="column-email">{item.email ?? '—'}</td>
-                      <td className="role column-role">{roleLabel(item.role)}</td>
-                      <td className="posts column-posts">{item.postCount}</td>
+                      {showName ? <td className="column-name">{item.displayName ?? '—'}</td> : null}
+                      {showEmail ? <td className="column-email">{item.email ?? '—'}</td> : null}
+                      {showRole ? (
+                        <td className="role column-role">{roleLabel(item.role)}</td>
+                      ) : null}
+                      {showPosts ? <td className="posts column-posts">{item.postCount}</td> : null}
                     </tr>
                   );
                 })}
@@ -1206,34 +1233,42 @@ export function UsersPage({ user }: { user: AuthUser }) {
                       <SortIndicator direction={sort === 'username' ? order : null} />
                     </button>
                   </th>
-                  <th scope="col" className="column-name">
-                    Name
-                  </th>
-                  <th scope="col" className="column-email">
-                    <button
-                      type="button"
-                      className="sortable-column"
-                      aria-label={`Sort by email${sort === 'email' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
-                      onClick={() => {
-                        if (sort === 'email') {
-                          setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
-                        } else {
-                          setSort('email');
-                          setOrder('asc');
-                        }
-                        setPage(1);
-                      }}
-                    >
-                      Email
-                      <SortIndicator direction={sort === 'email' ? order : null} />
-                    </button>
-                  </th>
-                  <th scope="col" className="column-role">
-                    Role
-                  </th>
-                  <th scope="col" className="column-posts">
-                    Posts
-                  </th>
+                  {showName ? (
+                    <th scope="col" className="column-name">
+                      Name
+                    </th>
+                  ) : null}
+                  {showEmail ? (
+                    <th scope="col" className="column-email">
+                      <button
+                        type="button"
+                        className="sortable-column"
+                        aria-label={`Sort by email${sort === 'email' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
+                        onClick={() => {
+                          if (sort === 'email') {
+                            setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
+                          } else {
+                            setSort('email');
+                            setOrder('asc');
+                          }
+                          setPage(1);
+                        }}
+                      >
+                        Email
+                        <SortIndicator direction={sort === 'email' ? order : null} />
+                      </button>
+                    </th>
+                  ) : null}
+                  {showRole ? (
+                    <th scope="col" className="column-role">
+                      Role
+                    </th>
+                  ) : null}
+                  {showPosts ? (
+                    <th scope="col" className="column-posts">
+                      Posts
+                    </th>
+                  ) : null}
                 </tr>
               </tfoot>
             </table>

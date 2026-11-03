@@ -8461,3 +8461,54 @@ a.glance-chip:hover {
 .content-table.users tbody .row-actions {
   line-height: 1.2;
 }
+
+/* WordPress Screen Options panel: Columns, Pagination and View mode. */
+.screen-meta-panel .metabox-prefs,
+.screen-meta-panel .screen-options,
+.screen-meta-panel .screen-options-view-mode {
+  border: 0;
+  margin: 0 0 10px;
+  padding: 0;
+}
+
+.screen-meta-panel legend {
+  padding: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.screen-meta-panel .metabox-prefs label,
+.screen-meta-panel .screen-options-view-mode label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 12px 4px 0;
+  font-size: 13px;
+}
+
+.screen-meta-panel .screen-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.screen-meta-panel .screen-options label {
+  font-size: 13px;
+}
+
+.screen-meta-panel .screen-options input[type='number'] {
+  width: 60px;
+  height: 30px;
+}
+
+/* WordPress compact view removes row actions and tightens rows. */
+.wp-list-screen.compact-view .content-table .row-actions {
+  display: none;
+}
+
+.wp-list-screen.compact-view .content-table tbody td,
+.wp-list-screen.compact-view .content-table tbody th {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}

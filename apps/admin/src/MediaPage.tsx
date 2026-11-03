@@ -1,5 +1,10 @@
 import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
-import { SCREEN_OPTIONS_EVENT, screenPerPage } from './screenOptions.js';
+import {
+  SCREEN_COLUMNS_EVENT,
+  SCREEN_OPTIONS_EVENT,
+  screenHiddenColumns,
+  screenPerPage,
+} from './screenOptions.js';
 import {
   actionErrorMessage,
   deleteMedia,
@@ -341,6 +346,17 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
   const [monthFilter, setMonthFilter] = useState('');
   const [order, setOrder] = useState<'newest' | 'oldest'>('newest');
   const [perPage, setPerPage] = useState(() => screenPerPage('media', DEFAULT_PER_PAGE));
+  const [hiddenColumns, setHiddenColumns] = useState(() => screenHiddenColumns('media'));
+
+  useEffect(() => {
+    const sync = () => setHiddenColumns(screenHiddenColumns('media'));
+    window.addEventListener(SCREEN_COLUMNS_EVENT, sync);
+    return () => window.removeEventListener(SCREEN_COLUMNS_EVENT, sync);
+  }, []);
+
+  const showAuthor = !hiddenColumns.has('author');
+  const showParent = !hiddenColumns.has('parent');
+  const showDate = !hiddenColumns.has('date');
   const [bulkSelect, setBulkSelect] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
@@ -873,26 +889,32 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
                       <th scope="col" className="column-title">
                         File
                       </th>
-                      <th scope="col" className="column-author">
-                        Author
-                      </th>
-                      <th scope="col" className="column-parent">
-                        Uploaded to
-                      </th>
-                      <th scope="col" className="column-date">
-                        <button
-                          type="button"
-                          className="sortable-column"
-                          aria-label={`Sort by date${order === 'newest' ? ', descending' : ''}`}
-                          onClick={() => {
-                            setOrder((value) => (value === 'newest' ? 'oldest' : 'newest'));
-                            setPage(1);
-                          }}
-                        >
-                          Date
-                          <SortIndicator direction={order === 'newest' ? 'desc' : 'asc'} />
-                        </button>
-                      </th>
+                      {showAuthor ? (
+                        <th scope="col" className="column-author">
+                          Author
+                        </th>
+                      ) : null}
+                      {showParent ? (
+                        <th scope="col" className="column-parent">
+                          Uploaded to
+                        </th>
+                      ) : null}
+                      {showDate ? (
+                        <th scope="col" className="column-date">
+                          <button
+                            type="button"
+                            className="sortable-column"
+                            aria-label={`Sort by date${order === 'newest' ? ', descending' : ''}`}
+                            onClick={() => {
+                              setOrder((value) => (value === 'newest' ? 'oldest' : 'newest'));
+                              setPage(1);
+                            }}
+                          >
+                            Date
+                            <SortIndicator direction={order === 'newest' ? 'desc' : 'asc'} />
+                          </button>
+                        </th>
+                      ) : null}
                     </tr>
                   </thead>
                   <tbody>
@@ -992,18 +1014,22 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
                             </a>
                           </div>
                         </td>
-                        <td className="column-author">—</td>
-                        <td className="column-parent">
-                          <span className="media-unattached">(Unattached)</span>
-                          <button
-                            type="button"
-                            className="media-attach-link"
-                            onClick={() => setSelected(item)}
-                          >
-                            Attach
-                          </button>
-                        </td>
-                        <td className="column-date">{relativeMediaDate(item.createdAt)}</td>
+                        {showAuthor ? <td className="column-author">—</td> : null}
+                        {showParent ? (
+                          <td className="column-parent">
+                            <span className="media-unattached">(Unattached)</span>
+                            <button
+                              type="button"
+                              className="media-attach-link"
+                              onClick={() => setSelected(item)}
+                            >
+                              Attach
+                            </button>
+                          </td>
+                        ) : null}
+                        {showDate ? (
+                          <td className="column-date">{relativeMediaDate(item.createdAt)}</td>
+                        ) : null}
                       </tr>
                     ))}
                   </tbody>
@@ -1013,26 +1039,32 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
                       <th scope="col" className="column-title">
                         File
                       </th>
-                      <th scope="col" className="column-author">
-                        Author
-                      </th>
-                      <th scope="col" className="column-parent">
-                        Uploaded to
-                      </th>
-                      <th scope="col" className="column-date">
-                        <button
-                          type="button"
-                          className="sortable-column"
-                          aria-label={`Sort by date${order === 'newest' ? ', descending' : ''}`}
-                          onClick={() => {
-                            setOrder((value) => (value === 'newest' ? 'oldest' : 'newest'));
-                            setPage(1);
-                          }}
-                        >
-                          Date
-                          <SortIndicator direction={order === 'newest' ? 'desc' : 'asc'} />
-                        </button>
-                      </th>
+                      {showAuthor ? (
+                        <th scope="col" className="column-author">
+                          Author
+                        </th>
+                      ) : null}
+                      {showParent ? (
+                        <th scope="col" className="column-parent">
+                          Uploaded to
+                        </th>
+                      ) : null}
+                      {showDate ? (
+                        <th scope="col" className="column-date">
+                          <button
+                            type="button"
+                            className="sortable-column"
+                            aria-label={`Sort by date${order === 'newest' ? ', descending' : ''}`}
+                            onClick={() => {
+                              setOrder((value) => (value === 'newest' ? 'oldest' : 'newest'));
+                              setPage(1);
+                            }}
+                          >
+                            Date
+                            <SortIndicator direction={order === 'newest' ? 'desc' : 'asc'} />
+                          </button>
+                        </th>
+                      ) : null}
                     </tr>
                   </tfoot>
                 </table>
