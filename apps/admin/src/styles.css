@@ -8593,3 +8593,37 @@ a.glance-chip:hover {
 #dashboard-widgets.columns-4 .postbox-container {
   width: 25%;
 }
+
+/* WordPress pagination page input. */
+.tablenav-pages .paging-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  vertical-align: middle;
+}
+
+.tablenav-pages .current-page {
+  width: 40px;
+  height: 30px;
+  padding: 0 4px;
+  border: 1px solid #8c8f94;
+  border-radius: 2px;
+  text-align: center;
+  font-size: 13px;
+}
+
+.tablenav-pages .tablenav-paging-text {
+  font-size: 13px;
+}
+
+.pagination .page-numbers.current {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

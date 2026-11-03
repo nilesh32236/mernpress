@@ -29,6 +29,7 @@ import {
   Skeleton,
   SortIndicator,
   type NoticeMessage,
+  Pagination,
 } from './components.js';
 import { pluralize } from './format.js';
 import { roleLabel } from './roles.js';
@@ -1303,56 +1304,15 @@ export function UsersPage({ user }: { user: AuthUser }) {
           </div>
 
           {totalPages > 1 ? (
-            <nav className="pagination" aria-label="Users pagination">
-              <div className="tablenav-pages">
-                <span className="displaying-num">{pluralize(total, 'user')}</span>
-                <span className="pagination-links">
-                  <button
-                    type="button"
-                    className="button secondary-button pagination-button"
-                    aria-label="First page"
-                    title="First page"
-                    disabled={page <= 1}
-                    onClick={() => setPage(1)}
-                  >
-                    «
-                  </button>
-                  <button
-                    type="button"
-                    className="button secondary-button pagination-button"
-                    aria-label="Previous page"
-                    title="Previous page"
-                    disabled={page <= 1}
-                    onClick={() => setPage((value) => Math.max(1, value - 1))}
-                  >
-                    ‹
-                  </button>
-                  <span className="page-numbers current">
-                    Page {page} of {totalPages}
-                  </span>
-                  <button
-                    type="button"
-                    className="button secondary-button pagination-button"
-                    aria-label="Next page"
-                    title="Next page"
-                    disabled={page >= totalPages}
-                    onClick={() => setPage((value) => value + 1)}
-                  >
-                    ›
-                  </button>
-                  <button
-                    type="button"
-                    className="button secondary-button pagination-button"
-                    aria-label="Last page"
-                    title="Last page"
-                    disabled={page >= totalPages}
-                    onClick={() => setPage(totalPages)}
-                  >
-                    »
-                  </button>
-                </span>
-              </div>
-            </nav>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              singular="user"
+              plural="users"
+              ariaLabel="Users pagination"
+              onChange={setPage}
+            />
           ) : null}
         </>
       )}

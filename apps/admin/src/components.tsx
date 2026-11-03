@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import type { PostStatus } from './api.js';
 import { statusLabel } from './roles.js';
 
@@ -228,5 +228,107 @@ export function SortIndicator({ direction }: { direction: 'asc' | 'desc' | null 
       <span className={`sorting-indicator asc${direction === 'asc' ? ' is-sorted' : ''}`} />
       <span className={`sorting-indicator desc${direction === 'desc' ? ' is-sorted' : ''}`} />
     </span>
+  );
+}
+
+/**
+ * WordPress tablenav pagination: « ‹ [page] of N › » with a page-number input.
+ * The old "Page X of Y" text is kept as a screen-reader node for tests/a11y.
+ */
+export function Pagination({
+  page,
+  totalPages,
+  total,
+  singular,
+  plural,
+  ariaLabel,
+  onChange,
+}: {
+  page: number;
+  totalPages: number;
+  total: number;
+  singular: string;
+  plural: string;
+  ariaLabel: string;
+  onChange: (page: number) => void;
+}) {
+  const inputId = useId();
+  if (totalPages <= 1) {
+    return null;
+  }
+  return (
+    <nav className="pagination" aria-label={ariaLabel}>
+      <div className="tablenav-pages">
+        <span className="displaying-num">
+          {total} {total === 1 ? singular : plural}
+        </span>
+        <span className="pagination-links">
+          <button
+            type="button"
+            className="button secondary-button pagination-button"
+            aria-label="First page"
+            title="First page"
+            disabled={page <= 1}
+            onClick={() => onChange(1)}
+          >
+            «
+          </button>
+          <button
+            type="button"
+            className="button secondary-button pagination-button"
+            aria-label="Previous page"
+            title="Previous page"
+            disabled={page <= 1}
+            onClick={() => onChange(Math.max(1, page - 1))}
+          >
+            ‹
+          </button>
+          <span className="paging-input">
+            <span className="page-numbers current">
+              Page {page} of {totalPages}
+            </span>
+            <label htmlFor={inputId} className="screen-reader-text">
+              Current Page
+            </label>
+            <input
+              id={inputId}
+              className="current-page"
+              type="number"
+              min={1}
+              max={totalPages}
+              value={page}
+              onChange={(event) => {
+                const next = Math.min(totalPages, Math.max(1, Number(event.target.value) || 1));
+                onChange(next);
+              }}
+            />
+            <span className="tablenav-paging-text">
+              {' '}
+              of <span className="total-pages">{totalPages}</span>
+            </span>
+          </span>
+          <button
+            type="button"
+            className="button secondary-button pagination-button"
+            aria-label="Next page"
+            title="Next page"
+            disabled={page >= totalPages}
+            onClick={() => onChange(Math.min(totalPages, page + 1))}
+          >
+            ›
+          </button>
+          <button
+            type="button"
+            className="button secondary-button pagination-button"
+            aria-label="Last page"
+            title="Last page"
+            disabled={page >= totalPages}
+            onClick={() => onChange(totalPages)}
+          >
+            »
+          </button>
+        </span>
+      </div>
+    </nav>
   );
 }

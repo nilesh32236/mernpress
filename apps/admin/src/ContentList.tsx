@@ -24,6 +24,7 @@ import {
   PageHeader,
   SortIndicator,
   type NoticeMessage,
+  Pagination,
 } from './components.js';
 import { availableTransitions, canCreateContent, canEditPost, canReadContent } from './roles.js';
 import {
@@ -1324,58 +1325,15 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
           </div>
 
           {totalPages > 1 ? (
-            <nav className="pagination" aria-label={`${label} pagination`}>
-              <div className="tablenav-pages">
-                <span className="displaying-num">
-                  {`${data.pagination.total} ${data.pagination.total === 1 ? 'item' : 'items'}`}
-                </span>
-                <span className="pagination-links">
-                  <button
-                    type="button"
-                    className="button secondary-button pagination-button"
-                    aria-label="First page"
-                    title="First page"
-                    disabled={page <= 1}
-                    onClick={() => applyFilters(status, search, 1)}
-                  >
-                    «
-                  </button>
-                  <button
-                    type="button"
-                    className="button secondary-button pagination-button"
-                    aria-label="Previous page"
-                    title="Previous page"
-                    disabled={page <= 1}
-                    onClick={() => applyFilters(status, search, page - 1)}
-                  >
-                    ‹
-                  </button>
-                  <span className="page-numbers current">
-                    Page {page} of {totalPages}
-                  </span>
-                  <button
-                    type="button"
-                    className="button secondary-button pagination-button"
-                    aria-label="Next page"
-                    title="Next page"
-                    disabled={page >= totalPages}
-                    onClick={() => applyFilters(status, search, page + 1)}
-                  >
-                    ›
-                  </button>
-                  <button
-                    type="button"
-                    className="button secondary-button pagination-button"
-                    aria-label="Last page"
-                    title="Last page"
-                    disabled={page >= totalPages}
-                    onClick={() => applyFilters(status, search, totalPages)}
-                  >
-                    »
-                  </button>
-                </span>
-              </div>
-            </nav>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={data.pagination.total}
+              singular="item"
+              plural="items"
+              ariaLabel={`${label} pagination`}
+              onChange={(next) => applyFilters(status, search, next)}
+            />
           ) : null}
         </>
       )}

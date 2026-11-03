@@ -18,6 +18,7 @@ import {
   PageHeader,
   SortIndicator,
   type NoticeMessage,
+  Pagination,
 } from './components.js';
 import { canManageTerms } from './roles.js';
 import { replace, useLocation } from './router.js';
@@ -829,61 +830,15 @@ export function TermsPage({ user }: { user: AuthUser }) {
               </div>
 
               {totalPages > 1 ? (
-                <nav className="pagination" aria-label={`${taxonomyPlural(taxonomy)} pagination`}>
-                  <div className="tablenav-pages">
-                    <span className="displaying-num">
-                      {data.pagination.total}{' '}
-                      {data.pagination.total === 1
-                        ? taxonomyLabel(taxonomy)
-                        : taxonomyPlural(taxonomy)}
-                    </span>
-                    <span className="pagination-links">
-                      <button
-                        type="button"
-                        className="button secondary-button pagination-button"
-                        aria-label="First page"
-                        title="First page"
-                        disabled={page <= 1}
-                        onClick={() => applyState(taxonomy, search, 1)}
-                      >
-                        «
-                      </button>
-                      <button
-                        type="button"
-                        className="button secondary-button pagination-button"
-                        aria-label="Previous page"
-                        title="Previous page"
-                        disabled={page <= 1}
-                        onClick={() => applyState(taxonomy, search, page - 1)}
-                      >
-                        ‹
-                      </button>
-                      <span className="page-numbers current">
-                        Page {page} of {totalPages}
-                      </span>
-                      <button
-                        type="button"
-                        className="button secondary-button pagination-button"
-                        aria-label="Next page"
-                        title="Next page"
-                        disabled={page >= totalPages}
-                        onClick={() => applyState(taxonomy, search, page + 1)}
-                      >
-                        ›
-                      </button>
-                      <button
-                        type="button"
-                        className="button secondary-button pagination-button"
-                        aria-label="Last page"
-                        title="Last page"
-                        disabled={page >= totalPages}
-                        onClick={() => applyState(taxonomy, search, totalPages)}
-                      >
-                        »
-                      </button>
-                    </span>
-                  </div>
-                </nav>
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  total={data.pagination.total}
+                  singular={taxonomyLabel(taxonomy)}
+                  plural={taxonomyPlural(taxonomy)}
+                  ariaLabel={`${taxonomyPlural(taxonomy)} pagination`}
+                  onChange={(next) => applyState(taxonomy, search, next)}
+                />
               ) : null}
 
               <div className="tablenav">
