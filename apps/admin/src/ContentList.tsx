@@ -1,10 +1,11 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { Fragment, useEffect, useState, type FormEvent } from 'react';
 import {
   actionErrorMessage,
   bulkPosts,
   fetchPosts,
   fetchTerms,
   transitionPost,
+  updatePost,
   type AdminPost,
   type AdminTerm,
   type AuthUser,
@@ -100,6 +101,12 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
   const [categoryFilter, setCategoryFilter] = useState('');
   const [monthFilter, setMonthFilter] = useState('');
   const [pendingCategory, setPendingCategory] = useState('');
+  const [quickId, setQuickId] = useState<string | null>(null);
+  const [quickTitle, setQuickTitle] = useState('');
+  const [quickSlug, setQuickSlug] = useState('');
+  const [quickStatus, setQuickStatus] = useState<'DRAFT' | 'PUBLISHED'>('DRAFT');
+  const [quickBusy, setQuickBusy] = useState(false);
+  const [quickError, setQuickError] = useState<string | null>(null);
   const [perPage, setPerPage] = useState(() =>
     screenPerPage(type === 'post' ? 'posts' : 'pages', 10),
   );
@@ -288,6 +295,49 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     applyFilters(status, searchInput.trim(), 1);
+  }
+
+  function startQuickEdit(post: AdminPost): void {
+    setQuickId(post.id);
+    setQuickTitle(post.title);
+    setQuickSlug(post.slug);
+    setQuickStatus(post.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT');
+    setQuickError(null);
+  }
+
+  async function saveQuickEdit(post: AdminPost): Promise<void> {
+    if (quickBusy) return;
+    const title = quickTitle.trim();
+    if (!title) {
+      setQuickError('Title is required.');
+      return;
+    }
+    setQuickBusy(true);
+    setQuickError(null);
+    try {
+      let updated = post;
+      if (title !== post.title || quickSlug.trim() !== post.slug) {
+        updated = await updatePost(post.id, {
+          baseVersion: post.version,
+          title,
+          ...(quickSlug.trim() ? { slug: quickSlug.trim() } : {}),
+        });
+      }
+      if (quickStatus !== updated.status) {
+        updated = await transitionPost(
+          updated.id,
+          quickStatus === 'PUBLISHED' ? 'publish' : 'unpublish',
+          updated.version,
+        );
+      }
+      setQuickId(null);
+      setNotice({ tone: 'success', text: 'Changes saved.' });
+      setReloadKey((value) => value + 1);
+    } catch (caught) {
+      setQuickError(actionErrorMessage(caught));
+    } finally {
+      setQuickBusy(false);
+    }
   }
 
   async function runAction(post: AdminPost, action: TransitionAction) {
@@ -702,84 +752,30 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                   const transitions = availableTransitions(user, post);
                   const editable = canEditPost(user, post);
                   return (
-                    <tr key={post.id}>
-                      <th scope="row" className="check-column">
-                        <input
-                          type="checkbox"
-                          aria-label={`Select ${post.title}`}
-                          checked={selected.has(post.id)}
-                          disabled={!editable}
-                          onChange={() => toggleSelected(post.id)}
-                        />
-                      </th>
-                      <td className="title column-title">
-                        <a
-                          className="row-title"
-                          href={editContentPath(type, post.id)}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            navigate(editContentPath(type, post.id));
-                          }}
-                        >
-                          {post.title}
-                        </a>
-                        <div className="row-actions">
-                          {editable ? (
-                            <a
-                              className="row-action-link"
-                              href={editContentPath(type, post.id)}
-                              onClick={(event) => {
-                                event.preventDefault();
-                                navigate(editContentPath(type, post.id));
-                              }}
-                            >
-                              Edit
-                            </a>
-                          ) : null}
-                          {transitions.includes('trash') ? (
-                            <>
-                              <span className="row-action-sep" aria-hidden="true">
-                                {' '}
-                                |{' '}
-                              </span>
-                              <button
-                                type="button"
-                                className="row-action-link is-danger"
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  void runAction(post, 'trash');
-                                }}
-                              >
-                                Trash
-                              </button>
-                            </>
-                          ) : null}
-                          {transitions.includes('restore') ? (
-                            <>
-                              <span className="row-action-sep" aria-hidden="true">
-                                {' '}
-                                |{' '}
-                              </span>
-                              <button
-                                type="button"
-                                className="row-action-link"
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  void runAction(post, 'restore');
-                                }}
-                              >
-                                Restore
-                              </button>
-                            </>
-                          ) : null}
-                          {post.status === 'PUBLISHED' ||
-                          transitions.includes('publish') ||
-                          transitions.includes('unpublish') ? (
-                            <>
-                              <span className="row-action-sep" aria-hidden="true">
-                                {' '}
-                                |{' '}
-                              </span>
+                    <Fragment key={post.id}>
+                      <tr>
+                        <th scope="row" className="check-column">
+                          <input
+                            type="checkbox"
+                            aria-label={`Select ${post.title}`}
+                            checked={selected.has(post.id)}
+                            disabled={!editable}
+                            onChange={() => toggleSelected(post.id)}
+                          />
+                        </th>
+                        <td className="title column-title">
+                          <a
+                            className="row-title"
+                            href={editContentPath(type, post.id)}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              navigate(editContentPath(type, post.id));
+                            }}
+                          >
+                            {post.title}
+                          </a>
+                          <div className="row-actions">
+                            {editable ? (
                               <a
                                 className="row-action-link"
                                 href={editContentPath(type, post.id)}
@@ -788,75 +784,226 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                                   navigate(editContentPath(type, post.id));
                                 }}
                               >
-                                View
+                                Edit
                               </a>
-                            </>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td className="author column-author">
-                        <button
-                          type="button"
-                          className="term-link"
-                          onClick={() => {
-                            if (!post.authorId) return;
-                            setMine(false);
-                            setAuthorFilter(post.authorId);
-                            setPage(1);
-                          }}
-                        >
-                          {post.author?.username ??
-                            (post.authorId === user.id ? 'You' : 'Another user')}
-                        </button>
-                      </td>
-                      <td className="categories column-categories">
-                        {post.terms.categories.map((term) => (
+                            ) : null}
+                            {transitions.includes('trash') ? (
+                              <>
+                                <span className="row-action-sep" aria-hidden="true">
+                                  {' '}
+                                  |{' '}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="row-action-link is-danger"
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    void runAction(post, 'trash');
+                                  }}
+                                >
+                                  Trash
+                                </button>
+                              </>
+                            ) : null}
+                            {transitions.includes('restore') ? (
+                              <>
+                                <span className="row-action-sep" aria-hidden="true">
+                                  {' '}
+                                  |{' '}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="row-action-link"
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    void runAction(post, 'restore');
+                                  }}
+                                >
+                                  Restore
+                                </button>
+                              </>
+                            ) : null}
+                            {post.status === 'PUBLISHED' ||
+                            transitions.includes('publish') ||
+                            transitions.includes('unpublish') ? (
+                              <>
+                                <span className="row-action-sep" aria-hidden="true">
+                                  {' '}
+                                  |{' '}
+                                </span>
+                                <a
+                                  className="row-action-link"
+                                  href={editContentPath(type, post.id)}
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    navigate(editContentPath(type, post.id));
+                                  }}
+                                >
+                                  View
+                                </a>
+                              </>
+                            ) : null}
+                            {editable && post.status !== 'TRASHED' ? (
+                              <>
+                                <span className="row-action-sep" aria-hidden="true">
+                                  {' '}
+                                  |{' '}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="row-action-link"
+                                  onClick={() => startQuickEdit(post)}
+                                >
+                                  Quick Edit
+                                </button>
+                              </>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td className="author column-author">
                           <button
-                            key={term.id}
                             type="button"
                             className="term-link"
                             onClick={() => {
-                              setCategoryFilter(term.id);
-                              setPendingCategory(term.id);
+                              if (!post.authorId) return;
+                              setMine(false);
+                              setAuthorFilter(post.authorId);
                               setPage(1);
                             }}
                           >
-                            {term.name}
+                            {post.author?.username ??
+                              (post.authorId === user.id ? 'You' : 'Another user')}
                           </button>
-                        ))}
-                        {post.terms.categories.length === 0 && <span className="no-terms">—</span>}
-                      </td>
-                      <td className="tags column-tags">
-                        {post.terms.tags.map((term) => (
-                          <button
-                            key={term.id}
-                            type="button"
-                            className="term-link"
-                            onClick={() => {
-                              setTagFilter(term.id);
-                              setPage(1);
-                            }}
-                          >
-                            {term.name}
-                          </button>
-                        ))}
-                        {post.terms.tags.length === 0 && <span className="no-terms">—</span>}
-                      </td>
-                      <td className="comments column-comments" />
-                      <td className="date column-date">
-                        <span className={`wp-status-prefix is-${post.status.toLowerCase()}`}>
-                          {post.status === 'PUBLISHED'
-                            ? 'Published'
-                            : post.status === 'DRAFT'
-                              ? 'Draft'
-                              : 'Trashed'}
-                        </span>
-                        <br />
-                        {formatWpDate(
-                          post.status === 'PUBLISHED' ? post.publishedAt : post.updatedAt,
-                        )}
-                      </td>
-                    </tr>
+                        </td>
+                        <td className="categories column-categories">
+                          {post.terms.categories.map((term) => (
+                            <button
+                              key={term.id}
+                              type="button"
+                              className="term-link"
+                              onClick={() => {
+                                setCategoryFilter(term.id);
+                                setPendingCategory(term.id);
+                                setPage(1);
+                              }}
+                            >
+                              {term.name}
+                            </button>
+                          ))}
+                          {post.terms.categories.length === 0 && (
+                            <span className="no-terms">—</span>
+                          )}
+                        </td>
+                        <td className="tags column-tags">
+                          {post.terms.tags.map((term) => (
+                            <button
+                              key={term.id}
+                              type="button"
+                              className="term-link"
+                              onClick={() => {
+                                setTagFilter(term.id);
+                                setPage(1);
+                              }}
+                            >
+                              {term.name}
+                            </button>
+                          ))}
+                          {post.terms.tags.length === 0 && <span className="no-terms">—</span>}
+                        </td>
+                        <td className="comments column-comments" />
+                        <td className="date column-date">
+                          <span className={`wp-status-prefix is-${post.status.toLowerCase()}`}>
+                            {post.status === 'PUBLISHED'
+                              ? 'Published'
+                              : post.status === 'DRAFT'
+                                ? 'Draft'
+                                : 'Trashed'}
+                          </span>
+                          <br />
+                          {formatWpDate(
+                            post.status === 'PUBLISHED' ? post.publishedAt : post.updatedAt,
+                          )}
+                        </td>
+                      </tr>
+                      {quickId === post.id ? (
+                        <tr className="quick-edit-row">
+                          <td colSpan={7}>
+                            <form
+                              className="quick-edit-form"
+                              aria-label={`Quick edit ${post.title}`}
+                              onSubmit={(event) => {
+                                event.preventDefault();
+                                void saveQuickEdit(post);
+                              }}
+                            >
+                              <div className="quick-edit-fields">
+                                <label>
+                                  <span>Title</span>
+                                  <input
+                                    type="text"
+                                    value={quickTitle}
+                                    onChange={(event) => setQuickTitle(event.target.value)}
+                                    disabled={quickBusy}
+                                    required
+                                  />
+                                </label>
+                                <label>
+                                  <span>Slug</span>
+                                  <input
+                                    type="text"
+                                    value={quickSlug}
+                                    onChange={(event) => setQuickSlug(event.target.value)}
+                                    disabled={quickBusy}
+                                  />
+                                </label>
+                                <label>
+                                  <span>Status</span>
+                                  <select
+                                    value={quickStatus}
+                                    onChange={(event) =>
+                                      setQuickStatus(event.target.value as 'DRAFT' | 'PUBLISHED')
+                                    }
+                                    disabled={quickBusy}
+                                  >
+                                    {transitions.includes('unpublish') ||
+                                    post.status === 'DRAFT' ? (
+                                      <option value="DRAFT">Draft</option>
+                                    ) : null}
+                                    {transitions.includes('publish') ||
+                                    post.status === 'PUBLISHED' ? (
+                                      <option value="PUBLISHED">Published</option>
+                                    ) : null}
+                                  </select>
+                                </label>
+                              </div>
+                              {quickError ? (
+                                <p className="form-error" role="alert">
+                                  {quickError}
+                                </p>
+                              ) : null}
+                              <div className="quick-edit-actions">
+                                <button
+                                  type="submit"
+                                  className="button primary-button"
+                                  disabled={quickBusy}
+                                  aria-busy={quickBusy}
+                                >
+                                  {quickBusy ? 'Updating…' : 'Update'}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="button secondary-button"
+                                  onClick={() => setQuickId(null)}
+                                  disabled={quickBusy}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </form>
+                          </td>
+                        </tr>
+                      ) : null}
+                    </Fragment>
                   );
                 })}
               </tbody>

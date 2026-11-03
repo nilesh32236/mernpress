@@ -5947,3 +5947,46 @@ a.glance-chip:hover {
 .content-table.terms .column-name {
   width: 30%;
 }
+
+/* WordPress Quick Edit row. */
+.quick-edit-row > td {
+  background: #f6f7f7;
+  border-left: 4px solid #72aee6;
+  padding: 12px 10px;
+}
+
+.quick-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quick-edit-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  align-items: flex-end;
+}
+
+.quick-edit-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: #1d2327;
+}
+
+.quick-edit-fields input,
+.quick-edit-fields select {
+  min-width: 220px;
+}
+
+.quick-edit-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.quick-edit-actions .button {
+  font-size: 13px;
+}
