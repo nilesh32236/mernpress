@@ -39,8 +39,9 @@ describe('dashboard', () => {
     render(<Dashboard user={admin} />);
 
     expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeDefined();
-    expect(await screen.findByRole('link', { name: /9\s*Posts/ })).toBeDefined();
-    expect(await screen.findByRole('link', { name: /6\s*Pages/ })).toBeDefined();
+    // At a Glance shows published totals, like WordPress ("N Published posts").
+    expect(await screen.findByRole('link', { name: /3\s*Published posts/ })).toBeDefined();
+    expect(await screen.findByRole('link', { name: /2\s*Published pages/ })).toBeDefined();
     // Six count queries + one site-health check (dashboard card).
     expect(fetchMock).toHaveBeenCalledTimes(7);
     const urls = fetchMock.mock.calls.map(([url]) => String(url));

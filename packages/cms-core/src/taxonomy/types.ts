@@ -46,7 +46,7 @@ export interface UpdateTermInput {
   parentId?: string | null | undefined;
 }
 
-export type TermSort = 'name' | 'createdAt' | 'updatedAt';
+export type TermSort = 'name' | 'description' | 'slug' | 'count' | 'createdAt' | 'updatedAt';
 
 export interface TermListQuery {
   taxonomy?: TaxonomyType | undefined;

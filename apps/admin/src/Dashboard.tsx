@@ -372,50 +372,52 @@ export function Dashboard({ user }: { user: AuthUser }) {
             <ul>
               <li className="post-count">
                 <a
-                  href={listPath('post')}
+                  href={`${listPath('post')}?status=PUBLISHED`}
                   onClick={(event) => {
                     event.preventDefault();
-                    navigate(listPath('post'));
+                    navigate(`${listPath('post')}?status=PUBLISHED`);
                   }}
                 >
                   <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 20 20"
                     aria-hidden="true"
                     className="glance-icon"
                   >
                     <path
-                      d="M16 3l5 5-3 1-4 4-3-3 4-4 1-3zM9 12l3 3-4 4 10 3-3-10-4 4z"
+                      d="M14.5 3.5 17 6l-2 .7-2.8 2.8L10 7.3l2.8-2.8.7-2zM8.3 9.6l2.1 2.1-2.9 2.9 7 2.1-2.1-7-2.9 2.9z"
                       fill="currentColor"
                     />
                   </svg>
-                  {postTotal} {postTotal === 1 ? 'Post' : 'Posts'}
+                  {counts.post.PUBLISHED}{' '}
+                  {counts.post.PUBLISHED === 1 ? 'Published post' : 'Published posts'}
                 </a>
               </li>
               <li className="page-count">
                 <a
-                  href={listPath('page')}
+                  href={`${listPath('page')}?status=PUBLISHED`}
                   onClick={(event) => {
                     event.preventDefault();
-                    navigate(listPath('page'));
+                    navigate(`${listPath('page')}?status=PUBLISHED`);
                   }}
                 >
                   <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 20 20"
                     aria-hidden="true"
                     className="glance-icon"
                   >
-                    <path d="M6 3h9l4 4v14H6V3zm8 1.5V8h3.5L14 4.5z" fill="currentColor" />
+                    <path d="M5 2.5h7.5L16 6v11.5H5V2.5zm7 1.2V6.7h3L12 3.7z" fill="currentColor" />
                   </svg>
-                  {pageTotal} {pageTotal === 1 ? 'Page' : 'Pages'}
+                  {counts.page.PUBLISHED}{' '}
+                  {counts.page.PUBLISHED === 1 ? 'Published page' : 'Published pages'}
                 </a>
               </li>
             </ul>
             <p id="wp-version-message">
-              <span>MERNPress running the block editor.</span>
+              <span>MERNPress 0.1.0.</span>
             </p>
           </div>
         );
@@ -493,9 +495,6 @@ export function Dashboard({ user }: { user: AuthUser }) {
     }
   }
 
-  const postTotal = counts.post.DRAFT + counts.post.PUBLISHED + counts.post.TRASHED;
-  const pageTotal = counts.page.DRAFT + counts.page.PUBLISHED + counts.page.TRASHED;
-
   return (
     <>
       <div className="dash-title-row">
@@ -529,7 +528,7 @@ export function Dashboard({ user }: { user: AuthUser }) {
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path fill="#151515" d="M0 0h1232v240H0z" />
-                  <ellipse cx="616" cy="232" fill="#3858E9" opacity=".12" rx="1497" ry="249" />
+                  <ellipse cx="616" cy="232" fill="#3858E9" opacity=".05" rx="1497" ry="249" />
                   <defs>
                     <linearGradient
                       id="wp-hero-blue"

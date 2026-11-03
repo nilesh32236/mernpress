@@ -591,6 +591,7 @@ h2 {
 /* ---------- Sidebar ---------- */
 
 .admin-sidebar {
+  padding-top: 12px;
   background: var(--wp-sidebar);
   border-right: 1px solid var(--wp-sidebar-border);
   color: var(--wp-sidebar-text);
@@ -706,10 +707,11 @@ h2 {
    hover/focus for the others. */
 .nav-submenu {
   display: none;
-  background: var(--wp-sidebar);
-  padding: 0 0 6px;
+  background: #2c3338;
+  padding: 6px 0;
   margin: 0;
   list-style: none;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
 }
 
 .nav-item.is-active .nav-submenu,
@@ -884,12 +886,6 @@ a.nav-sublink.is-active:hover {
   flex: 1;
 }
 
-@media (min-width: 640px) {
-  .main-content {
-    padding: 12px 20px 32px;
-  }
-}
-
 .main-content-inner {
   width: 100%;
   display: flex;
@@ -979,15 +975,15 @@ a.nav-sublink.is-active:hover {
   position: relative;
   top: -3px;
   margin-left: 0;
-  padding: 0 10px;
-  min-height: 30px;
+  padding: 0 12px;
+  height: 32px;
   border: 1px solid #2271b1;
-  border-radius: 3px;
-  background: #f6f7f7;
+  border-radius: 2px;
+  background: transparent;
   color: #2271b1;
   font-size: 13px;
-  font-weight: 400;
-  line-height: 2.15384615;
+  font-weight: 500;
+  line-height: 30px;
   text-decoration: none;
   cursor: pointer;
   white-space: nowrap;
@@ -2130,10 +2126,10 @@ a.glance-chip:hover {
 
 .settings-panel .field {
   display: grid;
-  grid-template-columns: 200px minmax(0, 1fr);
-  gap: 0 20px;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 0;
   align-items: start;
-  padding: 15px 0;
+  padding: 0;
   margin: 0;
   border: 0;
 }
@@ -2141,10 +2137,27 @@ a.glance-chip:hover {
 .settings-panel .field > label,
 .settings-panel .field > .field-label {
   grid-column: 1;
-  padding: 10px 10px 0 0;
+  padding: 20px 10px 20px 0;
   font-size: 14px;
   font-weight: 600;
+  line-height: 1.3;
   color: #1d2327;
+}
+
+.settings-panel .field > div,
+.settings-panel .field > input,
+.settings-panel .field > select,
+.settings-panel .field > textarea,
+.settings-panel .field > .field-help {
+  grid-column: 2;
+}
+
+.settings-panel .field > div,
+.settings-panel .field > input,
+.settings-panel .field > select,
+.settings-panel .field > textarea {
+  margin-top: 15px;
+  margin-bottom: 15px;
 }
 
 .settings-panel .field input:not([type='checkbox']):not([type='radio']),
@@ -2175,9 +2188,9 @@ a.glance-chip:hover {
 
 .settings-panel .field > .field-help {
   grid-column: 2;
-  margin: 6px 0 0;
+  margin: 4px 0 15px;
   font-style: normal;
-  font-size: 13px;
+  font-size: 14px;
   max-width: 66em;
 }
 
@@ -2185,8 +2198,18 @@ a.glance-chip:hover {
   grid-column: 2;
 }
 
-.settings-panel .side-actions {
-  padding: 10px 0 0 200px;
+.settings-panel .field.actions {
+  display: block;
+  margin: 20px 0 5px;
+  padding: 0 0 19.5px;
+}
+
+.settings-panel .field.actions .button {
+  height: 40px;
+  min-height: 40px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .settings-panel .content-card {
@@ -2678,7 +2701,7 @@ a.glance-chip:hover {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  min-height: 100vh;
+  min-height: calc(100vh - 32px);
   background: #ffffff;
 }
 
@@ -2692,9 +2715,9 @@ a.glance-chip:hover {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  height: 60px;
-  min-height: 60px;
-  padding: 0 8px 0 0;
+  height: 64px;
+  min-height: 64px;
+  padding: 0 8px;
   background: #ffffff;
   border-bottom: 1px solid #e0e0e0;
   color: #1e1e1e;
@@ -2732,8 +2755,8 @@ a.glance-chip:hover {
 .editor-topbar-tools {
   display: flex;
   align-items: center;
-  gap: 2px;
-  margin-left: 32px;
+  gap: 8px;
+  margin-left: 0;
   padding-left: 0;
   border-left: 0;
 }
@@ -2767,12 +2790,16 @@ a.glance-chip:hover {
 }
 
 .editor-topbar-tool-primary {
-  background: #3858e9;
+  width: 32px;
+  height: 32px;
+  border-radius: 2px;
+  background: #007cba;
   color: #ffffff;
 }
 
 .editor-topbar-tool-primary:hover:not(:disabled) {
-  background: #2145e6;
+  background: #005a87;
+  color: #ffffff;
 }
 
 .editor-topbar-divider {
@@ -2917,19 +2944,20 @@ a.glance-chip:hover {
 }
 
 .editor-topbar-publish {
-  padding: 6px 16px;
-  border: 1px solid #3858e9;
-  background: #3858e9;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  background: #007cba;
   color: #ffffff;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   border-radius: 2px;
-  min-height: 36px;
+  height: 32px;
+  min-height: 32px;
 }
 
 .editor-topbar-publish:hover:not(:disabled) {
-  background: #2145e6;
-  border-color: #2145e6;
+  background: #005a87;
+  border-color: #005a87;
   color: #ffffff;
 }
 
@@ -2952,7 +2980,7 @@ a.glance-chip:hover {
 }
 
 .editor-topbar-gear.is-active {
-  background: #3858e9;
+  background: #1e1e1e;
   color: #ffffff;
 }
 
@@ -2963,24 +2991,21 @@ a.glance-chip:hover {
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
-  border: 1px solid transparent;
-  border-radius: 3px;
-  color: #ffffff;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 2px;
+  color: #1e1e1e;
   text-decoration: none;
-  transition:
-    background 120ms ease,
-    border-color 120ms ease;
 }
 
 .editor-back:hover {
-  background: var(--wp-sidebar-hover);
-  border-color: #646970;
+  background: #f0f0f0;
+  color: #1e1e1e;
 }
 
 .editor-back:focus-visible {
-  outline: 2px solid #72aee6;
+  outline: 2px solid #3858e9;
   outline-offset: 2px;
 }
 
@@ -3651,7 +3676,7 @@ a.glance-chip:hover {
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 0;
   margin: 0;
-  padding: 0;
+  padding: 2px;
   list-style: none;
 }
 
@@ -3667,9 +3692,7 @@ a.glance-chip:hover {
   text-align: left;
   cursor: pointer;
   overflow: hidden;
-  transition:
-    border-color 120ms ease,
-    box-shadow 120ms ease;
+  transition: box-shadow 120ms ease;
 }
 
 .media-card:hover,
@@ -3678,12 +3701,54 @@ a.glance-chip:hover {
   outline: none;
 }
 
+.media-card.is-selected {
+  box-shadow:
+    inset 0 0 0 5px #f0f0f1,
+    inset 0 0 0 7px #c3c4c7;
+}
+
+.media-card .media-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f0f0f1;
+  color: #50575e;
+}
+
+.media-card .media-check svg {
+  width: 16px;
+  height: 16px;
+}
+
+.media-grid.is-select-mode .media-card .media-check,
+.media-card.is-selected .media-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.media-card.is-selected .media-check {
+  background: #2271b1;
+  color: #ffffff;
+}
+
+.media-card.is-selected .media-thumb img {
+  opacity: 1;
+}
+
+.media-grid.is-select-mode .media-thumb img {
+  opacity: 0.65;
+}
+
 .media-thumb {
   display: block;
   aspect-ratio: 1 / 1;
   overflow: hidden;
   background: #f0f0f1;
-  overflow: hidden;
 }
 
 .media-thumb img {
@@ -4503,8 +4568,8 @@ a.glance-chip:hover {
 }
 
 .media-list-open img {
-  width: 60px;
-  height: 60px;
+  width: 62px;
+  height: 62px;
   object-fit: cover;
   border-radius: 3px;
   border: 1px solid #e0e0e0;
@@ -4812,30 +4877,110 @@ a.glance-chip:hover {
 }
 
 /* WordPress media toolbar bar (attachment filters). */
+/* WordPress media toolbar: 80px tall, 12px 16px padding, 12px 0 15px margin. */
 .media-toolbar-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  margin: 10px 0 0;
+  justify-content: space-between;
+  gap: 0;
+  min-height: 80px;
+  padding: 12px 16px;
+  margin: 12px 0 15px;
   border: 1px solid #c3c4c7;
   background: #ffffff;
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
 }
 
+.media-toolbar-secondary {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.media-view-toggle {
+  display: flex;
+  padding: 12px 0;
+  margin: 0 12px 0 2px;
+}
+
 .media-toolbar-bar .view-toggle-button {
-  width: 34px;
-  height: 30px;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border: 1px solid transparent;
+  border-radius: 0;
   background: transparent;
-  color: #50575e;
+  color: #c3c4c7;
+  cursor: pointer;
+}
+
+.media-toolbar-bar .view-toggle-button:hover {
+  color: #787c82;
 }
 
 .media-toolbar-bar .view-toggle-button.is-active {
   color: #2271b1;
+}
+
+.media-toolbar-bar .attachment-filters {
+  height: 32px;
+  min-height: 32px;
+  margin: 0 10px 0 0;
+  padding: 0 24px 0 8px;
+  border: 1px solid #8c8f94;
+  border-radius: 2px;
+  background: #ffffff;
+  color: #2c3338;
+  font-size: 14px;
+  line-height: 2;
+}
+
+.media-toolbar-bar .button {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid #2271b1;
+  border-radius: 2px;
+  background: transparent;
+  color: #2271b1;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.media-toolbar-bar .button:hover:not(:disabled) {
+  background: #f0f0f1;
+  border-color: #0a4b78;
+  color: #0a4b78;
+}
+
+.media-toolbar-primary.search-form {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.media-search-input-label {
+  font-size: 14px;
+  color: #3c434a;
+}
+
+.media-toolbar-primary input[type='search'],
+.media-search input[type='search'] {
+  width: 280px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 1px solid #8c8f94;
+  border-radius: 2px;
+  background: #ffffff;
+  font-size: 14px;
 }
 
 .media-search {
@@ -4848,16 +4993,6 @@ a.glance-chip:hover {
 .media-search label {
   font-size: 13px;
   color: #2c3338;
-}
-
-.media-search input[type='search'] {
-  width: 260px;
-  min-height: 30px;
-  padding: 0 8px;
-  border: 1px solid #8c8f94;
-  border-radius: 4px;
-  background: #ffffff;
-  font-size: 14px;
 }
 
 .media-select-box {
@@ -5093,8 +5228,9 @@ a.glance-chip:hover {
   justify-content: space-between;
   align-items: center;
   margin: 0;
-  padding: 8px 12px;
+  padding: 12px 16px;
   font-size: 14px;
+  font-weight: 600;
   line-height: 1.4;
   color: #1d2327;
 }
@@ -5108,8 +5244,8 @@ a.glance-chip:hover {
 .postbox .handle-order-higher,
 .postbox .handle-order-lower,
 .postbox .handlediv {
-  width: 1.62rem;
-  height: 1.62rem;
+  width: 24px;
+  height: 24px;
   margin: 0;
   padding: 0;
   border: 0;
@@ -5157,14 +5293,18 @@ a.glance-chip:hover {
 }
 
 #dashboard_right_now ul {
+  display: inline-block;
+  width: 100%;
   margin: 0;
-  padding: 8px 0 6px;
+  padding: 8px 0 0;
   list-style: none;
 }
 
 #dashboard_right_now li {
-  margin: 0;
-  padding: 2px 12px;
+  float: left;
+  width: 50%;
+  margin: 0 0 10px;
+  padding: 0;
 }
 
 #dashboard_right_now li a {
@@ -5180,8 +5320,12 @@ a.glance-chip:hover {
 }
 
 .glance-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 5px;
   color: #646970;
   flex-shrink: 0;
+  vertical-align: middle;
 }
 
 /* Activity */
@@ -5595,18 +5739,6 @@ a.glance-chip:hover {
   color: #646970;
 }
 
-/* WordPress active-menu notch: a white arrow pointing into the content area. */
-.admin-menu-link.is-active::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
-  border: 8px solid transparent;
-  border-right-color: #f0f0f1;
-  pointer-events: none;
-}
-
 /* List-table term/author links (WordPress blue text, no button chrome). */
 .content-table .term-link {
   padding: 0;
@@ -5677,30 +5809,64 @@ a.glance-chip:hover {
 /* WordPress Screen Options / Help meta panels. */
 .screen-meta-links {
   position: absolute;
-  top: 10px;
+  top: 0;
   right: 20px;
   z-index: 5;
   display: flex;
   justify-content: flex-end;
-  gap: 6px;
+  gap: 0;
   margin: 0;
 }
 
 .screen-meta-links .show-settings {
-  min-height: 30px;
-  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  margin: 0 0 0 6px;
+  padding: 0 6px 0 16px;
   border: 1px solid #c3c4c7;
-  border-radius: 3px;
-  background: #f6f7f7;
-  color: #2271b1;
+  border-top: 0;
+  border-radius: 0 0 4px 4px;
+  background: #ffffff;
+  color: #646970;
   font-size: 13px;
+  line-height: 30px;
   cursor: pointer;
+  box-shadow: none;
 }
 
 .screen-meta-links .show-settings:hover,
+.screen-meta-links .show-settings:active,
+.screen-meta-links .show-settings:focus {
+  color: #2c3338;
+}
+
+.screen-meta-links .show-settings:focus {
+  border-color: #2271b1;
+  box-shadow: 0 0 0 1px #2271b1;
+  outline: 2px solid transparent;
+}
+
 .screen-meta-links .show-settings.is-active {
   background: #ffffff;
-  color: #135e96;
+  color: #2c3338;
+}
+
+/* WordPress chevron after the tab label. */
+.screen-meta-links .show-settings::after {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid currentColor;
+  margin-left: 4px;
+  transition: transform 120ms ease;
+}
+
+.screen-meta-links .show-settings.is-active::after {
+  transform: rotate(180deg);
 }
 
 .screen-meta-panel {
@@ -5879,10 +6045,11 @@ a.glance-chip:hover {
   align-items: center;
   gap: 6px;
   height: 32px;
-  padding: 0 8px;
+  padding: 0 8px 0 7px;
   color: var(--wp-bar-text);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 400;
+  line-height: 32px;
   text-decoration: none;
 }
 
@@ -6536,4 +6703,1216 @@ a.glance-chip:hover {
 
 .tools-health td:last-child {
   width: 120px;
+}
+
+/* ==========================================================================
+   WordPress list screens — exact 6.8 geometry (measured against wp-admin).
+   ========================================================================== */
+
+.wp-list-screen {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Title: 23px/400 with 9px top and 4px bottom padding, 5px right margin. */
+.wp-list-screen .list-title-row {
+  display: block;
+}
+
+.wp-list-screen .list-title-row h1 {
+  display: inline-block;
+  margin: 0 5px 0 0;
+  padding: 9px 0 4px;
+  font-size: 23px;
+  font-weight: 400;
+  line-height: 1.3;
+  color: #1d2327;
+}
+
+/* WordPress keeps Screen Options/Help out of the document flow; the tabs and
+   search box share one row below the title. */
+.list-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  clear: both;
+}
+
+.list-top .subsubsub {
+  margin: 8px 0 0;
+  float: none;
+  align-self: flex-start;
+}
+
+.list-top .search-row {
+  margin: 11px 0 0;
+  flex: 0 0 auto;
+}
+
+.list-top .search-form {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.list-top .search-form input[type='search'] {
+  width: 200px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 1px solid #8c8f94;
+  border-radius: 2px;
+  background: #ffffff;
+  color: #2c3338;
+  font-size: 14px;
+  line-height: 2;
+}
+
+.list-top .search-form .button {
+  min-height: 32px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid #2271b1;
+  border-radius: 2px;
+  background: #f6f7f7;
+  color: #2271b1;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.list-top .search-form .button:hover:not(:disabled) {
+  background: #f0f0f1;
+  border-color: #0a4b78;
+  color: #0a4b78;
+}
+
+/* Toolbar: 32px controls, WordPress select padding and 2px radii. */
+.wp-list-screen .tablenav {
+  min-height: 32px;
+  height: auto;
+  margin: 6px 0 4px;
+  padding-top: 0;
+  align-items: center;
+}
+
+.wp-list-screen .tablenav .alignleft {
+  align-items: center;
+  gap: 6px;
+}
+
+.wp-list-screen .tablenav .bulk-select,
+.wp-list-screen .tablenav select {
+  height: 32px;
+  min-height: 32px;
+  min-width: 0;
+  padding: 0 24px 0 8px;
+  border: 1px solid #8c8f94;
+  border-radius: 2px;
+  font-size: 14px;
+  line-height: 2;
+}
+
+.wp-list-screen .tablenav .button {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid #2271b1;
+  border-radius: 2px;
+  background: #f6f7f7;
+  color: #2271b1;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.wp-list-screen .tablenav .button:hover:not(:disabled) {
+  background: #f0f0f1;
+  border-color: #0a4b78;
+  color: #0a4b78;
+}
+
+.wp-list-screen .tablenav .button:disabled {
+  color: #a7aaad;
+  border-color: #dcdcde;
+  background: #f6f7f7;
+  opacity: 1;
+}
+
+.wp-list-screen .tablenav .displaying-num {
+  color: #646970;
+  font-size: 13px;
+  line-height: 32px;
+}
+
+/* Table: separate borders, 1.3 line-height, WordPress cell metrics. */
+.wp-list-screen .table-scroll {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow-x: auto;
+}
+
+.wp-list-screen .content-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid #c3c4c7;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+  color: #3c434a;
+  font-size: 13px;
+}
+
+.wp-list-screen .content-table th,
+.wp-list-screen .content-table td {
+  padding: 8px 10px;
+  line-height: 1.3;
+  border-bottom: 1px solid #f0f0f1;
+  vertical-align: top;
+}
+
+.wp-list-screen .content-table thead th {
+  height: 37px;
+  padding: 0;
+  border-bottom: 1px solid #c3c4c7;
+  background: #ffffff;
+  color: #2c3338;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+  vertical-align: middle;
+}
+
+.wp-list-screen .content-table thead th > .sortable-column {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wp-list-screen .content-table thead th:not(:has(> .sortable-column)),
+.wp-list-screen .content-table thead th.column-comments {
+  padding: 8px 10px;
+}
+
+.wp-list-screen .content-table thead .check-column {
+  width: 2.2em;
+  padding: 4px 0 0 3px;
+  vertical-align: middle;
+}
+
+.wp-list-screen .content-table tbody .check-column {
+  width: 2.2em;
+  padding: 11px 0 0 3px;
+  vertical-align: top;
+}
+
+.wp-list-screen .content-table tbody tr:nth-child(odd) {
+  background: #f6f7f7;
+}
+
+.wp-list-screen .content-table tbody tr:hover,
+.wp-list-screen .content-table tbody tr:hover th,
+.wp-list-screen .content-table tbody tr:hover td {
+  background: #f0f6fc;
+}
+
+.wp-list-screen .content-table .row-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2271b1;
+}
+
+.wp-list-screen .content-table .row-title:hover {
+  color: #135e96;
+}
+
+.wp-list-screen .content-table .row-actions {
+  padding-top: 2px;
+  font-size: 13px;
+  line-height: 1.3;
+  color: #646970;
+}
+
+.wp-list-screen .content-table tfoot th {
+  border-top: 1px solid #c3c4c7;
+  border-bottom: 0;
+  background: #ffffff;
+  color: #2c3338;
+  font-size: 14px;
+  font-weight: 400;
+  vertical-align: middle;
+}
+
+.wp-list-screen .content-table tfoot .check-column {
+  padding: 4px 0 0 3px;
+}
+
+/* Status text inside the Date column: "Published" / "Draft" / "Trashed". */
+.wp-list-screen .wp-status-prefix {
+  font-weight: 400;
+}
+
+.wp-list-screen .wp-status-prefix.is-published {
+  color: #50575e;
+}
+
+/* WordPress sorting indicators: two stacked 10x4 triangles, grey by default
+   and dark for the active direction. */
+.sorting-indicators {
+  display: inline-grid;
+  gap: 2px;
+  margin-left: 7px;
+  vertical-align: middle;
+}
+
+.sorting-indicator {
+  display: block;
+  width: 0;
+  height: 0;
+}
+
+.sorting-indicator.asc {
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 4px solid #a7aaad;
+}
+
+.sorting-indicator.desc {
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 4px solid #a7aaad;
+}
+
+.sorting-indicator.is-sorted.asc {
+  border-bottom-color: #1d2327;
+}
+
+.sorting-indicator.is-sorted.desc {
+  border-top-color: #1d2327;
+}
+
+/* WordPress checkboxes in list tables are 16px with an 8px inset. */
+.wp-list-screen .content-table .check-column input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border-radius: 2px;
+  accent-color: #2271b1;
+}
+
+.wp-list-screen .content-table thead th > .sortable-column {
+  color: #2271b1;
+}
+
+.wp-list-screen .content-table thead th > .sortable-column:hover {
+  color: #135e96;
+}
+
+/* Header comments icon: WordPress shows it muted, 16px. */
+.wp-list-screen .content-table thead th.column-comments svg {
+  color: #50575e;
+  vertical-align: middle;
+}
+
+/* WordPress current-menu notch: an 8px arrow in the content background colour. */
+.admin-sidebar .nav-item.is-active > .nav-row > .nav-link {
+  position: relative;
+}
+
+.admin-sidebar .nav-item.is-active > .nav-row > .nav-link::after {
+  content: ' ';
+  position: absolute;
+  top: 50%;
+  right: 0;
+  margin-top: -8px;
+  border: 8px solid transparent;
+  border-right-color: #f0f0f1;
+  pointer-events: none;
+}
+
+/* WordPress block editor shell: admin bar visible, no admin menu, no footer. */
+.wp-shell.editor-mode .admin-sidebar,
+.wp-shell.editor-mode .app-footer,
+.wp-shell.editor-mode .sidebar-backdrop {
+  display: none;
+}
+
+.wp-shell.editor-mode .admin-main {
+  min-height: calc(100vh - 32px);
+}
+
+.wp-shell.editor-mode .main-content {
+  padding: 0;
+}
+
+/* WordPress categories/tags screen: search row above the two columns. */
+.terms-search-row {
+  display: flex;
+  justify-content: flex-end;
+  margin: 11px 0;
+}
+
+.terms-search-row .search-form {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.terms-search-row .search-form input[type='search'] {
+  width: 200px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 1px solid #8c8f94;
+  border-radius: 2px;
+  font-size: 14px;
+}
+
+.terms-search-row .search-form .button {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid #2271b1;
+  border-radius: 2px;
+  background: #f6f7f7;
+  color: #2271b1;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.wp-list-screen .terms-layout {
+  display: grid;
+  grid-template-columns: 35% 65%;
+  gap: 0;
+  align-items: start;
+  clear: both;
+}
+
+.wp-list-screen .terms-add-panel {
+  padding-right: 6px;
+}
+
+.wp-list-screen .terms-add-form h2 {
+  margin: 12px 0;
+  padding: 0;
+  font-size: 14.3px;
+  font-weight: 600;
+  color: #1d2327;
+}
+
+.wp-list-screen .terms-add-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 13px 0;
+}
+
+.wp-list-screen .terms-add-form .field > label {
+  padding: 2px 0;
+  font-size: 13px;
+  font-weight: 400;
+  color: #1d2327;
+}
+
+.wp-list-screen .terms-add-form .field input,
+.wp-list-screen .terms-add-form .field select,
+.wp-list-screen .terms-add-form .field textarea {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid #8c8f94;
+  border-radius: 4px;
+  font-size: 14px;
+  padding: 0 12px;
+}
+
+.wp-list-screen .terms-add-form .field select {
+  width: 130px;
+  padding: 0 24px 0 12px;
+}
+
+.wp-list-screen .terms-add-form .field textarea {
+  min-height: 118px;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.wp-list-screen .terms-add-form .field-help {
+  margin: 2px 0 5px;
+  font-size: 13px;
+  font-style: italic;
+  color: #646970;
+}
+
+.wp-list-screen .terms-add-form .field.actions {
+  margin-top: 0;
+}
+
+.wp-list-screen .terms-add-form .field.actions .button {
+  height: 40px;
+  min-height: 40px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #2271b1;
+  border-color: #2271b1;
+  color: #ffffff;
+}
+
+.wp-list-screen .terms-list {
+  gap: 0;
+}
+
+/* Editor sidebar sits below the 32px admin bar + 64px editor header. */
+.editor-sidebar {
+  top: 96px;
+  max-height: calc(100vh - 96px);
+}
+
+/* WordPress Profile: Administration Color Scheme fieldset (4 per row). */
+.profile-panel .scheme-list {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.profile-panel .color-option {
+  display: inline-block;
+  width: 24%;
+  margin-bottom: 3px;
+  padding: 5px 15px 15px;
+  box-sizing: border-box;
+  cursor: pointer;
+  vertical-align: top;
+}
+
+.profile-panel .color-option:hover,
+.profile-panel .color-option.selected {
+  background: #dcdcde;
+}
+
+.profile-panel .color-option input[type='radio'] {
+  margin: 0 4px 0 0;
+  vertical-align: middle;
+}
+
+.profile-panel .color-option label {
+  font-size: 14px;
+  color: #1d2327;
+  cursor: pointer;
+}
+
+.profile-panel .color-palette {
+  display: table;
+  width: 100%;
+  margin-top: 6px;
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+
+.profile-panel .color-palette-shade {
+  display: table-cell;
+  height: 20px;
+  padding: 0;
+  border: none;
+}
+
+@media (max-width: 782px) {
+  .profile-panel .color-option {
+    width: 49%;
+  }
+}
+
+/* The media search label is visible in grid view in WordPress. */
+.media-toolbar-primary.search-form > label.media-search-input-label {
+  position: static !important;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: nowrap;
+}
+
+/* Media page title action: WordPress compact button, no icon. */
+.wp-list-screen .media-add-new {
+  gap: 0;
+  padding: 0 12px;
+  border-radius: 2px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 30px;
+}
+
+/* ==========================================================================
+   WordPress list-table precision pass (measured against wp-admin 7.1).
+   ========================================================================== */
+
+/* Table layout is fixed in WordPress, so the column widths below hold. */
+.wp-list-screen .content-table {
+  table-layout: fixed;
+}
+
+/* WordPress table headers: 37px tall, 8px inner link padding, blue links. */
+.wp-list-screen .content-table thead th {
+  height: 37px;
+}
+
+.wp-list-screen .content-table thead th > .sortable-column {
+  padding: 8px;
+}
+
+/* Post/page columns (WP: title 32.1%, author 11.6%, taxonomies 16.6%,
+   comments 6.2%, date 14%). */
+.wp-list-screen .content-table.posts .column-title {
+  width: 32.1%;
+}
+
+.wp-list-screen .content-table.posts .column-author {
+  width: 11.6%;
+}
+
+.wp-list-screen .content-table.posts .column-categories,
+.wp-list-screen .content-table.posts .column-tags {
+  width: 16.6%;
+}
+
+.wp-list-screen .content-table.posts .column-comments {
+  width: 6.2%;
+}
+
+.wp-list-screen .content-table.posts .column-date {
+  width: 14%;
+}
+
+/* Users columns: three 24.3% identity columns, role 16.6%, posts 7.6%. */
+.wp-list-screen .content-table.users .column-username,
+.wp-list-screen .content-table.users .column-name,
+.wp-list-screen .content-table.users .column-email {
+  width: 24.3%;
+}
+
+.wp-list-screen .content-table.users .column-role {
+  width: 16.6%;
+}
+
+.wp-list-screen .content-table.users .column-posts {
+  width: 7.6%;
+}
+
+/* Terms columns. */
+.wp-list-screen .content-table.terms .column-name,
+.wp-list-screen .content-table.terms .column-description {
+  width: 30.7%;
+}
+
+.wp-list-screen .content-table.terms .column-slug {
+  width: 24.9%;
+}
+
+.wp-list-screen .content-table.terms .column-posts {
+  width: 9.3%;
+}
+
+/* WordPress list checkboxes sit 8px from the cell edge. */
+.wp-list-screen .content-table .check-column input[type='checkbox'] {
+  margin-left: 8px;
+}
+
+/* Users row titles are 13px/600 in WordPress (posts keep 14px). */
+.wp-list-screen .content-table.users .row-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Compact toolbar buttons use the WordPress #007cba accent. */
+.wp-list-screen .tablenav .button,
+.wp-list-screen .list-top .search-form .button,
+.wp-list-screen .terms-search-row .search-form .button,
+.media-toolbar-bar .button {
+  border-color: #007cba;
+  color: #007cba;
+}
+
+.wp-list-screen .tablenav .button:hover:not(:disabled),
+.wp-list-screen .list-top .search-form .button:hover:not(:disabled),
+.wp-list-screen .terms-search-row .search-form .button:hover:not(:disabled),
+.media-toolbar-bar .button:hover:not(:disabled) {
+  background: #f0f0f1;
+  border-color: #0a4b78;
+  color: #0a4b78;
+}
+
+/* A page-title action must keep its border even though it is also a .button. */
+.button.page-title-action,
+.button.list-add-new {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid #2271b1;
+  border-radius: 2px;
+  background: transparent;
+  color: #2271b1;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 30px;
+}
+
+/* ==========================================================================
+   WordPress block editor precision pass.
+   ========================================================================== */
+
+/* WP block title is 45.6px at this viewport (2.85rem), not 48px. */
+.editor-title-input {
+  font-size: 2.85rem;
+  line-height: 1.125;
+}
+
+/* WP: block canvas content aligns with the title (no extra horizontal inset). */
+.block-canvas-scroll {
+  padding: 0 0 48px;
+}
+
+.block-canvas-sheet {
+  max-width: 100%;
+}
+
+/* Settings toggle: black square with the sidebar icon while the sidebar is open. */
+.editor-topbar-gear {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: #1e1e1e;
+}
+
+.editor-topbar-gear:hover {
+  background: #f0f0f0;
+  color: #1e1e1e;
+}
+
+.editor-topbar-gear.is-active {
+  background: #1e1e1e;
+  color: #ffffff;
+}
+
+.editor-topbar-gear.is-active:hover {
+  background: #1e1e1e;
+  color: #ffffff;
+}
+
+/* Options menu (the ⋮ at the far right of the header). */
+.editor-options-menu {
+  position: relative;
+}
+
+.editor-options-menu > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.editor-options-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.editor-options-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 30;
+  min-width: 180px;
+  padding: 6px 0;
+  border: 1px solid #c3c4c7;
+  border-radius: 2px;
+  background: #ffffff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+}
+
+.editor-options-panel button {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  border: 0;
+  background: transparent;
+  color: #1e1e1e;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.editor-options-panel button:hover:not(:disabled) {
+  background: #f0f0f1;
+  color: #2271b1;
+}
+
+.editor-options-panel button:disabled {
+  color: #a7aaad;
+  cursor: default;
+}
+
+/* Editor sidebar values are blue links in WordPress. */
+.editor-link-value,
+.editor-status-value {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #2271b1;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: right;
+}
+
+.editor-link-value:hover,
+.editor-status-value:hover {
+  color: #135e96;
+  text-decoration: underline;
+}
+
+.editor-status-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.editor-status-value .editor-status-dot {
+  background: #2271b1;
+}
+
+/* WordPress check-column header: 4px top, 3px left, 37px row. */
+.wp-list-screen .content-table thead th.check-column {
+  height: 37px;
+  padding: 4px 0 0 3px;
+  vertical-align: middle;
+}
+
+/* Editor header: WordPress order Save draft, Preview, Settings, Publish, Options. */
+.editor-topbar-actions > .editor-topbar-text-button {
+  order: 1;
+}
+.editor-topbar-actions > .editor-topbar-view {
+  order: 2;
+}
+.editor-topbar-actions > .editor-topbar-gear {
+  order: 3;
+}
+.editor-topbar-actions > .editor-topbar-publish {
+  order: 4;
+}
+.editor-topbar-actions > .editor-options-menu {
+  order: 5;
+}
+
+.editor-options-menu {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+}
+
+.editor-options-menu > summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 2px;
+  color: #1e1e1e;
+}
+
+.editor-options-menu > summary:hover {
+  background: #f0f0f0;
+}
+
+/* WordPress title is 45.6px (rem resolves against the 13px admin root). */
+.editor-title-input {
+  font-size: 45.6px;
+}
+
+/* Align the block canvas with the title, and hide our extra bottom hint
+   (WordPress only shows the inline appender). */
+.block-canvas-scroll {
+  padding: 0 0 48px !important;
+}
+
+.block-canvas-sheet {
+  max-width: 100% !important;
+}
+
+.block-canvas-hint {
+  display: none !important;
+}
+
+/* WordPress narrow-screen list screens: the search box moves below the tabs
+   and the toolbar wraps instead of overflowing the viewport. */
+@media (max-width: 782px) {
+  .list-top {
+    flex-wrap: wrap;
+    gap: 0;
+  }
+
+  .list-top .subsubsub {
+    width: 100%;
+  }
+
+  .list-top .search-row,
+  .terms-search-row {
+    width: 100%;
+    margin: 8px 0 0;
+  }
+
+  .list-top .search-form,
+  .terms-search-row .search-form {
+    width: 100%;
+  }
+
+  .list-top .search-form input[type='search'],
+  .terms-search-row .search-form input[type='search'],
+  .media-toolbar-primary input[type='search'] {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+  }
+
+  .wp-list-screen .tablenav {
+    height: auto;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .wp-list-screen .tablenav .alignleft {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .media-toolbar-bar {
+    flex-wrap: wrap;
+    height: auto;
+  }
+
+  .media-toolbar-secondary {
+    flex-wrap: wrap;
+  }
+
+  .media-toolbar-primary.search-form {
+    width: 100%;
+    margin-top: 8px;
+  }
+}
+
+/* Dashboard title uses the same WordPress h1 metrics as list screens. */
+.dash-title-row h1 {
+  display: inline-block;
+  margin: 0 5px 0 0;
+  padding: 9px 0 4px;
+  font-size: 23px;
+  font-weight: 400;
+  line-height: 1.3;
+  color: #1d2327;
+}
+
+/* At a Glance rows: 20px icons and 20px line boxes like WordPress. */
+#dashboard_right_now li {
+  line-height: 20px;
+}
+
+#dashboard_right_now li a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+}
+
+#dashboard_right_now .inside {
+  padding-bottom: 12px;
+}
+
+/* WordPress page headers (Settings, Profile, Tools, Updates). */
+.page-header {
+  margin: 0;
+}
+
+.page-header h1 {
+  display: inline-block;
+  margin: 0 5px 0 0;
+  padding: 9px 0 4px;
+  font-size: 23px;
+  font-weight: 400;
+  line-height: 1.3;
+  color: #1d2327;
+}
+
+/* WordPress Tools cards. */
+.wp-tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  max-width: 1000px;
+}
+
+.wp-tools-grid .card {
+  margin: 0;
+  padding: 0 20px 12px;
+  border: 1px solid #c3c4c7;
+  background: #ffffff;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.wp-tools-grid .card h2 {
+  margin: 12px 0;
+  font-size: 14.3px;
+  font-weight: 600;
+}
+
+.wp-tools-grid .card p {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #3c434a;
+}
+
+/* WordPress 7.1 primary buttons use the #007cba action accent. */
+.primary-button,
+.button.primary-button,
+.tablenav .button.primary-button {
+  background: #007cba;
+  border-color: #007cba;
+  color: #ffffff;
+}
+
+.primary-button:hover:not(:disabled),
+.button.primary-button:hover:not(:disabled),
+.tablenav .button.primary-button:hover:not(:disabled) {
+  background: #005a87;
+  border-color: #005a87;
+  color: #ffffff;
+}
+
+/* Settings/Profile submit buttons are 40px tall, like WordPress p.submit. */
+.settings-panel .field.actions .button,
+.profile-panel .field.actions .button {
+  height: 40px;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 2px;
+}
+
+/* Profile section headings: 16.9px/600 with 16.9px vertical margins. */
+.profile-panel .profile-section-title {
+  margin: 16.9px 0;
+  padding: 0;
+  font-size: 16.9px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #1d2327;
+}
+
+/* Profile bio textarea is 500px wide (WP form-table textarea). */
+.profile-panel .field textarea {
+  width: 500px;
+  min-height: 118px;
+}
+
+/* Equal 3-shade palettes regardless of label width. */
+.profile-panel .color-palette {
+  table-layout: fixed;
+}
+
+/* WordPress media list: File 58.2%, Author 10%, Uploaded to 15%, Date 14%. */
+.content-table.media-list .column-title {
+  width: 58.2%;
+}
+
+.content-table.media-list .column-author {
+  width: 10%;
+}
+
+.content-table.media-list .column-parent {
+  width: 15%;
+}
+
+.content-table.media-list .column-date {
+  width: 14%;
+}
+
+.content-table.media-list .media-list-file {
+  width: auto;
+}
+
+/* List-view toolbar has no bottom margin in WordPress. */
+.media-toolbar-bar.is-list {
+  margin-bottom: 0;
+}
+
+/* WordPress shows postbox reorder arrows only on hover/focus. */
+.postbox .handle-order-higher,
+.postbox .handle-order-lower {
+  visibility: hidden;
+}
+
+.postbox:hover .handle-order-higher,
+.postbox:hover .handle-order-lower,
+.postbox:focus-within .handle-order-higher,
+.postbox:focus-within .handle-order-lower {
+  visibility: visible;
+}
+
+/* Admin bar home icon. */
+.brand-home {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  color: #f0f0f1;
+}
+
+/* Media list rows: keep WordPress's 80px row by taking the row actions out of flow. */
+.content-table.media-list .media-list-file {
+  position: relative;
+}
+
+.content-table.media-list .row-actions {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 100%;
+  z-index: 2;
+  padding: 1px 4px;
+  background: #f6f7f7;
+  visibility: hidden;
+}
+
+.content-table.media-list tbody tr:hover .row-actions,
+.content-table.media-list tbody tr:focus-within .row-actions {
+  visibility: visible;
+}
+
+.content-table.media-list tbody tr:hover,
+.content-table.media-list tbody tr:hover td,
+.content-table.media-list tbody tr:hover th {
+  background: #f0f6fc;
+}
+
+/* WordPress media list row height is 80px (62px thumb + 9px cell padding). */
+.content-table.media-list tbody td,
+.content-table.media-list tbody th {
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+
+/* Editor slug row behaves like WordPress's editable link. */
+.editor-slug-input {
+  width: 100%;
+  max-width: 160px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #2271b1;
+  font: inherit;
+  font-size: 13px;
+  text-align: right;
+  text-overflow: ellipsis;
+}
+
+.editor-slug-input:hover {
+  text-decoration: underline;
+}
+
+.editor-slug-input:focus {
+  outline: 1px solid #2271b1;
+  outline-offset: 2px;
+  background: #ffffff;
+}
+
+/* Terms submit uses the WordPress primary action accent. */
+.wp-list-screen .terms-add-form .field.actions .button {
+  background: #007cba;
+  border-color: #007cba;
+  color: #ffffff;
+}
+
+.wp-list-screen .terms-add-form .field.actions .button:hover:not(:disabled) {
+  background: #005a87;
+  border-color: #005a87;
+}
+
+/* WordPress has no bottom keyboard-hint bar under the block canvas. */
+.block-canvas-help {
+  display: none;
+}
+
+/* WordPress terms form controls span 95% of the 427px column (406px). */
+.wp-list-screen .terms-add-form .field > input,
+.wp-list-screen .terms-add-form .field > textarea {
+  width: 95%;
+}
+
+.wp-list-screen .terms-add-form .field > select {
+  width: 130px;
+}
+
+/* Terms table header height and column widths. */
+.wp-list-screen .content-table.terms thead th {
+  height: 37px;
+}
+
+.wp-list-screen .content-table.terms thead th.check-column {
+  padding: 4px 0 0 3px !important;
+}
+
+/* WordPress dashboard widget insides. */
+#dashboard_right_now .inside {
+  margin-top: 11px;
+  padding: 0 12px 12px;
+}
+
+#dashboard_site_health .inside {
+  padding: 12px;
+}
+
+#dashboard_activity .inside,
+#dashboard_quick_press .inside {
+  padding: 12px;
+}
+
+/* WordPress media grid shows the selection circle on hover. */
+.media-grid:not(.is-select-mode) .media-card:hover .media-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.media-grid:not(.is-select-mode) .media-card:hover .media-thumb img {
+  opacity: 0.65;
+}
+
+/* WordPress Tools cards use ordinary outline buttons. */
+.wp-tools-grid .card .button {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid #2271b1;
+  border-radius: 2px;
+  background: transparent;
+  color: #2271b1;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.wp-tools-grid .card .button:hover {
+  background: #f0f0f1;
+  border-color: #0a4b78;
+  color: #0a4b78;
 }

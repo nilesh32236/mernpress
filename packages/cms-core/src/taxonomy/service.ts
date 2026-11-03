@@ -386,8 +386,8 @@ export function createTaxonomyService(options: TaxonomyServiceOptions) {
     }
 
     const orderBy: Prisma.TermOrderByWithRelationInput[] =
-      query.sort === 'name'
-        ? [{ name: query.order }, { id: 'asc' }]
+      query.sort === 'count'
+        ? [{ posts: { _count: query.order } }, { name: 'asc' }, { id: 'asc' }]
         : [{ [query.sort]: query.order } as Prisma.TermOrderByWithRelationInput, { id: 'asc' }];
 
     const [total, rows] = await Promise.all([

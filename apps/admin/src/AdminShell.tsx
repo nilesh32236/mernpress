@@ -615,9 +615,16 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       icon: <ToolsIcon />,
       subs: [
         {
-          label: 'Export',
+          label: 'Available Tools',
           to: '/tools',
-          active: route.name === 'tools' && searchParams.get('section') !== 'health',
+          active:
+            route.name === 'tools' &&
+            !['export', 'health'].includes(searchParams.get('section') ?? ''),
+        },
+        {
+          label: 'Export',
+          to: '/tools?section=export',
+          active: route.name === 'tools' && searchParams.get('section') === 'export',
         },
         {
           label: 'Site Health',
@@ -667,7 +674,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
 
   return (
     <div
-      className={`wp-shell${collapsed ? ' sidebar-collapsed' : ''}${mobileOpen ? ' sidebar-open' : ''}`}
+      className={`wp-shell${collapsed ? ' sidebar-collapsed' : ''}${mobileOpen ? ' sidebar-open' : ''}${isEditorRoute ? ' editor-mode' : ''}`}
     >
       <a className="skip-link" href="#main-content">
         Skip to content
@@ -710,8 +717,18 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
                 go('/admin');
               }}
             >
-              <span className="brand-mark" aria-hidden="true">
-                M
+              <span className="brand-home" aria-hidden="true">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                >
+                  <path d="M3 11 12 3l9 8" />
+                  <path d="M5.5 9.5V21h13V9.5" />
+                </svg>
               </span>
               <span className="brand-text">MERNPress</span>
             </a>

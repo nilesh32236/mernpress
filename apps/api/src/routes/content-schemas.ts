@@ -132,7 +132,9 @@ export const termListQuerySchema = z
   .object({
     taxonomy: taxonomyType.optional(),
     search: z.string().max(200).optional(),
-    sort: z.enum(['name', 'createdAt', 'updatedAt']).default('name'),
+    sort: z
+      .enum(['name', 'description', 'slug', 'count', 'createdAt', 'updatedAt'])
+      .default('name'),
     order: z.enum(['asc', 'desc']).default('asc'),
     ...pagination,
   })

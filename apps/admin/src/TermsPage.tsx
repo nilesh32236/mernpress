@@ -16,6 +16,7 @@ import {
   Notice,
   Skeleton,
   PageHeader,
+  SortIndicator,
   type NoticeMessage,
 } from './components.js';
 import { canManageTerms } from './roles.js';
@@ -66,7 +67,9 @@ export function TermsPage({ user }: { user: AuthUser }) {
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [perPage, setPerPage] = useState(() => screenPerPage('terms', DEFAULT_PER_PAGE));
-  const [sort, setSort] = useState<'name' | 'createdAt' | 'updatedAt'>('name');
+  const [sort, setSort] = useState<
+    'name' | 'description' | 'slug' | 'count' | 'createdAt' | 'updatedAt'
+  >('name');
   const [order, setOrder] = useState<'asc' | 'desc'>('asc');
 
   const [newName, setNewName] = useState('');
@@ -311,8 +314,28 @@ export function TermsPage({ user }: { user: AuthUser }) {
   }
 
   return (
-    <>
-      <PageHeader title={taxonomy === 'category' ? 'Categories' : 'Tags'} />
+    <div className="wp-list-screen">
+      <div className="list-title-row">
+        <h1>{taxonomy === 'category' ? 'Categories' : 'Tags'}</h1>
+      </div>
+
+      <div className="terms-search-row">
+        <form className="search-form" onSubmit={handleSearch} role="search">
+          <label htmlFor="term-search" className="screen-reader-text">
+            Search {taxonomyPlural(taxonomy)}
+          </label>
+          <input
+            id="term-search"
+            type="search"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            disabled={loading}
+          />
+          <button type="submit" className="button secondary-button" disabled={loading}>
+            Search {taxonomyPlural(taxonomy)}
+          </button>
+        </form>
+      </div>
 
       {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
 
@@ -405,25 +428,6 @@ export function TermsPage({ user }: { user: AuthUser }) {
 
         {/* Right column: term list table */}
         <section className="terms-list">
-          <form className="list-filters" onSubmit={handleSearch} role="search">
-            <div className="field">
-              <label htmlFor="term-search" className="screen-reader-text">
-                Search {taxonomyPlural(taxonomy)}
-              </label>
-              <input
-                id="term-search"
-                type="search"
-                value={searchInput}
-                onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="Name or slug"
-                disabled={loading}
-              />
-            </div>
-            <button type="submit" className="button secondary-button" disabled={loading}>
-              Search {taxonomyPlural(taxonomy)}
-            </button>
-          </form>
-
           {error ? (
             <ErrorState
               title={`Could not load ${taxonomyLabel(taxonomy).toLowerCase()}`}
@@ -468,7 +472,7 @@ export function TermsPage({ user }: { user: AuthUser }) {
                   <button
                     type="button"
                     className="button secondary-button bulk-apply"
-                    disabled={bulkBusy || selected.size === 0}
+                    disabled={bulkBusy}
                     onClick={() => void deleteSelected()}
                   >
                     {bulkBusy ? 'Applying…' : 'Apply'}
@@ -503,7 +507,7 @@ export function TermsPage({ user }: { user: AuthUser }) {
                           }
                         />
                       </th>
-                      <th scope="col">
+                      <th scope="col" className="column-name">
                         <button
                           type="button"
                           className="sortable-column"
@@ -515,14 +519,66 @@ export function TermsPage({ user }: { user: AuthUser }) {
                           }}
                         >
                           Name
-                          <span className="sort-indicator" aria-hidden="true">
-                            {sort === 'name' ? (order === 'asc' ? '▲' : '▼') : '▲▼'}
-                          </span>
+                          <SortIndicator direction={sort === 'name' ? order : null} />
                         </button>
                       </th>
-                      <th scope="col">Description</th>
-                      <th scope="col">Slug</th>
-                      <th scope="col">Count</th>
+                      <th scope="col">
+                        <button
+                          type="button"
+                          className="sortable-column"
+                          aria-label={`Sort by description${sort === 'description' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
+                          onClick={() => {
+                            if (sort === 'description') {
+                              setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
+                            } else {
+                              setSort('description');
+                              setOrder('asc');
+                            }
+                            setPage(1);
+                          }}
+                        >
+                          Description
+                          <SortIndicator direction={sort === 'description' ? order : null} />
+                        </button>
+                      </th>
+                      <th scope="col">
+                        <button
+                          type="button"
+                          className="sortable-column"
+                          aria-label={`Sort by slug${sort === 'slug' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
+                          onClick={() => {
+                            if (sort === 'slug') {
+                              setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
+                            } else {
+                              setSort('slug');
+                              setOrder('asc');
+                            }
+                            setPage(1);
+                          }}
+                        >
+                          Slug
+                          <SortIndicator direction={sort === 'slug' ? order : null} />
+                        </button>
+                      </th>
+                      <th scope="col">
+                        <button
+                          type="button"
+                          className="sortable-column"
+                          aria-label={`Sort by count${sort === 'count' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
+                          onClick={() => {
+                            if (sort === 'count') {
+                              setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
+                            } else {
+                              setSort('count');
+                              setOrder('asc');
+                            }
+                            setPage(1);
+                          }}
+                        >
+                          Count
+                          <SortIndicator direction={sort === 'count' ? order : null} />
+                        </button>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -661,7 +717,7 @@ export function TermsPage({ user }: { user: AuthUser }) {
                           }
                         />
                       </th>
-                      <th scope="col">
+                      <th scope="col" className="column-name">
                         <button
                           type="button"
                           className="sortable-column"
@@ -673,14 +729,66 @@ export function TermsPage({ user }: { user: AuthUser }) {
                           }}
                         >
                           Name
-                          <span className="sort-indicator" aria-hidden="true">
-                            {sort === 'name' ? (order === 'asc' ? '▲' : '▼') : '▲▼'}
-                          </span>
+                          <SortIndicator direction={sort === 'name' ? order : null} />
                         </button>
                       </th>
-                      <th scope="col">Description</th>
-                      <th scope="col">Slug</th>
-                      <th scope="col">Count</th>
+                      <th scope="col">
+                        <button
+                          type="button"
+                          className="sortable-column"
+                          aria-label={`Sort by description${sort === 'description' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
+                          onClick={() => {
+                            if (sort === 'description') {
+                              setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
+                            } else {
+                              setSort('description');
+                              setOrder('asc');
+                            }
+                            setPage(1);
+                          }}
+                        >
+                          Description
+                          <SortIndicator direction={sort === 'description' ? order : null} />
+                        </button>
+                      </th>
+                      <th scope="col">
+                        <button
+                          type="button"
+                          className="sortable-column"
+                          aria-label={`Sort by slug${sort === 'slug' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
+                          onClick={() => {
+                            if (sort === 'slug') {
+                              setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
+                            } else {
+                              setSort('slug');
+                              setOrder('asc');
+                            }
+                            setPage(1);
+                          }}
+                        >
+                          Slug
+                          <SortIndicator direction={sort === 'slug' ? order : null} />
+                        </button>
+                      </th>
+                      <th scope="col">
+                        <button
+                          type="button"
+                          className="sortable-column"
+                          aria-label={`Sort by count${sort === 'count' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
+                          onClick={() => {
+                            if (sort === 'count') {
+                              setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
+                            } else {
+                              setSort('count');
+                              setOrder('asc');
+                            }
+                            setPage(1);
+                          }}
+                        >
+                          Count
+                          <SortIndicator direction={sort === 'count' ? order : null} />
+                        </button>
+                      </th>
                     </tr>
                   </tfoot>
                 </table>
@@ -749,17 +857,14 @@ export function TermsPage({ user }: { user: AuthUser }) {
                   <label htmlFor="terms-bulk-action-bottom" className="screen-reader-text">
                     Bulk actions
                   </label>
-                  <select
-                    id="terms-bulk-action-bottom"
-                    className="bulk-select"
-                    defaultValue="delete"
-                  >
+                  <select id="terms-bulk-action-bottom" className="bulk-select" defaultValue="">
+                    <option value="">Bulk actions</option>
                     <option value="delete">Delete</option>
                   </select>
                   <button
                     type="button"
                     className="button secondary-button bulk-apply"
-                    disabled={bulkBusy || selected.size === 0}
+                    disabled={bulkBusy}
                     onClick={() => void deleteSelected()}
                   >
                     {bulkBusy ? 'Applying…' : 'Apply'}
@@ -788,6 +893,6 @@ export function TermsPage({ user }: { user: AuthUser }) {
           )}
         </section>
       </div>
-    </>
+    </div>
   );
 }

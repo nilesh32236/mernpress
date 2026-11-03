@@ -7,7 +7,7 @@ import {
   type SiteHealth,
 } from './api.js';
 import { Notice, PageHeader, type NoticeMessage } from './components.js';
-import { useLocation } from './router.js';
+import { navigate, useLocation } from './router.js';
 
 interface ExportItem {
   id: string;
@@ -97,12 +97,58 @@ export function ToolsPage() {
     }
   }
 
+  const section = new URLSearchParams(location.search).get('section');
+
+  if (section !== 'export' && section !== 'health') {
+    return (
+      <>
+        <PageHeader title="Tools" />
+        <div className="wp-tools-grid">
+          <section className="card" aria-labelledby="tool-export-heading">
+            <h2 id="tool-export-heading">Export</h2>
+            <p>
+              Export your posts and pages as a JSON file. The export includes canonical block markup
+              so it can be archived or imported elsewhere.
+            </p>
+            <p>
+              <button
+                type="button"
+                className="button"
+                onClick={() => navigate('/tools?section=export')}
+              >
+                Open Export
+              </button>
+            </p>
+          </section>
+          <section className="card" aria-labelledby="tool-health-heading">
+            <h2 id="tool-health-heading">Site Health</h2>
+            <p>Server and storage checks for this installation.</p>
+            <p>
+              <button
+                type="button"
+                className="button"
+                onClick={() => navigate('/tools?section=health')}
+              >
+                Open Site Health
+              </button>
+            </p>
+          </section>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
-      <PageHeader title="Tools" />
+      <PageHeader title={section === 'export' ? 'Export' : 'Site Health'} />
       {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
 
-      <section id="export" className="content-card tools-section" aria-labelledby="export-heading">
+      <section
+        id="export"
+        className="content-card tools-section"
+        aria-labelledby="export-heading"
+        hidden={section !== 'export'}
+      >
         <h2 id="export-heading">Export</h2>
         <p className="lede">
           Export your posts and pages as a JSON file. The export includes canonical block markup so
@@ -128,7 +174,12 @@ export function ToolsPage() {
         </p>
       </section>
 
-      <section id="health" className="content-card tools-section" aria-labelledby="health-heading">
+      <section
+        id="health"
+        className="content-card tools-section"
+        aria-labelledby="health-heading"
+        hidden={section !== 'health'}
+      >
         <h2 id="health-heading">Site Health</h2>
         <p className="lede">Server and storage checks for this installation.</p>
         {health === null ? (

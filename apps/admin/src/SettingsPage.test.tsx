@@ -71,7 +71,8 @@ describe('settings page', () => {
     render(<SettingsPage user={admin} />);
     await screen.findByDisplayValue('My Site');
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Reading' }));
+    window.history.replaceState(null, '', '/settings#reading');
+    window.dispatchEvent(new PopStateEvent('popstate'));
 
     await screen.findByDisplayValue('10');
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes('group=reading'))).toBe(true);
@@ -109,7 +110,8 @@ describe('settings page', () => {
     render(<SettingsPage user={admin} />);
     await screen.findByDisplayValue('My Site');
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Reading' }));
+    window.history.replaceState(null, '', '/settings#reading');
+    window.dispatchEvent(new PopStateEvent('popstate'));
     await screen.findByDisplayValue('10');
 
     const saveButton = screen.getByRole('button', { name: /save/i }) as HTMLButtonElement;

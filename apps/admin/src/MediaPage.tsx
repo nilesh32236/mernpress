@@ -10,7 +10,14 @@ import {
   type MediaItem,
   type Paged,
 } from './api.js';
-import { EmptyState, ErrorState, Notice, Skeleton, type NoticeMessage } from './components.js';
+import {
+  EmptyState,
+  ErrorState,
+  Notice,
+  Skeleton,
+  SortIndicator,
+  type NoticeMessage,
+} from './components.js';
 import { formatDateTime, pluralize } from './format.js';
 
 const DEFAULT_PER_PAGE = 24;
@@ -517,29 +524,14 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
   const totalPages = Math.max(data?.pagination.totalPages ?? 1, 1);
 
   return (
-    <>
-      <div className="media-title-row">
+    <div className="wp-list-screen">
+      <div className="list-title-row">
         <h1>Media Library</h1>
         <button
           type="button"
-          className="button secondary-button media-add-new"
+          className="button page-title-action media-add-new"
           onClick={openPicker}
         >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="17 8 12 3 7 8" />
-            <line x1="12" y1="3" x2="12" y2="15" />
-          </svg>
           Add Media File
         </button>
         <input
@@ -610,135 +602,132 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
         </ul>
       ) : null}
 
-      <div className="media-toolbar-bar">
-        <div className="media-view-toggle" role="group" aria-label="Media view">
-          <button
-            type="button"
-            className={`view-toggle-button${view === 'list' ? ' is-active' : ''}`}
-            aria-pressed={view === 'list'}
-            aria-label="List view"
-            title="List view"
-            onClick={() => setView('list')}
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              aria-hidden="true"
+      <div className={view === 'grid' ? 'media-toolbar-bar' : 'media-toolbar-bar is-list'}>
+        <div className="media-toolbar-secondary">
+          <div className="media-view-toggle" role="group" aria-label="Media view">
+            <button
+              type="button"
+              className={`view-toggle-button${view === 'list' ? ' is-active' : ''}`}
+              aria-pressed={view === 'list'}
+              aria-label="List view"
+              title="List view"
+              onClick={() => setView('list')}
             >
-              <line x1="8" y1="6" x2="21" y2="6" />
-              <line x1="8" y1="12" x2="21" y2="12" />
-              <line x1="8" y1="18" x2="21" y2="18" />
-              <line x1="3" y1="6" x2="3.01" y2="6" />
-              <line x1="3" y1="12" x2="3.01" y2="12" />
-              <line x1="3" y1="18" x2="3.01" y2="18" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            className={`view-toggle-button${view === 'grid' ? ' is-active' : ''}`}
-            aria-pressed={view === 'grid'}
-            aria-label="Grid view"
-            title="Grid view"
-            onClick={() => setView('grid')}
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              aria-hidden="true"
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M2 4h16v2H2V4zm0 5h16v2H2V9zm0 5h16v2H2v-2z" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className={`view-toggle-button${view === 'grid' ? ' is-active' : ''}`}
+              aria-pressed={view === 'grid'}
+              aria-label="Grid view"
+              title="Grid view"
+              onClick={() => setView('grid')}
             >
-              <rect x="3" y="3" width="7" height="7" />
-              <rect x="14" y="3" width="7" height="7" />
-              <rect x="3" y="14" width="7" height="7" />
-              <rect x="14" y="14" width="7" height="7" />
-            </svg>
-          </button>
-        </div>
-        <select
-          id="media-type-filter"
-          className="bulk-select"
-          defaultValue="all"
-          aria-label="Filter by media type"
-          onChange={() => {
-            // Only images exist in this phase; the filter mirrors the WordPress UI.
-          }}
-        >
-          <option value="all">All media items</option>
-          <option value="image">Images</option>
-        </select>
-        <select
-          id="media-month-filter"
-          className="bulk-select"
-          aria-label="Filter by date"
-          value={monthFilter}
-          onChange={(event) => {
-            setMonthFilter(event.target.value);
-            setPage(1);
-          }}
-        >
-          <option value="">All dates</option>
-          {monthOptions().map((month) => (
-            <option key={month.value} value={month.value}>
-              {month.label}
-            </option>
-          ))}
-        </select>
-        {view === 'grid' ? (
-          <button
-            type="button"
-            className="button secondary-button"
-            aria-pressed={bulkSelect}
-            onClick={() => {
-              setBulkSelect((on) => !on);
-              setSelectedIds(new Set());
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M2 2h6v6H2V2zm10 0h6v6h-6V2zM2 12h6v6H2v-6zm10 0h6v6h-6v-6z" />
+              </svg>
+            </button>
+          </div>
+          <label htmlFor="media-type-filter" className="screen-reader-text">
+            Filter by type
+          </label>
+          <select
+            id="media-type-filter"
+            className="attachment-filters"
+            defaultValue="all"
+            onChange={() => {
+              // Only images exist in this phase; the filter mirrors the WordPress UI.
             }}
           >
-            {bulkSelect ? 'Cancel selection' : 'Bulk select'}
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="button secondary-button"
-            onClick={() => {
-              setSearch(searchInput.trim());
+            <option value="all">All media items</option>
+            <option value="image">Images</option>
+          </select>
+          <label htmlFor="media-month-filter" className="screen-reader-text">
+            Filter by date
+          </label>
+          <select
+            id="media-month-filter"
+            className="attachment-filters"
+            value={monthFilter}
+            onChange={(event) => {
+              setMonthFilter(event.target.value);
               setPage(1);
             }}
           >
-            Filter
-          </button>
-        )}
-        {selectedIds.size > 0 ? (
-          <button
-            type="button"
-            className="button button-link-delete"
-            disabled={bulkBusy}
-            onClick={() => void deleteSelected()}
+            <option value="">All dates</option>
+            {monthOptions().map((month) => (
+              <option key={month.value} value={month.value}>
+                {month.label}
+              </option>
+            ))}
+          </select>
+          {view === 'grid' ? (
+            <button
+              type="button"
+              className="button media-button select-mode-toggle-button"
+              aria-pressed={bulkSelect}
+              onClick={() => {
+                setBulkSelect((on) => !on);
+                setSelectedIds(new Set());
+              }}
+            >
+              {bulkSelect ? 'Cancel selection' : 'Bulk select'}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="button button-compact"
+              onClick={() => {
+                setSearch(searchInput.trim());
+                setPage(1);
+              }}
+            >
+              Filter
+            </button>
+          )}
+          {selectedIds.size > 0 ? (
+            <button
+              type="button"
+              className="button button-link-delete"
+              disabled={bulkBusy}
+              onClick={() => void deleteSelected()}
+            >
+              {bulkBusy ? 'Deleting…' : `Delete selected (${selectedIds.size})`}
+            </button>
+          ) : null}
+        </div>
+        <div className="media-toolbar-primary search-form">
+          <label
+            htmlFor={searchId}
+            className={view === 'grid' ? 'media-search-input-label' : 'screen-reader-text'}
           >
-            {bulkBusy ? 'Deleting…' : `Delete selected (${selectedIds.size})`}
-          </button>
-        ) : null}
-        <div className="media-search">
-          <label htmlFor={searchId} className={view === 'grid' ? undefined : 'screen-reader-text'}>
             Search media
           </label>
           <input
             id={searchId}
             type="search"
+            className="search"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            placeholder=""
           />
           {view === 'list' ? (
             <button
               type="button"
-              className="button secondary-button"
+              className="button button-compact"
               onClick={() => {
                 setSearch(searchInput.trim());
                 setPage(1);
@@ -773,21 +762,51 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
       ) : (
         <>
           {view === 'grid' ? (
-            <ul className="media-grid" aria-label="Media items">
-              {data.items.map((item) => (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    className="media-card"
-                    onClick={() => setSelected(item)}
-                    aria-label={`View ${item.originalName}`}
-                  >
-                    <span className="media-thumb">
-                      <img src={thumbnailUrl(item)} alt={item.altText || ''} loading="lazy" />
-                    </span>
-                  </button>
-                </li>
-              ))}
+            <ul
+              className={`media-grid${bulkSelect ? ' is-select-mode' : ''}`}
+              aria-label="Media items"
+            >
+              {data.items.map((item) => {
+                const isSelected = selectedIds.has(item.id);
+                return (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      className={`media-card${isSelected ? ' is-selected' : ''}`}
+                      onClick={() => {
+                        if (bulkSelect) {
+                          setSelectedIds((current) => {
+                            const next = new Set(current);
+                            if (next.has(item.id)) {
+                              next.delete(item.id);
+                            } else {
+                              next.add(item.id);
+                            }
+                            return next;
+                          });
+                          return;
+                        }
+                        setSelected(item);
+                      }}
+                      aria-pressed={bulkSelect ? isSelected : undefined}
+                      aria-label={
+                        bulkSelect
+                          ? `${isSelected ? 'Deselect' : 'Select'} ${item.originalName}`
+                          : `View ${item.originalName}`
+                      }
+                    >
+                      <span className="media-thumb">
+                        <img src={thumbnailUrl(item)} alt={item.altText || ''} loading="lazy" />
+                      </span>
+                      <span className="media-check" aria-hidden="true">
+                        <svg viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M8.2 14.4 4 10.2l1.4-1.4 2.8 2.8 6.4-6.4L16 6.6z" />
+                        </svg>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <>
@@ -803,7 +822,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
                   <button
                     type="button"
                     className="button secondary-button bulk-apply"
-                    disabled={bulkBusy || selectedIds.size === 0}
+                    disabled={bulkBusy}
                     onClick={() => void deleteSelected()}
                   >
                     {bulkBusy ? 'Applying…' : 'Apply'}
@@ -838,10 +857,16 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
                           }
                         />
                       </th>
-                      <th scope="col">File</th>
-                      <th scope="col">Author</th>
-                      <th scope="col">Uploaded to</th>
-                      <th scope="col">
+                      <th scope="col" className="column-title">
+                        File
+                      </th>
+                      <th scope="col" className="column-author">
+                        Author
+                      </th>
+                      <th scope="col" className="column-parent">
+                        Uploaded to
+                      </th>
+                      <th scope="col" className="column-date">
                         <button
                           type="button"
                           className="sortable-column"
@@ -852,9 +877,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
                           }}
                         >
                           Date
-                          <span className="sort-indicator" aria-hidden="true">
-                            {order === 'newest' ? '▼' : '▲'}
-                          </span>
+                          <SortIndicator direction={order === 'newest' ? 'desc' : 'asc'} />
                         </button>
                       </th>
                     </tr>
@@ -974,10 +997,16 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
                   <tfoot>
                     <tr>
                       <th scope="col" className="check-column" />
-                      <th scope="col">File</th>
-                      <th scope="col">Author</th>
-                      <th scope="col">Uploaded to</th>
-                      <th scope="col">
+                      <th scope="col" className="column-title">
+                        File
+                      </th>
+                      <th scope="col" className="column-author">
+                        Author
+                      </th>
+                      <th scope="col" className="column-parent">
+                        Uploaded to
+                      </th>
+                      <th scope="col" className="column-date">
                         <button
                           type="button"
                           className="sortable-column"
@@ -988,9 +1017,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
                           }}
                         >
                           Date
-                          <span className="sort-indicator" aria-hidden="true">
-                            {order === 'newest' ? '▼' : '▲'}
-                          </span>
+                          <SortIndicator direction={order === 'newest' ? 'desc' : 'asc'} />
                         </button>
                       </th>
                     </tr>
@@ -1010,7 +1037,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
                   <button
                     type="button"
                     className="button secondary-button bulk-apply"
-                    disabled={bulkBusy || selectedIds.size === 0}
+                    disabled={bulkBusy}
                     onClick={() => void deleteSelected()}
                   >
                     {bulkBusy ? 'Applying…' : 'Apply'}
@@ -1024,20 +1051,6 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
               </div>
             </>
           )}
-
-          {view === 'grid' ? (
-            <p className="media-showing">
-              {total === 0
-                ? 'No media items found.'
-                : (() => {
-                    const first = (page - 1) * perPage + 1;
-                    const last = Math.min(page * perPage, total);
-                    return first === last
-                      ? `Showing ${first} of ${total} media items`
-                      : `Showing ${first}–${last} of ${total} media items`;
-                  })()}
-            </p>
-          ) : null}
 
           {totalPages > 1 ? (
             <nav className="pagination" aria-label="Media pagination">
@@ -1103,6 +1116,6 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
           onDeleted={handleDeleted}
         />
       ) : null}
-    </>
+    </div>
   );
 }

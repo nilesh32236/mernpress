@@ -136,12 +136,6 @@ function SignedInApp({
     document.title = pageTitle(route);
   }, [route]);
 
-  // The block editor is a full-screen workspace in WordPress: no admin bar,
-  // no admin menu, just its own 60px header and canvas.
-  if (route.name === 'new' || route.name === 'edit') {
-    return <RouteView user={user} route={route} onUserUpdated={onUserUpdated} />;
-  }
-
   return (
     <AdminShell user={user} route={route} onSignedOut={onSignedOut}>
       <RouteView user={user} route={route} onUserUpdated={onUserUpdated} />

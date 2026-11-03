@@ -172,13 +172,15 @@ export function ProfilePage({
             <h2 className="profile-section-title">Personal Options</h2>
             <div className="field">
               <span className="field-label">Admin Color Scheme</span>
-              <div className="color-scheme-grid" role="radiogroup" aria-label="Admin Color Scheme">
+              <fieldset className="scheme-list" role="radiogroup" aria-label="Admin Color Scheme">
+                <legend className="screen-reader-text">Administration Color Scheme</legend>
                 {COLOR_SCHEMES.map((scheme) => (
-                  <label
+                  <div
                     key={scheme.id}
-                    className={`color-scheme-option${adminColor === scheme.id ? ' is-active' : ''}`}
+                    className={`color-option${adminColor === scheme.id ? ' selected' : ''}`}
                   >
                     <input
+                      id={`admin_color_${scheme.id}`}
                       type="radio"
                       name="admin_color"
                       value={scheme.id}
@@ -188,15 +190,21 @@ export function ProfilePage({
                         applyColorScheme(scheme.id);
                       }}
                     />
-                    <span className="color-scheme-swatch" aria-hidden="true">
-                      {scheme.swatch.map((color, index) => (
-                        <span key={`${scheme.id}-${index}`} style={{ background: color }} />
+                    <label htmlFor={`admin_color_${scheme.id}`}>{scheme.label}</label>
+                    <div className="color-palette" aria-hidden="true">
+                      {scheme.swatch.slice(0, 3).map((color, index) => (
+                        <div
+                          key={`${scheme.id}-${index}`}
+                          className="color-palette-shade"
+                          style={{ backgroundColor: color }}
+                        >
+                          &nbsp;
+                        </div>
                       ))}
-                    </span>
-                    <span className="color-scheme-label">{scheme.label}</span>
-                  </label>
+                    </div>
+                  </div>
                 ))}
-              </div>
+              </fieldset>
             </div>
 
             <h2 className="profile-section-title">Name</h2>

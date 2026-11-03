@@ -61,34 +61,9 @@ function ReadingIcon() {
   );
 }
 
-function WritingIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-    </svg>
-  );
-}
-
 function FieldLabel({ children }: { icon?: ReactNode; children: ReactNode }) {
   return <span className="field-label-text">{children}</span>;
 }
-
-const TABS: Array<{ value: SettingsTab; label: string; icon: ReactNode }> = [
-  { value: 'general', label: 'General', icon: <GeneralIcon /> },
-  { value: 'writing', label: 'Writing', icon: <WritingIcon /> },
-  { value: 'reading', label: 'Reading', icon: <ReadingIcon /> },
-];
 
 function tabFromHash(hash: string): SettingsTab {
   if (hash === '#reading') return 'reading';
@@ -248,14 +223,6 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
     }
   }, [location]);
 
-  function handleTabChange(tab: SettingsTab) {
-    setActiveTab(tab);
-    setNotice(null);
-    if (!loaded[tab] && !loading[tab]) {
-      void loadGroup(tab);
-    }
-  }
-
   async function saveGeneral(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (saving.general || !generalDirty) return;
@@ -372,56 +339,19 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
             </div>
 
             <div className="field">
-              <span className="field-label">Site Icon</span>
-              <div>
-                {siteIconMedia ? (
-                  <div className="site-icon-current">
-                    <img src={siteIconMedia.derivatives['300'] ?? siteIconMedia.url} alt="" />
-                    <button
-                      type="button"
-                      className="button secondary-button"
-                      onClick={() => {
-                        setIconPickerOpen(true);
-                        setIconItems(null);
-                        void listMedia({ type: 'image', perPage: 24 })
-                          .then((result) => setIconItems(result.items))
-                          .catch(() => setIconItems([]));
-                      }}
-                    >
-                      Change Site Icon
-                    </button>
-                    <button
-                      type="button"
-                      className="button-link-delete"
-                      onClick={() => {
-                        setSiteIcon(null);
-                        setSiteIconMedia(null);
-                        setGeneralDirty(true);
-                      }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    className="button secondary-button"
-                    onClick={() => {
-                      setIconPickerOpen(true);
-                      setIconItems(null);
-                      void listMedia({ type: 'image', perPage: 24 })
-                        .then((result) => setIconItems(result.items))
-                        .catch(() => setIconItems([]));
-                    }}
-                  >
-                    Choose a Site Icon
-                  </button>
-                )}
-                <p className="field-help">
-                  The Site Icon is used as a browser and app icon for your site. It must be square
-                  and at least 512 × 512 pixels.
-                </p>
-              </div>
+              <label htmlFor="site_url">
+                <FieldLabel icon={<GeneralIcon />}>Site Address (URL)</FieldLabel>
+              </label>
+              <input
+                id="site_url"
+                type="url"
+                value={siteUrl}
+                onChange={(event) => {
+                  setSiteUrl(event.target.value);
+                  setGeneralDirty(true);
+                }}
+                disabled={saving.general}
+              />
             </div>
             <div className="field">
               <label htmlFor="admin_email">
@@ -438,21 +368,6 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
                 disabled={saving.general}
               />
               <p className="field-help">This address is used for admin purposes.</p>
-            </div>
-            <div className="field">
-              <label htmlFor="site_url">
-                <FieldLabel icon={<GeneralIcon />}>Site Address (URL)</FieldLabel>
-              </label>
-              <input
-                id="site_url"
-                type="url"
-                value={siteUrl}
-                onChange={(event) => {
-                  setSiteUrl(event.target.value);
-                  setGeneralDirty(true);
-                }}
-                disabled={saving.general}
-              />
             </div>
             <div className="field">
               <label htmlFor="users_can_register">Membership</label>
@@ -625,6 +540,58 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
               </select>
             </div>
 
+            <div className="field">
+              <span className="field-label">Site Icon</span>
+              <div>
+                {siteIconMedia ? (
+                  <div className="site-icon-current">
+                    <img src={siteIconMedia.derivatives['300'] ?? siteIconMedia.url} alt="" />
+                    <button
+                      type="button"
+                      className="button secondary-button"
+                      onClick={() => {
+                        setIconPickerOpen(true);
+                        setIconItems(null);
+                        void listMedia({ type: 'image', perPage: 24 })
+                          .then((result) => setIconItems(result.items))
+                          .catch(() => setIconItems([]));
+                      }}
+                    >
+                      Change Site Icon
+                    </button>
+                    <button
+                      type="button"
+                      className="button-link-delete"
+                      onClick={() => {
+                        setSiteIcon(null);
+                        setSiteIconMedia(null);
+                        setGeneralDirty(true);
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="button secondary-button"
+                    onClick={() => {
+                      setIconPickerOpen(true);
+                      setIconItems(null);
+                      void listMedia({ type: 'image', perPage: 24 })
+                        .then((result) => setIconItems(result.items))
+                        .catch(() => setIconItems([]));
+                    }}
+                  >
+                    Choose a Site Icon
+                  </button>
+                )}
+                <p className="field-help">
+                  The Site Icon is used as a browser and app icon for your site. It must be square
+                  and at least 512 × 512 pixels.
+                </p>
+              </div>
+            </div>
             <div className="field actions">
               <button
                 type="submit"
@@ -860,23 +827,6 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
       />
       {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
 
-      <div className="settings-tabs" role="tablist" aria-label="Settings sections">
-        {TABS.map((tab) => (
-          <button
-            key={tab.value}
-            type="button"
-            role="tab"
-            id={`settings-tab-${tab.value}`}
-            aria-selected={activeTab === tab.value}
-            aria-controls={`settings-panel-${tab.value}`}
-            className={`settings-tab${activeTab === tab.value ? ' is-active' : ''}`}
-            onClick={() => handleTabChange(tab.value)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
       {currentLoading ? (
         <Skeleton label={`Loading ${tabLabel(activeTab)} settings…`} lines={5} />
       ) : currentError ? (
@@ -886,12 +836,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
           onRetry={() => void loadGroup(activeTab)}
         />
       ) : (
-        <div
-          className="settings-panel"
-          role="tabpanel"
-          id={`settings-panel-${activeTab}`}
-          aria-labelledby={`settings-tab-${activeTab}`}
-        >
+        <div className="settings-panel" id={`settings-panel-${activeTab}`}>
           {renderForm()}
         </div>
       )}

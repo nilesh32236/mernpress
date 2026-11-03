@@ -1032,9 +1032,10 @@ export function ContentEditor({
         <header className="editor-topbar">
           <div className="editor-topbar-left">
             <a
-              className="editor-logo"
+              className="editor-back"
               href={listPath(type)}
               aria-label={`Back to ${type === 'post' ? 'posts' : 'pages'}`}
+              title={`Back to ${type === 'post' ? 'posts' : 'pages'}`}
               onClick={(event) => {
                 event.preventDefault();
                 if (
@@ -1046,7 +1047,17 @@ export function ContentEditor({
                 navigate(listPath(type));
               }}
             >
-              M
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                aria-hidden="true"
+              >
+                <path d="M15 5l-7 7 7 7" />
+              </svg>
             </a>
             <div className="editor-topbar-tools" ref={setToolbarSlot} />
             {/* Kept for assistive tech and tests; the visible document title
@@ -1061,9 +1072,6 @@ export function ContentEditor({
             >
               <span className="editor-document-title">{form.title || 'No title'}</span>
               <span className="editor-document-type">· {type === 'post' ? 'Post' : 'Page'}</span>
-              <span className="editor-document-shortcut" aria-hidden="true">
-                Ctrl+K
-              </span>
             </button>
             <span className="screen-reader-text" role="status" aria-live="polite">
               {saving
@@ -1076,10 +1084,27 @@ export function ContentEditor({
             </span>
           </div>
           <div className="editor-topbar-actions">
+            {createdPost ? null : (
+              <>
+                {secondarySave ? (
+                  <button
+                    type="button"
+                    className="editor-topbar-text-button"
+                    onClick={() => void handleSave('save')}
+                    disabled={saving || Boolean(conflict)}
+                    aria-busy={saving}
+                    aria-keyshortcuts="Control+S Meta+S"
+                    title="Save draft (Ctrl/Cmd+S)"
+                  >
+                    {saving ? 'Saving…' : secondarySave}
+                  </button>
+                ) : null}
+              </>
+            )}
             {!createdPost && post?.status !== 'TRASHED' ? (
               <button
                 type="button"
-                className="editor-topbar-icon-button"
+                className="editor-topbar-icon-button editor-topbar-view"
                 onClick={() => void handlePreview()}
                 disabled={previewBusy || saving || !post}
                 aria-busy={previewBusy}
@@ -1098,27 +1123,37 @@ export function ContentEditor({
                     strokeWidth="1.6"
                     aria-hidden="true"
                   >
-                    <path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z" />
-                    <circle cx="12" cy="12" r="3" />
+                    <rect x="3" y="4" width="18" height="12" rx="1" />
+                    <line x1="8" y1="20" x2="16" y2="20" />
+                    <line x1="12" y1="16" x2="12" y2="20" />
                   </svg>
                 )}
               </button>
             ) : null}
+            <button
+              type="button"
+              className={`button editor-topbar-gear${sidebarOpen ? ' is-active' : ''}`}
+              aria-expanded={sidebarOpen}
+              aria-controls="editor-document-settings"
+              aria-label="Settings"
+              title="Settings"
+              onClick={() => setSidebarOpen((open) => !open)}
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                aria-hidden="true"
+              >
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <line x1="9" y1="4" x2="9" y2="20" />
+              </svg>
+            </button>
             {createdPost ? null : (
               <>
-                {secondarySave ? (
-                  <button
-                    type="button"
-                    className="editor-topbar-text-button"
-                    onClick={() => void handleSave('save')}
-                    disabled={saving || Boolean(conflict)}
-                    aria-busy={saving}
-                    aria-keyshortcuts="Control+S Meta+S"
-                    title="Save draft (Ctrl/Cmd+S)"
-                  >
-                    {saving ? 'Saving…' : secondarySave}
-                  </button>
-                ) : null}
                 <button
                   type="button"
                   className="button primary-button editor-topbar-publish"
@@ -1132,42 +1167,26 @@ export function ContentEditor({
                 </button>
               </>
             )}
-            <button
-              type="button"
-              className={`button editor-topbar-gear${sidebarOpen ? ' is-active' : ''}`}
-              aria-expanded={sidebarOpen}
-              aria-controls="editor-document-settings"
-              aria-label="Settings"
-              title="Settings"
-              onClick={() => setSidebarOpen((open) => !open)}
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                aria-hidden="true"
-              >
-                <circle cx="12" cy="5" r="1.2" fill="currentColor" />
-                <circle cx="12" cy="12" r="1.2" fill="currentColor" />
-                <circle cx="12" cy="19" r="1.2" fill="currentColor" />
-              </svg>
-              <span className="screen-reader-text">Settings</span>
-              <svg
-                className="editor-gear-legacy"
-                width="0"
-                height="0"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                focusable="false"
-              >
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-              </svg>
-            </button>
+            <details className="editor-options-menu">
+              <summary className="editor-topbar-icon-button" aria-label="Options" title="Options">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="5" r="1.6" />
+                  <circle cx="12" cy="12" r="1.6" />
+                  <circle cx="12" cy="19" r="1.6" />
+                </svg>
+              </summary>
+              <div className="editor-options-panel">
+                <button type="button" onClick={() => setSidebarOpen(true)}>
+                  Settings
+                </button>
+              </div>
+            </details>
           </div>
         </header>
 
@@ -1529,28 +1548,32 @@ export function ContentEditor({
                           </div>
                         </div>
                         <div className="publish-field">
-                          <span className="publish-label">Visibility</span>
-                          <div className="publish-value">Public</div>
-                        </div>
-                        <div className="publish-field">
                           <span className="publish-label">Author</span>
                           <div className="publish-value">
-                            {post.author?.username ?? user.username}
+                            <span className="editor-link-value">
+                              {post.author?.username ?? user.username}
+                            </span>
                           </div>
                         </div>
                         <div className="publish-field">
                           <span className="publish-label">Template</span>
                           <div className="publish-value">
-                            {post.type === 'post' ? 'Single Post' : 'Default Template'}
+                            <span className="editor-link-value">
+                              {post.type === 'post' ? 'Single Posts' : 'Default Template'}
+                            </span>
                           </div>
                         </div>
                         <div className="publish-field">
                           <span className="publish-label">Discussion</span>
-                          <div className="publish-value">Closed</div>
+                          <div className="publish-value">
+                            <span className="editor-link-value">Closed</span>
+                          </div>
                         </div>
                         <div className="publish-field">
                           <span className="publish-label">Format</span>
-                          <div className="publish-value">Standard</div>
+                          <div className="publish-value">
+                            <span className="editor-link-value">Standard</span>
+                          </div>
                         </div>
                         {post.status === 'DRAFT' ? (
                           <div className="publish-field">
@@ -1621,6 +1644,26 @@ export function ContentEditor({
                             </div>
                           </div>
                         )}
+                        <div className="publish-field">
+                          <span className="publish-label">Slug</span>
+                          <div className="publish-value">
+                            <input
+                              id="content-slug"
+                              name="slug"
+                              type="text"
+                              maxLength={200}
+                              className="editor-slug-input"
+                              value={form.slug}
+                              onChange={(event) => updateForm('slug', event.target.value)}
+                              aria-label="Slug"
+                              aria-invalid={Boolean(fieldErrors['slug'])}
+                              aria-describedby={
+                                fieldErrors['slug'] ? 'content-slug-error' : undefined
+                              }
+                            />
+                            <FieldError id="content-slug-error" message={fieldErrors['slug']} />
+                          </div>
+                        </div>
                         {post.status !== 'TRASHED' && transitions.includes('trash') ? (
                           <div className="publish-field">
                             <button
@@ -1661,22 +1704,49 @@ export function ContentEditor({
                           </div>
                         </div>
                         <div className="publish-field">
+                          <span className="publish-label">Slug</span>
+                          <div className="publish-value">
+                            <input
+                              id="content-slug"
+                              name="slug"
+                              type="text"
+                              maxLength={200}
+                              className="editor-slug-input"
+                              value={form.slug}
+                              onChange={(event) => updateForm('slug', event.target.value)}
+                              aria-label="Slug"
+                              placeholder="Auto"
+                              aria-invalid={Boolean(fieldErrors['slug'])}
+                              aria-describedby={
+                                fieldErrors['slug'] ? 'content-slug-error' : undefined
+                              }
+                            />
+                            <FieldError id="content-slug-error" message={fieldErrors['slug']} />
+                          </div>
+                        </div>
+                        <div className="publish-field">
                           <span className="publish-label">Author</span>
-                          <div className="publish-value">{user.username}</div>
+                          <div className="publish-value">
+                            <span className="editor-link-value">{user.username}</span>
+                          </div>
                         </div>
                         <div className="publish-field">
                           <span className="publish-label">Template</span>
                           <div className="publish-value">
-                            {type === 'post' ? 'Single Post' : 'Default Template'}
+                            {type === 'post' ? 'Single Posts' : 'Default Template'}
                           </div>
                         </div>
                         <div className="publish-field">
                           <span className="publish-label">Discussion</span>
-                          <div className="publish-value">Closed</div>
+                          <div className="publish-value">
+                            <span className="editor-link-value">Closed</span>
+                          </div>
                         </div>
                         <div className="publish-field">
                           <span className="publish-label">Format</span>
-                          <div className="publish-value">Standard</div>
+                          <div className="publish-value">
+                            <span className="editor-link-value">Standard</span>
+                          </div>
                         </div>
                         <p className="field-help">
                           The content is created as a draft. Publish it from the top bar when it is
@@ -1684,35 +1754,6 @@ export function ContentEditor({
                         </p>
                       </>
                     )}
-                  </section>
-
-                  <section className="editor-panel" aria-labelledby="document-fields-heading">
-                    <h3 id="document-fields-heading">Permalink</h3>
-                    <div className="field">
-                      <label htmlFor="content-slug">Slug</label>
-                      <div className="permalink-input">
-                        <span aria-hidden="true">/</span>
-                        <input
-                          id="content-slug"
-                          name="slug"
-                          type="text"
-                          maxLength={200}
-                          value={form.slug}
-                          onChange={(event) => updateForm('slug', event.target.value)}
-                          aria-invalid={Boolean(fieldErrors['slug'])}
-                          aria-describedby={
-                            fieldErrors['slug']
-                              ? 'content-slug-help content-slug-error'
-                              : 'content-slug-help'
-                          }
-                        />
-                      </div>
-                      <p id="content-slug-help" className="field-help">
-                        Leave blank to derive from the title when creating. On edit, leave unchanged
-                        to keep the current slug.
-                      </p>
-                      <FieldError id="content-slug-error" message={fieldErrors['slug']} />
-                    </div>
                   </section>
 
                   {post && !createdPost ? (

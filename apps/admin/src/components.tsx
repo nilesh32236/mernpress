@@ -217,3 +217,16 @@ export function FieldError({ id, message }: { id: string; message?: string | und
     </p>
   );
 }
+
+/**
+ * WordPress list-table sort indicator: two stacked 10x4 CSS triangles, the
+ * active direction dark (#1d2327) and the other grey (#a7aaad).
+ */
+export function SortIndicator({ direction }: { direction: 'asc' | 'desc' | null }) {
+  return (
+    <span className="sorting-indicators" aria-hidden="true">
+      <span className={`sorting-indicator asc${direction === 'asc' ? ' is-sorted' : ''}`} />
+      <span className={`sorting-indicator desc${direction === 'desc' ? ' is-sorted' : ''}`} />
+    </span>
+  );
+}

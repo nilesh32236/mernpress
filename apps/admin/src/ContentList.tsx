@@ -4,6 +4,7 @@ import {
   bulkPosts,
   fetchPosts,
   fetchTerms,
+  rotatePreviewToken,
   transitionPost,
   updatePost,
   type AdminPost,
@@ -21,6 +22,7 @@ import {
   Notice,
   Skeleton,
   PageHeader,
+  SortIndicator,
   type NoticeMessage,
 } from './components.js';
 import { availableTransitions, canCreateContent, canEditPost, canReadContent } from './roles.js';
@@ -92,12 +94,13 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
-  const [, setPendingAction] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<BulkAction | 'edit' | ''>('');
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
   const [bulkEditStatus, setBulkEditStatus] = useState<'DRAFT' | 'PUBLISHED'>('DRAFT');
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [previewBusyId, setPreviewBusyId] = useState<string | null>(null);
   const [sort, setSort] = useState<'updatedAt' | 'title'>('updatedAt');
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -399,6 +402,40 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
     });
   }
 
+  async function openPreview(post: AdminPost): Promise<void> {
+    setPreviewBusyId(post.id);
+    setNotice(null);
+    try {
+      const rotated = await rotatePreviewToken(post.id);
+      const url = rotated.previewUrl ?? rotated.previewPath;
+      if (!url) {
+        throw new Error('No preview link was returned.');
+      }
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setPreviewBusyId(null);
+    }
+  }
+
+  async function deleteForever(post: AdminPost): Promise<void> {
+    if (!window.confirm(`Permanently delete “${post.title}”? This cannot be undone.`)) {
+      return;
+    }
+    setPendingAction(`${post.id}:delete`);
+    setNotice(null);
+    try {
+      await bulkPosts('delete', [{ id: post.id, baseVersion: post.version }]);
+      setNotice({ tone: 'success', text: 'Deleted permanently.' });
+      setReloadKey((value) => value + 1);
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
   async function runBulkAction(): Promise<void> {
     if (!data || bulkAction === '' || selected.size === 0) {
       return;
@@ -487,7 +524,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
   const totalPages = Math.max(data?.pagination.totalPages ?? 1, 1);
 
   return (
-    <>
+    <div className="wp-list-screen">
       <div className="list-title-row">
         <h1>{label}</h1>
         {canCreateContent(user) ? (
@@ -506,100 +543,102 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
 
       {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
 
-      <ul className="subsubsub" aria-label={`${label} status filter`}>
-        <li>
-          <button
-            type="button"
-            className="subsubsub-tab"
-            aria-current={!status && !mine ? 'true' : undefined}
-            onClick={() => {
-              setMine(false);
-              applyFilters('', search, 1);
-            }}
-          >
-            All <span className="count">({counts[''] ?? 0})</span>
-          </button>{' '}
-          |
-        </li>
-        <li>
-          <button
-            type="button"
-            className="subsubsub-tab"
-            aria-current={mine ? 'true' : undefined}
-            onClick={() => {
-              setMine(true);
-              applyFilters(status, search, 1);
-            }}
-          >
-            Mine <span className="count">({mineCount})</span>
-          </button>{' '}
-          |
-        </li>
-        <li>
-          <button
-            type="button"
-            className="subsubsub-tab"
-            aria-current={!mine && status === 'PUBLISHED' ? 'true' : undefined}
-            onClick={() => {
-              setMine(false);
-              applyFilters('PUBLISHED', search, 1);
-            }}
-          >
-            Published <span className="count">({counts.PUBLISHED ?? 0})</span>
-          </button>
-        </li>
-        {(counts.DRAFT ?? 0) > 0 || (!mine && status === 'DRAFT') ? (
+      <div className="list-top">
+        <ul className="subsubsub" aria-label={`${label} status filter`}>
           <li>
-            {' '}
-            |{' '}
             <button
               type="button"
               className="subsubsub-tab"
-              aria-current={!mine && status === 'DRAFT' ? 'true' : undefined}
+              aria-current={!status && !mine ? 'true' : undefined}
               onClick={() => {
                 setMine(false);
-                applyFilters('DRAFT', search, 1);
+                applyFilters('', search, 1);
               }}
             >
-              Drafts <span className="count">({counts.DRAFT ?? 0})</span>
-            </button>
+              All <span className="count">({counts[''] ?? 0})</span>
+            </button>{' '}
+            |
           </li>
-        ) : null}
-        {(counts.TRASHED ?? 0) > 0 || (!mine && status === 'TRASHED') ? (
           <li>
-            {' '}
-            |{' '}
             <button
               type="button"
               className="subsubsub-tab"
-              aria-current={!mine && status === 'TRASHED' ? 'true' : undefined}
+              aria-current={mine ? 'true' : undefined}
               onClick={() => {
-                setMine(false);
-                applyFilters('TRASHED', search, 1);
+                setMine(true);
+                applyFilters(status, search, 1);
               }}
             >
-              Trashed <span className="count">({counts.TRASHED ?? 0})</span>
+              Mine <span className="count">({mineCount})</span>
+            </button>{' '}
+            |
+          </li>
+          <li>
+            <button
+              type="button"
+              className="subsubsub-tab"
+              aria-current={!mine && status === 'PUBLISHED' ? 'true' : undefined}
+              onClick={() => {
+                setMine(false);
+                applyFilters('PUBLISHED', search, 1);
+              }}
+            >
+              Published <span className="count">({counts.PUBLISHED ?? 0})</span>
             </button>
           </li>
-        ) : null}
-      </ul>
+          {(counts.DRAFT ?? 0) > 0 || (!mine && status === 'DRAFT') ? (
+            <li>
+              {' '}
+              |{' '}
+              <button
+                type="button"
+                className="subsubsub-tab"
+                aria-current={!mine && status === 'DRAFT' ? 'true' : undefined}
+                onClick={() => {
+                  setMine(false);
+                  applyFilters('DRAFT', search, 1);
+                }}
+              >
+                Drafts <span className="count">({counts.DRAFT ?? 0})</span>
+              </button>
+            </li>
+          ) : null}
+          {(counts.TRASHED ?? 0) > 0 || (!mine && status === 'TRASHED') ? (
+            <li>
+              {' '}
+              |{' '}
+              <button
+                type="button"
+                className="subsubsub-tab"
+                aria-current={!mine && status === 'TRASHED' ? 'true' : undefined}
+                onClick={() => {
+                  setMine(false);
+                  applyFilters('TRASHED', search, 1);
+                }}
+              >
+                Trashed <span className="count">({counts.TRASHED ?? 0})</span>
+              </button>
+            </li>
+          ) : null}
+        </ul>
 
-      <div className="search-row">
-        <form className="search-form" onSubmit={handleSearch} role="search">
-          <label htmlFor={`${type}-search`} className="screen-reader-text">
-            Search {label}
-          </label>
-          <input
-            id={`${type}-search`}
-            type="search"
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            placeholder=""
-          />
-          <button type="submit" className="button secondary-button">
-            Search {label}
-          </button>
-        </form>
+        <div className="search-row">
+          <form className="search-form" onSubmit={handleSearch} role="search">
+            <label htmlFor={`${type}-search`} className="screen-reader-text">
+              Search {label}
+            </label>
+            <input
+              id={`${type}-search`}
+              type="search"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder=""
+            />
+            <button type="submit" className="button secondary-button">
+              Search {label}
+            </button>
+          </form>
+        </div>
       </div>
 
       <div className="tablenav">
@@ -625,7 +664,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
               <button
                 type="button"
                 className="button secondary-button bulk-apply"
-                disabled={bulkBusy || bulkAction === '' || selected.size === 0}
+                disabled={bulkBusy}
                 onClick={() => void runBulkAction()}
               >
                 {bulkBusy ? 'Applying…' : 'Apply'}
@@ -779,7 +818,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                       onChange={() => toggleSelectAll()}
                     />
                   </th>
-                  <th scope="col">
+                  <th scope="col" className="column-title">
                     <button
                       type="button"
                       className="sortable-column"
@@ -787,14 +826,22 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                       onClick={() => toggleSort('title')}
                     >
                       Title
-                      <span className="sort-indicator" aria-hidden="true">
-                        {sort === 'title' ? (order === 'asc' ? '▲' : '▼') : '▲▼'}
-                      </span>
+                      <SortIndicator direction={sort === 'title' ? order : null} />
                     </button>
                   </th>
-                  <th scope="col">Author</th>
-                  <th scope="col">{type === 'post' ? 'Categories' : ''}</th>
-                  <th scope="col">{type === 'post' ? 'Tags' : ''}</th>
+                  <th scope="col" className="column-author">
+                    Author
+                  </th>
+                  {type === 'post' ? (
+                    <>
+                      <th scope="col" className="column-categories">
+                        Categories
+                      </th>
+                      <th scope="col" className="column-tags">
+                        Tags
+                      </th>
+                    </>
+                  ) : null}
                   <th scope="col" className="column-comments">
                     <span className="screen-reader-text">Comments</span>
                     <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
@@ -806,7 +853,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                       />
                     </svg>
                   </th>
-                  <th scope="col">
+                  <th scope="col" className="column-date">
                     <button
                       type="button"
                       className="sortable-column"
@@ -814,9 +861,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                       onClick={() => toggleSort('updatedAt')}
                     >
                       Date
-                      <span className="sort-indicator" aria-hidden="true">
-                        {sort === 'updatedAt' ? (order === 'asc' ? '▲' : '▼') : '▲▼'}
-                      </span>
+                      <SortIndicator direction={sort === 'updatedAt' ? order : null} />
                     </button>
                   </th>
                 </tr>
@@ -861,6 +906,21 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                                 Edit
                               </a>
                             ) : null}
+                            {editable && post.status !== 'TRASHED' ? (
+                              <>
+                                <span className="row-action-sep" aria-hidden="true">
+                                  {' '}
+                                  |{' '}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="row-action-link"
+                                  onClick={() => startQuickEdit(post)}
+                                >
+                                  Quick Edit
+                                </button>
+                              </>
+                            ) : null}
                             {transitions.includes('trash') ? (
                               <>
                                 <span className="row-action-sep" aria-hidden="true">
@@ -897,9 +957,23 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                                 </button>
                               </>
                             ) : null}
-                            {post.status === 'PUBLISHED' ||
-                            transitions.includes('publish') ||
-                            transitions.includes('unpublish') ? (
+                            {post.status === 'TRASHED' && editable ? (
+                              <>
+                                <span className="row-action-sep" aria-hidden="true">
+                                  {' '}
+                                  |{' '}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="row-action-link is-danger"
+                                  aria-busy={pendingAction === `${post.id}:delete`}
+                                  onClick={() => void deleteForever(post)}
+                                >
+                                  Delete Permanently
+                                </button>
+                              </>
+                            ) : null}
+                            {post.status === 'PUBLISHED' ? (
                               <>
                                 <span className="row-action-sep" aria-hidden="true">
                                   {' '}
@@ -907,17 +981,14 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                                 </span>
                                 <a
                                   className="row-action-link"
-                                  href={editContentPath(type, post.id)}
-                                  onClick={(event) => {
-                                    event.preventDefault();
-                                    navigate(editContentPath(type, post.id));
-                                  }}
+                                  href={`/${post.slug}`}
+                                  target="_blank"
+                                  rel="noreferrer"
                                 >
                                   View
                                 </a>
                               </>
-                            ) : null}
-                            {editable && post.status !== 'TRASHED' ? (
+                            ) : post.status !== 'TRASHED' ? (
                               <>
                                 <span className="row-action-sep" aria-hidden="true">
                                   {' '}
@@ -926,9 +997,10 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                                 <button
                                   type="button"
                                   className="row-action-link"
-                                  onClick={() => startQuickEdit(post)}
+                                  aria-busy={previewBusyId === post.id}
+                                  onClick={() => void openPreview(post)}
                                 >
-                                  Quick Edit
+                                  Preview
                                 </button>
                               </>
                             ) : null}
@@ -949,41 +1021,45 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                               (post.authorId === user.id ? 'You' : 'Another user')}
                           </button>
                         </td>
-                        <td className="categories column-categories">
-                          {post.terms.categories.map((term) => (
-                            <button
-                              key={term.id}
-                              type="button"
-                              className="term-link"
-                              onClick={() => {
-                                setCategoryFilter(term.id);
-                                setPendingCategory(term.id);
-                                setPage(1);
-                              }}
-                            >
-                              {term.name}
-                            </button>
-                          ))}
-                          {post.terms.categories.length === 0 && (
-                            <span className="no-terms">—</span>
-                          )}
-                        </td>
-                        <td className="tags column-tags">
-                          {post.terms.tags.map((term) => (
-                            <button
-                              key={term.id}
-                              type="button"
-                              className="term-link"
-                              onClick={() => {
-                                setTagFilter(term.id);
-                                setPage(1);
-                              }}
-                            >
-                              {term.name}
-                            </button>
-                          ))}
-                          {post.terms.tags.length === 0 && <span className="no-terms">—</span>}
-                        </td>
+                        {type === 'post' ? (
+                          <>
+                            <td className="categories column-categories">
+                              {post.terms.categories.map((term) => (
+                                <button
+                                  key={term.id}
+                                  type="button"
+                                  className="term-link"
+                                  onClick={() => {
+                                    setCategoryFilter(term.id);
+                                    setPendingCategory(term.id);
+                                    setPage(1);
+                                  }}
+                                >
+                                  {term.name}
+                                </button>
+                              ))}
+                              {post.terms.categories.length === 0 && (
+                                <span className="no-terms">—</span>
+                              )}
+                            </td>
+                            <td className="tags column-tags">
+                              {post.terms.tags.map((term) => (
+                                <button
+                                  key={term.id}
+                                  type="button"
+                                  className="term-link"
+                                  onClick={() => {
+                                    setTagFilter(term.id);
+                                    setPage(1);
+                                  }}
+                                >
+                                  {term.name}
+                                </button>
+                              ))}
+                              {post.terms.tags.length === 0 && <span className="no-terms">—</span>}
+                            </td>
+                          </>
+                        ) : null}
                         <td className="comments column-comments" />
                         <td className="date column-date">
                           <span className={`wp-status-prefix is-${post.status.toLowerCase()}`}>
@@ -1001,7 +1077,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                       </tr>
                       {quickId === post.id ? (
                         <tr className="quick-edit-row">
-                          <td colSpan={7}>
+                          <td colSpan={type === 'post' ? 7 : 5}>
                             <form
                               className="quick-edit-form"
                               aria-label={`Quick edit ${post.title}`}
@@ -1097,7 +1173,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                       onChange={() => toggleSelectAll()}
                     />
                   </th>
-                  <th scope="col">
+                  <th scope="col" className="column-title">
                     <button
                       type="button"
                       className="sortable-column"
@@ -1105,14 +1181,22 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                       onClick={() => toggleSort('title')}
                     >
                       Title
-                      <span className="sort-indicator" aria-hidden="true">
-                        {sort === 'title' ? (order === 'asc' ? '▲' : '▼') : '▲▼'}
-                      </span>
+                      <SortIndicator direction={sort === 'title' ? order : null} />
                     </button>
                   </th>
-                  <th scope="col">Author</th>
-                  <th scope="col">{type === 'post' ? 'Categories' : ''}</th>
-                  <th scope="col">{type === 'post' ? 'Tags' : ''}</th>
+                  <th scope="col" className="column-author">
+                    Author
+                  </th>
+                  {type === 'post' ? (
+                    <>
+                      <th scope="col" className="column-categories">
+                        Categories
+                      </th>
+                      <th scope="col" className="column-tags">
+                        Tags
+                      </th>
+                    </>
+                  ) : null}
                   <th scope="col" className="column-comments">
                     <span className="screen-reader-text">Comments</span>
                     <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
@@ -1124,7 +1208,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                       />
                     </svg>
                   </th>
-                  <th scope="col">
+                  <th scope="col" className="column-date">
                     <button
                       type="button"
                       className="sortable-column"
@@ -1132,9 +1216,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                       onClick={() => toggleSort('updatedAt')}
                     >
                       Date
-                      <span className="sort-indicator" aria-hidden="true">
-                        {sort === 'updatedAt' ? (order === 'asc' ? '▲' : '▼') : '▲▼'}
-                      </span>
+                      <SortIndicator direction={sort === 'updatedAt' ? order : null} />
                     </button>
                   </th>
                 </tr>
@@ -1163,7 +1245,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
               <button
                 type="button"
                 className="button secondary-button bulk-apply"
-                disabled={bulkBusy || bulkAction === '' || selected.size === 0}
+                disabled={bulkBusy}
                 onClick={() => void runBulkAction()}
               >
                 {bulkBusy ? 'Applying…' : 'Apply'}
@@ -1232,6 +1314,6 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
           ) : null}
         </>
       )}
-    </>
+    </div>
   );
 }

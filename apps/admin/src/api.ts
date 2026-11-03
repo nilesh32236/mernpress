@@ -712,7 +712,7 @@ export async function fetchTerms(
     search?: string;
     page?: number;
     perPage?: number;
-    sort?: 'name' | 'createdAt' | 'updatedAt';
+    sort?: 'name' | 'description' | 'slug' | 'count' | 'createdAt' | 'updatedAt';
     order?: 'asc' | 'desc';
   } = {},
 ): Promise<Paged<AdminTerm>> {
@@ -836,12 +836,21 @@ export interface UserProfile {
 export type OptionValues = Record<string, unknown>;
 
 export async function fetchUsers(
-  params: { search?: string; role?: UserRole; page?: number; perPage?: number } = {},
+  params: {
+    search?: string;
+    role?: UserRole;
+    sort?: 'username' | 'email';
+    order?: 'asc' | 'desc';
+    page?: number;
+    perPage?: number;
+  } = {},
 ): Promise<AdminUserList> {
   const response = await fetch(
     `/api/users${queryString({
       search: params.search,
       role: params.role,
+      sort: params.sort,
+      order: params.order,
       page: params.page,
       perPage: params.perPage,
     })}`,

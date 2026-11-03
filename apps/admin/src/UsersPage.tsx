@@ -27,6 +27,7 @@ import {
   Notice,
   PageHeader,
   Skeleton,
+  SortIndicator,
   type NoticeMessage,
 } from './components.js';
 import { pluralize } from './format.js';
@@ -557,6 +558,8 @@ export function UsersPage({ user }: { user: AuthUser }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [roleFilter, setRoleFilter] = useState<UserRole | ''>('');
+  const [sort, setSort] = useState<'username' | 'email'>('username');
+  const [order, setOrder] = useState<'asc' | 'desc'>('asc');
   const [roleCounts, setRoleCounts] = useState<Record<string, number>>({});
   const [data, setData] = useState<AdminUserList | null>(null);
   const [loading, setLoading] = useState(true);
@@ -610,6 +613,8 @@ export function UsersPage({ user }: { user: AuthUser }) {
     fetchUsers({
       ...(search ? { search } : {}),
       ...(roleFilter ? { role: roleFilter } : {}),
+      ...(sort !== 'username' ? { sort } : {}),
+      ...(order !== 'asc' ? { order } : {}),
       page,
       perPage,
     })
@@ -632,7 +637,7 @@ export function UsersPage({ user }: { user: AuthUser }) {
     return () => {
       active = false;
     };
-  }, [search, page, roleFilter, perPage, reloadKey]);
+  }, [search, page, roleFilter, sort, order, perPage, reloadKey]);
 
   useEffect(() => {
     function onOptions() {
@@ -774,7 +779,7 @@ export function UsersPage({ user }: { user: AuthUser }) {
   const total = data?.pagination.total ?? 0;
 
   return (
-    <>
+    <div className="wp-list-screen">
       <div className="list-title-row">
         <h1>Users</h1>
         <button
@@ -785,65 +790,66 @@ export function UsersPage({ user }: { user: AuthUser }) {
           Add User
         </button>
       </div>
-      <ul className="subsubsub" aria-label="User role filter">
-        <li>
-          <button
-            type="button"
-            className="subsubsub-tab"
-            aria-current={roleFilter === '' ? 'true' : undefined}
-            onClick={() => {
-              setRoleFilter('');
-              setPage(1);
-            }}
-          >
-            All <span className="count">({total})</span>
-          </button>
-        </li>
-        {(
-          [
-            ['administrator', 'Administrator'],
-            ['editor', 'Editor'],
-            ['author', 'Author'],
-            ['contributor', 'Contributor'],
-            ['subscriber', 'Subscriber'],
-          ] as const
-        )
-          .filter(([role]) => (roleCounts[role] ?? 0) > 0 || roleFilter === role)
-          .map(([role, label]) => (
-            <li key={role}>
-              <button
-                type="button"
-                className="subsubsub-tab"
-                aria-current={roleFilter === role ? 'true' : undefined}
-                onClick={() => {
-                  setRoleFilter(role);
-                  setPage(1);
-                }}
-              >
-                {label} <span className="count">({roleCounts[role] ?? 0})</span>
-              </button>
-            </li>
-          ))}
-      </ul>
+      <div className="list-top">
+        <ul className="subsubsub" aria-label="User role filter">
+          <li>
+            <button
+              type="button"
+              className="subsubsub-tab"
+              aria-current={roleFilter === '' ? 'true' : undefined}
+              onClick={() => {
+                setRoleFilter('');
+                setPage(1);
+              }}
+            >
+              All <span className="count">({total})</span>
+            </button>
+          </li>
+          {(
+            [
+              ['administrator', 'Administrator'],
+              ['editor', 'Editor'],
+              ['author', 'Author'],
+              ['contributor', 'Contributor'],
+              ['subscriber', 'Subscriber'],
+            ] as const
+          )
+            .filter(([role]) => (roleCounts[role] ?? 0) > 0 || roleFilter === role)
+            .map(([role, label]) => (
+              <li key={role}>
+                <button
+                  type="button"
+                  className="subsubsub-tab"
+                  aria-current={roleFilter === role ? 'true' : undefined}
+                  onClick={() => {
+                    setRoleFilter(role);
+                    setPage(1);
+                  }}
+                >
+                  {label} <span className="count">({roleCounts[role] ?? 0})</span>
+                </button>
+              </li>
+            ))}
+        </ul>
+        <div className="search-row">
+          <form className="search-form" onSubmit={handleSearch} role="search">
+            <label htmlFor="user-search" className="screen-reader-text">
+              Search Users
+            </label>
+            <input
+              id="user-search"
+              type="search"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+            />
+            <button type="submit" className="button secondary-button">
+              Search Users
+            </button>
+          </form>
+        </div>
+      </div>
 
       {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
-
-      <div className="search-row">
-        <form className="search-form" onSubmit={handleSearch} role="search">
-          <label htmlFor="user-search" className="screen-reader-text">
-            Search Users
-          </label>
-          <input
-            id="user-search"
-            type="search"
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-          />
-          <button type="submit" className="button secondary-button">
-            Search Users
-          </button>
-        </form>
-      </div>
 
       <div className="tablenav">
         <div className="alignleft">
@@ -862,7 +868,7 @@ export function UsersPage({ user }: { user: AuthUser }) {
           <button
             type="button"
             className="button secondary-button bulk-apply"
-            disabled={bulkBusy || bulkAction === '' || selected.size === 0}
+            disabled={bulkBusy}
             onClick={() => void runBulkAction()}
           >
             {bulkBusy ? 'Applying…' : 'Apply'}
@@ -886,7 +892,7 @@ export function UsersPage({ user }: { user: AuthUser }) {
           <button
             type="button"
             className="button secondary-button bulk-apply"
-            disabled={bulkBusy || bulkRole === '' || selected.size === 0}
+            disabled={bulkBusy}
             onClick={() => void runBulkRoleChange()}
           >
             Change
@@ -940,11 +946,53 @@ export function UsersPage({ user }: { user: AuthUser }) {
                       onChange={() => toggleSelectAll()}
                     />
                   </th>
-                  <th scope="col">Username</th>
-                  <th scope="col">Name</th>
-                  <th scope="col">Email</th>
-                  <th scope="col">Role</th>
-                  <th scope="col">Posts</th>
+                  <th scope="col" className="column-username">
+                    <button
+                      type="button"
+                      className="sortable-column"
+                      aria-label={`Sort by username${sort === 'username' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
+                      onClick={() => {
+                        if (sort === 'username') {
+                          setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
+                        } else {
+                          setSort('username');
+                          setOrder('asc');
+                        }
+                        setPage(1);
+                      }}
+                    >
+                      Username
+                      <SortIndicator direction={sort === 'username' ? order : null} />
+                    </button>
+                  </th>
+                  <th scope="col" className="column-name">
+                    Name
+                  </th>
+                  <th scope="col" className="column-email">
+                    <button
+                      type="button"
+                      className="sortable-column"
+                      aria-label={`Sort by email${sort === 'email' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
+                      onClick={() => {
+                        if (sort === 'email') {
+                          setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
+                        } else {
+                          setSort('email');
+                          setOrder('asc');
+                        }
+                        setPage(1);
+                      }}
+                    >
+                      Email
+                      <SortIndicator direction={sort === 'email' ? order : null} />
+                    </button>
+                  </th>
+                  <th scope="col" className="column-role">
+                    Role
+                  </th>
+                  <th scope="col" className="column-posts">
+                    Posts
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -1031,11 +1079,53 @@ export function UsersPage({ user }: { user: AuthUser }) {
                       onChange={() => toggleSelectAll()}
                     />
                   </th>
-                  <th scope="col">Username</th>
-                  <th scope="col">Name</th>
-                  <th scope="col">Email</th>
-                  <th scope="col">Role</th>
-                  <th scope="col">Posts</th>
+                  <th scope="col" className="column-username">
+                    <button
+                      type="button"
+                      className="sortable-column"
+                      aria-label={`Sort by username${sort === 'username' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
+                      onClick={() => {
+                        if (sort === 'username') {
+                          setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
+                        } else {
+                          setSort('username');
+                          setOrder('asc');
+                        }
+                        setPage(1);
+                      }}
+                    >
+                      Username
+                      <SortIndicator direction={sort === 'username' ? order : null} />
+                    </button>
+                  </th>
+                  <th scope="col" className="column-name">
+                    Name
+                  </th>
+                  <th scope="col" className="column-email">
+                    <button
+                      type="button"
+                      className="sortable-column"
+                      aria-label={`Sort by email${sort === 'email' ? (order === 'asc' ? ', descending' : ', ascending') : ''}`}
+                      onClick={() => {
+                        if (sort === 'email') {
+                          setOrder((value) => (value === 'asc' ? 'desc' : 'asc'));
+                        } else {
+                          setSort('email');
+                          setOrder('asc');
+                        }
+                        setPage(1);
+                      }}
+                    >
+                      Email
+                      <SortIndicator direction={sort === 'email' ? order : null} />
+                    </button>
+                  </th>
+                  <th scope="col" className="column-role">
+                    Role
+                  </th>
+                  <th scope="col" className="column-posts">
+                    Posts
+                  </th>
                 </tr>
               </tfoot>
             </table>
@@ -1058,7 +1148,7 @@ export function UsersPage({ user }: { user: AuthUser }) {
               <button
                 type="button"
                 className="button secondary-button bulk-apply"
-                disabled={bulkBusy || bulkAction === '' || selected.size === 0}
+                disabled={bulkBusy}
                 onClick={() => void runBulkAction()}
               >
                 {bulkBusy ? 'Applying…' : 'Apply'}
@@ -1155,6 +1245,6 @@ export function UsersPage({ user }: { user: AuthUser }) {
           onSuccess={finishDialog}
         />
       ) : null}
-    </>
+    </div>
   );
 }

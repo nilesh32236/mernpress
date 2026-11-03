@@ -75,6 +75,9 @@ export interface UserListQuery {
   search?: string | undefined;
   /** Optional role filter (WordPress role tabs). */
   role?: UserRole | undefined;
+  /** WordPress sortable columns: username (login) and email. */
+  sort?: 'username' | 'email' | undefined;
+  order?: 'asc' | 'desc' | undefined;
   page: number;
   perPage: number;
 }
@@ -430,7 +433,12 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
       prisma.user.findMany({
         where,
         select: { ...SUMMARY_SELECT, _count: { select: { posts: true } } },
-        orderBy: [{ username: 'asc' }, { id: 'asc' }],
+        orderBy: [
+          {
+            [query.sort ?? 'username']: query.order ?? 'asc',
+          } as Prisma.UserOrderByWithRelationInput,
+          { id: 'asc' },
+        ],
         skip: (query.page - 1) * query.perPage,
         take: query.perPage,
       }),
