@@ -1,14 +1,10 @@
 import type { MetadataRoute } from 'next';
-import { listPublished } from '@/lib/api';
+import { listPublished, siteUrl } from '@/lib/api';
 
 export const revalidate = 3600;
 
-function baseUrl(): string {
-  return process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-}
-
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = baseUrl();
+  const base = siteUrl();
   const entries: MetadataRoute.Sitemap = [
     { url: base, lastModified: new Date() },
     { url: `${base}/posts`, lastModified: new Date() },

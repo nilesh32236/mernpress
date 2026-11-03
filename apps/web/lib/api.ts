@@ -46,6 +46,36 @@ function apiUrl(): string {
   return process.env.MERNPRESS_API_URL || 'http://127.0.0.1:4000';
 }
 
+/**
+ * Public site origin used for absolute URLs (sitemap, robots, canonical and
+ * og:image fallbacks). Set MERNPRESS_SITE_URL in production; the localhost
+ * default is development-only.
+ */
+/**
+ * Absolute URL for a media path. Media is served by the API, which shares the
+ * public origin with the site in production (Caddy routes /api); in
+ * development the API origin can be set explicitly via
+ * MERNPRESS_PUBLIC_API_URL.
+ */
+export function mediaUrl(path: string): string {
+  if (/^https?:\/\//.test(path)) return path;
+  const base = (
+    process.env.MERNPRESS_PUBLIC_API_URL ||
+    process.env.MERNPRESS_SITE_URL ||
+    process.env.MERNPRESS_API_URL ||
+    'http://127.0.0.1:4000'
+  ).replace(/\/+$/, '');
+  return `${base}${path}`;
+}
+
+export function siteUrl(): string {
+  return (
+    process.env.MERNPRESS_SITE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    'http://localhost:3000'
+  ).replace(/\/+$/, '');
+}
+
 async function apiFetch(path: string): Promise<Response> {
   const url = `${apiUrl()}${path}`;
   return fetch(url, { next: { revalidate: 60 } } as RequestInit);

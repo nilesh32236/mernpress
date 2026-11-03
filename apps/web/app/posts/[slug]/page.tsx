@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getPublishedBySlug } from '@/lib/api';
+import { getPublishedBySlug, mediaUrl, siteUrl } from '@/lib/api';
 import type { PublicPost } from '@/lib/api';
 import PostView from '@/components/PostView';
 import type { Metadata } from 'next';
@@ -57,7 +57,9 @@ export async function generateMetadata({
     title,
     description: description || undefined,
     robots: post.robots ?? undefined,
-    alternates: post.canonicalUrl ? { canonical: post.canonicalUrl } : undefined,
+    alternates: {
+      canonical: post.canonicalUrl ?? `${siteUrl()}/posts/${post.slug}`,
+    },
     openGraph: {
       title: post.ogTitle ?? title,
       description: post.ogDescription ?? (description || undefined),
@@ -65,9 +67,7 @@ export async function generateMetadata({
         ? {
             images: [
               {
-                url: post.featuredImage.url.startsWith('http')
-                  ? post.featuredImage.url
-                  : `${(process.env.MERNPRESS_API_URL || 'http://127.0.0.1:4000').replace(/\/+$/, '')}${post.featuredImage.url}`,
+                url: mediaUrl(post.featuredImage.url),
                 ...(post.featuredImage.width ? { width: post.featuredImage.width } : {}),
                 ...(post.featuredImage.height ? { height: post.featuredImage.height } : {}),
                 alt: post.featuredImage.altText,

@@ -142,6 +142,7 @@ describe('post page', () => {
     const meta = await generateMetadata({ params });
     expect(meta.title).toBe('Hello World');
     expect(meta.robots).toBeUndefined();
-    expect(meta.alternates).toBeUndefined();
+    // WordPress always emits a canonical; the default is derived from the slug.
+    expect(meta.alternates?.canonical).toBe('http://localhost:3000/posts/hello-world');
   });
 });
