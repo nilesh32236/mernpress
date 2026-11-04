@@ -234,3 +234,12 @@ export type {
 // ---- WordPress import (ADR 0016) ----
 export { createImportService, parseWxr, type ImportService } from './import/service.js';
 export type { ImportResult } from './import/service.js';
+
+// ---- Settings connectors (ADR 0017) ----
+export {
+  createConnectorService,
+  CONNECTOR_PROVIDERS,
+  type ConnectorProvider,
+  type ConnectorService,
+} from './connectors/service.js';
+export type { ConnectorState } from './connectors/service.js';

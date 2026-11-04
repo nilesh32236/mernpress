@@ -57,6 +57,8 @@ function screenKey(route: Route): string {
     case 'exportPersonalData':
     case 'erasePersonalData':
       return 'personal-data';
+    case 'connectors':
+      return 'connectors';
     case 'plugins':
     case 'pluginInstall':
       return 'plugins';
@@ -269,6 +271,27 @@ function screenHelp(route: Route): {
           {
             label: 'Documentation on Personal Data',
             href: 'https://wordpress.org/documentation/article/tools-export-personal-data-screen/',
+          },
+          support,
+        ],
+      };
+    case 'connectors':
+      return {
+        title: 'Connectors',
+        sections: [
+          {
+            heading: 'Overview',
+            body: 'Connectors hold provider API keys in one place so features can share them. Enter a key for a provider to connect it, or disconnect it later; keys are never shown again in full.',
+          },
+          {
+            heading: 'AI features',
+            body: 'No AI feature is bundled with this build yet, so saved keys are stored encrypted and unused until one ships.',
+          },
+        ],
+        links: [
+          {
+            label: 'Documentation on Connectors',
+            href: 'https://wordpress.org/documentation/article/settings-connectors-screen/',
           },
           support,
         ],
@@ -990,7 +1013,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
     {
       to: '/settings',
       label: 'Settings',
-      active: route.name === 'settings',
+      active: route.name === 'settings' || route.name === 'connectors',
       show: isAdmin,
       icon: <span className="dashicons dashicons-admin-settings" />,
       subs: [
@@ -998,6 +1021,11 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
           label: 'General',
           to: '/settings',
           active: route.name === 'settings' && (hash === '' || hash === '#general'),
+        },
+        {
+          label: 'Connectors',
+          to: '/settings/connectors',
+          active: route.name === 'connectors',
         },
         {
           label: 'Writing',

@@ -2508,3 +2508,25 @@ applied. `/`, `/admin/`, `/admin/tools/import`,
 anonymous callers. The production bundles contain the import and personal-data
 screens ("Run Importer", "Add Data Export Request", "Download personal data"),
 the API routes exist, and the `data_requests` table is present in production.
+
+### 2026-11-04 — Expanded scope, slice 9: Settings → Connectors
+
+- Added a connector service storing provider API keys (OpenAI, Google,
+  Anthropic) in the existing `options` table, encrypted with AES-256-GCM under a
+  scrypt-derived key from `AUTH_HASH_PEPPER`. The API returns only a mask and the
+  connect time; keys are never echoed back.
+- Administrator-only routes `GET /api/admin/connectors`,
+  `PUT /api/admin/connectors/:id` and `DELETE /api/admin/connectors/:id`.
+- Settings → Connectors matches WordPress 7.1: centered 630px column, title and
+  description, lavender AI banner, provider rows with icon/name/description and
+  a masked Connected state or key field + Connect, plus the footer note about
+  additional connectors. The Settings submenu order is now General, Connectors,
+  Writing, Reading, Discussion, Media, Permalinks, Privacy.
+- The screen and Help state that no AI feature is bundled yet, so stored keys
+  are unused until one ships; "Install the AI plugin" is replaced with "Browse
+  plugins" because there is no marketplace.
+- Verified in the browser: saving a key showed "Connected · key sk-…3456" and
+  Disconnect; the stored option value was AES-GCM ciphertext with the plaintext
+  absent (`like '%plaintext-canary%'` = false); disconnecting removed the row.
+- Validation: 605 unit/integration tests (API 384, admin 143, block-system 65,
+  web 13), 23 Playwright E2E tests and six builds pass.

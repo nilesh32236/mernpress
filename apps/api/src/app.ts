@@ -21,6 +21,7 @@ import {
   createDashboardFeedService,
   createPrivacyService,
   createImportService,
+  createConnectorService,
   type AuthConfig,
 } from '@mernpress/cms-core';
 import { checkDatabase, createDatabaseClient } from '@mernpress/database';
@@ -44,6 +45,7 @@ import { registerUpdateRoutes } from './routes/updates.js';
 import { registerDashboardRoutes } from './routes/dashboard.js';
 import { registerImportRoutes } from './routes/import.js';
 import { registerPrivacyRoutes } from './routes/privacy.js';
+import { registerConnectorRoutes } from './routes/connectors.js';
 import { registerAdminHealthRoutes } from './routes/admin-health.js';
 import { startPublishScheduler } from './scheduler.js';
 import { resolveRequestId } from './http/request-id.js';
@@ -187,6 +189,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   app.decorate('imports', imports);
   app.decorate('privacy', privacy);
 
+  const connectors = createConnectorService({ prisma: database, pepper: env.AUTH_HASH_PEPPER });
+  app.decorate('connectors', connectors);
+
   app.addHook('onRequest', async (request, reply) => {
     if (!MUTATING_METHODS.has(request.method)) {
       return;
@@ -232,6 +237,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerDashboardRoutes(app, { env, auth, dashboardFeeds });
   registerImportRoutes(app, { env, auth, imports });
   registerPrivacyRoutes(app, { env, auth, privacy });
+  registerConnectorRoutes(app, { env, auth, connectors });
   registerPublicCommentRoutes(app, { comments, auth });
 
   if (env.SCHEDULER_ENABLED) {

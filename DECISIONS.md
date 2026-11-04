@@ -73,6 +73,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-055 | 2026-11-04 | Tools → Import ships a real WordPress WXR importer (posts/pages, categories/tags, statuses, dates, collision-safe slugs, per-item error report; attachments/comments/users skipped and stated) and Tools → Export/Erase Personal Data ship a real request workflow backed by a new `data_requests` table: exports download the account profile/posts/comments as JSON, erasure anonymises profile fields and comment authorship in one transaction and keeps the account. Third-party importers are listed but unavailable; the Theme/Plugin File Editors remain excluded as a code-execution surface. | accepted | [ADR 0016](docs/adr/0016-tools-import-personal-data.md) |
 
+| D-056 | 2026-11-04 | Settings → Connectors stores provider API keys (OpenAI, Google, Anthropic) encrypted with AES-256-GCM under a key derived from AUTH_HASH_PEPPER, returns only a mask, and offers connect/disconnect per provider. The screen matches WordPress 7.1 (centered column, AI banner, provider rows, footer note) and says plainly that no bundled AI feature consumes the keys yet; the Settings submenu order now matches WordPress. Administrators only. | accepted | [ADR 0017](docs/adr/0017-settings-connectors.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

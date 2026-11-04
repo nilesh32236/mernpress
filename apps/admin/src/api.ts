@@ -1688,3 +1688,47 @@ export async function downloadPersonalData(id: string): Promise<void> {
   link.remove();
   URL.revokeObjectURL(url);
 }
+
+// ---- Settings connectors (ADR 0017) ----
+export interface ConnectorState {
+  id: string;
+  name: string;
+  description: string;
+  configured: boolean;
+  maskedKey: string | null;
+  updatedAt: string | null;
+}
+
+export async function fetchConnectors(): Promise<ConnectorState[]> {
+  const response = await fetch('/api/admin/connectors', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return (await readJson<{ items: ConnectorState[] }>(response)).items;
+}
+
+export async function setConnectorKey(id: string, apiKey: string): Promise<ConnectorState[]> {
+  const response = await fetch(`/api/admin/connectors/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ apiKey }),
+  });
+  return (await readJson<{ items: ConnectorState[] }>(response)).items;
+}
+
+export async function disconnectConnector(id: string): Promise<ConnectorState[]> {
+  const response = await fetch(`/api/admin/connectors/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  return (await readJson<{ items: ConnectorState[] }>(response)).items;
+}

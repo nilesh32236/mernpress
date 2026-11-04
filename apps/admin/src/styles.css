@@ -11234,3 +11234,151 @@ a.glance-chip:hover {
   color: var(--wp-muted);
   font-size: 13px;
 }
+
+/* ==========================================================================
+   Settings → Connectors (WordPress 7.1): centered 630px column, lavender AI
+   banner, provider rows with icon, copy and a right-aligned action.
+   ========================================================================== */
+
+.connectors-intro {
+  margin: 0 0 20px;
+  color: var(--wp-text);
+  font-size: 14px;
+}
+
+.connectors-intro,
+.connectors-footer {
+  max-width: 100%;
+}
+
+.connectors-banner,
+.connectors-list,
+.connectors-footer {
+  width: 100%;
+  max-width: 630px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.connectors-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 4px;
+  padding: 20px 24px;
+  border-radius: 2px;
+  background: linear-gradient(100deg, #f6e7f7 0%, #efe3fa 60%, #e9e2fb 100%);
+}
+
+.connectors-banner p {
+  margin: 0 0 12px;
+  color: var(--wp-text-strong, #1d2327);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.connectors-banner-art {
+  flex: 0 0 auto;
+  color: #8c6bb1;
+  font-size: 64px;
+  line-height: 1;
+}
+
+.connectors-list {
+  margin-top: 12px;
+  margin-bottom: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.connector-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 8px;
+  padding: 14px 20px;
+  border: 1px solid #c3c4c7;
+  border-radius: 2px;
+  background: #ffffff;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.connector-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  background: #f0f0f1;
+  color: #1d2327;
+  font-size: 18px;
+  font-weight: 600;
+  flex: 0 0 auto;
+}
+
+.connector-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.connector-copy strong {
+  color: #1d2327;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.connector-description {
+  color: var(--wp-muted);
+  font-size: 13px;
+}
+
+.connector-status {
+  color: #00693e;
+  font-size: 12px;
+}
+
+.connector-connect {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.connector-connect input {
+  width: 170px;
+  height: 32px;
+}
+
+.connector-connect .button,
+.connector-row > .button {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.connectors-footer {
+  margin-top: 16px;
+  color: var(--wp-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (max-width: 782px) {
+  .connector-row {
+    flex-wrap: wrap;
+  }
+
+  .connector-connect {
+    width: 100%;
+  }
+
+  .connector-connect input {
+    flex: 1;
+    width: auto;
+  }
+}
