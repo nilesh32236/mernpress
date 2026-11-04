@@ -2251,4 +2251,5 @@ and `20261104090233_restore_featured_media_index`. Production `/`, `/admin/`,
 `/api/health` return 200; a public comment was created through the production
 API (201), listed (200) and removed. The public single-post page renders the
 empty comment list and form, with the footer at 427px and no horizontal
-overflow.
+overflow. A follow-up mobile-table patch was released as
+`20261104T092742Z-c26f870`; `/`, `/admin/` and `/api/health` remain 200.
