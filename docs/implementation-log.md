@@ -2063,3 +2063,59 @@ icons rather than the WordPress Dashicons font.
 - Writing Settings gains Default Post Format (stored in options) and the editor
   shows that format for new posts.
 - wp-login submit button is 40px tall.
+
+## 2026-11-04 — WordPress parity audit and public-site rebuild
+
+Owner feedback: the design and functionality still did not match WordPress, page
+by page. Ground truth remained WordPress 7.1.4 at `/tmp/opencode/wp-site` plus
+the mirrored core CSS in `/tmp/opencode/wp68`.
+
+**Critical production fix:** the Next.js standalone bundle did not contain
+`.next/static` or `public`, so every CSS/font/image request 404ed and production
+served unstyled HTML. `apps/web/scripts/copy-standalone.mjs` now copies both as
+part of `postbuild`; the live site's CSS, Manrope font, icons and images return
+200. This was the single largest visual mismatch.
+
+**Public site (Twenty Twenty-Five):**
+- Manrope 22px/300 body, 645px content column, 71px header, 48px Blog and post
+  titles, 18px excerpts, 14px dates, long-month `F j, Y` dates.
+- Blog and posts pages use the TT5 query loop; single posts use the TT5 template
+  (title, 3/2 featured image, Written by/in meta, 22px content, tags, previous/
+  next navigation, More posts); pages use the page template.
+- Search (`/search`), category and tag archives, the TT5 404 (two-column image
+  + copy + search form) and the RSS feed (`/feed`) are implemented.
+- Header/footer navigation lists published pages; footer matches the TT5
+  structure and 426px height (theme name + credit bottom row).
+- Public API supports search and category/tag filters; the public DTO includes
+  the author; `/api/public/site` exposes the title/tagline/visibility/feed
+  settings.
+
+**Admin:**
+- Login, dashboard, posts/pages lists, editor, media grid/list/modal, users,
+  terms, Settings General/Writing/Reading, Profile, Tools, Updates and Help/
+  Screen Options were compared against wp-admin at 1440px.
+- Editor top bar, sidebar and canvas now use the measured WordPress geometry;
+  media uses the Attachment details modal; Settings uses form-table geometry;
+  Profile has First/Last/Nickname/Display Name, the WordPress colour schemes
+  (Fresh default), Keyboard Shortcuts and Toolbar preferences; a public admin
+  bar honours the Toolbar preference.
+- Sidebar and admin-bar New menu use the WordPress Dashicons font (attributed,
+  GPL-2.0-or-later) instead of the Gutenberg icon set.
+- Settings Reading gained search-engine visibility and feed options; the public
+  site honours them in robots, sitemap and the feed.
+
+**Migrations:** `20261104010000_add_user_name_parts` adds `first_name`,
+`last_name`, `nickname` to `users` (additive, applied to dev, test and prod).
+
+**Validation:** format, lint, typecheck, 540 unit/integration tests
+(API 340, admin 122, block-system 65, web 13), 23 Playwright E2E tests, and the
+production build. Releases: `20261104T001136Z-f850de3`, `...-b805952`,
+`...-13ba317`, `...-cd3e9c0`, `...-96e85d9`, `...-ab6c0e2`, `...-3fb42f5`,
+`...-8f7c0a1`, `...-bd7eb77`. Production `/`, `/admin/`, `/api/health`, `/feed`
+and `/robots.txt` return 200.
+
+**Deliberate MVP exclusions (not faked):** Comments, Appearance, Plugins,
+update-checking, post-by-email/update-services, feeds' per-post editor UI,
+Discussion/Media/Permalinks/Privacy settings, Tools import/personal-data/editors,
+profile language/syntax-highlighting options. These are documented rather than
+shown as empty screens.

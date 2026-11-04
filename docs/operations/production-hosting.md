@@ -305,3 +305,18 @@ Both verified 200 on `/`, `/admin/` and `/api/health`; no schema changes.
 - `20261104T001136Z-f850de3` — global body typography, profile keyboard
   shortcuts, default post format and login button height. Verified 200 on `/`,
   `/admin/` and `/api/health`; no schema change.
+
+### 2026-11-04 — Public-site rebuild, standalone asset fix and parity releases
+
+The Next.js standalone bundle omitted `.next/static` and `public`; production
+served unstyled HTML. `apps/web/scripts/copy-standalone.mjs` now copies both in
+`postbuild`, and the deployed release includes them. Releases `13ba317` through
+`bd7eb77` were built with
+`DATABASE_URL=<prod> MERNPRESS_SITE_URL=https://mernpress.duckdns.org
+MERNPRESS_API_URL=http://127.0.0.1:4000 pnpm build`, symlinked at
+`/opt/mernpress/current`, and verified 200 on `/`, `/admin/`, `/api/health`,
+`/api/public/site`, `/feed` and `/robots.txt`. Migration
+`20261104010000_add_user_name_parts` was applied to `mernpress_prod`.
+Rollback: repoint the symlink to the previous release and restart
+`mernpress-api`/`mernpress-web`; the name-part columns are additive and inert to
+the previous build.
