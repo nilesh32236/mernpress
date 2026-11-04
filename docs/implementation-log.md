@@ -2252,4 +2252,5 @@ and `20261104090233_restore_featured_media_index`. Production `/`, `/admin/`,
 API (201), listed (200) and removed. The public single-post page renders the
 empty comment list and form, with the footer at 427px and no horizontal
 overflow. A follow-up mobile-table patch was released as
-`20261104T092742Z-c26f870`; `/`, `/admin/` and `/api/health` remain 200.
+`20261104T092742Z-c26f870`; a recursive reply rendering fix followed as
+`20261104T092931Z-fc94543`. `/`, `/admin/` and `/api/health` remain 200.
