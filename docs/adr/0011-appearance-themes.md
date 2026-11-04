@@ -48,6 +48,5 @@ server would repeat the plugin trust problem before a plugin system exists
 - One additive `options` row on first save; no migration.
 - The Theme Details screenshot is a real capture of the public site stored at
   `apps/admin/public/theme-screenshot.png` and served under `/admin/`.
-- Appearance → Editor/Fonts (Site Editor) remain a later slice; they are not
-  rendered as empty screens.
+- Appearance → Editor and Fonts were added in ADR 0015.
 - Plugins, update checks and the Events/News widget remain separate slices.

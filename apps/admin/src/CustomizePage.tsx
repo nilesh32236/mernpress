@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { actionErrorMessage, fetchOptions, updateOptions } from './api.js';
 import { Notice, Skeleton, type NoticeMessage } from './components.js';
 import { navigate } from './router.js';
+import { publicSiteUrl } from './sitePreview.js';
 
 /**
  * Appearance → Customize (site identity).
@@ -11,13 +12,6 @@ import { navigate } from './router.js';
  * title and tagline from the General options, so this screen edits exactly
  * those values with a live preview of the public site.
  */
-/** The public site origin: same origin in production, the web dev server locally. */
-function publicSiteUrl(): string {
-  const configured = import.meta.env.VITE_SITE_URL;
-  if (configured) return configured.replace(/\/+$/, '');
-  return import.meta.env.DEV ? 'http://127.0.0.1:3000' : '';
-}
-
 export function CustomizePage() {
   const [title, setTitle] = useState('');
   const [tagline, setTagline] = useState('');

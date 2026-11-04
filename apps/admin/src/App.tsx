@@ -9,6 +9,8 @@ import { ThemeInstallPage } from './ThemeInstallPage.js';
 import { CustomizePage } from './CustomizePage.js';
 import { PluginsPage } from './PluginsPage.js';
 import { PluginInstallPage } from './PluginInstallPage.js';
+import { SiteEditorPage } from './SiteEditorPage.js';
+import { FontsPage } from './FontsPage.js';
 import { ContentList } from './ContentList.js';
 import { TermsPage } from './TermsPage.js';
 import { MediaPage } from './MediaPage.js';
@@ -171,6 +173,10 @@ function pageTitle(route: Route): string {
       return 'MERNPress admin · Add Themes';
     case 'customize':
       return 'MERNPress admin · Customize';
+    case 'siteEditor':
+      return 'MERNPress admin · Editor';
+    case 'fonts':
+      return 'MERNPress admin · Fonts';
     case 'plugins':
       return 'MERNPress admin · Plugins';
     case 'pluginInstall':
@@ -229,6 +235,10 @@ function RouteView({
       return user.role === 'administrator' ? <ThemeInstallPage user={user} /> : <Forbidden />;
     case 'customize':
       return user.role === 'administrator' ? <CustomizePage /> : <Forbidden />;
+    case 'siteEditor':
+      return user.role === 'administrator' ? <SiteEditorPage user={user} /> : <Forbidden />;
+    case 'fonts':
+      return user.role === 'administrator' ? <FontsPage /> : <Forbidden />;
     case 'plugins':
       return user.role === 'administrator' ? <PluginsPage user={user} /> : <Forbidden />;
     case 'pluginInstall':

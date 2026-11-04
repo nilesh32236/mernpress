@@ -2443,3 +2443,23 @@ admin bundle contains the Events and News widget and the API build contains the
 feed route and the WordPress.org events/news defaults. The first deploy attempt
 hit ENOSPC; releases were pruned to the current and previous build (14 removed,
 22 GB free) and the build re-ran successfully.
+
+### 2026-11-04 — Expanded scope, slice 7: Appearance → Editor and Fonts
+
+- Added the Site Editor screen (`/site-editor`): 300px dark "Design" sidebar with
+  Identity, Styles, Pages, Navigation, Patterns and a Templates list, plus a
+  white canvas that previews the real public site in an iframe. Template entries
+  resolve real content through the public API (latest post, latest page, that
+  post's first category and tag) with the front page, blog index, search and 404
+  routes; empty templates show an explicit hint instead of a broken frame.
+  Identity opens Appearance → Customize, Pages opens the Pages list, and
+  Styles/Navigation/Patterns report that templates and styles ship in code.
+- Added the Fonts screen (`/fonts`) matching WordPress 7.1's font library:
+  Library / Upload / Install Fonts tabs, THEME section, expandable family rows
+  with "N of N active", a sample at each weight and the bottom Update bar. Data
+  comes from the active theme's new `fonts` registry field, so Themes and Fonts
+  share one source. Upload and provider install state their limitation.
+- Appearance submenu now lists Themes, Editor and Fonts, matching WordPress 7.1.
+- Extracted the public-site preview helper used by Customize and the Site Editor.
+- Validation: 590 unit/integration tests (API 375, admin 137, block-system 65,
+  web 13), 23 Playwright E2E tests and six builds pass.

@@ -69,6 +69,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-053 | 2026-11-04 | The dashboard Events and News widget is backed by a real feed service: the public WordPress.org events API and news feed by default (overridable via EVENTS_API_URL/NEWS_FEED_URL), 6 s timeouts, per-location events cache and location-independent news cache with 10-minute TTL, and no caching of failures. Events require a location and the widget says so; rendering matches WordPress (two event rows, five news links, Meetups/WordCamps/News footer, Screen Options entry). | accepted | [ADR 0014](docs/adr/0014-dashboard-events-news.md) |
 
+| D-054 | 2026-11-04 | Appearance → Editor is a real template browser: the WordPress Design sidebar (Identity, Styles, Pages, Navigation, Patterns, Templates), a canvas iframe previewing the actual public routes, and content-resolved entries for single post/page/category/tag from the latest published content. Identity links to Customize, Pages to the list, and Styles/Navigation/Patterns state that templates ship in code. Appearance → Fonts mirrors the WordPress font library from the active theme registry (families, weights, samples, N of N active) with Upload/Install disabled and explained. Administrators only. | accepted | [ADR 0015](docs/adr/0015-site-editor-fonts.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

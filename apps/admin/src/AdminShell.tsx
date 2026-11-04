@@ -48,6 +48,10 @@ function screenKey(route: Route): string {
     case 'themeInstall':
     case 'customize':
       return 'themes';
+    case 'siteEditor':
+      return 'site-editor';
+    case 'fonts':
+      return 'fonts';
     case 'plugins':
     case 'pluginInstall':
       return 'plugins';
@@ -175,6 +179,48 @@ function screenHelp(route: Route): {
           {
             label: 'Documentation on Themes',
             href: 'https://wordpress.org/documentation/article/appearance-themes-screen/',
+          },
+          support,
+        ],
+      };
+    case 'siteEditor':
+      return {
+        title: 'Site Editor',
+        sections: [
+          {
+            heading: 'Overview',
+            body: 'The Site Editor previews the public templates that ship with the MERNPress theme: front page, blog index, single post, page, archives, search and 404.',
+          },
+          {
+            heading: 'Editing templates',
+            body: 'Templates and styles are defined in the theme code and ship with releases, so in-browser template editing is not enabled in this build.',
+          },
+        ],
+        links: [
+          {
+            label: 'Documentation on the Site Editor',
+            href: 'https://wordpress.org/documentation/article/site-editor/',
+          },
+          support,
+        ],
+      };
+    case 'fonts':
+      return {
+        title: 'Fonts',
+        sections: [
+          {
+            heading: 'Overview',
+            body: 'The Fonts library lists the families bundled with the active theme, their weights and a live sample.',
+          },
+          {
+            heading: 'Uploading fonts',
+            body: 'Uploading font files and installing from a provider are not enabled in this build; fonts ship with the theme package.',
+          },
+        ],
+        links: [
+          {
+            label: 'Documentation on Fonts',
+            href: 'https://wordpress.org/documentation/article/font-library/',
           },
           support,
         ],
@@ -812,6 +858,16 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
           label: 'Themes',
           to: '/themes',
           active: route.name === 'themes' || route.name === 'customize',
+        },
+        {
+          label: 'Editor',
+          to: '/site-editor',
+          active: route.name === 'siteEditor',
+        },
+        {
+          label: 'Fonts',
+          to: '/fonts',
+          active: route.name === 'fonts',
         },
       ],
     },

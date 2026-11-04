@@ -16,6 +16,15 @@ export interface ThemeManifest {
   screenshot: string;
   /** Theme supports, shown in Theme Details like WordPress's feature list. */
   features: string[];
+  /** Font families the theme ships (Appearance → Fonts). */
+  fonts: ThemeFont[];
+}
+
+export interface ThemeFont {
+  family: string;
+  weights: number[];
+  /** How the font is delivered: bundled with the theme or a system stack. */
+  source: 'theme' | 'system';
 }
 
 export const THEMES: readonly ThemeManifest[] = [
@@ -44,6 +53,10 @@ export const THEMES: readonly ThemeManifest[] = [
       'Full site editing',
       'Threaded comments',
       'Wide blocks',
+    ],
+    fonts: [
+      { family: 'Manrope', weights: [300, 400, 600, 700], source: 'theme' },
+      { family: 'System UI', weights: [400, 600], source: 'system' },
     ],
   },
 ];

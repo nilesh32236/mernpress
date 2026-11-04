@@ -1397,6 +1397,12 @@ export async function bulkSetCommentStatus(ids: string[], status: CommentStatus)
 }
 
 // ---- Appearance: themes (ADR 0011) ----
+export interface ThemeFont {
+  family: string;
+  weights: number[];
+  source: 'theme' | 'system';
+}
+
 export interface AdminTheme {
   id: string;
   name: string;
@@ -1405,6 +1411,7 @@ export interface AdminTheme {
   description: string;
   tags: string[];
   features: string[];
+  fonts: ThemeFont[];
   screenshot: string;
   active: boolean;
   autoUpdates: boolean;

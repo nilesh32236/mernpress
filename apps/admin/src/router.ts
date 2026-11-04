@@ -14,6 +14,8 @@ export type Route =
   | { name: 'themes' }
   | { name: 'themeInstall' }
   | { name: 'customize' }
+  | { name: 'siteEditor' }
+  | { name: 'fonts' }
   | { name: 'plugins' }
   | { name: 'pluginInstall' }
   | { name: 'users' }
@@ -73,6 +75,12 @@ export function parseRoute(pathname: string): Route {
   }
   if (typeSegment === 'themes' && parts.length === 2 && second === 'customize') {
     return { name: 'customize' };
+  }
+  if (typeSegment === 'site-editor' && parts.length === 1) {
+    return { name: 'siteEditor' };
+  }
+  if (typeSegment === 'fonts' && parts.length === 1) {
+    return { name: 'fonts' };
   }
   if (typeSegment === 'plugins' && parts.length === 1) {
     return { name: 'plugins' };
@@ -205,6 +213,18 @@ export function breadcrumbs(route: Route): Array<{ label: string; to?: string }>
         { label: 'Dashboard', to: '/' },
         { label: 'Appearance', to: '/themes' },
         { label: 'Customize' },
+      ];
+    case 'siteEditor':
+      return [
+        { label: 'Dashboard', to: '/' },
+        { label: 'Appearance', to: '/themes' },
+        { label: 'Editor' },
+      ];
+    case 'fonts':
+      return [
+        { label: 'Dashboard', to: '/' },
+        { label: 'Appearance', to: '/themes' },
+        { label: 'Fonts' },
       ];
     case 'plugins':
       return [{ label: 'Dashboard', to: '/' }, { label: 'Plugins' }];
