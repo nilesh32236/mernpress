@@ -8716,3 +8716,165 @@ a.glance-chip:hover {
   font-size: 13px;
   line-height: 2.5;
 }
+
+/* Dashboard flex gap compensation: WordPress has no 12px gap between the
+   page title and the welcome panel (the shell uses one for notices). */
+.main-content-inner > .welcome-panel {
+  margin-top: 4px;
+}
+
+/* WordPress admin-bar avatar is a 22px circle. */
+.admin-bar-user .avatar-circle {
+  width: 22px;
+  height: 22px;
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+/* WordPress editor top bar geometry (post-new.php, 1440px). */
+.editor-topbar-left {
+  gap: 8px;
+}
+
+.editor-topbar-tools {
+  gap: 8px;
+}
+
+.editor-topbar-actions .editor-topbar-text-button {
+  height: 32px;
+  padding: 0 14px;
+  line-height: 32px;
+}
+
+.editor-topbar-actions .editor-topbar-icon-button {
+  width: 32px;
+  height: 32px;
+}
+
+.editor-topbar-actions .editor-topbar-gear,
+.editor-topbar-actions .editor-topbar-publish,
+.editor-topbar-actions .editor-options-menu,
+.editor-topbar-actions .editor-options-menu > summary {
+  box-sizing: border-box;
+  height: 32px;
+  min-height: 32px;
+}
+
+/* WordPress's Post sidebar goes straight from the title/excerpt block to the
+   status rows; there is no uppercase section heading or divider. */
+.publish-panel {
+  padding-top: 0;
+}
+
+.publish-panel > .publish-field:first-child {
+  margin-top: 0;
+}
+
+.publish-panel {
+  border-top: 0;
+}
+
+/* WordPress editor chrome precision (post-new.php @1440). */
+.editor-topbar-divider {
+  display: none;
+}
+
+.editor-topbar-actions {
+  gap: 8px;
+}
+
+.editor-topbar-actions .editor-topbar-text-button {
+  padding: 0 15px;
+}
+
+.editor-sidebar-head {
+  height: 47px;
+  min-height: 47px;
+}
+
+.editor-side-tabs {
+  height: 47px;
+}
+
+.editor-side-tab {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.editor-sidebar-close {
+  width: 47px;
+  height: 47px;
+}
+
+.editor-sidebar-body {
+  padding-top: 0;
+}
+
+.editor-title-block {
+  padding-top: 16px;
+  padding-bottom: 8px;
+}
+
+.publish-panel {
+  padding-top: 41px;
+}
+
+@media (max-width: 782px) {
+  .editor-sidebar-head {
+    height: auto;
+    min-height: 0;
+  }
+
+  .editor-side-tabs {
+    height: auto;
+  }
+
+  .editor-side-tab {
+    padding: 12px 6px;
+  }
+
+  .editor-title-block {
+    padding-top: 20px;
+    padding-bottom: 10px;
+  }
+
+  .publish-panel {
+    padding-top: 14px;
+  }
+}
+
+/* WordPress collapsed panel chevrons point down; expanded point up. */
+.editor-term-panel summary::after {
+  transform: rotate(-135deg);
+}
+
+.editor-term-panel:not([open]) summary::after {
+  transform: rotate(45deg);
+}
+
+/* WordPress status rows begin at y=341 in the Post sidebar. */
+.publish-panel {
+  padding-top: 43px;
+}
+
+/* WordPress term tables show the slug as plain text and the count as a
+   plain number, not a code pill or a bold link. */
+.wp-list-screen .content-table.terms .column-slug code {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.wp-list-screen .content-table.terms .column-posts a {
+  color: inherit;
+  font-weight: 400;
+  text-decoration: none;
+}
+
+.wp-list-screen .content-table.terms .column-posts a:hover {
+  color: #2271b1;
+  text-decoration: underline;
+}

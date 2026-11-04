@@ -173,8 +173,12 @@ export function ProfilePage({
           <form onSubmit={handleAccountSubmit} aria-label="Account details">
             <h2 className="profile-section-title">Personal Options</h2>
             <div className="field">
-              <span className="field-label">Admin Color Scheme</span>
-              <fieldset className="scheme-list" role="radiogroup" aria-label="Admin Color Scheme">
+              <span className="field-label">Administration Color Scheme</span>
+              <fieldset
+                className="scheme-list"
+                role="radiogroup"
+                aria-label="Administration Color Scheme"
+              >
                 <legend className="screen-reader-text">Administration Color Scheme</legend>
                 {COLOR_SCHEMES.map((scheme) => (
                   <div

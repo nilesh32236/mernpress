@@ -10,7 +10,7 @@
 export type ColorScheme =
   | 'default'
   | 'light'
-  | 'modern'
+  | 'fresh'
   | 'blue'
   | 'coffee'
   | 'ectoplasm'
@@ -27,8 +27,8 @@ export interface ColorSchemeOption {
 
 export const COLOR_SCHEMES: ColorSchemeOption[] = [
   { id: 'default', label: 'Default', swatch: ['#1d2327', '#2c3338', '#2271b1', '#72aee6'] },
+  { id: 'fresh', label: 'Fresh', swatch: ['#1d2327', '#2c3338', '#2271b1', '#72aee6'] },
   { id: 'light', label: 'Light', swatch: ['#f0f0f1', '#ffffff', '#2271b1', '#dcdcde'] },
-  { id: 'modern', label: 'Modern', swatch: ['#1e1e1e', '#3858e9', '#3858e9', '#7b90ff'] },
   { id: 'blue', label: 'Blue', swatch: ['#096484', '#4796b3', '#4796b3', '#52accc'] },
   { id: 'coffee', label: 'Coffee', swatch: ['#46403c', '#c7a589', '#c7a589', '#9ea476'] },
   { id: 'ectoplasm', label: 'Ectoplasm', swatch: ['#403b30', '#a3b745', '#a3b745', '#d46f15'] },
@@ -49,7 +49,7 @@ export function getColorScheme(): ColorScheme {
   } catch {
     // Storage is optional.
   }
-  return 'default';
+  return 'fresh';
 }
 
 export function applyColorScheme(id: ColorScheme): void {

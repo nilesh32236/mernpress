@@ -1525,12 +1525,14 @@ export function ContentEditor({
                     <p className="editor-last-edited">
                       {post
                         ? `Last edited ${formatDateTime(post.updatedAt)}.`
-                        : 'Last edited a moment ago.'}
+                        : 'Last edited a second ago.'}
                     </p>
                   </section>
 
-                  <section className="editor-panel publish-panel" aria-labelledby="publish-heading">
-                    <h3 id="publish-heading">Status &amp; visibility</h3>
+                  <section
+                    className="editor-panel publish-panel"
+                    aria-label="Status and visibility"
+                  >
                     {post ? (
                       <>
                         <div className="publish-field">
@@ -2031,7 +2033,7 @@ export function ContentEditor({
                       </>
                     ) : (
                       <>
-                        <details className="editor-term-panel" open>
+                        <details className="editor-term-panel">
                           <summary>Categories</summary>
                           {categories.length === 0 ? (
                             <p className="field-help">No categories exist yet.</p>
@@ -2053,7 +2055,7 @@ export function ContentEditor({
                             ))
                           )}
                         </details>
-                        <details className="editor-term-panel" open>
+                        <details className="editor-term-panel">
                           <summary>Tags</summary>
                           {tags.length === 0 ? (
                             <p className="field-help">No tags exist yet.</p>

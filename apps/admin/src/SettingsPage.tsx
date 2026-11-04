@@ -390,7 +390,62 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
                 }}
                 disabled={saving.general}
               />
-              <p className="field-help">In a few words, explain what this site is about.</p>
+              <p className="field-help">
+                In a few words, explain what this site is about. Example: &ldquo;Just another
+                WordPress site.&rdquo;
+              </p>
+            </div>
+            <div className="field">
+              <span className="field-label">Site Icon</span>
+              <div>
+                {siteIconMedia ? (
+                  <div className="site-icon-current">
+                    <img src={siteIconMedia.derivatives['300'] ?? siteIconMedia.url} alt="" />
+                    <button
+                      type="button"
+                      className="button secondary-button"
+                      onClick={() => {
+                        setIconPickerOpen(true);
+                        setIconItems(null);
+                        void listMedia({ type: 'image', perPage: 24 })
+                          .then((result) => setIconItems(result.items))
+                          .catch(() => setIconItems([]));
+                      }}
+                    >
+                      Change Site Icon
+                    </button>
+                    <button
+                      type="button"
+                      className="button-link-delete"
+                      onClick={() => {
+                        setSiteIcon(null);
+                        setSiteIconMedia(null);
+                        setGeneralDirty(true);
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="button secondary-button"
+                    onClick={() => {
+                      setIconPickerOpen(true);
+                      setIconItems(null);
+                      void listMedia({ type: 'image', perPage: 24 })
+                        .then((result) => setIconItems(result.items))
+                        .catch(() => setIconItems([]));
+                    }}
+                  >
+                    Choose a Site Icon
+                  </button>
+                )}
+                <p className="field-help">
+                  The Site Icon is used as a browser and app icon for your site. It must be square
+                  and at least 512 × 512 pixels.
+                </p>
+              </div>
             </div>
 
             <div className="field">
@@ -595,58 +650,6 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
               </select>
             </div>
 
-            <div className="field">
-              <span className="field-label">Site Icon</span>
-              <div>
-                {siteIconMedia ? (
-                  <div className="site-icon-current">
-                    <img src={siteIconMedia.derivatives['300'] ?? siteIconMedia.url} alt="" />
-                    <button
-                      type="button"
-                      className="button secondary-button"
-                      onClick={() => {
-                        setIconPickerOpen(true);
-                        setIconItems(null);
-                        void listMedia({ type: 'image', perPage: 24 })
-                          .then((result) => setIconItems(result.items))
-                          .catch(() => setIconItems([]));
-                      }}
-                    >
-                      Change Site Icon
-                    </button>
-                    <button
-                      type="button"
-                      className="button-link-delete"
-                      onClick={() => {
-                        setSiteIcon(null);
-                        setSiteIconMedia(null);
-                        setGeneralDirty(true);
-                      }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    className="button secondary-button"
-                    onClick={() => {
-                      setIconPickerOpen(true);
-                      setIconItems(null);
-                      void listMedia({ type: 'image', perPage: 24 })
-                        .then((result) => setIconItems(result.items))
-                        .catch(() => setIconItems([]));
-                    }}
-                  >
-                    Choose a Site Icon
-                  </button>
-                )}
-                <p className="field-help">
-                  The Site Icon is used as a browser and app icon for your site. It must be square
-                  and at least 512 × 512 pixels.
-                </p>
-              </div>
-            </div>
             <div className="field actions">
               <button
                 type="submit"

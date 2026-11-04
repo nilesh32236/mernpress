@@ -697,7 +697,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       subs: [
         { label: 'Library', to: '/media', active: route.name === 'media' },
         {
-          label: 'Add New',
+          label: 'Add Media File',
           to: '/media?upload=1',
           active: route.name === 'media' && searchParams.get('upload') === '1',
         },
@@ -1166,17 +1166,19 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
             ) : (
               <div className="main-content-inner">
                 <div id="screen-meta-links" className="screen-meta-links">
-                  <button
-                    type="button"
-                    className={`button show-settings${metaPanel === 'options' ? ' is-active' : ''}`}
-                    aria-expanded={metaPanel === 'options'}
-                    aria-controls="screen-options-wrap"
-                    onClick={() =>
-                      setMetaPanel((current) => (current === 'options' ? null : 'options'))
-                    }
-                  >
-                    Screen Options
-                  </button>
+                  {['dashboard', 'posts', 'pages', 'users', 'terms'].includes(currentScreen) ? (
+                    <button
+                      type="button"
+                      className={`button show-settings${metaPanel === 'options' ? ' is-active' : ''}`}
+                      aria-expanded={metaPanel === 'options'}
+                      aria-controls="screen-options-wrap"
+                      onClick={() =>
+                        setMetaPanel((current) => (current === 'options' ? null : 'options'))
+                      }
+                    >
+                      Screen Options
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     className={`button show-settings${metaPanel === 'help' ? ' is-active' : ''}`}
