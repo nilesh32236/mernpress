@@ -9182,3 +9182,29 @@ a.glance-chip:hover {
   font-weight: 600;
   color: #1d2327;
 }
+
+.dashicons-collapse:before {
+  content: '\f148';
+}
+.dashicons-translation:before {
+  content: '\f326';
+}
+
+/* Collapse button: the WP arrow flips when the menu is folded. */
+.collapse-toggle .collapse-glyph {
+  margin-left: auto;
+  color: #a7aaad;
+}
+
+.collapse-toggle .collapse-glyph.is-collapsed {
+  transform: rotate(180deg);
+}
+
+.settings-panel .field > label .dashicons-translation {
+  width: 16px;
+  height: 16px;
+  margin-left: 4px;
+  font-size: 16px;
+  vertical-align: text-bottom;
+  color: #646970;
+}

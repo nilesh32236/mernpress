@@ -498,10 +498,6 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
                   />
                   <span>Anyone can register</span>
                 </label>
-                <p className="field-help">
-                  Public registration is not exposed by this build; the setting is preserved for
-                  parity.
-                </p>
               </div>
             </div>
 
@@ -525,7 +521,10 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
             </div>
 
             <div className="field">
-              <label htmlFor="site_language">Site Language</label>
+              <label htmlFor="site_language">
+                Site Language{' '}
+                <span className="dashicons dashicons-translation" aria-hidden="true" />
+              </label>
               <select
                 id="site_language"
                 value={siteLanguage}

@@ -881,19 +881,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
             title="Search (Ctrl+K)"
             onClick={() => setSearchOpen(true)}
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              aria-hidden="true"
-            >
-              <circle cx="11" cy="11" r="7" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
+            <span className="dashicons dashicons-search" aria-hidden="true" />
             <span className="admin-bar-search-hint">Ctrl+K</span>
           </button>
           {canCreate ? (
@@ -1125,44 +1113,11 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
               }
             }}
           >
-            {railMode && !mobileOpen ? (
-              <>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <polyline points="13 17 18 12 13 7" />
-                  <polyline points="6 17 11 12 6 7" />
-                </svg>
-              </>
-            ) : (
-              <>
-                <span className="collapse-label">
-                  {mobileOpen ? 'Close Menu' : 'Collapse Menu'}
-                </span>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <polyline points="11 17 6 12 11 7" />
-                  <polyline points="18 17 13 12 18 7" />
-                </svg>
-              </>
-            )}
+            <span className="collapse-label">{mobileOpen ? 'Close Menu' : 'Collapse Menu'}</span>
+            <span
+              className={`dashicons dashicons-collapse collapse-glyph${railMode && !mobileOpen ? ' is-collapsed' : ''}`}
+              aria-hidden="true"
+            />
           </button>
         </aside>
 
