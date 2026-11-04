@@ -45,3 +45,24 @@ export function setToolbar(enabled: boolean): void {
   }
   window.dispatchEvent(new CustomEvent(KEYBOARD_SHORTCUTS_EVENT));
 }
+
+const INFINITE_SCROLL_KEY = 'mernpress.infiniteScroll';
+export const INFINITE_SCROLL_EVENT = 'mernpress:infinite-scroll';
+
+/** WordPress Media Library grid infinite scrolling (enabled by default). */
+export function infiniteScrollEnabled(): boolean {
+  try {
+    return window.localStorage.getItem(INFINITE_SCROLL_KEY) !== '0';
+  } catch {
+    return true;
+  }
+}
+
+export function setInfiniteScroll(enabled: boolean): void {
+  try {
+    window.localStorage.setItem(INFINITE_SCROLL_KEY, enabled ? '1' : '0');
+  } catch {
+    // Storage is optional.
+  }
+  window.dispatchEvent(new CustomEvent(INFINITE_SCROLL_EVENT));
+}

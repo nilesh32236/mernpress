@@ -9136,3 +9136,8 @@ a.glance-chip:hover {
   height: 20px;
   font-size: 20px;
 }
+
+/* Media Library infinite-scroll sentinel. */
+.media-sentinel {
+  height: 1px;
+}

@@ -86,6 +86,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  window.localStorage.removeItem('mernpress.infiniteScroll');
   cleanup();
   vi.restoreAllMocks();
   vi.clearAllMocks();
@@ -259,6 +260,9 @@ describe('media library page', () => {
   });
 
   it('pages through the library with the server-side pagination', async () => {
+    // WordPress uses infinite scrolling in the grid by default; pagination is
+    // the fallback when the profile preference disables it.
+    window.localStorage.setItem('mernpress.infiniteScroll', '0');
     vi.mocked(listMedia).mockResolvedValue(paged([makeMedia()], 30));
 
     render(<MediaPage user={admin} />);

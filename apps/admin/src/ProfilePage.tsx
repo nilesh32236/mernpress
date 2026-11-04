@@ -10,7 +10,9 @@ import {
 import { Notice, PageHeader, Skeleton, ErrorState, type NoticeMessage } from './components.js';
 import { COLOR_SCHEMES, applyColorScheme, getColorScheme } from './colorScheme.js';
 import {
+  infiniteScrollEnabled,
   keyboardShortcutsEnabled,
+  setInfiniteScroll,
   setKeyboardShortcuts,
   setToolbar,
   toolbarEnabled,
@@ -41,6 +43,9 @@ export function ProfilePage({
   const [adminColor, setAdminColor] = useState(getColorScheme);
   const [shortcutsEnabled, setShortcutsEnabled] = useState(() => keyboardShortcutsEnabled());
   const [showToolbar, setShowToolbar] = useState(() => toolbarEnabled());
+  const [disableInfiniteScroll, setDisableInfiniteScroll] = useState(
+    () => !infiniteScrollEnabled(),
+  );
   const [website, setWebsite] = useState('');
   const [accountError, setAccountError] = useState<string | null>(null);
   const [savingAccount, setSavingAccount] = useState(false);
@@ -267,6 +272,23 @@ export function ProfilePage({
                     }}
                   />
                   <span>Show Toolbar when viewing site</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="field">
+              <span className="field-label">Infinite Scrolling</span>
+              <div>
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={disableInfiniteScroll}
+                    onChange={(event) => {
+                      setDisableInfiniteScroll(event.target.checked);
+                      setInfiniteScroll(!event.target.checked);
+                    }}
+                  />
+                  <span>Disable infinite scrolling in the Media Library grid view</span>
                 </label>
               </div>
             </div>

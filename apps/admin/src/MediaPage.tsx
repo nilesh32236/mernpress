@@ -25,6 +25,7 @@ import {
   Pagination,
 } from './components.js';
 import { formatDateTime } from './format.js';
+import { INFINITE_SCROLL_EVENT, infiniteScrollEnabled } from './preferences.js';
 
 const DEFAULT_PER_PAGE = 24;
 
@@ -404,6 +405,12 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
     return () => window.removeEventListener(SCREEN_COLUMNS_EVENT, sync);
   }, []);
 
+  useEffect(() => {
+    const sync = () => setInfiniteScrollState(infiniteScrollEnabled());
+    window.addEventListener(INFINITE_SCROLL_EVENT, sync);
+    return () => window.removeEventListener(INFINITE_SCROLL_EVENT, sync);
+  }, []);
+
   const showAuthor = !hiddenColumns.has('author');
   const showParent = !hiddenColumns.has('parent');
   const showDate = !hiddenColumns.has('date');
@@ -417,6 +424,9 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
     }
   }, []);
   const [view, setView] = useState<'grid' | 'list'>('grid');
+  const [infiniteScroll, setInfiniteScrollState] = useState(() => infiniteScrollEnabled());
+  const appendRef = useRef(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const [uploads, setUploads] = useState<UploadJob[]>([]);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -432,6 +442,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
+      appendRef.current = false;
       setSearch(searchInput.trim());
       setPage(1);
     }, 400);
@@ -440,7 +451,9 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
 
   useEffect(() => {
     function onOptions() {
+      appendRef.current = false;
       setPerPage(screenPerPage('media', DEFAULT_PER_PAGE));
+      setPage(1);
     }
     window.addEventListener(SCREEN_OPTIONS_EVENT, onOptions);
     return () => window.removeEventListener(SCREEN_OPTIONS_EVENT, onOptions);
@@ -448,7 +461,10 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
+    const append = appendRef.current;
+    if (!append) {
+      setLoading(true);
+    }
     setError(null);
 
     listMedia({
@@ -461,11 +477,24 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
     })
       .then((result) => {
         if (!active) return;
-        setData(result);
+        if (append) {
+          setData((current) =>
+            current
+              ? {
+                  items: [...current.items, ...result.items],
+                  pagination: result.pagination,
+                }
+              : result,
+          );
+        } else {
+          setData(result);
+        }
+        appendRef.current = false;
         setLoading(false);
       })
       .catch((caught) => {
         if (!active) return;
+        appendRef.current = false;
         setError(actionErrorMessage(caught));
         setLoading(false);
       });
@@ -473,7 +502,27 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
     return () => {
       active = false;
     };
-  }, [page, search, monthFilter, order, reloadKey]);
+  }, [page, search, monthFilter, order, perPage, reloadKey]);
+
+  // WordPress Media Library grid view scrolls into the next page.
+  useEffect(() => {
+    if (view !== 'grid' || !infiniteScroll || loading || !data) return;
+    const pages = data.pagination.totalPages ?? 1;
+    if (page >= pages) return;
+    const node = sentinelRef.current;
+    if (!node || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting) && !appendRef.current) {
+          appendRef.current = true;
+          setPage((current) => Math.min(pages, current + 1));
+        }
+      },
+      { rootMargin: '200px' },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [view, infiniteScroll, loading, data, page]);
 
   async function deleteSelected(): Promise<void> {
     if (selectedIds.size === 0) return;
@@ -690,7 +739,11 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
               aria-pressed={view === 'list'}
               aria-label="List view"
               title="List view"
-              onClick={() => setView('list')}
+              onClick={() => {
+                appendRef.current = false;
+                setView('list');
+                setPage(1);
+              }}
             >
               <svg
                 width="20"
@@ -708,7 +761,11 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
               aria-pressed={view === 'grid'}
               aria-label="Grid view"
               title="Grid view"
-              onClick={() => setView('grid')}
+              onClick={() => {
+                appendRef.current = false;
+                setView('grid');
+                setPage(1);
+              }}
             >
               <svg
                 width="20"
@@ -743,6 +800,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
             className="attachment-filters"
             value={monthFilter}
             onChange={(event) => {
+              appendRef.current = false;
               setMonthFilter(event.target.value);
               setPage(1);
             }}
@@ -841,55 +899,60 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
       ) : (
         <>
           {view === 'grid' ? (
-            <ul
-              className={`media-grid${bulkSelect ? ' is-select-mode' : ''}`}
-              aria-label="Media items"
-            >
-              {data.items.map((item) => {
-                const isSelected = selectedIds.has(item.id);
-                return (
-                  <li key={item.id}>
-                    <button
-                      type="button"
-                      className={`media-card${isSelected ? ' is-selected' : ''}`}
-                      onClick={() => {
-                        if (bulkSelect) {
-                          setSelectedIds((current) => {
-                            const next = new Set(current);
-                            if (next.has(item.id)) {
-                              next.delete(item.id);
-                            } else {
-                              next.add(item.id);
-                            }
-                            return next;
-                          });
-                          return;
+            <>
+              <ul
+                className={`media-grid${bulkSelect ? ' is-select-mode' : ''}`}
+                aria-label="Media items"
+              >
+                {data.items.map((item) => {
+                  const isSelected = selectedIds.has(item.id);
+                  return (
+                    <li key={item.id}>
+                      <button
+                        type="button"
+                        className={`media-card${isSelected ? ' is-selected' : ''}`}
+                        onClick={() => {
+                          if (bulkSelect) {
+                            setSelectedIds((current) => {
+                              const next = new Set(current);
+                              if (next.has(item.id)) {
+                                next.delete(item.id);
+                              } else {
+                                next.add(item.id);
+                              }
+                              return next;
+                            });
+                            return;
+                          }
+                          setSelected(item);
+                        }}
+                        aria-pressed={bulkSelect ? isSelected : undefined}
+                        aria-label={
+                          bulkSelect
+                            ? `${isSelected ? 'Deselect' : 'Select'} ${item.originalName}`
+                            : `View ${item.originalName}`
                         }
-                        setSelected(item);
-                      }}
-                      aria-pressed={bulkSelect ? isSelected : undefined}
-                      aria-label={
-                        bulkSelect
-                          ? `${isSelected ? 'Deselect' : 'Select'} ${item.originalName}`
-                          : `View ${item.originalName}`
-                      }
-                    >
-                      <span className="media-thumb">
-                        <img src={thumbnailUrl(item)} alt={item.altText || ''} loading="lazy" />
-                      </span>
-                      <span className="media-card-label" aria-hidden="true">
-                        {item.originalName}
-                      </span>
-                      <span className="media-check" aria-hidden="true">
-                        <svg viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M8.2 14.4 4 10.2l1.4-1.4 2.8 2.8 6.4-6.4L16 6.6z" />
-                        </svg>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+                      >
+                        <span className="media-thumb">
+                          <img src={thumbnailUrl(item)} alt={item.altText || ''} loading="lazy" />
+                        </span>
+                        <span className="media-card-label" aria-hidden="true">
+                          {item.originalName}
+                        </span>
+                        <span className="media-check" aria-hidden="true">
+                          <svg viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M8.2 14.4 4 10.2l1.4-1.4 2.8 2.8 6.4-6.4L16 6.6z" />
+                          </svg>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              {infiniteScroll ? (
+                <div ref={sentinelRef} className="media-sentinel" aria-hidden="true" />
+              ) : null}
+            </>
           ) : (
             <>
               <div className="tablenav">
@@ -959,7 +1022,11 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
                             className="sortable-column"
                             aria-label={`Sort by date${order === 'newest' ? ', descending' : ''}`}
                             onClick={() => {
+                              appendRef.current = false;
+                              appendRef.current = false;
                               setOrder((value) => (value === 'newest' ? 'oldest' : 'newest'));
+                              setPage(1);
+                              setPage(1);
                               setPage(1);
                             }}
                           >
@@ -1109,7 +1176,11 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
                             className="sortable-column"
                             aria-label={`Sort by date${order === 'newest' ? ', descending' : ''}`}
                             onClick={() => {
+                              appendRef.current = false;
+                              appendRef.current = false;
                               setOrder((value) => (value === 'newest' ? 'oldest' : 'newest'));
+                              setPage(1);
+                              setPage(1);
                               setPage(1);
                             }}
                           >
@@ -1150,7 +1221,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
             </>
           )}
 
-          {totalPages > 1 ? (
+          {totalPages > 1 && (view === 'list' || !infiniteScroll) ? (
             <Pagination
               page={page}
               totalPages={totalPages}
