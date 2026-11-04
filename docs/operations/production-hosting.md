@@ -132,6 +132,11 @@ no DuckDNS token is stored in the Caddyfile.
 - `mernpress-api.service` — enabled, API on `127.0.0.1:4000`, runs as
   `mernpress` with hardening (`ProtectSystem=strict`, `ProtectHome`, no new
   privileges, no capabilities, private tmp). Health and readiness both 200.
+  `ProtectSystem=strict` makes the whole filesystem read-only for the service,
+  so uploads require `ReadWritePaths=/opt/mernpress/media` in the unit **in
+  addition** to owning that directory as `mernpress`; without it Site Health
+  reports `Media storage: Critical` and every upload fails. The unit is backed
+  up as `mernpress-api.service.bak-<timestamp>` before edits.
 - `/etc/mernpress/mernpress.env` — production environment, `root:mernpress`
   mode `0640`. Never copy it into the repository.
 - `/etc/mernpress/duckdns.env` — `DUCKDNS_DOMAIN=mernpress` and the regenerated

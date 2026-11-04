@@ -2553,3 +2553,25 @@ build uses `aes-256-gcm` for credential encryption.
   return 200 and the production bundle contains the "Add Post" label.
 - Remaining deltas are decisions, not code: the Theme/Plugin File Editors and
   production admin visual sign-off (needs an owner login).
+
+### 2026-11-04 — Production admin verification pass
+
+- Created a temporary production administrator (`verify-temp-admin`), captured
+  every admin screen at 1440px plus the mobile posts list at 375px, and reviewed
+  them against the WordPress 7.1.4 reference: dashboard, posts, pages, media,
+  comments, themes, plugins, users, add user, profile, tools, import, export
+  personal data, general settings, discussion settings, connectors, updates, site
+  editor, fonts and login. The account, its sessions, a test connector key and
+  the test upload were removed afterwards.
+- Live write paths confirmed in production: Updates "Check again" recorded the
+  check, a connector key saved as `Connected · key sk-…7890` and disconnected,
+  and a media upload returned 201 with the file served 200.
+- **Production bug found and fixed:** `mernpress-api.service` uses
+  `ProtectSystem=strict`, so `/opt/mernpress/media` was read-only to the process
+  despite correct ownership; Site Health reported `Media storage: Critical` and
+  uploads failed. Added `ReadWritePaths=/opt/mernpress/media` (unit backup kept),
+  reloaded systemd, restarted the API; Site Health now reports Good.
+- Recorded the owner's decision to keep the Theme/Plugin File Editors excluded
+  (AGENTS.md) and updated the parity matrix and production hosting notes.
+- No application code changed in this pass; the previously verified release
+  `20261104T115855Z-168e829` stays live.

@@ -22,8 +22,9 @@ screens exist, where they were verified and what is still outstanding.
 ## Screen status
 
 Legend: **D** = implemented and visually verified against the reference in
-development; **P** = implemented, production route/bundle verified, screen not
-visually signed off (needs an owner login); **X** = deliberately excluded.
+development; **P** = additionally captured and reviewed in production with a
+temporary administrator account (2026-11-04); **X** = deliberately excluded by
+owner decision.
 
 | Screen | Status | Notes |
 | --- | --- | --- |
@@ -57,19 +58,27 @@ visually signed off (needs an owner login); **X** = deliberately excluded.
   geometry, list tables, editor chrome, media grid, dashboard widgets, theme
   dialog, plugin table, updates, import, personal data, connectors, site editor,
   fonts).
-- **Production**: routes and built bundles are checked after every release
-  (`/`, `/admin/`, each admin route returns 200; admin APIs return 401 without a
-  session). The screens themselves have **not** been visually signed off in
-  production because no owner credentials are available.
+- **Production (2026-11-04)**: a temporary administrator account was created
+  for the pass and deleted afterwards. All 20 admin screens were captured at
+  1440px (plus the mobile posts list at 375px) and reviewed: dashboard, posts,
+  pages, media, comments, themes, plugins, users, add user, profile, tools,
+  import, export personal data, general settings, discussion settings,
+  connectors, updates, site editor, fonts, login. Write paths were exercised
+  live: updates "Check again", connector save/disconnect, and a media upload
+  (201, served 200).
+- **Production bug found and fixed by this pass**: `mernpress-api.service` runs
+  with `ProtectSystem=strict`, which made `/opt/mernpress/media` read-only to the
+  process even though the directory was owned by `mernpress`. Site Health
+  reported `Media storage: Critical` and uploads failed. The unit now declares
+  `ReadWritePaths=/opt/mernpress/media` (backup kept), the service was
+  restarted, Site Health reports Good, and a real upload succeeded.
 
 ## Outstanding
 
-1. **Production admin visual sign-off.** Needs an owner login (or a temporary
-   administrator account) to capture every production admin screen and compare
-   it with the reference.
-2. **Tools → Theme/Plugin File Editor.** Deliberately excluded. Either keep the
-   exclusion documented or ship a read-only, allowlisted file viewer — owner
-   decision.
-3. Third-party importers (Blogger, LiveJournal, Movable Type, RSS, Tumblr) and
+1. **Tools → Theme/Plugin File Editor.** Owner decision (2026-11-04): keep them
+   excluded; do not ship a read-only viewer. Recorded in AGENTS.md.
+2. Third-party importers (Blogger, LiveJournal, Movable Type, RSS, Tumblr) and
    the plugin marketplace are listed as unavailable by design; they need
    external services and an install/runtime story the project has not accepted.
+3. Per-screen pixel comparison is complete for the WordPress chrome and layout;
+   content differences (fewer posts/pages in production) are expected.

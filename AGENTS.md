@@ -26,8 +26,11 @@ ask rather than silently weakening a boundary.
   their own phase gates.
 - **Expanded scope (owner decision 2026-11-04):** the owner explicitly approved
   expanding beyond the original MVP boundary to every WordPress screen.
-  Comments are delivered as the first slice (ADR 0009); Appearance/Plugins/
-  update checks and the remaining WordPress-only settings are subsequent slices.
+  Comments, WordPress-only settings, Appearance, Plugins, update checking, the
+  dashboard Events/News widget, Tools import/personal-data and Settings
+  Connectors are delivered. The owner also decided (2026-11-04) that the
+  Theme/Plugin File Editors stay excluded rather than shipping a read-only
+  viewer, because in-browser server-code access is an RCE/disclosure surface.
 - After approval, implement **one feature/slice at a time**. At the end of each
   slice: report changed files, exact commands, test results, manual test steps,
   limitations, and **stop**. Do not start the next slice without explicit
