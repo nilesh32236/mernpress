@@ -2185,4 +2185,6 @@ disabled clean Save state, WordPress activity dates, editor word count/relative
 last-edited line and the content-derived blog excerpt. Production `/`,
 `/admin/`, `/api/health`, `/feed`, `/search?q=test` return 200, the 404 route
 returns 404 with the same 750/905/1035 geometry, and anonymous pages log zero
-console errors.
+console errors. A final spacing release `20261104T072643Z-649658d` aligns the
+Profile (Personal Options at 102px) and Tools (first card at 105px) content
+tops; all production routes remain 200.
