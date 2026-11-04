@@ -25,3 +25,23 @@ export function setKeyboardShortcuts(enabled: boolean): void {
   }
   window.dispatchEvent(new CustomEvent(KEYBOARD_SHORTCUTS_EVENT));
 }
+
+const TOOLBAR_KEY = 'mernpress.toolbar';
+
+/** WordPress "Show Toolbar when viewing site". */
+export function toolbarEnabled(): boolean {
+  try {
+    return window.localStorage.getItem(TOOLBAR_KEY) !== '0';
+  } catch {
+    return true;
+  }
+}
+
+export function setToolbar(enabled: boolean): void {
+  try {
+    window.localStorage.setItem(TOOLBAR_KEY, enabled ? '1' : '0');
+  } catch {
+    // Storage is optional.
+  }
+  window.dispatchEvent(new CustomEvent(KEYBOARD_SHORTCUTS_EVENT));
+}

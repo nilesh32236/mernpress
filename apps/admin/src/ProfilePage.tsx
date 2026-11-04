@@ -9,7 +9,12 @@ import {
 } from './api.js';
 import { Notice, PageHeader, Skeleton, ErrorState, type NoticeMessage } from './components.js';
 import { COLOR_SCHEMES, applyColorScheme, getColorScheme } from './colorScheme.js';
-import { keyboardShortcutsEnabled, setKeyboardShortcuts } from './preferences.js';
+import {
+  keyboardShortcutsEnabled,
+  setKeyboardShortcuts,
+  setToolbar,
+  toolbarEnabled,
+} from './preferences.js';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -35,6 +40,7 @@ export function ProfilePage({
   const [bio, setBio] = useState('');
   const [adminColor, setAdminColor] = useState(getColorScheme);
   const [shortcutsEnabled, setShortcutsEnabled] = useState(() => keyboardShortcutsEnabled());
+  const [showToolbar, setShowToolbar] = useState(() => toolbarEnabled());
   const [website, setWebsite] = useState('');
   const [accountError, setAccountError] = useState<string | null>(null);
   const [savingAccount, setSavingAccount] = useState(false);
@@ -244,6 +250,23 @@ export function ProfilePage({
                     }}
                   />
                   <span>Enable the command palette shortcut (Ctrl/Cmd+K)</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="field">
+              <span className="field-label">Toolbar</span>
+              <div>
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={showToolbar}
+                    onChange={(event) => {
+                      setShowToolbar(event.target.checked);
+                      setToolbar(event.target.checked);
+                    }}
+                  />
+                  <span>Show Toolbar when viewing site</span>
                 </label>
               </div>
             </div>

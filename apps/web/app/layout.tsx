@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Manrope } from 'next/font/google';
 import { getSiteSettings, listPublicPosts } from '@/lib/api';
 import './globals.css';
+import PublicAdminBar from '@/components/PublicAdminBar';
 
 const manrope = Manrope({
   subsets: ['latin'],
@@ -52,6 +53,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="en" className={manrope.variable}>
       <body>
+        <PublicAdminBar siteTitle={siteTitle} />
         <a href="#main-content" className="skip-link">
           Skip to content
         </a>
