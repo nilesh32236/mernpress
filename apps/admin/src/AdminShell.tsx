@@ -13,6 +13,7 @@ import type { Route } from './router.js';
 import { navigate, newContentPath } from './router.js';
 import { ADMIN_BASE } from './router.js';
 import { useNavigationGuard } from './navigation-guard.js';
+import { keyboardShortcutsEnabled } from './preferences.js';
 import { canCreateContent, canManageTerms, canReadContent } from './roles.js';
 import {
   DASHBOARD_COLUMNS_EVENT,
@@ -569,7 +570,11 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        event.key.toLowerCase() === 'k' &&
+        keyboardShortcutsEnabled()
+      ) {
         event.preventDefault();
         setSearchOpen(true);
       }

@@ -249,6 +249,28 @@ const SPECS: Record<string, OptionSpec> = {
       return value;
     },
   },
+  default_post_format: {
+    group: 'writing',
+    defaultValue: 'standard',
+    validate: (value) => {
+      const formats = [
+        'standard',
+        'aside',
+        'gallery',
+        'image',
+        'link',
+        'quote',
+        'status',
+        'video',
+        'audio',
+        'chat',
+      ];
+      if (typeof value !== 'string' || !formats.includes(value)) {
+        throwValidation('default_post_format is not a supported format.');
+      }
+      return value;
+    },
+  },
   default_author: {
     group: 'writing',
     defaultValue: null,

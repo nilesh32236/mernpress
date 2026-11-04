@@ -1025,6 +1025,14 @@ export function ContentEditor({
           intent: 'save',
         };
   const secondarySave = primaryAction.intent === 'publish' ? 'Save draft' : null;
+  const defaultPostFormat = (() => {
+    try {
+      return window.localStorage.getItem('mernpress.defaultPostFormat') ?? 'standard';
+    } catch {
+      return 'standard';
+    }
+  })();
+  const formatLabel = (value: string): string => value.charAt(0).toUpperCase() + value.slice(1);
 
   return (
     <>
@@ -1572,7 +1580,9 @@ export function ContentEditor({
                         <div className="publish-field">
                           <span className="publish-label">Format</span>
                           <div className="publish-value">
-                            <span className="editor-link-value">Standard</span>
+                            <span className="editor-link-value">
+                              {post ? 'Standard' : formatLabel(defaultPostFormat)}
+                            </span>
                           </div>
                         </div>
                         {post.status === 'DRAFT' ? (
@@ -1745,7 +1755,9 @@ export function ContentEditor({
                         <div className="publish-field">
                           <span className="publish-label">Format</span>
                           <div className="publish-value">
-                            <span className="editor-link-value">Standard</span>
+                            <span className="editor-link-value">
+                              {post ? 'Standard' : formatLabel(defaultPostFormat)}
+                            </span>
                           </div>
                         </div>
                         <p className="field-help">

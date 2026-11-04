@@ -9,6 +9,7 @@ import {
 } from './api.js';
 import { Notice, PageHeader, Skeleton, ErrorState, type NoticeMessage } from './components.js';
 import { COLOR_SCHEMES, applyColorScheme, getColorScheme } from './colorScheme.js';
+import { keyboardShortcutsEnabled, setKeyboardShortcuts } from './preferences.js';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -30,6 +31,7 @@ export function ProfilePage({
   const [email, setEmail] = useState('');
   const [bio, setBio] = useState('');
   const [adminColor, setAdminColor] = useState(getColorScheme);
+  const [shortcutsEnabled, setShortcutsEnabled] = useState(() => keyboardShortcutsEnabled());
   const [website, setWebsite] = useState('');
   const [accountError, setAccountError] = useState<string | null>(null);
   const [savingAccount, setSavingAccount] = useState(false);
@@ -205,6 +207,23 @@ export function ProfilePage({
                   </div>
                 ))}
               </fieldset>
+            </div>
+
+            <div className="field">
+              <span className="field-label">Keyboard Shortcuts</span>
+              <div>
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={shortcutsEnabled}
+                    onChange={(event) => {
+                      setShortcutsEnabled(event.target.checked);
+                      setKeyboardShortcuts(event.target.checked);
+                    }}
+                  />
+                  <span>Enable the command palette shortcut (Ctrl/Cmd+K)</span>
+                </label>
+              </div>
             </div>
 
             <h2 className="profile-section-title">Name</h2>

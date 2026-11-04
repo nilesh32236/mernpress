@@ -35,7 +35,7 @@
   --wp-input-border: #8c8f94;
 
   /* Text */
-  --wp-text: #2c3338;
+  --wp-text: #3c434a;
   --wp-muted: #646970;
 
   /* Status pills */
@@ -100,10 +100,10 @@ body {
 
 body {
   background: var(--wp-bg);
-  color: var(--wp-text);
+  color: #3c434a;
   font-family: var(--font-sans);
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.4;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -175,7 +175,7 @@ h1 {
   font-size: 23px;
   font-weight: 400;
   line-height: 1.3;
-  color: var(--wp-text);
+  color: #1d2327;
 }
 
 h2 {
@@ -183,7 +183,7 @@ h2 {
   font-size: 14px;
   font-weight: 600;
   line-height: 1.4;
-  color: var(--wp-text);
+  color: #1d2327;
 }
 
 .eyebrow {
@@ -8705,4 +8705,14 @@ a.glance-chip:hover {
     border-left: 0;
     border-top: 1px solid #c3c4c7;
   }
+}
+
+/* WordPress login button is 40px tall. */
+.login-submit {
+  min-height: 40px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 2.5;
 }

@@ -152,6 +152,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
   const [, setReadingDirty] = useState(false);
 
   const [defaultCategory, setDefaultCategory] = useState('');
+  const [defaultFormat, setDefaultFormat] = useState('standard');
   const [defaultAuthor, setDefaultAuthor] = useState('');
   const [, setWritingDirty] = useState(false);
   const [categoryOptions, setCategoryOptions] = useState<Array<{
@@ -211,6 +212,15 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
         setReadingDirty(false);
       } else {
         setDefaultCategory(textValue(values.default_post_category));
+        setDefaultFormat(textValue(values.default_post_format) || 'standard');
+        try {
+          window.localStorage.setItem(
+            'mernpress.defaultPostFormat',
+            textValue(values.default_post_format) || 'standard',
+          );
+        } catch {
+          // Storage is optional.
+        }
         setDefaultAuthor(textValue(values.default_author));
         setWritingDirty(false);
       }
@@ -326,8 +336,14 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
     try {
       await updateOptions('writing', {
         default_post_category: defaultCategory.trim() === '' ? null : defaultCategory.trim(),
+        default_post_format: defaultFormat,
         default_author: defaultAuthor.trim() === '' ? null : defaultAuthor.trim(),
       });
+      try {
+        window.localStorage.setItem('mernpress.defaultPostFormat', defaultFormat);
+      } catch {
+        // Storage is optional.
+      }
       setWritingDirty(false);
       setNotice({ tone: 'success', text: 'Settings saved.' });
     } catch (caught) {
@@ -833,6 +849,29 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
                   {term.name}
                 </option>
               ))}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="default_post_format">Default Post Format</label>
+            <select
+              id="default_post_format"
+              value={defaultFormat}
+              onChange={(event) => {
+                setDefaultFormat(event.target.value);
+                setWritingDirty(true);
+              }}
+              disabled={saving.writing}
+            >
+              <option value="standard">Standard</option>
+              <option value="aside">Aside</option>
+              <option value="gallery">Gallery</option>
+              <option value="image">Image</option>
+              <option value="link">Link</option>
+              <option value="quote">Quote</option>
+              <option value="status">Status</option>
+              <option value="video">Video</option>
+              <option value="audio">Audio</option>
+              <option value="chat">Chat</option>
             </select>
           </div>
           <div className="field">
