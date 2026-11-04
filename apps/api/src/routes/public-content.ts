@@ -8,6 +8,9 @@ import {
 } from './content-schemas.js';
 
 const previewTokenParamSchema = z.object({ token: z.string().min(1).max(200) }).strict();
+const termParamSchema = z
+  .object({ taxonomy: z.enum(['category', 'tag']), slug: z.string().min(1).max(200) })
+  .strict();
 
 interface PublicRouteOptions {
   content: ContentService;
@@ -60,6 +63,23 @@ export function registerPublicContentRoutes(
         throw new ContentError('VALIDATION_ERROR', validationMessage(parsed.error.issues), 400);
       }
       return content.listPublic(parsed.data);
+    }),
+  );
+
+  // Public taxonomy metadata for archive titles and descriptions. An existing
+  // but empty category still has an archive in WordPress, so this stays a 200
+  // even when the term has no published posts.
+  app.get('/api/public/terms/:taxonomy/:slug', async (request, reply) =>
+    handle(request, reply, async () => {
+      const params = termParamSchema.safeParse(request.params);
+      if (!params.success) {
+        throw new ContentError('VALIDATION_ERROR', 'Invalid taxonomy term', 400);
+      }
+      const term = await content.getPublicTerm(params.data.taxonomy, params.data.slug);
+      if (!term) {
+        throw new ContentError('NOT_FOUND', 'Not found', 404);
+      }
+      return term;
     }),
   );
 

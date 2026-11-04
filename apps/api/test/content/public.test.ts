@@ -218,6 +218,39 @@ describe('public search and term archives', () => {
   });
 });
 
+describe('GET /api/public/terms/:taxonomy/:slug', () => {
+  it('returns term metadata for an empty archive', async () => {
+    const category = await createTerm({
+      taxonomy: 'category',
+      name: 'Empty Archive',
+      description: 'Nothing here yet.',
+    });
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/public/terms/category/${category.slug}`,
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      name: 'Empty Archive',
+      slug: category.slug,
+      description: 'Nothing here yet.',
+    });
+  });
+
+  it('returns 404 for an unknown term and 400 for an invalid taxonomy', async () => {
+    const missing = await app.inject({
+      method: 'GET',
+      url: '/api/public/terms/category/nope',
+    });
+    expect(missing.statusCode).toBe(404);
+    const invalid = await app.inject({
+      method: 'GET',
+      url: '/api/public/terms/author/admin',
+    });
+    expect(invalid.statusCode).toBe(400);
+  });
+});
+
 describe('GET /api/public/posts/:slug', () => {
   it('returns a published post with its terms', async () => {
     const category = await createTerm({ taxonomy: 'category', name: 'Public Cat' });

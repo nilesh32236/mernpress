@@ -6,6 +6,13 @@ export interface PublicTerm {
   slug: string;
 }
 
+/** Taxonomy archive metadata (category/tag title and description). */
+export interface PublicTermInfo {
+  name: string;
+  slug: string;
+  description: string | null;
+}
+
 export interface FeaturedImage {
   id: string;
   url: string;
@@ -141,6 +148,18 @@ export async function getPublishedBySlug(
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Failed to load ${type} "${slug}": ${res.status}`);
   return (await res.json()) as PublicPost;
+}
+
+export async function getPublicTerm(
+  taxonomy: 'category' | 'tag',
+  slug: string,
+): Promise<PublicTermInfo | null> {
+  const res = await apiFetch(
+    `/api/public/terms/${taxonomy}/${encodeURIComponent(slug)}`,
+  );
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Failed to load ${taxonomy} "${slug}": ${res.status}`);
+  return (await res.json()) as PublicTermInfo;
 }
 
 /**

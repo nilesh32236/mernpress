@@ -840,28 +840,8 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
             </svg>
           </button>
           <div className="admin-bar-site">
-            <a
-              className="admin-bar-site-name"
-              href={ADMIN_BASE}
-              aria-label="MERNPress admin home"
-              onClick={(e) => {
-                e.preventDefault();
-                go('/admin');
-              }}
-            >
-              <span className="brand-home" aria-hidden="true">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                >
-                  <path d="M3 11 12 3l9 8" />
-                  <path d="M5.5 9.5V21h13V9.5" />
-                </svg>
-              </span>
+            <a className="admin-bar-site-name" href="/" aria-label="Visit MERNPress">
+              <span className="brand-home dashicons dashicons-wordpress" aria-hidden="true" />
               <span className="brand-text">MERNPress</span>
             </a>
             <a

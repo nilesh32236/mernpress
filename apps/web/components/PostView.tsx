@@ -1,15 +1,6 @@
 import Link from 'next/link';
 import { mediaUrl, type PublicPost } from '@/lib/api';
-
-function formatDate(iso: string | null): string | null {
-  if (!iso) return null;
-  return new Date(iso).toLocaleDateString('en-US', {
-    timeZone: 'UTC',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
+import MorePosts from './MorePosts';
 
 export default function PostView({
   post,
@@ -49,15 +40,15 @@ export default function PostView({
         {!isPage ? (
           <div className="entry-meta">
             <span>Written by </span>
-            {author ? (
-              <Link href={`/posts?author=${encodeURIComponent(author)}`}>{author}</Link>
-            ) : null}
+            {author ? <span>{author}</span> : null}
             <span> in </span>
             {categories.length > 0 ? (
               categories.map((term, index) => (
                 <span key={term.id}>
                   {index > 0 ? ', ' : ''}
-                  <Link href={`/category/${term.slug}`}>{term.name}</Link>
+                  <Link className="entry-category" href={`/category/${term.slug}`}>
+                    {term.name}
+                  </Link>
                 </span>
               ))
             ) : (
@@ -99,28 +90,7 @@ export default function PostView({
             </nav>
           </div>
 
-          {morePosts.length > 0 ? (
-            <section className="entry-wide more-posts" aria-labelledby="more-posts-heading">
-              <h2 id="more-posts-heading">More posts</h2>
-              <ul>
-                {morePosts.slice(0, 4).map((entry) => {
-                  const entryDate = formatDate(entry.publishedAt);
-                  return (
-                    <li key={entry.id}>
-                      <Link className="more-posts-title" href={`/posts/${entry.slug}`}>
-                        {entry.title}
-                      </Link>
-                      {entryDate ? (
-                        <Link className="more-posts-date" href={`/posts/${entry.slug}`}>
-                          <time dateTime={entry.publishedAt ?? undefined}>{entryDate}</time>
-                        </Link>
-                      ) : null}
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          ) : null}
+          <MorePosts posts={morePosts} />
         </>
       ) : null}
     </main>

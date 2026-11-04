@@ -46,6 +46,7 @@ import type {
   Principal,
   PublicListQuery,
   PublicPost,
+  PublicTerm,
   UpdatePostInput,
 } from './types.js';
 
@@ -94,6 +95,7 @@ export interface ContentService {
   getPreviewPost(token: string): Promise<PublicPost>;
   listPublic(query: PublicListQuery): Promise<Paged<PublicPost>>;
   getPublicBySlug(type: ContentType, slug: string): Promise<PublicPost>;
+  getPublicTerm(taxonomy: 'category' | 'tag', slug: string): Promise<PublicTerm | null>;
 }
 
 /**
@@ -1177,6 +1179,17 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     };
   }
 
+  async function getPublicTerm(
+    taxonomy: 'category' | 'tag',
+    slug: string,
+  ): Promise<PublicTerm | null> {
+    const term = await prisma.term.findFirst({
+      where: { taxonomy, slug },
+      select: { name: true, slug: true, description: true },
+    });
+    return term ?? null;
+  }
+
   async function getPublicBySlug(type: ContentType, slug: string): Promise<PublicPost> {
     const current = now();
     const row = await prisma.post.findFirst({
@@ -1207,5 +1220,6 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     getPreviewPost,
     listPublic,
     getPublicBySlug,
+    getPublicTerm,
   };
 }

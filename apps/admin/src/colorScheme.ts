@@ -8,9 +8,9 @@
  */
 
 export type ColorScheme =
-  | 'default'
-  | 'light'
+  | 'modern'
   | 'fresh'
+  | 'light'
   | 'blue'
   | 'coffee'
   | 'ectoplasm'
@@ -22,19 +22,21 @@ export interface ColorSchemeOption {
   id: ColorScheme;
   label: string;
   /** Four representative colors: bar, sidebar, active item, link. */
-  swatch: [string, string, string, string];
+  swatch: string[];
 }
 
 export const COLOR_SCHEMES: ColorSchemeOption[] = [
-  { id: 'default', label: 'Default', swatch: ['#1d2327', '#2c3338', '#2271b1', '#72aee6'] },
+  // WordPress 7.1's default is the "Modern" scheme; "Fresh" is its classic
+  // predecessor and remains selectable in the profile picker.
+  { id: 'modern', label: 'Default', swatch: ['#1e1e1e', '#3858e9', '#7b90ff'] },
   { id: 'fresh', label: 'Fresh', swatch: ['#1d2327', '#2c3338', '#2271b1', '#72aee6'] },
-  { id: 'light', label: 'Light', swatch: ['#f0f0f1', '#ffffff', '#2271b1', '#dcdcde'] },
-  { id: 'blue', label: 'Blue', swatch: ['#096484', '#4796b3', '#4796b3', '#52accc'] },
-  { id: 'coffee', label: 'Coffee', swatch: ['#46403c', '#c7a589', '#c7a589', '#9ea476'] },
-  { id: 'ectoplasm', label: 'Ectoplasm', swatch: ['#403b30', '#a3b745', '#a3b745', '#d46f15'] },
-  { id: 'midnight', label: 'Midnight', swatch: ['#1e1e1e', '#e14d43', '#e14d43', '#69a8bb'] },
-  { id: 'ocean', label: 'Ocean', swatch: ['#627c83', '#9ebaa0', '#9ebaa0', '#aa9d88'] },
-  { id: 'sunrise', label: 'Sunrise', swatch: ['#1d2327', '#dd823b', '#dd823b', '#ccaf0b'] },
+  { id: 'light', label: 'Light', swatch: ['#e5e5e5', '#6a6a6a', '#c64606', '#007cba'] },
+  { id: 'blue', label: 'Blue', swatch: ['#183751', '#245278', '#437aa8', '#e1a948'] },
+  { id: 'coffee', label: 'Coffee', swatch: ['#46403c', '#59524c', '#c7a589', '#9ea476'] },
+  { id: 'ectoplasm', label: 'Ectoplasm', swatch: ['#403b30', '#4a4539', '#a3b745', '#d46f15'] },
+  { id: 'midnight', label: 'Midnight', swatch: ['#232a2e', '#333c42', '#69a8bb', '#cf4339'] },
+  { id: 'ocean', label: 'Ocean', swatch: ['#627c83', '#738e96', '#9ebaa0', '#aa9d88'] },
+  { id: 'sunrise', label: 'Sunrise', swatch: ['#1d2327', '#2c3338', '#dd823b', '#ccaf0b'] },
 ];
 
 const STORAGE_KEY = 'mernpress.colorScheme';
@@ -43,6 +45,10 @@ const VALID = new Set<ColorScheme>(COLOR_SCHEMES.map((scheme) => scheme.id));
 export function getColorScheme(): ColorScheme {
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
+    // "default" was the pre-7.1 alias for the Modern scheme.
+    if (stored === 'default') {
+      return 'fresh';
+    }
     if (stored !== null && VALID.has(stored as ColorScheme)) {
       return stored as ColorScheme;
     }

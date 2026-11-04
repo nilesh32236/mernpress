@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { PublicPost } from '@/lib/api';
+import { mediaUrl, type PublicPost } from '@/lib/api';
 
 function formatDate(iso: string | null): string | null {
   if (!iso) return null;
@@ -19,13 +19,27 @@ export default function PostList({ posts }: { posts: PublicPost[] }) {
         const date = formatDate(post.publishedAt);
         return (
           <li key={post.id} className="post-item">
+            {post.featuredImage ? (
+              <figure className="post-featured">
+                <Link href={`/posts/${post.slug}`}>
+                  <img
+                    src={mediaUrl(post.featuredImage.derivatives['1200'] ?? post.featuredImage.url)}
+                    alt={post.featuredImage.altText}
+                    width={post.featuredImage.width ?? undefined}
+                    height={post.featuredImage.height ?? undefined}
+                  />
+                </Link>
+              </figure>
+            ) : null}
             <h2 className="post-title">
               <Link href={`/posts/${post.slug}`}>{post.title}</Link>
             </h2>
             {post.excerpt ? <p className="post-excerpt">{post.excerpt}</p> : null}
             {date ? (
               <p className="post-date">
-                <time dateTime={post.publishedAt ?? undefined}>{date}</time>
+                <Link href={`/posts/${post.slug}`}>
+                  <time dateTime={post.publishedAt ?? undefined}>{date}</time>
+                </Link>
               </p>
             ) : null}
           </li>

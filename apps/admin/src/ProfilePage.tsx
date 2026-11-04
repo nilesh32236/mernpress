@@ -183,6 +183,21 @@ export function ProfilePage({
     }
   }
 
+  const displayNameChoices: string[] = [];
+  const addChoice = (value: string | null | undefined) => {
+    const trimmed = value?.trim();
+    if (trimmed && !displayNameChoices.includes(trimmed)) displayNameChoices.push(trimmed);
+  };
+  addChoice(username);
+  addChoice(firstName);
+  addChoice(lastName);
+  addChoice(nickname);
+  if (firstName.trim() && lastName.trim()) {
+    addChoice(`${firstName.trim()} ${lastName.trim()}`);
+    addChoice(`${lastName.trim()} ${firstName.trim()}`);
+  }
+  addChoice(displayName);
+
   return (
     <>
       <PageHeader title="Profile" />
@@ -227,7 +242,7 @@ export function ProfilePage({
                     />
                     <label htmlFor={`admin_color_${scheme.id}`}>{scheme.label}</label>
                     <div className="color-palette" aria-hidden="true">
-                      {scheme.swatch.slice(0, 3).map((color, index) => (
+                      {scheme.swatch.map((color, index) => (
                         <div
                           key={`${scheme.id}-${index}`}
                           className="color-palette-shade"
@@ -296,7 +311,7 @@ export function ProfilePage({
             <h2 className="profile-section-title">Name</h2>
             <div className="field">
               <label htmlFor="profile-username">Username</label>
-              <div>
+              <div className="profile-username-row">
                 <input
                   id="profile-username"
                   type="text"
@@ -305,7 +320,7 @@ export function ProfilePage({
                   disabled
                   autoComplete="username"
                 />
-                <p className="field-help">Usernames cannot be changed.</p>
+                <span className="field-help">Usernames cannot be changed.</span>
               </div>
             </div>
 
@@ -349,17 +364,19 @@ export function ProfilePage({
             </div>
 
             <div className="field">
-              <label htmlFor="profile-display-name">Display Name</label>
-              <input
+              <label htmlFor="profile-display-name">Display name publicly as</label>
+              <select
                 id="profile-display-name"
-                type="text"
-                maxLength={100}
-                value={displayName}
+                value={displayName || username}
                 onChange={(event) => setDisplayName(event.target.value)}
                 disabled={savingAccount}
-                autoComplete="name"
-              />
-              <p className="field-help">This is how your name will be displayed on the site.</p>
+              >
+                {displayNameChoices.map((choice) => (
+                  <option key={choice} value={choice}>
+                    {choice}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <h2 className="profile-section-title">Contact Info</h2>

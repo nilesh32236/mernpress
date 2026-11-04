@@ -29,7 +29,7 @@ function readPattern(key: string, fallback: string): string {
 
 export function formatSettingsDate(
   date: Date,
-  pattern = readPattern(DATE_PATTERN, 'Y/m/d'),
+  pattern = readPattern(DATE_PATTERN, 'F j, Y'),
 ): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   const months = [

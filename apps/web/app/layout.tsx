@@ -78,9 +78,12 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         {children}
         <footer className="site-footer">
           <div className="site-footer-top">
-            <Link href="/" className="site-footer-title">
-              {siteTitle}
-            </Link>
+            <div className="site-footer-brand">
+              <Link href="/" className="site-footer-title">
+                {siteTitle}
+              </Link>
+              {settings?.tagline ? <p className="site-footer-tagline">{settings.tagline}</p> : null}
+            </div>
             <div className="site-footer-navs">
               <nav className="site-footer-nav" aria-label="Footer">
                 <Link href="/posts">Blog</Link>

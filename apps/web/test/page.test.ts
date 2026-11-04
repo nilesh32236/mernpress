@@ -46,7 +46,7 @@ describe('home page', () => {
         pagination: { page: 1, perPage: 10, total: 1, totalPages: 1 },
       }),
     );
-    const html = renderToStaticMarkup(await HomePage());
+    const html = renderToStaticMarkup(await HomePage({ searchParams: Promise.resolve({}) }));
     expect(html).toContain('Blog');
     expect(html).toContain('Hello World');
     expect(html).toContain('An excerpt');
@@ -60,13 +60,13 @@ describe('home page', () => {
         pagination: { page: 1, perPage: 10, total: 0, totalPages: 1 },
       }),
     );
-    const html = renderToStaticMarkup(await HomePage());
-    expect(html).toContain('No posts published yet');
+    const html = renderToStaticMarkup(await HomePage({ searchParams: Promise.resolve({}) }));
+    expect(html).toContain('Sorry, but nothing was found');
   });
 
   it('renders friendly message when API is down', async () => {
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('down'));
-    const html = renderToStaticMarkup(await HomePage());
+    const html = renderToStaticMarkup(await HomePage({ searchParams: Promise.resolve({}) }));
     expect(html).toContain('temporarily unavailable');
   });
 });

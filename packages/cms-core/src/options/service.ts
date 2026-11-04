@@ -145,7 +145,7 @@ const SPECS: Record<string, OptionSpec> = {
   },
   date_format: {
     group: 'general',
-    defaultValue: 'Y/m/d',
+    defaultValue: 'F j, Y',
     validate: (value) => {
       if (typeof value !== 'string' || value.length > 40) {
         throwValidation('date_format must be a short pattern.');

@@ -159,6 +159,13 @@ export interface PublicPost {
   terms: { categories: AdminTermSummary[]; tags: AdminTermSummary[] };
 }
 
+/** Public taxonomy term (category/tag) with its archive description. */
+export interface PublicTerm {
+  name: string;
+  slug: string;
+  description: string | null;
+}
+
 export interface CreatePostInput {
   type: ContentType;
   title: string;

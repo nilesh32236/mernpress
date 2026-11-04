@@ -55,7 +55,7 @@ describe('profile page', () => {
     render(<ProfilePage user={admin} />);
 
     expect(((await screen.findByLabelText('Username')) as HTMLInputElement).value).toBe('admin');
-    expect((screen.getByLabelText('Display Name') as HTMLInputElement).value).toBe('Admin');
+    expect((screen.getByLabelText('Display name publicly as') as HTMLInputElement).value).toBe('Admin');
     expect((screen.getByLabelText('Email (required)') as HTMLInputElement).value).toBe(
       'admin@example.com',
     );
@@ -66,13 +66,13 @@ describe('profile page', () => {
     render(<ProfilePage user={admin} onProfileUpdated={onProfileUpdated} />);
 
     await screen.findByLabelText('Username');
-    fireEvent.change(screen.getByLabelText('Display Name'), { target: { value: 'Super Admin' } });
+    fireEvent.change(screen.getByLabelText('Display name publicly as'), { target: { value: 'admin' } });
     fireEvent.submit(screen.getByRole('form', { name: 'Account details' }));
 
     await waitFor(() =>
       expect(vi.mocked(updateProfile)).toHaveBeenCalledWith({
         username: 'admin',
-        displayName: 'Super Admin',
+        displayName: 'admin',
         firstName: null,
         lastName: null,
         nickname: null,

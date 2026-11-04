@@ -146,7 +146,7 @@ export function Dashboard({ user }: { user: AuthUser }) {
     }
   });
   const [leftOrder, setLeftOrder] = useState<WidgetKey[]>(['siteHealth', 'glance', 'activity']);
-  const [rightOrder] = useState<WidgetKey[]>(['quickDraft']);
+  const [rightOrder, setRightOrder] = useState<WidgetKey[]>(['quickDraft']);
   const [hiddenWidgets, setHiddenWidgets] = useState(() => dashboardHiddenWidgets());
   const [columns, setColumns] = useState<DashboardColumns>(() => dashboardColumns());
 
@@ -301,8 +301,12 @@ export function Dashboard({ user }: { user: AuthUser }) {
     );
   }
 
-  function moveWidget(index: number, delta: number): void {
-    setLeftOrder((current) => {
+  function moveWidget(
+    setOrder: (update: (current: WidgetKey[]) => WidgetKey[]) => void,
+    index: number,
+    delta: number,
+  ): void {
+    setOrder((current) => {
       const target = index + delta;
       if (target < 0 || target >= current.length) {
         return current;
@@ -754,7 +758,8 @@ export function Dashboard({ user }: { user: AuthUser }) {
                 >
                   <div className="meta-box-sortables">
                     {keys.map((key, index) => {
-                      const canReorder = columns === 2 && columnIndex === 0;
+                      const canReorder = columns === 2;
+                      const setOrder = columnIndex === 0 ? setLeftOrder : setRightOrder;
                       return (
                         <Postbox
                           key={key}
@@ -762,8 +767,12 @@ export function Dashboard({ user }: { user: AuthUser }) {
                           title={WIDGET_TITLES[key]}
                           canMoveUp={canReorder && index > 0}
                           canMoveDown={canReorder && index < keys.length - 1}
-                          onMoveUp={canReorder ? () => moveWidget(index, -1) : () => undefined}
-                          onMoveDown={canReorder ? () => moveWidget(index, 1) : () => undefined}
+                          onMoveUp={
+                            canReorder ? () => moveWidget(setOrder, index, -1) : () => undefined
+                          }
+                          onMoveDown={
+                            canReorder ? () => moveWidget(setOrder, index, 1) : () => undefined
+                          }
                         >
                           {renderWidget(key)}
                         </Postbox>

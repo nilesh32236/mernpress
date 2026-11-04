@@ -64,7 +64,9 @@ function formatWpDate(value: string | null): string {
   if (!value) return '—';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '—';
-  return `${formatSettingsDate(date)} at ${formatSettingsTime(date)}`;
+  // WordPress list tables hard-code this column's format regardless of the
+  // General Settings date/time format.
+  return `${formatSettingsDate(date, 'Y/m/d')} at ${formatSettingsTime(date, 'g:i a')}`;
 }
 
 function monthOptions(): Array<{ value: string; label: string }> {
@@ -838,7 +840,9 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
           ) : null}
 
           <div className="table-scroll">
-            <table className="content-table widefat fixed striped posts">
+            <table
+              className={`content-table widefat fixed striped ${type === 'page' ? 'pages' : 'posts'}`}
+            >
               <caption className="screen-reader-text">{label}</caption>
               <thead>
                 <tr>

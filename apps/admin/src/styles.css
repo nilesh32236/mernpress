@@ -2,18 +2,18 @@
    MERNPress admin — WordPress-style design system (matches the reference
    qrolichealth CMS admin pixel-for-pixel in tokens and patterns).
 
-   Shell: WordPress admin bar (32px, #1d2327) above a 160px dark
+   Shell: WordPress admin bar (32px, #1e1e1e) above a 160px dark
    sidebar; 52px icon rail when collapsed; off-canvas drawer below 1024px.
-   Content: #f0f0f1 bg, 1200px max width, 23px font-normal titles, WP blue
-   #2271b1 primary, list-table / tab / card / pill patterns per reference.
+   Content: #f0f0f1 bg, 1200px max width, 23px font-normal titles, WP modern
+   #3858e9 primary, list-table / tab / card / pill patterns per reference.
    ========================================================================== */
 
 :root {
-  /* WP admin chrome */
+  /* WP admin chrome (WordPress 7.1 "Fresh" scheme, used by the reference). */
   --wp-admin-bar: #1d2327;
   --wp-sidebar: #1d2327;
   --wp-sidebar-hover: #2c3338;
-  --wp-sidebar-deep: #23282d;
+  --wp-sidebar-deep: #2c3338;
   --wp-sidebar-border: #2c3338;
   --wp-sidebar-text: #eeeeee;
   --wp-menu-hover: #72aee6;
@@ -22,9 +22,11 @@
   --wp-sidebar-icon: #c3c4c7;
   --wp-sidebar-sub: rgba(240, 246, 252, 0.7);
 
-  /* WP blue */
+  /* WP link/menu accent and button accent are distinct in wp-admin. */
   --wp-blue: #2271b1;
   --wp-blue-hover: #135e96;
+  --wp-button: #007cba;
+  --wp-button-hover: #005a87;
 
   /* Content area */
   --wp-bg: #f0f0f1;
@@ -59,9 +61,9 @@
      these. New code should use the --wp-* tokens above. */
   --wp-text-muted: #6e767d;
   --wp-link: #2271b1;
-  --wp-primary: #2271b1;
+  --wp-primary: #007cba;
   --wp-border-dark: #8c8f94;
-  --surface: #f0f0f1;
+  --surface: #f0f0f0;
   --surface-raised: #ffffff;
   --surface-muted: #f6f7f7;
   --surface-alt: #fafafa;
@@ -389,8 +391,8 @@ h2 {
 }
 
 .admin-bar-brand:hover {
-  background: #2c3338;
-  color: #72aee6;
+  background: var(--wp-sidebar-hover);
+  color: var(--wp-menu-hover);
 }
 
 .visit-site-pill {
@@ -624,7 +626,7 @@ h2 {
 }
 
 .collapse-toggle:hover {
-  color: #72aee6;
+  color: var(--wp-menu-hover);
 }
 
 .collapse-toggle svg {
@@ -707,7 +709,7 @@ h2 {
    hover/focus for the others. */
 .nav-submenu {
   display: none;
-  background: #2c3338;
+  background: var(--wp-sidebar-deep);
   padding: 6px 0;
   margin: 0;
   list-style: none;
@@ -963,7 +965,7 @@ a.nav-sublink.is-active:hover {
 
 .list-title-row h1 {
   display: inline-block;
-  margin: 0 5px 0 0;
+  margin: 0;
   padding: 9px 0 4px;
   line-height: 1.3;
 }
@@ -974,13 +976,13 @@ a.nav-sublink.is-active:hover {
   display: inline-block;
   position: relative;
   top: -3px;
-  margin-left: 0;
+  margin-left: 8px;
   padding: 0 12px;
   height: 32px;
-  border: 1px solid #2271b1;
+  border: 1px solid var(--wp-blue);
   border-radius: 2px;
   background: transparent;
-  color: #2271b1;
+  color: var(--wp-blue);
   font-size: 13px;
   font-weight: 500;
   line-height: 30px;
@@ -992,8 +994,8 @@ a.nav-sublink.is-active:hover {
 .page-title-action:hover,
 .list-add-new:hover {
   background: #f0f0f1;
-  border-color: #0a4b78;
-  color: #0a4b78;
+  border-color: var(--wp-blue-hover);
+  color: var(--wp-blue-hover);
 }
 
 .title-badge {
@@ -1041,30 +1043,30 @@ a.nav-sublink.is-active:hover {
 
 .primary-button,
 .button.primary-button {
-  background: var(--wp-blue);
-  border-color: var(--wp-blue);
+  background: var(--wp-button);
+  border-color: var(--wp-button);
   color: #ffffff;
 }
 
 .primary-button:hover:not(:disabled),
 .button.primary-button:hover:not(:disabled) {
-  background: var(--wp-blue-hover);
-  border-color: var(--wp-blue-hover);
+  background: var(--wp-button-hover);
+  border-color: var(--wp-button-hover);
   color: #ffffff;
 }
 
 .secondary-button,
 .button.secondary-button {
-  background: #ffffff;
-  border-color: var(--wp-blue);
-  color: var(--wp-blue);
+  background: transparent;
+  border-color: var(--wp-button);
+  color: var(--wp-button);
 }
 
 .secondary-button:hover:not(:disabled),
 .button.secondary-button:hover:not(:disabled) {
-  background: #f0f6fc;
-  border-color: var(--wp-blue-hover);
-  color: var(--wp-blue-hover);
+  background: rgba(0, 124, 186, 0.04);
+  border-color: var(--wp-button-hover);
+  color: var(--wp-button-hover);
 }
 
 .small-button,
@@ -1078,18 +1080,18 @@ a.nav-sublink.is-active:hover {
 /* Toolbar buttons (bulk/search rows): white, grey border, blue text. */
 .tablenav .secondary-button,
 .tablenav .button.secondary-button {
-  background: #ffffff;
-  border-color: var(--wp-input-border);
-  color: var(--wp-blue);
+  background: transparent;
+  border-color: var(--wp-button);
+  color: var(--wp-button);
   min-height: 32px;
   font-weight: 400;
 }
 
 .tablenav .secondary-button:hover:not(:disabled),
 .tablenav .button.secondary-button:hover:not(:disabled) {
-  background: var(--wp-bg);
-  border-color: var(--wp-blue);
-  color: var(--wp-blue-hover);
+  background: rgba(0, 124, 186, 0.04);
+  border-color: var(--wp-button-hover);
+  color: var(--wp-button-hover);
 }
 
 /* Row-action text links (WP list-table pattern) */
@@ -1129,6 +1131,28 @@ a.delete-link,
 .delete-link:hover {
   color: #901313;
   text-decoration: underline;
+}
+
+.publish-panel .button.delete-link {
+  display: block;
+  width: 100%;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--wp-danger);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--wp-danger);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 32px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.publish-panel .button.delete-link:hover:not(:disabled) {
+  background: var(--wp-danger);
+  color: #ffffff;
+  text-decoration: none;
 }
 
 /* Icon-only row actions (users table) */
@@ -1469,14 +1493,14 @@ a.delete-link,
   border-radius: 2px;
   padding: 0.2em;
   line-height: 2;
-  color: #2271b1;
+  color: var(--wp-blue);
   font: inherit;
   font-size: 13px;
   cursor: pointer;
 }
 
 .subsubsub-tab:hover {
-  color: #135e96;
+  color: var(--wp-blue-hover);
 }
 
 .subsubsub-tab[aria-current='true'] {
@@ -1654,11 +1678,6 @@ a.delete-link,
 
 .content-table.striped tbody tr:nth-child(odd) {
   background: #f6f7f7;
-}
-
-.content-table tbody tr:hover th,
-.content-table tbody tr:hover td {
-  background: #f0f6fc;
 }
 
 .content-table .check-column {
@@ -2199,7 +2218,10 @@ a.glance-chip:hover {
 }
 
 .settings-panel .field.actions {
-  display: block;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
   margin: 20px 0 5px;
   padding: 0 0 19.5px;
 }
@@ -2793,12 +2815,12 @@ a.glance-chip:hover {
   width: 32px;
   height: 32px;
   border-radius: 2px;
-  background: #007cba;
+  background: var(--wp-button);
   color: #ffffff;
 }
 
 .editor-topbar-tool-primary:hover:not(:disabled) {
-  background: #005a87;
+  background: var(--wp-button-hover);
   color: #ffffff;
 }
 
@@ -2876,18 +2898,20 @@ a.glance-chip:hover {
 
 .editor-topbar-text-button {
   padding: 6px 8px;
-  border: 0;
+  border: 1px solid var(--wp-button);
   border-radius: 2px;
   background: transparent;
-  color: #757575;
+  color: var(--wp-button);
   font-size: 13px;
+  font-weight: 500;
   line-height: 1.4;
   cursor: pointer;
 }
 
 .editor-topbar-text-button:hover:not(:disabled) {
-  color: #1e1e1e;
-  background: transparent;
+  color: var(--wp-button-hover);
+  border-color: var(--wp-button-hover);
+  background: color-mix(in srgb, var(--wp-button) 4%, transparent);
 }
 
 .editor-topbar-text-button:disabled {
@@ -2946,7 +2970,7 @@ a.glance-chip:hover {
 .editor-topbar-publish {
   padding: 0 12px;
   border: 1px solid transparent;
-  background: #007cba;
+  background: var(--wp-button);
   color: #ffffff;
   font-size: 13px;
   font-weight: 600;
@@ -2956,8 +2980,8 @@ a.glance-chip:hover {
 }
 
 .editor-topbar-publish:hover:not(:disabled) {
-  background: #005a87;
-  border-color: #005a87;
+  background: var(--wp-button-hover);
+  border-color: var(--wp-button-hover);
   color: #ffffff;
 }
 
@@ -3697,7 +3721,7 @@ a.glance-chip:hover {
 
 .media-card:hover,
 .media-card:focus-visible {
-  box-shadow: inset 0 0 0 2px #2271b1;
+  box-shadow: inset 0 0 0 2px var(--wp-blue);
   outline: none;
 }
 
@@ -3732,7 +3756,7 @@ a.glance-chip:hover {
 }
 
 .media-card.is-selected .media-check {
-  background: #2271b1;
+  background: var(--wp-blue);
   color: #ffffff;
 }
 
@@ -3828,7 +3852,7 @@ a.glance-chip:hover {
 .media-upload-fill {
   display: block;
   height: 100%;
-  background: var(--wp-blue);
+  background: var(--wp-button);
   transition: width 120ms linear;
 }
 
@@ -4048,7 +4072,7 @@ a.glance-chip:hover {
 }
 
 .revision-link:focus-visible {
-  outline: 2px solid var(--wp-blue, #2271b1);
+  outline: 2px solid var(--wp-blue);
   outline-offset: 1px;
 }
 
@@ -4201,7 +4225,7 @@ a.glance-chip:hover {
 }
 
 .featured-current:focus-visible {
-  outline: 2px solid var(--wp-blue, #2271b1);
+  outline: 2px solid var(--wp-blue);
   outline-offset: 2px;
 }
 
@@ -4248,7 +4272,7 @@ a.glance-chip:hover {
 }
 
 .featured-picker-item[aria-selected='true'] {
-  border-color: var(--wp-blue, #2271b1);
+  border-color: var(--wp-blue);
 }
 
 /* Dashboard activity list (recently published) */
@@ -4495,10 +4519,10 @@ a.glance-chip:hover {
   align-items: center;
   gap: 6px;
   padding: 5px 12px;
-  border: 1px solid var(--wp-blue);
+  border: 1px solid var(--wp-button);
   border-radius: 3px;
   background: #ffffff;
-  color: var(--wp-blue);
+  color: var(--wp-button);
   font-size: 12px;
   font-weight: 500;
   text-decoration: none;
@@ -4545,7 +4569,7 @@ a.glance-chip:hover {
 }
 
 .view-toggle-button.is-active {
-  background: #2271b1;
+  background: var(--wp-blue);
   color: #ffffff;
 }
 
@@ -4649,8 +4673,8 @@ a.glance-chip:hover {
 }
 
 .login-card .field input:focus {
-  border-color: #2271b1;
-  box-shadow: 0 0 0 1px #2271b1;
+  border-color: var(--wp-blue);
+  box-shadow: 0 0 0 1px var(--wp-blue);
   outline: 2px solid transparent;
 }
 
@@ -4680,7 +4704,7 @@ a.glance-chip:hover {
 }
 
 .login-show-password:hover {
-  color: #2271b1;
+  color: var(--wp-blue);
 }
 
 .login-submit-row {
@@ -4736,14 +4760,14 @@ a.glance-chip:hover {
 .row-actions {
   margin-top: 2px;
   font-size: 13px;
-  color: #2271b1;
+  color: var(--wp-blue);
 }
 
 .row-action-link {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #2271b1;
+  color: var(--wp-blue);
   font: inherit;
   font-size: 13px;
   text-decoration: none;
@@ -4751,7 +4775,7 @@ a.glance-chip:hover {
 }
 
 .row-action-link:hover {
-  color: #135e96;
+  color: var(--wp-blue-hover);
   text-decoration: underline;
 }
 
@@ -4784,7 +4808,7 @@ a.glance-chip:hover {
 }
 
 .login-back a:hover {
-  color: #2271b1;
+  color: var(--wp-blue);
 }
 
 .signout-error {
@@ -4832,7 +4856,7 @@ a.glance-chip:hover {
 }
 
 .sortable-column:hover {
-  color: #2271b1;
+  color: var(--wp-blue);
 }
 
 .sort-indicator {
@@ -4924,7 +4948,7 @@ a.glance-chip:hover {
 }
 
 .media-toolbar-bar .view-toggle-button.is-active {
-  color: #2271b1;
+  color: var(--wp-blue);
 }
 
 .media-toolbar-bar .attachment-filters {
@@ -4944,10 +4968,10 @@ a.glance-chip:hover {
   height: 32px;
   min-height: 32px;
   padding: 0 12px;
-  border: 1px solid #2271b1;
+  border: 1px solid var(--wp-button);
   border-radius: 2px;
   background: transparent;
-  color: #2271b1;
+  color: var(--wp-button);
   font-size: 13px;
   font-weight: 500;
 }
@@ -5169,7 +5193,7 @@ a.glance-chip:hover {
 }
 
 .welcome-panel-column-container a {
-  color: #2271b1;
+  color: var(--wp-blue);
 }
 
 @media screen and (max-width: 960px) {
@@ -5311,12 +5335,12 @@ a.glance-chip:hover {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: #2271b1;
+  color: var(--wp-blue);
   text-decoration: none;
 }
 
 #dashboard_right_now li a:hover {
-  color: #135e96;
+  color: var(--wp-blue-hover);
 }
 
 .glance-icon {
@@ -5373,12 +5397,12 @@ a.glance-chip:hover {
 }
 
 #published-posts a {
-  color: #2271b1;
+  color: var(--wp-blue);
   text-decoration: none;
 }
 
 #published-posts a:hover {
-  color: #135e96;
+  color: var(--wp-blue-hover);
   text-decoration: underline;
 }
 
@@ -5614,14 +5638,14 @@ a.glance-chip:hover {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #2271b1;
+  color: var(--wp-blue);
   font-size: 13px;
   text-decoration: none;
   cursor: pointer;
 }
 
 .editor-excerpt-link:hover {
-  color: #135e96;
+  color: var(--wp-blue-hover);
   text-decoration: underline;
 }
 
@@ -5700,14 +5724,14 @@ a.glance-chip:hover {
 .profile-panel {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 0;
 }
 
 .profile-section-title {
-  margin: 16px 0 0;
+  margin: 16.9px 0;
   padding: 0;
-  font-size: 18px;
-  font-weight: 400;
+  font-size: 16.9px;
+  font-weight: 600;
   color: #1d2327;
 }
 
@@ -5744,7 +5768,7 @@ a.glance-chip:hover {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #2271b1;
+  color: var(--wp-blue);
   font: inherit;
   font-size: 13px;
   text-align: left;
@@ -5752,7 +5776,7 @@ a.glance-chip:hover {
 }
 
 .content-table .term-link:hover {
-  color: #135e96;
+  color: var(--wp-blue-hover);
   text-decoration: underline;
 }
 
@@ -5843,8 +5867,8 @@ a.glance-chip:hover {
 }
 
 .screen-meta-links .show-settings:focus {
-  border-color: #2271b1;
-  box-shadow: 0 0 0 1px #2271b1;
+  border-color: var(--wp-blue);
+  box-shadow: 0 0 0 1px var(--wp-blue);
   outline: 2px solid transparent;
 }
 
@@ -5926,10 +5950,10 @@ a.glance-chip:hover {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: #2271b1;
+  background: var(--wp-blue);
   box-shadow:
     0 0 0 2px #ffffff,
-    0 0 0 3px #2271b1;
+    0 0 0 3px var(--wp-blue);
 }
 
 .editor-status-value.is-trashed .editor-status-dot {
@@ -5940,12 +5964,12 @@ a.glance-chip:hover {
 }
 
 .editor-publish-link {
-  color: #2271b1;
+  color: var(--wp-blue);
   cursor: pointer;
 }
 
 .editor-publish-link:hover {
-  color: #135e96;
+  color: var(--wp-blue-hover);
   text-decoration: underline;
 }
 
@@ -6057,6 +6081,12 @@ a.glance-chip:hover {
   color: var(--wp-menu-hover);
 }
 
+.admin-bar-site-name .brand-home {
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+}
+
 .admin-bar-visit {
   position: absolute;
   top: 32px;
@@ -6064,8 +6094,8 @@ a.glance-chip:hover {
   display: none;
   min-width: 120px;
   padding: 6px 10px;
-  background: #2c3338;
-  color: #c3c4c7;
+  background: var(--wp-sidebar-deep);
+  color: var(--wp-sidebar-sub);
   font-size: 12px;
   text-decoration: none;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
@@ -6078,7 +6108,7 @@ a.glance-chip:hover {
 }
 
 .admin-bar-visit:hover {
-  color: #72aee6;
+  color: var(--wp-menu-hover);
 }
 
 /* WordPress menu icons are 20px. */
@@ -6109,7 +6139,7 @@ a.glance-chip:hover {
 }
 
 .media-list-title {
-  color: #2271b1;
+  color: var(--wp-blue);
   font-weight: 600;
 }
 
@@ -6126,13 +6156,13 @@ a.glance-chip:hover {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #2271b1;
+  color: var(--wp-blue);
   font-size: 12px;
   cursor: pointer;
 }
 
 .media-attach-link:hover {
-  color: #135e96;
+  color: var(--wp-blue-hover);
   text-decoration: underline;
 }
 
@@ -6347,6 +6377,12 @@ a.glance-chip:hover {
   font-size: 12px;
 }
 
+.format-option-custom input[type='text'] {
+  width: 160px;
+  min-height: 30px;
+  margin-left: 4px;
+}
+
 /* WordPress Site Icon setting and media picker. */
 .site-icon-current {
   display: flex;
@@ -6405,8 +6441,8 @@ a.glance-chip:hover {
 
 .site-icon-item:hover,
 .site-icon-item:focus-visible {
-  border-color: #2271b1;
-  box-shadow: 0 0 0 1px #2271b1;
+  border-color: var(--wp-blue);
+  box-shadow: 0 0 0 1px var(--wp-blue);
 }
 
 .site-icon-item img {
@@ -6488,20 +6524,40 @@ a.glance-chip:hover {
   --wp-bar-muted: #50575e;
 }
 
+:root[data-color-scheme='fresh'] {
+  --wp-admin-bar: #1d2327;
+  --wp-sidebar: #1d2327;
+  --wp-sidebar-hover: #2c3338;
+  --wp-sidebar-deep: #23282d;
+  --wp-sidebar-border: #2c3338;
+  --wp-sidebar-text: #eeeeee;
+  --wp-sidebar-icon: #c3c4c7;
+  --wp-sidebar-sub: rgba(240, 246, 252, 0.7);
+  --wp-menu-hover: #72aee6;
+  --wp-bar-text: #f0f0f1;
+  --wp-bar-muted: #c3c4c7;
+  --wp-blue: #2271b1;
+  --wp-blue-hover: #135e96;
+  --wp-button: #007cba;
+  --wp-button-hover: #005a87;
+}
+
 :root[data-color-scheme='modern'] {
   --wp-admin-bar: #1e1e1e;
   --wp-sidebar: #1e1e1e;
-  --wp-sidebar-hover: #2c3338;
-  --wp-sidebar-deep: #2c3338;
+  --wp-sidebar-hover: #0c0c0c;
+  --wp-sidebar-deep: #0c0c0c;
   --wp-sidebar-border: #2c3338;
-  --wp-sidebar-text: #f0f0f1;
-  --wp-sidebar-icon: #f0f0f1;
-  --wp-sidebar-sub: #c3c4c7;
+  --wp-sidebar-text: #ffffff;
+  --wp-sidebar-icon: #f3f1f1;
+  --wp-sidebar-sub: #bbbbbb;
   --wp-menu-hover: #7b90ff;
-  --wp-bar-text: #f0f0f1;
-  --wp-bar-muted: #c3c4c7;
+  --wp-bar-text: #ffffff;
+  --wp-bar-muted: #ffffff;
   --wp-blue: #3858e9;
-  --wp-blue-hover: #2145e6;
+  --wp-blue-hover: #173ad6;
+  --wp-button: #3858e9;
+  --wp-button-hover: #173ad6;
 }
 
 :root[data-color-scheme='blue'] {
@@ -6603,9 +6659,9 @@ a.glance-chip:hover {
 /* Profile personal options: color scheme grid. */
 .color-scheme-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 242px));
   gap: 10px;
-  max-width: 720px;
+  max-width: 998px;
 }
 
 .color-scheme-option {
@@ -6618,8 +6674,8 @@ a.glance-chip:hover {
 }
 
 .color-scheme-option.is-active {
-  border-color: #2271b1;
-  box-shadow: 0 0 0 1px #2271b1;
+  border-color: var(--wp-blue);
+  box-shadow: 0 0 0 1px var(--wp-blue);
 }
 
 .color-scheme-option input {
@@ -6721,7 +6777,7 @@ a.glance-chip:hover {
 
 .wp-list-screen .list-title-row h1 {
   display: inline-block;
-  margin: 0 5px 0 0;
+  margin: 0;
   padding: 9px 0 4px;
   font-size: 23px;
   font-weight: 400;
@@ -6740,6 +6796,7 @@ a.glance-chip:hover {
 }
 
 .list-top .subsubsub {
+  min-height: 26px;
   margin: 8px 0 0;
   float: none;
   align-self: flex-start;
@@ -6753,11 +6810,11 @@ a.glance-chip:hover {
 .list-top .search-form {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 9px;
 }
 
 .list-top .search-form input[type='search'] {
-  width: 200px;
+  width: 199px;
   height: 32px;
   min-height: 32px;
   padding: 0 8px;
@@ -6773,26 +6830,26 @@ a.glance-chip:hover {
   min-height: 32px;
   height: 32px;
   padding: 0 12px;
-  border: 1px solid #2271b1;
+  border: 1px solid var(--wp-button);
   border-radius: 2px;
-  background: #f6f7f7;
-  color: #2271b1;
+  background: transparent;
+  color: var(--wp-button);
   font-size: 13px;
   font-weight: 500;
   line-height: 1.6;
 }
 
 .list-top .search-form .button:hover:not(:disabled) {
-  background: #f0f0f1;
-  border-color: #0a4b78;
-  color: #0a4b78;
+  background: rgba(0, 124, 186, 0.04);
+  border-color: var(--wp-button-hover);
+  color: var(--wp-button-hover);
 }
 
 /* Toolbar: 32px controls, WordPress select padding and 2px radii. */
 .wp-list-screen .tablenav {
   min-height: 32px;
   height: auto;
-  margin: 6px 0 4px;
+  margin: 11px 0 6px;
   padding-top: 0;
   align-items: center;
 }
@@ -6818,19 +6875,19 @@ a.glance-chip:hover {
   height: 32px;
   min-height: 32px;
   padding: 0 12px;
-  border: 1px solid #2271b1;
+  border: 1px solid var(--wp-button);
   border-radius: 2px;
-  background: #f6f7f7;
-  color: #2271b1;
+  background: transparent;
+  color: var(--wp-button);
   font-size: 13px;
   font-weight: 500;
   line-height: 1.6;
 }
 
 .wp-list-screen .tablenav .button:hover:not(:disabled) {
-  background: #f0f0f1;
-  border-color: #0a4b78;
-  color: #0a4b78;
+  background: rgba(0, 124, 186, 0.04);
+  border-color: var(--wp-button-hover);
+  color: var(--wp-button-hover);
 }
 
 .wp-list-screen .tablenav .button:disabled {
@@ -6918,20 +6975,14 @@ a.glance-chip:hover {
   background: #f6f7f7;
 }
 
-.wp-list-screen .content-table tbody tr:hover,
-.wp-list-screen .content-table tbody tr:hover th,
-.wp-list-screen .content-table tbody tr:hover td {
-  background: #f0f6fc;
-}
-
 .wp-list-screen .content-table .row-title {
   font-size: 14px;
   font-weight: 600;
-  color: #2271b1;
+  color: var(--wp-blue);
 }
 
 .wp-list-screen .content-table .row-title:hover {
-  color: #135e96;
+  color: var(--wp-blue-hover);
 }
 
 .wp-list-screen .content-table .row-actions {
@@ -7005,15 +7056,15 @@ a.glance-chip:hover {
   height: 16px;
   margin: 0;
   border-radius: 2px;
-  accent-color: #2271b1;
+  accent-color: var(--wp-blue);
 }
 
 .wp-list-screen .content-table thead th > .sortable-column {
-  color: #2271b1;
+  color: var(--wp-blue);
 }
 
 .wp-list-screen .content-table thead th > .sortable-column:hover {
-  color: #135e96;
+  color: var(--wp-blue-hover);
 }
 
 /* Header comments icon: WordPress shows it muted, 16px. */
@@ -7080,10 +7131,10 @@ a.glance-chip:hover {
   height: 32px;
   min-height: 32px;
   padding: 0 12px;
-  border: 1px solid #2271b1;
+  border: 1px solid var(--wp-button);
   border-radius: 2px;
   background: #f6f7f7;
-  color: #2271b1;
+  color: var(--wp-button);
   font-size: 13px;
   font-weight: 500;
 }
@@ -7161,8 +7212,8 @@ a.glance-chip:hover {
   padding: 0 16px;
   font-size: 13px;
   font-weight: 500;
-  background: #2271b1;
-  border-color: #2271b1;
+  background: var(--wp-button);
+  border-color: var(--wp-button);
   color: #ffffff;
 }
 
@@ -7294,6 +7345,24 @@ a.glance-chip:hover {
   width: 14%;
 }
 
+/* Pages have no taxonomy columns, so the title column takes their space.
+   Without this the first (checkbox) column absorbs the leftover width. */
+.wp-list-screen .content-table.pages .column-author {
+  width: 11.6%;
+}
+
+.wp-list-screen .content-table.pages .column-title {
+  width: 65.3%;
+}
+
+.wp-list-screen .content-table.pages .column-comments {
+  width: 6.2%;
+}
+
+.wp-list-screen .content-table.pages .column-date {
+  width: 14%;
+}
+
 /* Users columns: three 24.3% identity columns, role 16.6%, posts 7.6%. */
 .wp-list-screen .content-table.users .column-username,
 .wp-list-screen .content-table.users .column-name,
@@ -7334,22 +7403,22 @@ a.glance-chip:hover {
   font-weight: 600;
 }
 
-/* Compact toolbar buttons use the WordPress #007cba accent. */
+/* Compact toolbar buttons use the WordPress var(--wp-blue) accent. */
 .wp-list-screen .tablenav .button,
 .wp-list-screen .list-top .search-form .button,
 .wp-list-screen .terms-search-row .search-form .button,
 .media-toolbar-bar .button {
-  border-color: #007cba;
-  color: #007cba;
+  border-color: var(--wp-button);
+  color: var(--wp-button);
 }
 
 .wp-list-screen .tablenav .button:hover:not(:disabled),
 .wp-list-screen .list-top .search-form .button:hover:not(:disabled),
 .wp-list-screen .terms-search-row .search-form .button:hover:not(:disabled),
 .media-toolbar-bar .button:hover:not(:disabled) {
-  background: #f0f0f1;
-  border-color: #0a4b78;
-  color: #0a4b78;
+  background: rgba(0, 124, 186, 0.04);
+  border-color: var(--wp-button-hover);
+  color: var(--wp-button-hover);
 }
 
 /* A page-title action must keep its border even though it is also a .button. */
@@ -7357,10 +7426,10 @@ a.glance-chip:hover {
 .button.list-add-new {
   height: 32px;
   padding: 0 12px;
-  border: 1px solid #2271b1;
+  border: 1px solid var(--wp-blue);
   border-radius: 2px;
   background: transparent;
-  color: #2271b1;
+  color: var(--wp-blue);
   font-size: 13px;
   font-weight: 500;
   line-height: 30px;
@@ -7454,7 +7523,7 @@ a.glance-chip:hover {
 
 .editor-options-panel button:hover:not(:disabled) {
   background: #f0f0f1;
-  color: #2271b1;
+  color: var(--wp-button);
 }
 
 .editor-options-panel button:disabled {
@@ -7468,7 +7537,7 @@ a.glance-chip:hover {
   border: 0;
   padding: 0;
   background: transparent;
-  color: #2271b1;
+  color: var(--wp-blue);
   font: inherit;
   font-size: 13px;
   cursor: pointer;
@@ -7477,7 +7546,7 @@ a.glance-chip:hover {
 
 .editor-link-value:hover,
 .editor-status-value:hover {
-  color: #135e96;
+  color: var(--wp-blue-hover);
   text-decoration: underline;
 }
 
@@ -7488,7 +7557,7 @@ a.glance-chip:hover {
 }
 
 .editor-status-value .editor-status-dot {
-  background: #2271b1;
+  background: var(--wp-blue);
 }
 
 /* WordPress check-column header: 4px top, 3px left, 37px row. */
@@ -7656,9 +7725,9 @@ a.glance-chip:hover {
 /* WordPress Tools cards. */
 .wp-tools-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: minmax(0, 520px);
   gap: 20px;
-  max-width: 1000px;
+  max-width: 520px;
 }
 
 .wp-tools-grid .card {
@@ -7681,20 +7750,20 @@ a.glance-chip:hover {
   color: #3c434a;
 }
 
-/* WordPress 7.1 primary buttons use the #007cba action accent. */
+/* WordPress 7.1 primary buttons use the var(--wp-blue) action accent. */
 .primary-button,
 .button.primary-button,
 .tablenav .button.primary-button {
-  background: #007cba;
-  border-color: #007cba;
+  background: var(--wp-button);
+  border-color: var(--wp-button);
   color: #ffffff;
 }
 
 .primary-button:hover:not(:disabled),
 .button.primary-button:hover:not(:disabled),
 .tablenav .button.primary-button:hover:not(:disabled) {
-  background: #005a87;
-  border-color: #005a87;
+  background: var(--wp-button-hover);
+  border-color: var(--wp-button-hover);
   color: #ffffff;
 }
 
@@ -7819,7 +7888,7 @@ a.glance-chip:hover {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #2271b1;
+  color: var(--wp-blue);
   font: inherit;
   font-size: 13px;
   text-align: right;
@@ -7831,21 +7900,21 @@ a.glance-chip:hover {
 }
 
 .editor-slug-input:focus {
-  outline: 1px solid #2271b1;
+  outline: 1px solid var(--wp-blue);
   outline-offset: 2px;
   background: #ffffff;
 }
 
 /* Terms submit uses the WordPress primary action accent. */
 .wp-list-screen .terms-add-form .field.actions .button {
-  background: #007cba;
-  border-color: #007cba;
+  background: var(--wp-button);
+  border-color: var(--wp-button);
   color: #ffffff;
 }
 
 .wp-list-screen .terms-add-form .field.actions .button:hover:not(:disabled) {
-  background: #005a87;
-  border-color: #005a87;
+  background: var(--wp-button-hover);
+  border-color: var(--wp-button-hover);
 }
 
 /* WordPress has no bottom keyboard-hint bar under the block canvas. */
@@ -7903,10 +7972,10 @@ a.glance-chip:hover {
   height: 32px;
   min-height: 32px;
   padding: 0 12px;
-  border: 1px solid #2271b1;
+  border: 1px solid var(--wp-button);
   border-radius: 2px;
   background: transparent;
-  color: #2271b1;
+  color: var(--wp-button);
   font-size: 13px;
   font-weight: 500;
 }
@@ -7989,7 +8058,7 @@ a.glance-chip:hover {
 }
 
 .media-drawer-close:hover {
-  color: #135e96;
+  color: var(--wp-blue-hover);
 }
 
 .media-drawer-body {
@@ -8109,12 +8178,12 @@ a.glance-chip:hover {
 }
 
 .media-drawer-links a {
-  color: #2271b1;
+  color: var(--wp-blue);
   text-decoration: none;
 }
 
 .media-drawer-links a:hover {
-  color: #135e96;
+  color: var(--wp-blue-hover);
 }
 
 .media-drawer-links .button-link-delete {
@@ -8154,13 +8223,13 @@ a.glance-chip:hover {
 /* WordPress login links use the admin blue. */
 .login-card-links a,
 .login-back a {
-  color: #2271b1;
+  color: var(--wp-blue);
   text-decoration: none;
 }
 
 .login-card-links a:hover,
 .login-back a:hover {
-  color: #135e96;
+  color: var(--wp-blue-hover);
   text-decoration: underline;
 }
 
@@ -8194,9 +8263,32 @@ a.glance-chip:hover {
   order: 4;
 }
 
+.editor-sidebar-body > div:first-child > .editor-panel[aria-labelledby='revisions-heading'] {
+  order: 5;
+}
+
+.editor-sidebar-body > div:first-child > .editor-panel[aria-labelledby='preview-token-heading'] {
+  order: 6;
+}
+
 /* Profile starts directly under the page title like WordPress. */
 .profile-panel {
   margin-top: -8px;
+}
+
+.profile-panel select#profile-display-name {
+  width: 210px;
+}
+
+.profile-username-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-username-row .field-help {
+  margin: 0;
+  white-space: nowrap;
 }
 
 /* Reading page number input is 70px wide like WordPress (overrides form-table). */
@@ -8564,7 +8656,7 @@ a.glance-chip:hover {
 }
 
 .media-drawer-nav:hover:not(:disabled) {
-  color: #135e96;
+  color: var(--wp-blue-hover);
 }
 
 .media-drawer-nav:disabled {
@@ -8653,7 +8745,7 @@ a.glance-chip:hover {
 .contextual-help-tabs a {
   display: block;
   padding: 6px 12px 6px 16px;
-  color: #2271b1;
+  color: var(--wp-blue);
   font-size: 13px;
   text-decoration: none;
 }
@@ -8875,7 +8967,7 @@ a.glance-chip:hover {
 }
 
 .wp-list-screen .content-table.terms .column-posts a:hover {
-  color: #2271b1;
+  color: var(--wp-blue);
   text-decoration: underline;
 }
 
@@ -9086,6 +9178,9 @@ a.glance-chip:hover {
 
 .dashicons-dashboard:before {
   content: '\f226';
+}
+.dashicons-wordpress:before {
+  content: '\f120';
 }
 .dashicons-admin-post:before {
   content: '\f109';

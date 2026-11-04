@@ -1021,7 +1021,11 @@ export function ContentEditor({
       ? { label: 'Publish', intent: 'publish' }
       : {
           label:
-            post?.status === 'PUBLISHED' || post?.status === 'TRASHED' ? 'Update' : 'Save draft',
+            post?.status === 'PUBLISHED'
+              ? 'Save'
+              : post?.status === 'TRASHED'
+                ? 'Update'
+                : 'Save draft',
           intent: 'save',
         };
   const secondarySave = primaryAction.intent === 'publish' ? 'Save draft' : null;
@@ -1109,6 +1113,30 @@ export function ContentEditor({
                 ) : null}
               </>
             )}
+            {post?.status === 'PUBLISHED' ? (
+              <a
+                className="editor-topbar-icon-button editor-topbar-view-link"
+                href={type === 'post' ? `/posts/${post.slug}` : `/${post.slug}`}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="View post"
+                title="View post"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  aria-hidden="true"
+                >
+                  <path d="M14 4h6v6" />
+                  <path d="M20 4 11 13" />
+                  <path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5" />
+                </svg>
+              </a>
+            ) : null}
             {!createdPost && post?.status !== 'TRASHED' ? (
               <button
                 type="button"

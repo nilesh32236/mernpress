@@ -99,6 +99,9 @@ function toMessage(error: unknown): string {
   return 'Cannot reach the API. Check your connection and try again.';
 }
 
+const DATE_PRESETS = ['F j, Y', 'Y-m-d', 'm/d/Y', 'd/m/Y', 'd.m.Y'];
+const TIME_PRESETS = ['g:i a', 'g:i A', 'H:i'];
+
 export function SettingsPage({ user: _user }: { user: AuthUser }) {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<SettingsTab>(() =>
@@ -140,8 +143,10 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
   const [defaultRole, setDefaultRole] = useState('subscriber');
   const [siteLanguage, setSiteLanguage] = useState('en_US');
   const [timezone, setTimezone] = useState('UTC');
-  const [dateFormat, setDateFormat] = useState('Y/m/d');
+  const [dateFormat, setDateFormat] = useState('F j, Y');
+  const [customDateFormat, setCustomDateFormat] = useState('F j, Y');
   const [timeFormat, setTimeFormat] = useState('g:i a');
+  const [customTimeFormat, setCustomTimeFormat] = useState('g:i a');
   const [weekStartsOn, setWeekStartsOn] = useState('1');
   const [generalDirty, setGeneralDirty] = useState(false);
 
@@ -176,7 +181,8 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
         setSiteTitle(textValue(values.site_title));
         setSiteTagline(textValue(values.site_tagline));
         setAdminEmail(textValue(values.admin_email));
-        setSiteUrl(textValue(values.site_url));
+        const storedSiteUrl = textValue(values.site_url);
+        setSiteUrl(storedSiteUrl || (typeof window === 'undefined' ? '' : window.location.origin));
         const iconId = typeof values.site_icon === 'string' ? values.site_icon : null;
         setSiteIcon(iconId);
         if (iconId) {
@@ -190,12 +196,16 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
         setDefaultRole(textValue(values.default_role) || 'subscriber');
         setSiteLanguage(textValue(values.site_language) || 'en_US');
         setTimezone(textValue(values.timezone) || 'UTC');
-        setDateFormat(textValue(values.date_format) || 'Y/m/d');
-        setTimeFormat(textValue(values.time_format) || 'g:i a');
+        const loadedDateFormat = textValue(values.date_format) || 'F j, Y';
+        const loadedTimeFormat = textValue(values.time_format) || 'g:i a';
+        setDateFormat(loadedDateFormat);
+        setCustomDateFormat(loadedDateFormat);
+        setTimeFormat(loadedTimeFormat);
+        setCustomTimeFormat(loadedTimeFormat);
         setWeekStartsOn(textValue(values.week_starts_on) || '1');
         cacheSiteFormats(
-          textValue(values.date_format) || 'Y/m/d',
-          textValue(values.time_format) || 'g:i a',
+          loadedDateFormat,
+          loadedTimeFormat,
         );
         try {
           window.localStorage.setItem(
@@ -358,6 +368,8 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
 
   const tabLabel = (tab: SettingsTab) =>
     tab === 'general' ? 'General' : tab === 'reading' ? 'Reading' : 'Writing';
+
+  const sampleDate = new Date();
 
   const renderForm = () => {
     if (activeTab === 'general') {
@@ -571,63 +583,110 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
             <div className="field">
               <label htmlFor="date_format">Date Format</label>
               <div className="format-options" role="radiogroup" aria-label="Date Format">
-                {[
-                  ['Y/m/d', '2026/11/03'],
-                  ['F j, Y', 'November 3, 2026'],
-                  ['Y-m-d', '2026-11-03'],
-                  ['m/d/Y', '11/03/2026'],
-                  ['d/m/Y', '03/11/2026'],
-                  ['d.m.Y', '03.11.2026'],
-                ].map(([value, label]) => (
+                {DATE_PRESETS.map((value, index) => (
                   <label key={value} className="format-option">
                     <input
-                      id={value === 'Y/m/d' ? 'date_format' : undefined}
+                      id={index === 0 ? 'date_format' : undefined}
                       type="radio"
                       name="date_format"
                       value={value}
                       checked={dateFormat === value}
                       onChange={() => {
-                        setDateFormat(value!);
-                        cacheSiteFormats(value!, timeFormat);
+                        setDateFormat(value);
+                        cacheSiteFormats(value, timeFormat);
                         setGeneralDirty(true);
                       }}
                       disabled={saving.general}
                     />
-                    <span className="format-preview">{label}</span>
+                    <span className="format-preview">{formatSettingsDate(sampleDate, value)}</span>
                     <code>{value}</code>
                   </label>
                 ))}
-                <p className="field-help">Preview: {formatSettingsDate(new Date(), dateFormat)}</p>
+                <label className="format-option format-option-custom">
+                  <input
+                    type="radio"
+                    name="date_format"
+                    value="custom"
+                    checked={!DATE_PRESETS.includes(dateFormat)}
+                    onChange={() => {
+                      setDateFormat(customDateFormat);
+                      cacheSiteFormats(customDateFormat, timeFormat);
+                      setGeneralDirty(true);
+                    }}
+                    disabled={saving.general}
+                  />
+                  <span className="format-preview">Custom</span>
+                  <input
+                    type="text"
+                    value={customDateFormat}
+                    aria-label="Custom date format"
+                    maxLength={40}
+                    onChange={(event) => {
+                      setCustomDateFormat(event.target.value);
+                      setDateFormat(event.target.value);
+                      cacheSiteFormats(event.target.value, timeFormat);
+                      setGeneralDirty(true);
+                    }}
+                    disabled={saving.general}
+                  />
+                </label>
+                <p className="field-help">Preview: {formatSettingsDate(sampleDate, dateFormat)}</p>
               </div>
             </div>
 
             <div className="field">
               <label htmlFor="time_format">Time Format</label>
               <div className="format-options" role="radiogroup" aria-label="Time Format">
-                {[
-                  ['g:i a', '8:15 am'],
-                  ['g:i A', '8:15 AM'],
-                  ['H:i', '08:15'],
-                ].map(([value, label]) => (
+                {TIME_PRESETS.map((value, index) => (
                   <label key={value} className="format-option">
                     <input
-                      id={value === 'g:i a' ? 'time_format' : undefined}
+                      id={index === 0 ? 'time_format' : undefined}
                       type="radio"
                       name="time_format"
                       value={value}
                       checked={timeFormat === value}
                       onChange={() => {
-                        setTimeFormat(value!);
-                        cacheSiteFormats(dateFormat, value!);
+                        setTimeFormat(value);
+                        cacheSiteFormats(dateFormat, value);
                         setGeneralDirty(true);
                       }}
                       disabled={saving.general}
                     />
-                    <span className="format-preview">{label}</span>
+                    <span className="format-preview">{formatSettingsTime(sampleDate, value)}</span>
                     <code>{value}</code>
                   </label>
                 ))}
-                <p className="field-help">Preview: {formatSettingsTime(new Date(), timeFormat)}</p>
+                <label className="format-option format-option-custom">
+                  <input
+                    type="radio"
+                    name="time_format"
+                    value="custom"
+                    checked={!TIME_PRESETS.includes(timeFormat)}
+                    onChange={() => {
+                      setTimeFormat(customTimeFormat);
+                      cacheSiteFormats(dateFormat, customTimeFormat);
+                      setGeneralDirty(true);
+                    }}
+                    disabled={saving.general}
+                  />
+                  <span className="format-preview">Custom</span>
+                  <input
+                    type="text"
+                    value={customTimeFormat}
+                    aria-label="Custom time format"
+                    maxLength={40}
+                    onChange={(event) => {
+                      setCustomTimeFormat(event.target.value);
+                      setTimeFormat(event.target.value);
+                      cacheSiteFormats(dateFormat, event.target.value);
+                      setGeneralDirty(true);
+                    }}
+                    disabled={saving.general}
+                  />
+                </label>
+                <p className="field-help">
+                  Preview: {formatSettingsTime(sampleDate, timeFormat)}
+                </p>
               </div>
             </div>
 

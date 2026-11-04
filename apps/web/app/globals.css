@@ -9,6 +9,7 @@
   --site-text: #111111;
   --site-muted: #686868;
   --site-border: #dddddd;
+  --site-accent-6: rgba(17, 17, 17, 0.2);
 }
 
 *,
@@ -89,6 +90,7 @@ a:hover {
 .site-title {
   font-size: 22px;
   font-weight: 700;
+  letter-spacing: -0.5px;
   line-height: 1.4;
 }
 
@@ -120,6 +122,17 @@ a:hover {
   line-height: 1.125;
 }
 
+.archive-description {
+  margin: 0 0 19px;
+  font-size: 22px;
+  font-weight: 300;
+  line-height: 1.4;
+}
+
+.archive-empty {
+  padding: 70px 0;
+}
+
 .status {
   margin: 0;
   font-size: 22px;
@@ -146,6 +159,18 @@ a:hover {
   font-size: 32px;
   font-weight: 400;
   line-height: 1.125;
+}
+
+.post-featured {
+  margin: 0 0 19px;
+}
+
+.post-featured img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
 }
 
 .post-excerpt {
@@ -198,7 +223,7 @@ a:hover {
   align-items: baseline;
   gap: 0.2em;
   margin: 0 0 70px;
-  color: var(--site-muted);
+  color: var(--site-text);
   font-size: 14px;
   font-weight: 300;
   line-height: 1.4;
@@ -210,18 +235,32 @@ a:hover {
   font-weight: 300;
 }
 
-/* Tag list below the post content: 70px block padding like TT5's post-terms
-   group, 14px/300 with underlined links. */
+.entry-meta .entry-category {
+  font-weight: 300;
+  white-space: nowrap;
+}
+
+/* Tag list below the post content: TT5's "Pill shaped" post-terms style. */
 .entry-tags {
   padding: 70px 0;
-  color: var(--site-muted);
+  color: var(--site-text);
   font-size: 14px;
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.4;
 }
 
 .entry-tags a {
+  display: inline;
+  padding: 5px 10px;
+  border: 0.8px solid var(--site-accent-6);
+  border-radius: 20px;
   color: inherit;
+  font-weight: 400;
+  line-height: 2.8;
+  text-decoration: none;
+}
+
+.entry-tags a:hover {
   text-decoration: underline;
 }
 
@@ -322,14 +361,36 @@ a:hover {
 .pagination {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
   margin-top: 70px;
   font-size: 18px;
-  font-weight: 300;
+  font-weight: 500;
 }
 
-.pagination .pagination-status {
-  color: var(--site-muted);
+.pagination-numbers {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin: 0 auto;
+}
+
+.pagination-arrow {
+  min-width: 1.5em;
+  text-align: center;
+}
+
+.pagination-arrow.is-disabled {
+  visibility: hidden;
+}
+
+.page-numbers {
+  padding: 0.1em 0.35em;
+  color: inherit;
+}
+
+.page-numbers.current {
+  font-weight: 700;
 }
 
 /* Footer. */
@@ -348,7 +409,15 @@ a:hover {
 .site-footer-title {
   font-size: 32px;
   font-weight: 700;
+  letter-spacing: -0.5px;
   line-height: 1.125;
+}
+
+.site-footer-tagline {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 300;
+  line-height: 1.4;
 }
 
 .site-footer-nav {
@@ -435,8 +504,8 @@ a:hover {
   justify-content: space-between;
   gap: 24px;
   margin: 70px 0;
-  padding: 19px 0;
-  border-top: 1px solid var(--site-border);
+  padding: 30px 0;
+  border-top: 1px solid var(--site-accent-6);
   font-size: 18px;
   font-weight: 300;
   line-height: 1.4;
@@ -488,7 +557,7 @@ a:hover {
   gap: 24px;
   min-height: 66px;
   padding: 20px 0;
-  border-bottom: 1px solid var(--site-border);
+  border-bottom: 1px solid var(--site-accent-6);
 }
 
 .more-posts-title {
@@ -505,8 +574,8 @@ a:hover {
   white-space: nowrap;
 }
 
-/* WordPress search block: a 61px input and dark button, as rendered by the
-   Twenty Twenty-Five theme. */
+/* WordPress search block (Twenty Twenty-Five): pill input with a 20% border,
+   a pill button 18px to its right, and 61px total height at desktop. */
 .search-form {
   display: block;
   margin: 0;
@@ -515,25 +584,27 @@ a:hover {
 
 .search-form-inner {
   display: flex;
+  flex-wrap: nowrap;
   align-items: stretch;
-  gap: 10px;
+  gap: 0;
   width: 100%;
+  max-width: 100%;
 }
 
 .search-form-input {
   flex: 1 1 auto;
-  min-width: 0;
-  height: 61px;
+  min-width: 3rem;
+  height: auto;
   margin: 0;
-  padding: 0 24px;
-  border: 1px solid #111;
-  border-radius: 0;
+  padding: 8px 25px;
+  border: 1px solid rgba(17, 17, 17, 0.2);
+  border-radius: 3.125rem;
   background: #fff;
-  color: var(--site-text);
+  color: #000;
   font-family: inherit;
-  font-size: 22px;
-  font-weight: 300;
-  line-height: 1.4;
+  font-size: 1.125rem;
+  font-weight: inherit;
+  line-height: 1.6;
   appearance: none;
   -webkit-appearance: none;
 }
@@ -544,35 +615,45 @@ a:hover {
 }
 
 .search-form-input:focus {
-  outline: 2px solid var(--site-text);
-  outline-offset: -2px;
+  outline: 2px solid #686868;
+  outline-offset: 2px;
 }
 
 .search-form-button {
   flex: 0 0 auto;
-  height: 61px;
-  margin: 0;
-  padding: 0 24px;
-  border: 1px solid #111;
-  border-radius: 0;
+  height: auto;
+  min-height: 61px;
+  margin: 0 0 0 1.125rem;
+  padding: 1rem 2.25rem;
+  border: 0;
+  border-radius: 3.125rem;
   background: #111;
   color: #fff;
   font-family: inherit;
-  font-size: 22px;
-  font-weight: 400;
-  line-height: 1.4;
+  font-size: 1.125rem;
+  font-weight: 300;
+  line-height: 1.6;
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
 }
 
 .search-form-button:hover {
-  background: #333;
+  background: color-mix(in srgb, #111 85%, transparent);
 }
 
 .search-form-button:focus-visible {
-  outline: 2px solid var(--site-text);
+  outline: 2px solid #686868;
   outline-offset: 2px;
+}
+
+.search-form + .post-list {
+  margin-top: 19px;
+}
+
+.search-status {
+  margin-top: 19px;
+  padding: 70px 0;
 }
 
 .not-found-content .search-form {
@@ -637,15 +718,6 @@ a:hover {
     height: auto;
     aspect-ratio: 645 / 826;
   }
-
-  .search-form-inner {
-    flex-direction: column;
-    gap: 0;
-  }
-
-  .search-form-button {
-    margin: 10px 0 0;
-  }
 }
 
 /* WordPress two-column footer navigation. */
@@ -676,7 +748,7 @@ html.has-public-admin-bar {
   gap: 16px;
   height: 32px;
   padding: 0 12px;
-  background: #1d2327;
+  background: #1e1e1e;
   color: #c3c4c7;
   font-size: 13px;
   font-weight: 400;
@@ -695,7 +767,7 @@ html.has-public-admin-bar {
 .public-admin-bar a:hover,
 .public-admin-bar summary:hover,
 .public-admin-bar button:hover {
-  color: #72aee6;
+  color: #7b90ff;
   text-decoration: none;
 }
 

@@ -2140,3 +2140,27 @@ shown as empty screens.
   theme/credit bottom row and `F j, Y` dates.
 - All 541 unit/integration tests (API 341, admin 122, block-system 65, web 13),
   23 E2E tests, lint, typecheck and build pass.
+
+### 2026-11-04 — WordPress 7.1.4 side-by-side parity pass
+
+- Restored a live WordPress 7.1.4 reference (PHP + MariaDB, Twenty Twenty-Five)
+  and compared computed styles, markup and geometry page by page instead of
+  relying on remembered metrics.
+- Public: the search block now uses TT5's pill input/button (61px high,
+  `3.125rem` radius, 18px gap), so search and 404 match WordPress exactly
+  (404 title 751/form 905/footer 1035 at 1440px). The TT5 query loop now renders
+  featured images, the byline uses the theme's black 14px text, tags use the
+  bordered pill style, and "More posts" is wide on search/single. Added
+  archive descriptions, empty-archive output and WordPress-style
+  previous/numbers/next pagination. `/api/public/terms/:taxonomy/:slug` returns
+  archive metadata so empty categories no longer 404.
+- Admin: restored the reference user's Fresh scheme (`#1d2327` chrome,
+  `#2271b1` links/menu, `#007cba` buttons), separated link and button accents,
+  and matched list-table rhythm/column widths, transparent toolbar buttons,
+  Media Library toolbar/grid metrics, dashboard widget order, editor chrome
+  (64px white header, hidden admin menu, `Save` label, WP sidebar order,
+  outlined Move to Trash, View Post link), Users labels (`Add User`/`Add New`),
+  Profile color swatches/widths, inline username help, the display-name select,
+  date-format presets/custom inputs and Tools card width.
+- Validation: 544 unit/integration tests (API 344, admin 122, block-system 65,
+  web 13), 23 Playwright E2E tests and six production builds pass.
