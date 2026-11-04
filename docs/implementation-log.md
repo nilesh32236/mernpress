@@ -2499,3 +2499,12 @@ registry carries the `fonts` field with Manrope.
   recorded the note.
 - Validation: 600 unit/integration tests (API 381, admin 141, block-system 65,
   web 13), 23 Playwright E2E tests and six builds pass.
+
+**Deployment:** release `20261104T113807Z-315dc72` (production symlink
+`/opt/mernpress/current`), with migration `20261104112457_add_data_requests`
+applied. `/`, `/admin/`, `/admin/tools/import`,
+`/admin/tools/export-personal-data`, `/admin/tools/erase-personal-data` and
+`/api/health` return 200; `/api/admin/data-requests?type=EXPORT` returns 401 for
+anonymous callers. The production bundles contain the import and personal-data
+screens ("Run Importer", "Add Data Export Request", "Download personal data"),
+the API routes exist, and the `data_requests` table is present in production.
