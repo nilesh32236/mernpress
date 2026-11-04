@@ -171,6 +171,25 @@ export function registerAuthRoutes(app: FastifyInstance, options: AuthRouteOptio
     }
   });
 
+  // Anonymous-safe session probe for the public admin bar. A normal visitor
+  // has no session, so answer 200 with a null user instead of 401: the browser
+  // console should stay clean on every public page load.
+  app.get('/api/public/session', async (request, reply) => {
+    noStore(reply);
+    const sessionToken = cookieValue(request, SESSION_COOKIE);
+
+    if (!sessionToken) {
+      return { user: null };
+    }
+
+    try {
+      const session = await auth.validateSession(sessionToken);
+      return { user: session?.user ?? null };
+    } catch (error) {
+      return handleAuthError(error, reply, request);
+    }
+  });
+
   app.post('/api/auth/logout', async (request, reply) => {
     noStore(reply);
     const sessionToken = cookieValue(request, SESSION_COOKIE);

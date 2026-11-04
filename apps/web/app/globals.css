@@ -505,6 +505,80 @@ a:hover {
   white-space: nowrap;
 }
 
+/* WordPress search block: a 61px input and dark button, as rendered by the
+   Twenty Twenty-Five theme. */
+.search-form {
+  display: block;
+  margin: 0;
+  max-width: 100%;
+}
+
+.search-form-inner {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+}
+
+.search-form-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 61px;
+  margin: 0;
+  padding: 0 24px;
+  border: 1px solid #111;
+  border-radius: 0;
+  background: #fff;
+  color: var(--site-text);
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 300;
+  line-height: 1.4;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.search-form-input::placeholder {
+  color: var(--site-muted);
+  opacity: 1;
+}
+
+.search-form-input:focus {
+  outline: 2px solid var(--site-text);
+  outline-offset: -2px;
+}
+
+.search-form-button {
+  flex: 0 0 auto;
+  height: 61px;
+  margin: 0;
+  padding: 0 24px;
+  border: 1px solid #111;
+  border-radius: 0;
+  background: #111;
+  color: #fff;
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.4;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.search-form-button:hover {
+  background: #333;
+}
+
+.search-form-button:focus-visible {
+  outline: 2px solid var(--site-text);
+  outline-offset: 2px;
+}
+
+.not-found-content .search-form {
+  margin-top: 20px;
+}
+
 /* WordPress Twenty Twenty-Five 404 template: two columns, image left,
    bottom-aligned copy and search on the right. */
 .not-found-main {
@@ -566,6 +640,7 @@ a:hover {
 
   .search-form-inner {
     flex-direction: column;
+    gap: 0;
   }
 
   .search-form-button {

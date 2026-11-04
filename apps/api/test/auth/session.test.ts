@@ -45,6 +45,21 @@ describe('session lifecycle', () => {
     expect(audit).toHaveLength(1);
   });
 
+  it('answers the public admin-bar probe without a 401 for anonymous visitors', async () => {
+    const anonymous = await app.inject({ method: 'GET', url: '/api/public/session' });
+    expect(anonymous.statusCode).toBe(200);
+    expect(anonymous.json()).toEqual({ user: null });
+
+    const { cookieHeader } = await loginAs(app, ADMIN_USERNAME, ADMIN_PASSWORD);
+    const signedIn = await app.inject({
+      method: 'GET',
+      url: '/api/public/session',
+      headers: { cookie: cookieHeader },
+    });
+    expect(signedIn.statusCode).toBe(200);
+    expect(signedIn.json()).toMatchObject({ user: { username: ADMIN_USERNAME } });
+  });
+
   it('rejects missing and unknown session cookies', async () => {
     const missing = await app.inject({ method: 'GET', url: '/api/auth/session' });
     expect(missing.statusCode).toBe(401);

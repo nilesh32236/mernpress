@@ -32,9 +32,9 @@ export default function PublicAdminBar({ siteTitle }: { siteTitle: string }) {
     }
 
     let active = true;
-    fetch('/api/auth/session', { credentials: 'include', cache: 'no-store' })
+    fetch('/api/public/session', { credentials: 'include', cache: 'no-store' })
       .then((response) => (response.ok ? response.json() : null))
-      .then((body: { user?: SessionUser } | null) => {
+      .then((body: { user?: SessionUser | null } | null) => {
         if (active && body?.user) setUser(body.user);
       })
       .catch(() => {
