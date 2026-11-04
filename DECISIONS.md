@@ -65,6 +65,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-051 | 2026-11-04 | Plugins are bundled packages declared in `packages/cms-core/src/plugins/registry.ts`, with activation persisted as an `active_plugins` option and one real shipped plugin (Hello MERNPress) contributing a toolbar lyric when active. The Installed Plugins screen matches WordPress 7.1 (status filters with counts, bulk activate/deactivate, active-row edge, Automatic Updates column, Screen Options); Add Plugins explicitly reports that WordPress.org browsing, ZIP upload and runtime install are unavailable, and Upload Plugin is disabled. Administrators only; no third-party code is loaded. | accepted | [ADR 0012](docs/adr/0012-plugins.md) |
 
+| D-052 | 2026-11-04 | Update checking is real and scoped: the service reports core/theme/plugin versions plus stored auto-update preferences, fetches a configured `UPDATE_MANIFEST_URL` JSON manifest (5 s timeout, semver comparison), persists the last checked time and last published versions (`updates_last_checked`, `updates_last_result`) and surfaces transport failures as 502 UPDATE_CHECK_FAILED. Without a manifest it re-reads installed versions and the screen says so instead of claiming everything is current. Updates are discovered, not auto-installed; deploys remain the release process. Administrators only. | accepted | [ADR 0013](docs/adr/0013-update-checking.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

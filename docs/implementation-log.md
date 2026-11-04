@@ -2376,3 +2376,28 @@ it with a backdrop that does not tint the dialog's own text. `/`, `/admin/`,
 401 for anonymous callers. The production admin bundle contains the Installed
 Plugins/Add Plugins screens and the Hello MERNPress plugin; the API bundle's
 `cms-core` includes the `hello-mernpress` registry entry.
+
+### 2026-11-04 — Expanded scope, slice 5: update checking
+
+- Added an update service (`packages/cms-core/src/updates/service.ts`) that
+  reports the core version, every installed theme and plugin, the stored
+  auto-update preferences and the last check time. It fetches a configured
+  `UPDATE_MANIFEST_URL` with a 5-second timeout, compares numeric versions and
+  records `updates_last_checked` + `updates_last_result`; transport failures
+  surface as `502 UPDATE_CHECK_FAILED`. Without a manifest it re-reads installed
+  versions and reports that no update source is configured.
+- New administrator-only routes `GET /api/admin/updates` and
+  `POST /api/admin/updates/check`. The GET path is capability-checked too — a
+  test caught that an editor could read it before the fix.
+- Dashboard → Updates rebuilt to the WordPress 7.1 layout: current version,
+  "Last checked on … Check again.", auto-update summary, then MERNPress,
+  Plugins and Themes sections listing installed versions, available updates
+  and per-item auto-update state. Claims of "latest"/"all up to date" appear
+  only after a completed manifest check; the persisted result survives reloads.
+- `UPDATE_MANIFEST_URL` documented in `.env.example` with the manifest shape.
+- Verified in the browser against a local manifest (`core 0.2.0`, plugin
+  `1.0.1`): "Check again." reported "2 updates available.", showed the core
+  update and the plugin update, recorded the timestamp, and kept the result
+  after navigating away and back.
+- Validation: 576 unit/integration tests (API 371, admin 130, block-system 65,
+  web 13), 23 Playwright E2E tests and six builds pass.

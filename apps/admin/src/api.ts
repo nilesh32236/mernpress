@@ -1510,3 +1510,42 @@ export async function fetchPluginToolbar(): Promise<{ message: string | null }> 
   });
   return readJson<{ message: string | null }>(response);
 }
+
+// ---- Updates (ADR 0013) ----
+export interface UpdateItem {
+  id: string;
+  name: string;
+  type: 'core' | 'theme' | 'plugin';
+  installedVersion: string;
+  availableVersion: string | null;
+  autoUpdates: boolean;
+  status: 'current' | 'update' | 'unknown';
+}
+
+export interface UpdateStatus {
+  coreVersion: string;
+  source: 'manifest' | 'local';
+  manifestConfigured: boolean;
+  lastCheckedAt: string | null;
+  items: UpdateItem[];
+  updatesAvailable: number;
+}
+
+export async function fetchUpdates(): Promise<UpdateStatus> {
+  const response = await fetch('/api/admin/updates', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<UpdateStatus>(response);
+}
+
+export async function checkUpdates(): Promise<UpdateStatus> {
+  const response = await fetch('/api/admin/updates/check', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  return readJson<UpdateStatus>(response);
+}

@@ -17,6 +17,7 @@ import {
   createCommentService,
   createThemeService,
   createPluginService,
+  createUpdateService,
   type AuthConfig,
 } from '@mernpress/cms-core';
 import { checkDatabase, createDatabaseClient } from '@mernpress/database';
@@ -36,6 +37,7 @@ import { registerAutosaveRoutes } from './routes/autosave.js';
 import { registerCommentRoutes, registerPublicCommentRoutes } from './routes/comments.js';
 import { registerThemeRoutes } from './routes/themes.js';
 import { registerPluginRoutes } from './routes/plugins.js';
+import { registerUpdateRoutes } from './routes/updates.js';
 import { registerAdminHealthRoutes } from './routes/admin-health.js';
 import { startPublishScheduler } from './scheduler.js';
 import { resolveRequestId } from './http/request-id.js';
@@ -164,6 +166,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const plugins = createPluginService({ prisma: database });
   app.decorate('plugins', plugins);
 
+  const updates = createUpdateService({ prisma: database, manifestUrl: env.UPDATE_MANIFEST_URL });
+  app.decorate('updates', updates);
+
   app.addHook('onRequest', async (request, reply) => {
     if (!MUTATING_METHODS.has(request.method)) {
       return;
@@ -205,6 +210,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerCommentRoutes(app, { env, auth, comments });
   registerThemeRoutes(app, { env, auth, themes });
   registerPluginRoutes(app, { env, auth, plugins });
+  registerUpdateRoutes(app, { env, auth, updates });
   registerPublicCommentRoutes(app, { comments, auth });
 
   if (env.SCHEDULER_ENABLED) {

@@ -202,3 +202,12 @@ export {
   lyricFor,
   type PluginManifest,
 } from './plugins/registry.js';
+
+// ---- Update checks (ADR 0013) ----
+export {
+  createUpdateService,
+  compareVersions,
+  CORE_VERSION,
+  type UpdateService,
+} from './updates/service.js';
+export type { UpdateItem, UpdateSource, UpdateStatus } from './updates/service.js';

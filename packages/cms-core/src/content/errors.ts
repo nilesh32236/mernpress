@@ -22,7 +22,8 @@ export type ContentErrorCode =
   | 'INVALID_OPTION_GROUP'
   | 'SCHEDULE_TOO_SOON'
   | 'SCHEDULE_TOO_FAR'
-  | 'SCHEDULE_INVALID_STATUS';
+  | 'SCHEDULE_INVALID_STATUS'
+  | 'UPDATE_CHECK_FAILED';
 
 /**
  * Typed domain error for content/taxonomy. Routes map `statusCode` + `code` to

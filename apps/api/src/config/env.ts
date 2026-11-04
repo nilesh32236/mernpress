@@ -49,6 +49,8 @@ const rawEnvSchema = z.object({
       }
     }, 'DATABASE_URL must be a valid postgresql:// connection URL'),
   CORS_ORIGINS: z.string().optional(),
+  /** Optional release manifest endpoint for the Updates screen. */
+  UPDATE_MANIFEST_URL: z.string().url().optional(),
   AUTH_HASH_PEPPER: z
     .string()
     .min(32, 'AUTH_HASH_PEPPER must be at least 32 characters')
@@ -87,6 +89,7 @@ export type Env = {
   LOGIN_RATE_LIMIT_WINDOW_MINUTES: number;
   MEDIA_STORAGE_DIR: string;
   SCHEDULER_ENABLED: boolean;
+  UPDATE_MANIFEST_URL: string | undefined;
 };
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
@@ -171,5 +174,6 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     AUTH_HASH_PEPPER: hashPepper,
     CORS_ORIGINS: normalizedOrigins,
     MEDIA_STORAGE_DIR: storageDir,
+    UPDATE_MANIFEST_URL: parsed.data.UPDATE_MANIFEST_URL,
   };
 }

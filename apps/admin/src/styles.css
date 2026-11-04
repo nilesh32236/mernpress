@@ -10492,3 +10492,43 @@ a.glance-chip:hover {
   white-space: nowrap;
   font-size: 15px;
 }
+
+/* Dashboard → Updates (WordPress 7.1): plain sections, version lists. */
+.update-check-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--wp-blue);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.update-check-link:hover:not(:disabled) {
+  color: var(--wp-blue-hover);
+}
+
+.update-source-note code {
+  padding: 1px 4px;
+  background: #f0f0f1;
+  font-size: 12px;
+}
+
+.update-list {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  color: var(--wp-text);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.update-available {
+  color: #b32d2e;
+  font-weight: 600;
+}
+
+.update-auto {
+  display: block;
+  color: var(--wp-muted);
+  font-size: 13px;
+}
