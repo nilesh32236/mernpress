@@ -7742,6 +7742,7 @@ a.glance-chip:hover {
   grid-template-columns: minmax(0, 520px);
   gap: 20px;
   max-width: 520px;
+  margin-top: 8px;
 }
 
 .wp-tools-grid .card {
@@ -8287,7 +8288,7 @@ a.glance-chip:hover {
 
 /* Profile starts directly under the page title like WordPress. */
 .profile-panel {
-  margin-top: -8px;
+  margin-top: -15px;
 }
 
 .profile-panel select#profile-display-name {
