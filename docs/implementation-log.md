@@ -2435,3 +2435,11 @@ and restart the API to enable remote checks.
   (WordCamp Manchester 2026, BeeWUG) and five news items.
 - Validation: 586 unit/integration tests (API 375, admin 133, block-system 65,
   web 13), 23 Playwright E2E tests and six builds pass.
+
+**Deployment:** release `20261104T110631Z-d66b07b` (production symlink
+`/opt/mernpress/current`). `/`, `/admin/` and `/api/health` return 200;
+`/api/admin/dashboard/feeds` returns 401 for anonymous callers. The production
+admin bundle contains the Events and News widget and the API build contains the
+feed route and the WordPress.org events/news defaults. The first deploy attempt
+hit ENOSPC; releases were pruned to the current and previous build (14 removed,
+22 GB free) and the build re-ran successfully.
