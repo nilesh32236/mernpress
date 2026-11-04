@@ -2538,3 +2538,18 @@ callers. The production admin bundle contains the Connectors screen copy
 ("All of your API keys and credentials are stored here", "Browse plugins",
 "Connected · key"), the API build contains the connector routes, and the cms-core
 build uses `aes-256-gcm` for credential encryption.
+
+
+### 2026-11-04 — Menu parity fixes and verification matrix
+
+- Compared the live WordPress 7.1.4 admin menu with MERNPress by reading both
+  menus in the browser. Fixed the remaining label/structure deltas: Posts and
+  Pages submenus now say "Add Post"/"Add Page", and Comments is a single link
+  without an "All Comments" submenu.
+- Added `docs/verification/wordpress-parity-matrix.md` with the captured menu
+  diff, a screen-by-screen status table (developed/verified, production
+  route-only, excluded) and the outstanding owner decisions.
+- Deployed as `20261104T115855Z-168e829`; `/`, `/admin/` and `/api/health`
+  return 200 and the production bundle contains the "Add Post" label.
+- Remaining deltas are decisions, not code: the Theme/Plugin File Editors and
+  production admin visual sign-off (needs an owner login).
