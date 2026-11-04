@@ -2328,3 +2328,10 @@ Permalink and Privacy screens.
   (`apps/admin/public/theme-screenshot.png`).
 - Validation: 561 unit/integration tests (API 358, admin 125, block-system 65,
   web 13), 23 Playwright E2E tests and six builds pass.
+
+**Deployment:** release `20261104T101845Z-68b51eb` (production symlink
+`/opt/mernpress/current`). `/`, `/admin/`, `/api/health` return 200,
+`/admin/themes`, `/admin/themes/new` and `/admin/themes/customize` serve the SPA
+(200), `/admin/theme-screenshot.png` returns the 1200×900 PNG, and
+`/api/admin/themes` returns 401 for anonymous callers as designed. The
+production admin bundle contains the Themes, Add Themes and Customize screens.
