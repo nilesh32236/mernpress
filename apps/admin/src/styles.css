@@ -5,7 +5,8 @@
    Shell: WordPress admin bar (32px, #1e1e1e) above a 160px dark
    sidebar; 52px icon rail when collapsed; off-canvas drawer below 1024px.
    Content: #f0f0f1 bg, 1200px max width, 23px font-normal titles, WP modern
-   #3858e9 primary, list-table / tab / card / pill patterns per reference.
+   #2271b1 links and #007cba buttons, list-table / tab / card / pill patterns
+   per reference.
    ========================================================================== */
 
 :root {
@@ -5654,6 +5655,12 @@ a.glance-chip:hover {
 .editor-excerpt-link:hover {
   color: var(--wp-blue-hover);
   text-decoration: underline;
+}
+
+.editor-word-count {
+  margin: 8px 0 0;
+  color: #757575;
+  font-size: 12px;
 }
 
 .editor-last-edited {

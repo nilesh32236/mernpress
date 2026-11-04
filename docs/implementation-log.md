@@ -2162,6 +2162,10 @@ shown as empty screens.
   outlined Move to Trash, View Post link), Users labels (`Add User`/`Add New`),
   Profile color swatches/widths, inline username help, the display-name select,
   date-format presets/custom inputs and Tools card width.
+- Dashboard activity dates use WordPress's `M jS`/`Today` format; the editor
+  shows the word count/read time and a relative "Last edited" line; blog
+  excerpts fall back to the rendered content when no excerpt is stored; and the
+  public admin bar keeps the Fresh scheme colours.
 - The 404 illustration is now the actual Twenty Twenty-Five 404 image
   (`apps/web/public/404-tree.webp`, GPL-2.0-or-later, licence note beside it)
   instead of a vector approximation.

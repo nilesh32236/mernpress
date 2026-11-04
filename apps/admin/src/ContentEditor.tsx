@@ -41,7 +41,7 @@ import {
   PageHeader,
   type NoticeMessage,
 } from './components.js';
-import { formatDateTime } from './format.js';
+import { formatDateTime, formatRelativeTime } from './format.js';
 import { useUnsavedChanges } from './navigation-guard.js';
 import { availableTransitions, canAssignTerms, canCreateContent, canEditPost } from './roles.js';
 import { editContentPath, listPath, navigate } from './router.js';
@@ -1029,6 +1029,13 @@ export function ContentEditor({
           intent: 'save',
         };
   const secondarySave = primaryAction.intent === 'publish' ? 'Save draft' : null;
+  const wordCount = `${form.title} ${form.content}`
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<[^>]*>/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+  const readingMinutes = Math.max(1, Math.ceil(wordCount / 200));
   const defaultPostFormat = (() => {
     try {
       return window.localStorage.getItem('mernpress.defaultPostFormat') ?? 'standard';
@@ -1552,9 +1559,13 @@ export function ContentEditor({
                     >
                       {form.excerpt.trim() ? 'Edit excerpt' : 'Add an excerpt…'}
                     </button>
+                    <p className="editor-word-count">
+                      {wordCount} {wordCount === 1 ? 'word' : 'words'}, {readingMinutes} minute
+                      read time.
+                    </p>
                     <p className="editor-last-edited">
                       {post
-                        ? `Last edited ${formatDateTime(post.updatedAt)}.`
+                        ? `Last edited ${formatRelativeTime(post.updatedAt)}.`
                         : 'Last edited a second ago.'}
                     </p>
                   </section>

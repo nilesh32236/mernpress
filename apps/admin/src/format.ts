@@ -85,3 +85,27 @@ export function cacheSiteFormats(dateFormat: string, timeFormat: string): void {
     // Storage is optional.
   }
 }
+
+/** WordPress-style human time diff for editor meta ("a day ago"). */
+export function formatRelativeTime(value: string | null): string {
+  if (!value) return 'a few seconds ago';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'a few seconds ago';
+  const seconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
+  if (seconds < 45) return 'a few seconds ago';
+  if (seconds < 90) return 'a minute ago';
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes} minutes ago`;
+  if (minutes < 90) return 'an hour ago';
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} hours ago`;
+  if (hours < 36) return 'a day ago';
+  const days = Math.round(hours / 24);
+  if (days < 7) return `${days} days ago`;
+  const weeks = Math.round(days / 7);
+  if (weeks < 5) return `${weeks} weeks ago`;
+  const months = Math.round(days / 30);
+  if (months < 12) return `${months} months ago`;
+  const years = Math.round(days / 365);
+  return years === 1 ? 'a year ago' : `${years} years ago`;
+}

@@ -61,13 +61,28 @@ function formatActivityDate(value: string | null): string {
   if (date.toDateString() === now.toDateString()) {
     return `Today, ${time}`;
   }
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  if (date.toDateString() === yesterday.toDateString()) {
-    return `Yesterday, ${time}`;
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  if (date.toDateString() === tomorrow.toDateString()) {
+    return `Tomorrow, ${time}`;
   }
-  const day = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date);
-  return `${day}, ${time}`;
+  // WordPress uses "M jS" (with an ordinal suffix) for same-year dates and
+  // adds the year for older entries.
+  const month = new Intl.DateTimeFormat('en-US', { month: 'short' }).format(date);
+  const day = date.getDate();
+  const ordinal =
+    day % 10 === 1 && day % 100 !== 11
+      ? 'st'
+      : day % 10 === 2 && day % 100 !== 12
+        ? 'nd'
+        : day % 10 === 3 && day % 100 !== 13
+          ? 'rd'
+          : 'th';
+  const prefix =
+    date.getFullYear() === now.getFullYear()
+      ? `${month} ${day}${ordinal}`
+      : `${month} ${day}${ordinal} ${date.getFullYear()}`;
+  return `${prefix}, ${time}`;
 }
 
 function Postbox({
