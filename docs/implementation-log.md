@@ -2219,3 +2219,28 @@ tops; all production routes remain 200.
 with the `test.com` post, and `?author=admin` returns the same published post.
 The built admin stylesheet contains the 46px mobile toolbar and row-detail
 toggles. 545 unit/integration tests, 23 E2E tests and six builds pass.
+
+### 2026-11-04 — Expanded scope, slice 1: Comments
+
+- Owner approved expanding beyond the original MVP boundary to every WordPress
+  screen (ADR 0009). Comments are the first delivered slice.
+- Added the `comments` table and `CommentStatus` enum migration
+  (`20261104090209_add_comments`) plus a follow-up index migration
+  (`20261104090233_restore_featured_media_index`) that preserves the existing
+  featured-media index.
+- New comment service and API: public approved-comment list and submission
+  (plain text, validated name/email/URL/content, basic flood and parent checks,
+  approved by default), admin list/counts/recent/counts-by-post, status
+  moderation, editing, permanent delete and bulk moderation.
+- Admin: Comments menu with pending bubble, status tabs, search, columns,
+  Screen Options, Help, row actions, bulk actions, edit modal, Dashboard Recent
+  Comments widget, admin-bar comment count and Posts list comment bubbles.
+- Public: approved comment list with threaded replies, comment form with name,
+  email, website and comment fields, reply/cancel-reply flow and inline
+  moderation/error notices. The Next config now rewrites `/api/*` to the API
+  for local same-origin submissions.
+- Capabilities: `comments.read` (administrator/editor/author/contributor) and
+  `comments.moderate` (administrator/editor).
+- Validation: 551 unit/integration tests (API 350, admin 123, block-system 65,
+  web 13) and six builds pass; the public form and admin screen were exercised
+  end to end in the browser.

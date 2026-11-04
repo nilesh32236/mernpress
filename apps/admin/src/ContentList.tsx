@@ -2,6 +2,7 @@ import { Fragment, useEffect, useState, type FormEvent } from 'react';
 import {
   actionErrorMessage,
   bulkPosts,
+  fetchCommentCountsByPost,
   fetchPosts,
   fetchTerms,
   rotatePreviewToken,
@@ -112,6 +113,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
   const [bulkBusy, setBulkBusy] = useState(false);
   const [previewBusyId, setPreviewBusyId] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const screen = type === 'post' ? 'posts' : 'pages';
   const [hiddenColumns, setHiddenColumns] = useState(() => screenHiddenColumns(screen));
   const [viewMode, setViewMode] = useState(() => screenViewMode(screen));
@@ -241,6 +243,25 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
     order,
     reloadKey,
   ]);
+
+  useEffect(() => {
+    const ids = data?.items.map((post) => post.id) ?? [];
+    if (ids.length === 0) {
+      setCommentCounts({});
+      return;
+    }
+    let active = true;
+    fetchCommentCountsByPost(ids)
+      .then((counts) => {
+        if (active) setCommentCounts(counts);
+      })
+      .catch(() => {
+        if (active) setCommentCounts({});
+      });
+    return () => {
+      active = false;
+    };
+  }, [data]);
 
   // Screen Options: "Number of items per page".
   useEffect(() => {
@@ -1123,7 +1144,21 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                             {post.terms.tags.length === 0 && <span className="no-terms">—</span>}
                           </td>
                         ) : null}
-                        {showComments ? <td className="comments column-comments" /> : null}
+                        {showComments ? (
+                          <td className="comments column-comments">
+                            <a
+                              className="post-comment-count"
+                              href={`/comments?post_id=${post.id}`}
+                              aria-label={`${commentCounts[post.id] ?? 0} comments`}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                navigate(`/comments?post_id=${post.id}`);
+                              }}
+                            >
+                              {commentCounts[post.id] ?? 0}
+                            </a>
+                          </td>
+                        ) : null}
                         {showDate ? (
                           <td className="date column-date">
                             <span className={`wp-status-prefix is-${post.status.toLowerCase()}`}>

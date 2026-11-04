@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import {
   createPost,
   fetchPosts,
+  fetchRecentComments,
   fetchSiteHealth,
   type AdminPost,
   type AuthUser,
@@ -148,6 +149,7 @@ function Postbox({
 export function Dashboard({ user }: { user: AuthUser }) {
   const [counts, setCounts] = useState<Counts>(EMPTY_COUNTS);
   const [recent, setRecent] = useState<AdminPost[]>([]);
+  const [recentComments, setRecentComments] = useState<Awaited<ReturnType<typeof fetchRecentComments>>>([]);
   const [health, setHealth] = useState<SiteHealth | null>(null);
   const [quickTitle, setQuickTitle] = useState('');
   const [quickBody, setQuickBody] = useState('');
@@ -240,6 +242,21 @@ export function Dashboard({ user }: { user: AuthUser }) {
       active = false;
     };
   }, [allowed, reloadKey]);
+
+  useEffect(() => {
+    if (!allowed) return;
+    let active = true;
+    fetchRecentComments(5)
+      .then((result) => {
+        if (active) setRecentComments(result);
+      })
+      .catch(() => {
+        if (active) setRecentComments([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [allowed]);
 
   useEffect(() => {
     if (!allowed) return;
@@ -475,6 +492,41 @@ export function Dashboard({ user }: { user: AuthUser }) {
                       >
                         {post.title}
                       </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div id="recent-comments" className="activity-block">
+              <h3>Recent Comments</h3>
+              {recentComments.length === 0 ? (
+                <p className="no-activity">No comments yet.</p>
+              ) : (
+                <ul>
+                  {recentComments.map((comment) => (
+                    <li key={comment.id} className="recent-comment">
+                      <span className="comment-avatar" aria-hidden="true">
+                        {comment.authorName.slice(0, 1).toUpperCase()}
+                      </span>
+                      <div>
+                        <p>
+                          From <strong>{comment.authorName}</strong> on{' '}
+                          <a
+                            href={`/comments`}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              navigate('/comments');
+                            }}
+                          >
+                            {comment.postTitle}
+                          </a>
+                        </p>
+                        <p className="recent-comment-excerpt">
+                          {comment.content.length > 120
+                            ? `${comment.content.slice(0, 120)}…`
+                            : comment.content}
+                        </p>
+                      </div>
                     </li>
                   ))}
                 </ul>

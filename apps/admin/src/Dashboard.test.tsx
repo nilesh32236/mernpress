@@ -34,6 +34,16 @@ describe('dashboard', () => {
         json: async () => page(total),
       } as Response);
     }
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ items: [] }),
+    } as Response);
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ database: 'ok', mediaWritable: true, schedulerEnabled: true }),
+    } as Response);
     vi.stubGlobal('fetch', fetchMock);
 
     render(<Dashboard user={admin} />);
@@ -43,7 +53,7 @@ describe('dashboard', () => {
     expect(await screen.findByRole('link', { name: /3\s*Published posts/ })).toBeDefined();
     expect(await screen.findByRole('link', { name: /2\s*Published pages/ })).toBeDefined();
     // Six count queries + one site-health check (dashboard card).
-    expect(fetchMock).toHaveBeenCalledTimes(7);
+    expect(fetchMock).toHaveBeenCalledTimes(8);
     const urls = fetchMock.mock.calls.map(([url]) => String(url));
     expect(urls.some((url) => url.includes('type=post') && url.includes('status=DRAFT'))).toBe(
       true,

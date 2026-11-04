@@ -174,3 +174,15 @@ export {
   type UpdateMediaInput,
   type UploadMediaInput,
 } from './media/types.js';
+
+// ---- Comments (ADR 0009, expanded scope) ----
+export { createCommentService, type CommentService } from './comments/service.js';
+export type {
+  AdminComment,
+  CommentCounts,
+  CommentListQuery,
+  CommentStatus,
+  CreateCommentInput,
+  PublicComment,
+  UpdateCommentInput,
+} from './comments/types.js';

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { mediaUrl, type PublicPost } from '@/lib/api';
 import MorePosts from './MorePosts';
+import Comments from './Comments';
 
 export default function PostView({
   post,
@@ -90,6 +91,7 @@ export default function PostView({
             </nav>
           </div>
 
+          <Comments postId={post.id} postTitle={post.title} />
           <MorePosts posts={morePosts} />
         </>
       ) : null}

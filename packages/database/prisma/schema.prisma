@@ -49,6 +49,7 @@ model User {
   posts               Post[]
   postRevisions       PostRevision[]
   mediaItems          MediaItem[]
+  comments            Comment[]
 
   @@map("users")
 }
@@ -143,6 +144,7 @@ model Post {
   terms         PostTerm[]
   slugHistory   PostSlugHistory[]
   revisions     PostRevision[]
+  comments      Comment[]
   featuredMedia MediaItem?        @relation(fields: [featuredMediaId], references: [id], onDelete: SetNull)
 
   @@unique([type, slug])
@@ -150,6 +152,7 @@ model Post {
   @@index([status, updatedAt])
   @@index([authorId])
   @@index([scheduledAt])
+  @@index([featuredMediaId])
   @@map("posts")
 }
 
@@ -179,6 +182,39 @@ model PostRevision {
   @@index([postId, createdAt])
   @@index([postId, kind])
   @@map("post_revisions")
+}
+
+/// Comments (ADR 0009). Content is plain text; the public renderer escapes it.
+enum CommentStatus {
+  PENDING
+  APPROVED
+  SPAM
+  TRASHED
+}
+
+model Comment {
+  id          String        @id @default(uuid(7)) @db.Uuid
+  postId      String        @map("post_id") @db.Uuid
+  userId      String?       @map("user_id") @db.Uuid
+  parentId    String?       @map("parent_id") @db.Uuid
+  authorName  String        @map("author_name") @db.VarChar(200)
+  authorEmail String        @map("author_email") @db.VarChar(254)
+  authorUrl   String?       @map("author_url") @db.VarChar(2048)
+  content     String        @db.Text
+  status      CommentStatus @default(APPROVED)
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user    User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([status, createdAt])
+  @@index([postId, status])
+  @@index([parentId])
+  @@index([authorEmail])
+  @@map("comments")
 }
 
 /// Media library items (Phase 6). Files live under MEDIA_STORAGE_DIR with

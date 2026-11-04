@@ -3,6 +3,7 @@ import { fetchSession, setUnauthorizedHandler, type AuthUser } from './api.js';
 import { ContentEditor } from './ContentEditor.js';
 import { ToolsPage } from './ToolsPage.js';
 import { UpdatesPage } from './UpdatesPage.js';
+import { CommentsPage } from './CommentsPage.js';
 import { ContentList } from './ContentList.js';
 import { TermsPage } from './TermsPage.js';
 import { MediaPage } from './MediaPage.js';
@@ -157,6 +158,8 @@ function pageTitle(route: Route): string {
       return 'MERNPress admin · Categories & Tags';
     case 'media':
       return 'MERNPress admin · Media';
+    case 'comments':
+      return 'MERNPress admin · Comments';
     case 'users':
       return 'MERNPress admin · Users';
     case 'profile':
@@ -203,6 +206,8 @@ function RouteView({
       return <TermsPage user={user} />;
     case 'media':
       return <MediaPage user={user} />;
+    case 'comments':
+      return user.role === 'subscriber' ? <Forbidden /> : <CommentsPage user={user} />;
     case 'users':
       return user.role === 'administrator' ? <UsersPage user={user} /> : <Forbidden />;
     case 'profile':

@@ -8,13 +8,18 @@ import {
   settings as settingsIcon,
   tool,
 } from '@wordpress/icons';
-import { fetchPosts, logout, type AdminPost, type AuthUser } from './api.js';
+import { fetchCommentCounts, fetchPosts, logout, type AdminPost, type AuthUser } from './api.js';
 import type { Route } from './router.js';
 import { navigate, newContentPath } from './router.js';
 import { ADMIN_BASE } from './router.js';
 import { useNavigationGuard } from './navigation-guard.js';
 import { keyboardShortcutsEnabled } from './preferences.js';
-import { canCreateContent, canManageTerms, canReadContent } from './roles.js';
+import {
+  canCreateContent,
+  canManageTerms,
+  canReadComments,
+  canReadContent,
+} from './roles.js';
 import {
   DASHBOARD_COLUMNS_EVENT,
   DASHBOARD_WIDGETS,
@@ -45,6 +50,8 @@ function screenKey(route: Route): string {
       return 'dashboard';
     case 'media':
       return 'media';
+    case 'comments':
+      return 'comments';
     case 'users':
       return 'users';
     case 'terms':
@@ -119,6 +126,31 @@ function screenHelp(route: Route): {
           {
             label: 'Documentation on Media Library',
             href: 'https://wordpress.org/documentation/article/media-library-screen/',
+          },
+          support,
+        ],
+      };
+    case 'comments':
+      return {
+        title: 'Comments',
+        sections: [
+          {
+            heading: 'Overview',
+            body: 'This screen lists comments submitted on your posts. Use the status links to filter by Pending, Approved, Spam or Trash.',
+          },
+          {
+            heading: 'Screen Content',
+            body: 'Columns show the author, comment text, the post it replies to and the submission date. Screen Options can hide columns and change the number of comments per page.',
+          },
+          {
+            heading: 'Available Actions',
+            body: 'Hover a comment for Approve, Unapprove, Spam, Trash, Edit and Delete Permanently. Bulk actions apply a status to several comments at once.',
+          },
+        ],
+        links: [
+          {
+            label: 'Documentation on Comments',
+            href: 'https://wordpress.org/documentation/article/comments-screen/',
           },
           support,
         ],
@@ -295,6 +327,7 @@ interface NavEntry {
   show: boolean;
   icon: ReactNode;
   subs: SubItem[];
+  badge?: number | undefined;
 }
 
 function initials(name: string): string {
@@ -419,6 +452,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const [newMenuOpen, setNewMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [commentPending, setCommentPending] = useState(0);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const mainRef = useRef<HTMLElement>(null);
@@ -427,6 +461,20 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
   const previousPath = useRef(
     typeof window === 'undefined' ? '' : window.location.pathname + window.location.search,
   );
+
+  useEffect(() => {
+    let active = true;
+    fetchCommentCounts()
+      .then((counts) => {
+        if (active) setCommentPending(counts.pending);
+      })
+      .catch(() => {
+        // Subscribers and unauthenticated shells have no comment access.
+      });
+    return () => {
+      active = false;
+    };
+  }, [user.id, route.name]);
 
   useEffect(() => {
     const current = window.location.pathname + window.location.search;
@@ -518,7 +566,9 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
   // would duplicate navigation and sit behind the editor toolbar.
   const isEditorRoute = route.name === 'new' || route.name === 'edit';
   const currentScreen = screenKey(route);
-  const supportsPerPage = ['posts', 'pages', 'users', 'terms', 'media'].includes(currentScreen);
+  const supportsPerPage = ['posts', 'pages', 'users', 'terms', 'media', 'comments'].includes(
+    currentScreen,
+  );
   const screenColumns = SCREEN_COLUMNS[currentScreen] ?? [];
   const supportsViewMode = ['posts', 'pages'].includes(currentScreen);
   const isDashboard = currentScreen === 'dashboard';
@@ -728,6 +778,15 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       ],
     },
     {
+      to: '/comments',
+      label: 'Comments',
+      active: route.name === 'comments',
+      show: canReadComments(user),
+      icon: <span className="dashicons dashicons-admin-comments" />,
+      badge: commentPending > 0 ? commentPending : undefined,
+      subs: [{ label: 'All Comments', to: '/comments', active: route.name === 'comments' }],
+    },
+    {
       to: '/users',
       label: 'Users',
       active: route.name === 'users' || route.name === 'profile',
@@ -934,6 +993,23 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
               </div>
             </div>
           ) : null}
+          {canReadComments(user) ? (
+            <a
+              className="admin-bar-comments"
+              href="/comments"
+              aria-label={`${commentPending} comments awaiting moderation`}
+              title="Comments"
+              onClick={(event) => {
+                event.preventDefault();
+                go('/comments');
+              }}
+            >
+              <span className="dashicons dashicons-admin-comments" aria-hidden="true" />
+              {commentPending > 0 ? (
+                <span className="admin-bar-comments-count">{commentPending}</span>
+              ) : null}
+            </a>
+          ) : null}
         </div>
         <div className="admin-bar-right">
           <div className={`admin-bar-menu user-menu${userMenuOpen ? ' is-open' : ''}`}>
@@ -1054,6 +1130,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
                           {item.icon}
                         </span>
                         <span className="nav-link-text">{item.label}</span>
+                        {item.badge ? <span className="nav-badge">{item.badge}</span> : null}
                       </a>
                     </div>
                     {hasSubs && !(railMode && !mobileOpen) ? (
@@ -1113,7 +1190,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
             ) : (
               <div className="main-content-inner">
                 <div id="screen-meta-links" className="screen-meta-links">
-                  {['dashboard', 'posts', 'pages', 'users', 'terms', 'media'].includes(
+                  {['dashboard', 'posts', 'pages', 'users', 'terms', 'media', 'comments'].includes(
                     currentScreen,
                   ) &&
                   !(

@@ -1266,3 +1266,139 @@ export function actionErrorMessage(error: unknown): string {
 
   return 'Cannot reach the API. Check your connection and try again.';
 }
+
+// ---- Comments (ADR 0009, expanded scope) ----
+export type CommentStatus = 'PENDING' | 'APPROVED' | 'SPAM' | 'TRASHED';
+
+export interface AdminComment {
+  id: string;
+  postId: string;
+  postTitle: string;
+  postSlug: string;
+  userId: string | null;
+  parentId: string | null;
+  authorName: string;
+  authorEmail: string;
+  authorUrl: string | null;
+  content: string;
+  status: CommentStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CommentCounts {
+  all: number;
+  pending: number;
+  approved: number;
+  spam: number;
+  trashed: number;
+  mine: number;
+}
+
+export interface CommentListResult {
+  items: AdminComment[];
+  total: number;
+  totalPages: number;
+  counts: CommentCounts;
+}
+
+export async function fetchComments(params: {
+  status?: CommentStatus;
+  postId?: string;
+  search?: string;
+  page?: number;
+  perPage?: number;
+}): Promise<CommentListResult> {
+  const response = await fetch(`/api/admin/comments${queryString(params)}`, {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<CommentListResult>(response);
+}
+
+export async function fetchCommentCounts(): Promise<CommentCounts> {
+  const response = await fetch('/api/admin/comments/counts', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<CommentCounts>(response);
+}
+
+export async function fetchRecentComments(limit = 5): Promise<AdminComment[]> {
+  const response = await fetch(`/api/admin/comments/recent?limit=${limit}`, {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return (await readJson<{ items: AdminComment[] }>(response)).items;
+}
+
+export async function fetchCommentCountsByPost(
+  postIds: string[],
+): Promise<Record<string, number>> {
+  if (postIds.length === 0) return {};
+  const response = await fetch(
+    `/api/admin/comments/counts-by-post?ids=${encodeURIComponent(postIds.join(','))}`,
+    { credentials: 'include', cache: 'no-store', headers: { accept: 'application/json' } },
+  );
+  return readJson<Record<string, number>>(response);
+}
+
+export async function setCommentStatus(
+  id: string,
+  status: CommentStatus,
+): Promise<AdminComment> {
+  const response = await fetch(`/api/admin/comments/${encodeURIComponent(id)}/status`, {
+    method: 'PATCH',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', 'content-type': 'application/json', ...csrfHeader() },
+    body: JSON.stringify({ status }),
+  });
+  return readJson<AdminComment>(response);
+}
+
+export async function updateComment(
+  id: string,
+  input: {
+    authorName?: string;
+    authorEmail?: string;
+    authorUrl?: string | null;
+    content?: string;
+  },
+): Promise<AdminComment> {
+  const response = await fetch(`/api/admin/comments/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', 'content-type': 'application/json', ...csrfHeader() },
+    body: JSON.stringify(input),
+  });
+  return readJson<AdminComment>(response);
+}
+
+export async function deleteComment(id: string): Promise<void> {
+  const response = await fetch(`/api/admin/comments/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  if (!response.ok) await readJson(response);
+}
+
+export async function bulkSetCommentStatus(
+  ids: string[],
+  status: CommentStatus,
+): Promise<void> {
+  const response = await fetch('/api/admin/comments/bulk', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', 'content-type': 'application/json', ...csrfHeader() },
+    body: JSON.stringify({ ids, status }),
+  });
+  if (!response.ok) await readJson(response);
+}

@@ -24,6 +24,10 @@ ask rather than silently weakening a boundary.
   trusts stored markup. P2-05 user administration remains deferred; media
   (Phase 6), rendering/themes (Phase 7/10) and plugin (Phase 9) work follow
   their own phase gates.
+- **Expanded scope (owner decision 2026-11-04):** the owner explicitly approved
+  expanding beyond the original MVP boundary to every WordPress screen.
+  Comments are delivered as the first slice (ADR 0009); Appearance/Plugins/
+  update checks and the remaining WordPress-only settings are subsequent slices.
 - After approval, implement **one feature/slice at a time**. At the end of each
   slice: report changed files, exact commands, test results, manual test steps,
   limitations, and **stop**. Do not start the next slice without explicit
@@ -239,7 +243,10 @@ See [local setup](docs/operations/local-setup.md).
 ## 12. What not to do
 
 - Do not build a plugin marketplace, billing, multi-tenancy, cloud hosting,
-  comments, forms, CRM, outreach, compliance workflows or e-commerce in the MVP.
+  forms, CRM, outreach, compliance workflows or e-commerce. (Comments were
+  moved into scope by the owner's 2026-11-04 decision and are governed by
+  ADR 0009; Appearance/Plugins/update checks are subsequent expanded-scope
+  slices, not marketplace features.)
 - Do not port Qrolic's `qrolic/*` blocks or its Service/Job/Portfolio/Team CPTs
   into core. They are site-specific.
 - Do not claim WordPress parity. Document differences.

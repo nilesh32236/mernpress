@@ -12,6 +12,14 @@ export function canAssignTerms(user: AuthUser): boolean {
   return user.role !== 'subscriber';
 }
 
+export function canReadComments(user: AuthUser): boolean {
+  return user.role !== 'subscriber';
+}
+
+export function canModerateComments(user: AuthUser): boolean {
+  return user.role === 'administrator' || user.role === 'editor';
+}
+
 /**
  * Mirrors the server's `taxonomy.manage` capability for UI affordances only.
  * The API remains authoritative and rejects unauthorized writes.

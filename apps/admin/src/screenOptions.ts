@@ -71,6 +71,12 @@ export const SCREEN_COLUMNS: Record<string, ScreenColumn[]> = {
     { id: 'parent', label: 'Uploaded to' },
     { id: 'date', label: 'Date' },
   ],
+  comments: [
+    { id: 'author', label: 'Author' },
+    { id: 'comment', label: 'Comment' },
+    { id: 'response', label: 'In response to' },
+    { id: 'date', label: 'Submitted on' },
+  ],
 };
 
 const COLUMN_PREFIX = 'mernpress.hiddenColumns.';
