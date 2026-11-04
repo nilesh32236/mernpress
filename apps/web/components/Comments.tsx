@@ -24,13 +24,14 @@ function formatCommentDate(value: string): string {
 
 function CommentItem({
   comment,
-  replies,
+  byParent,
   onReply,
 }: {
   comment: PublicComment;
-  replies: PublicComment[];
+  byParent: Map<string, PublicComment[]>;
   onReply: (comment: PublicComment) => void;
 }) {
+  const replies = byParent.get(comment.id) ?? [];
   return (
     <li className="comment-item">
       <article className="comment-body">
@@ -57,7 +58,7 @@ function CommentItem({
       {replies.length > 0 ? (
         <ol className="children">
           {replies.map((reply) => (
-            <CommentItem key={reply.id} comment={reply} replies={[]} onReply={onReply} />
+            <CommentItem key={reply.id} comment={reply} byParent={byParent} onReply={onReply} />
           ))}
         </ol>
       ) : null}
@@ -180,7 +181,7 @@ export default function Comments({
             <CommentItem
               key={comment.id}
               comment={comment}
-              replies={replies.get(comment.id) ?? []}
+              byParent={replies}
               onReply={(target) => setParentId(target.id)}
             />
           ))}
