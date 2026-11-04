@@ -1,4 +1,4 @@
-import { ContentError, type ContentService } from '@mernpress/cms-core';
+import { ContentError, type ContentService, type OptionService } from '@mernpress/cms-core';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import {
@@ -11,6 +11,7 @@ const previewTokenParamSchema = z.object({ token: z.string().min(1).max(200) }).
 
 interface PublicRouteOptions {
   content: ContentService;
+  options: OptionService;
 }
 
 function validationMessage(issues: Array<{ path: PropertyKey[]; message: string }>): string {
@@ -26,7 +27,7 @@ export function registerPublicContentRoutes(
   app: FastifyInstance,
   options: PublicRouteOptions,
 ): void {
-  const { content } = options;
+  const { content, options: optionService } = options;
 
   async function handle(
     request: FastifyRequest,
@@ -45,6 +46,12 @@ export function registerPublicContentRoutes(
       throw error;
     }
   }
+
+  // Public-safe site settings (site title, tagline, search visibility, feed
+  // preferences). No credentials are exposed.
+  app.get('/api/public/site', async (request, reply) =>
+    handle(request, reply, async () => optionService.getPublicSettings()),
+  );
 
   app.get('/api/public/posts', async (request, reply) =>
     handle(request, reply, async () => {

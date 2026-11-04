@@ -149,6 +149,9 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
   const [homepageId, setHomepageId] = useState('');
   const [postsPageId, setPostsPageId] = useState('');
   const [postsPerPage, setPostsPerPage] = useState('10');
+  const [postsPerRss, setPostsPerRss] = useState('10');
+  const [rssUseExcerpt, setRssUseExcerpt] = useState<'full' | 'excerpt'>('full');
+  const [blogPublic, setBlogPublic] = useState(true);
   const [, setReadingDirty] = useState(false);
 
   const [defaultCategory, setDefaultCategory] = useState('');
@@ -316,6 +319,9 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
         homepage_id: homepageId.trim() === '' ? null : homepageId.trim(),
         posts_page_id: postsPageId.trim() === '' ? null : postsPageId.trim(),
         posts_per_page: Number(postsPerPage),
+        posts_per_rss: Number(postsPerRss) || 10,
+        rss_use_excerpt: rssUseExcerpt === 'excerpt',
+        blog_public: blogPublic,
       });
       setReadingDirty(false);
       setNotice({ tone: 'success', text: 'Settings saved.' });
@@ -812,6 +818,85 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
                   disabled={saving.reading}
                 />{' '}
                 posts
+              </div>
+            </div>
+            <div className="field">
+              <label htmlFor="posts_per_rss">
+                Number of recent items shown in syndication feeds
+              </label>
+              <div>
+                <input
+                  id="posts_per_rss"
+                  className="small-text"
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={postsPerRss}
+                  onChange={(event) => {
+                    setPostsPerRss(event.target.value);
+                    setReadingDirty(true);
+                  }}
+                  disabled={saving.reading}
+                />{' '}
+                items
+              </div>
+            </div>
+            <div className="field">
+              <span className="field-label">For each post in a feed, include</span>
+              <div>
+                <p className="radio-line">
+                  <label>
+                    <input
+                      type="radio"
+                      name="rss_use_excerpt"
+                      value="full"
+                      checked={rssUseExcerpt === 'full'}
+                      onChange={() => {
+                        setRssUseExcerpt('full');
+                        setReadingDirty(true);
+                      }}
+                      disabled={saving.reading}
+                    />{' '}
+                    Full text
+                  </label>
+                </p>
+                <p className="radio-line">
+                  <label>
+                    <input
+                      type="radio"
+                      name="rss_use_excerpt"
+                      value="excerpt"
+                      checked={rssUseExcerpt === 'excerpt'}
+                      onChange={() => {
+                        setRssUseExcerpt('excerpt');
+                        setReadingDirty(true);
+                      }}
+                      disabled={saving.reading}
+                    />{' '}
+                    Excerpt
+                  </label>
+                </p>
+                <p className="field-help">
+                  Your theme determines how content is displayed in browsers.
+                </p>
+              </div>
+            </div>
+            <div className="field">
+              <span className="field-label">Search engine visibility</span>
+              <div>
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={!blogPublic}
+                    onChange={(event) => {
+                      setBlogPublic(!event.target.checked);
+                      setReadingDirty(true);
+                    }}
+                    disabled={saving.reading}
+                  />{' '}
+                  Discourage search engines from indexing this site
+                </label>
+                <p className="field-help">It is up to search engines to honor this request.</p>
               </div>
             </div>
             <div className="field actions">

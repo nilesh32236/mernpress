@@ -38,6 +38,14 @@ export interface PublicPost {
   terms: { categories: PublicTerm[]; tags: PublicTerm[] };
 }
 
+export interface SiteSettings {
+  siteTitle: string;
+  tagline: string;
+  blogPublic: boolean;
+  postsPerRss: number;
+  rssUseExcerpt: boolean;
+}
+
 export interface PostsPage {
   items: PublicPost[];
   pagination: { page: number; perPage: number; total: number; totalPages: number };
@@ -110,6 +118,12 @@ export async function listPublishedPosts(page = 1, perPage = 10): Promise<PostsP
 }
 
 /** Backwards-compatible alias used by sitemap generation. */
+export async function getSiteSettings(): Promise<SiteSettings> {
+  const res = await apiFetch('/api/public/site');
+  if (!res.ok) throw new Error(`Failed to load site settings: ${res.status}`);
+  return (await res.json()) as SiteSettings;
+}
+
 export async function listPublished(
   type: ContentType = 'post',
   page = 1,

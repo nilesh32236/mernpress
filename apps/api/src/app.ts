@@ -186,7 +186,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerMediaRoutes(app, { env, auth, media, storageRoot: env.MEDIA_STORAGE_DIR });
   registerAutosaveRoutes(app, { env, auth, autosave });
   registerAdminHealthRoutes(app, { env, auth, database });
-  registerPublicContentRoutes(app, { content });
+  registerPublicContentRoutes(app, { content, options: optionService });
 
   if (env.SCHEDULER_ENABLED) {
     startPublishScheduler(app, { schedule });

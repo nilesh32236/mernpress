@@ -2,7 +2,7 @@ import type { DatabaseClient, Prisma } from '@mernpress/database';
 import { ContentError } from '../content/errors.js';
 import { requireCapability } from '../auth/capabilities.js';
 import type { Principal } from '../content/types.js';
-import type { OptionGroup, UpdateOptionsInput } from './types.js';
+import type { OptionGroup, SiteSettings, UpdateOptionsInput } from './types.js';
 
 export interface OptionServiceOptions {
   prisma: DatabaseClient;
@@ -233,6 +233,39 @@ const SPECS: Record<string, OptionSpec> = {
       return value;
     },
   },
+  blog_public: {
+    group: 'reading',
+    defaultValue: true,
+    validate: (value) => {
+      if (typeof value !== 'boolean') {
+        throwValidation('blog_public must be a boolean.');
+      }
+      return value;
+    },
+  },
+  posts_per_rss: {
+    group: 'reading',
+    defaultValue: 10,
+    validate: (value) => {
+      if (typeof value !== 'number' || !Number.isInteger(value)) {
+        throwValidation('posts_per_rss must be an integer.');
+      }
+      if (value < 1 || value > 100) {
+        throwValidation('posts_per_rss must be between 1 and 100.');
+      }
+      return value;
+    },
+  },
+  rss_use_excerpt: {
+    group: 'reading',
+    defaultValue: false,
+    validate: (value) => {
+      if (typeof value !== 'boolean') {
+        throwValidation('rss_use_excerpt must be a boolean.');
+      }
+      return value;
+    },
+  },
   default_post_category: {
     group: 'writing',
     defaultValue: null,
@@ -388,7 +421,27 @@ export function createOptionService(options: OptionServiceOptions) {
     return readMerged(keys);
   }
 
-  return { getOptions, updateOptions };
+  async function getPublicSettings(): Promise<SiteSettings> {
+    const values = await readMerged([
+      'site_title',
+      'site_tagline',
+      'blog_public',
+      'posts_per_rss',
+      'rss_use_excerpt',
+    ]);
+    return {
+      siteTitle: typeof values.site_title === 'string' ? values.site_title : 'MERNPress',
+      tagline: typeof values.site_tagline === 'string' ? values.site_tagline : '',
+      blogPublic: values.blog_public !== false,
+      postsPerRss:
+        typeof values.posts_per_rss === 'number' && values.posts_per_rss > 0
+          ? values.posts_per_rss
+          : 10,
+      rssUseExcerpt: values.rss_use_excerpt === true,
+    };
+  }
+
+  return { getOptions, updateOptions, getPublicSettings };
 }
 
 export type OptionService = ReturnType<typeof createOptionService>;

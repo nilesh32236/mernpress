@@ -74,7 +74,10 @@ describe('settings page', () => {
     window.history.replaceState(null, '', '/settings#reading');
     window.dispatchEvent(new PopStateEvent('popstate'));
 
-    await screen.findByDisplayValue('10');
+    const postsPerPage = (await screen.findByLabelText(
+      'Number of recent posts shown on archive pages',
+    )) as HTMLInputElement;
+    expect(postsPerPage.value).toBe('10');
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes('group=reading'))).toBe(true);
   });
 
@@ -112,13 +115,15 @@ describe('settings page', () => {
 
     window.history.replaceState(null, '', '/settings#reading');
     window.dispatchEvent(new PopStateEvent('popstate'));
-    await screen.findByDisplayValue('10');
+    const postsPerPage = (await screen.findByLabelText(
+      'Number of recent posts shown on archive pages',
+    )) as HTMLInputElement;
 
     const saveButton = screen.getByRole('button', { name: /save/i }) as HTMLButtonElement;
     // WordPress keeps Save Changes enabled even before an edit.
     expect(saveButton.disabled).toBe(false);
 
-    fireEvent.change(screen.getByDisplayValue('10'), { target: { value: '5' } });
+    fireEvent.change(postsPerPage, { target: { value: '5' } });
     expect(saveButton.disabled).toBe(false);
 
     fireEvent.click(saveButton);
@@ -129,6 +134,9 @@ describe('settings page', () => {
     const body = JSON.parse(String(putCall?.[1]?.body));
     expect(body.group).toBe('reading');
     expect(body.values.posts_per_page).toBe(5);
+    expect(body.values.posts_per_rss).toBe(10);
+    expect(body.values.rss_use_excerpt).toBe(false);
+    expect(body.values.blog_public).toBe(true);
     expect(body.values.homepage_id).toBeNull();
   });
 

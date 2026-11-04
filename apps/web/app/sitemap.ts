@@ -1,9 +1,14 @@
 import type { MetadataRoute } from 'next';
-import { listPublished, siteUrl } from '@/lib/api';
+import { getSiteSettings, listPublished, siteUrl } from '@/lib/api';
 
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const settings = await getSiteSettings().catch(() => null);
+  if (settings?.blogPublic === false) {
+    return [];
+  }
+
   const base = siteUrl();
   const entries: MetadataRoute.Sitemap = [
     { url: base, lastModified: new Date() },

@@ -1,4 +1,4 @@
-import { listPublishedPosts, siteUrl } from '@/lib/api';
+import { getSiteSettings, listPublishedPosts, siteUrl } from '@/lib/api';
 
 export const revalidate = 60;
 
@@ -14,8 +14,12 @@ function escapeXml(value: string): string {
 /** WordPress-compatible RSS 2.0 feed for the latest published posts. */
 export async function GET(): Promise<Response> {
   const base = siteUrl();
-  const data = await listPublishedPosts(1, 20).catch(() => null);
+  const settings = await getSiteSettings().catch(() => null);
+  const data = await listPublishedPosts(1, settings?.postsPerRss ?? 20).catch(() => null);
   const items = data?.items ?? [];
+  const siteTitle = settings?.siteTitle ?? 'MERNPress';
+  const description = settings?.tagline || 'MERNPress public site.';
+  const useExcerpt = settings?.rssUseExcerpt === true;
 
   const entries = items
     .map((post) => {
@@ -26,7 +30,9 @@ export async function GET(): Promise<Response> {
       <link>${escapeXml(link)}</link>
       <guid isPermaLink="true">${escapeXml(link)}</guid>
       <pubDate>${pubDate}</pubDate>
-      <description>${escapeXml(post.excerpt ?? '')}</description>
+      <description>${escapeXml(
+        useExcerpt ? (post.excerpt ?? '') : post.renderedContent,
+      )}</description>
     </item>`;
     })
     .join('\n');
@@ -34,9 +40,9 @@ export async function GET(): Promise<Response> {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>${escapeXml('MERNPress')}</title>
+    <title>${escapeXml(siteTitle)}</title>
     <link>${escapeXml(base)}</link>
-    <description>${escapeXml('MERNPress public site.')}</description>
+    <description>${escapeXml(description)}</description>
     <language>en-US</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
 ${entries}
