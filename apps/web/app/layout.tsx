@@ -92,7 +92,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               ) : null}
             </div>
           </div>
-          <p className="site-footer-credit">Designed with MERNPress</p>
+          <div className="site-footer-bottom">
+            <span className="site-footer-theme">MERNPress</span>
+            <span className="site-footer-credit">Designed with MERNPress</span>
+          </div>
         </footer>
       </body>
     </html>

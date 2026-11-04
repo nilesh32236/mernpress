@@ -5,7 +5,9 @@ function formatDate(iso: string | null): string | null {
   if (!iso) return null;
   return new Date(iso).toLocaleDateString('en-US', {
     timeZone: 'UTC',
-    dateStyle: 'medium',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
   });
 }
 
