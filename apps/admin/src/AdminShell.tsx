@@ -848,7 +848,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
         ...(canCreate
           ? [
               {
-                label: 'Add New',
+                label: 'Add Post',
                 to: newContentPath('post'),
                 active: route.name === 'new' && route.type === 'post',
               },
@@ -900,7 +900,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
         ...(canCreate
           ? [
               {
-                label: 'Add New',
+                label: 'Add Page',
                 to: newContentPath('page'),
                 active: route.name === 'new' && route.type === 'page',
               },
@@ -915,7 +915,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       show: canReadComments(user),
       icon: <span className="dashicons dashicons-admin-comments" />,
       badge: commentPending > 0 ? commentPending : undefined,
-      subs: [{ label: 'All Comments', to: '/comments', active: route.name === 'comments' }],
+      subs: [],
     },
     {
       to: '/themes',

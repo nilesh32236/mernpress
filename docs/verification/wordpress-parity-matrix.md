@@ -1,0 +1,75 @@
+# WordPress 7.1.4 parity matrix (admin)
+
+Captured 2026-11-04 by reading both menus: the live WordPress 7.1.4 reference at
+`/wp-admin/` and the MERNPress admin at `/admin/`. Use it to see exactly which
+screens exist, where they were verified and what is still outstanding.
+
+## Menu diff
+
+| WordPress top-level | WordPress submenu | MERNPress status |
+| --- | --- | --- |
+| Dashboard | Home, Updates | Match |
+| Posts | All Posts, Add Post, Categories, Tags | Match (label fixed to "Add Post") |
+| Media | Library, Add Media File | Match |
+| Pages | All Pages, Add Page | Match (label fixed to "Add Page") |
+| Comments | — (single link, moderation bubble) | Match (submenu removed) |
+| Appearance | Themes, Editor, Fonts | Match |
+| Plugins | Installed Plugins, Add Plugin | Match (Add Plugin states no marketplace) |
+| Users | All Users, Add User, Profile | Match |
+| Tools | Available Tools, Import, Export, Site Health, Export Personal Data, Erase Personal Data, Theme File Editor, Plugin File Editor | Match except the two File Editors (excluded, see below) |
+| Settings | General, Connectors, Writing, Reading, Discussion, Media, Permalinks, Privacy | Match |
+
+## Screen status
+
+Legend: **D** = implemented and visually verified against the reference in
+development; **P** = implemented, production route/bundle verified, screen not
+visually signed off (needs an owner login); **X** = deliberately excluded.
+
+| Screen | Status | Notes |
+| --- | --- | --- |
+| Login | D/P | WordPress login layout, error copy, Remember Me |
+| Dashboard + widgets | D/P | Welcome, Site Health, At a Glance, Activity, Quick Draft, Events and News |
+| Posts list / editor / Quick Edit / revisions / preview | D/P | Gutenberg-compatible editor, status tabs, filters, bulk actions |
+| Categories / Tags | D/P | Add/edit/delete, hierarchy, counts |
+| Media library / grid / list / details | D/P | Upload, derivatives, alt text, grid/list toggle |
+| Pages list / editor | D/P | Same editor chrome as posts |
+| Comments | D/P | Status tabs, moderation, edit, bulk, dashboard widget |
+| Appearance → Themes | D/P | Grid, details dialog, search, Customize |
+| Appearance → Editor | D/P | Design sidebar, template list, live canvas |
+| Appearance → Fonts | D/P | Library, weights, samples, unavailable upload/install |
+| Plugins → Installed | D/P | Filters, bulk, active edge, auto-update column |
+| Plugins → Add Plugin | D/P | Honest no-marketplace boundary |
+| Users / Add User / Profile | D/P | Roles, display name select, colour schemes, password |
+| Tools → Available Tools / Export / Site Health | D/P | Cards, export JSON, health checks |
+| Tools → Import | D/P | Real WordPress WXR import |
+| Tools → Export/Erase Personal Data | D/P | Request queue, JSON export, anonymising erasure |
+| Tools → Theme/Plugin File Editor | X | In-browser server-code editing excluded (RCE surface) |
+| Settings → General/Reading/Writing | D/P | Site identity, formats, feed options, mail fields |
+| Settings → Discussion/Media/Permalinks/Privacy | D/P | Options drive comments, uploads, URLs, privacy page |
+| Settings → Connectors | D/P | Encrypted provider credentials, masked state |
+| Updates | D/P | Version report, "Check again", manifest checks |
+| Public: home/blog/single/page/archives/search/404/author/feed/sitemap | D/P | Twenty Twenty-Five geometry, comments, pagination |
+
+## Verification evidence
+
+- **Development**: every screen above was opened in a real browser, measured
+  against the live WordPress 7.1.4 reference and fixed (search block, 404
+  geometry, list tables, editor chrome, media grid, dashboard widgets, theme
+  dialog, plugin table, updates, import, personal data, connectors, site editor,
+  fonts).
+- **Production**: routes and built bundles are checked after every release
+  (`/`, `/admin/`, each admin route returns 200; admin APIs return 401 without a
+  session). The screens themselves have **not** been visually signed off in
+  production because no owner credentials are available.
+
+## Outstanding
+
+1. **Production admin visual sign-off.** Needs an owner login (or a temporary
+   administrator account) to capture every production admin screen and compare
+   it with the reference.
+2. **Tools → Theme/Plugin File Editor.** Deliberately excluded. Either keep the
+   exclusion documented or ship a read-only, allowlisted file viewer — owner
+   decision.
+3. Third-party importers (Blogger, LiveJournal, Movable Type, RSS, Tumblr) and
+   the plugin marketplace are listed as unavailable by design; they need
+   external services and an install/runtime story the project has not accepted.

@@ -318,3 +318,5 @@ its changes are uncommitted and not CI-verified. Do not commit, push or start
 Phase 5 without explicit owner authorization. P2-05 user administration remains
 deferred, as do the Phase 5–10 editor, media, rendering, reliability, plugin and
 theme slices.
+
+- [WordPress 7.1.4 parity matrix](docs/verification/wordpress-parity-matrix.md) — screen-by-screen status.
