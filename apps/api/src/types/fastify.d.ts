@@ -1,4 +1,5 @@
 import type {
+  ApplicationPasswordService,
   AuthService,
   AutosaveService,
   BulkService,
@@ -15,6 +16,7 @@ declare module 'fastify' {
   interface FastifyInstance {
     database: DatabaseClient;
     auth: AuthService;
+    appPasswords: ApplicationPasswordService;
     content: ContentService;
     taxonomy: TaxonomyService;
     contentHooks: HookRegistry;

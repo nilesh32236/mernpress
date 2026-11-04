@@ -1,4 +1,9 @@
-import type { AuthService, UserAdminService } from '@mernpress/cms-core';
+import type {
+  ApplicationPasswordService,
+  AuthService,
+  UserAdminService,
+} from '@mernpress/cms-core';
+import { AVAILABLE_LOCALES } from '@mernpress/cms-core';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { requireAdmin } from '../auth/require-admin.js';
@@ -15,8 +20,13 @@ export const updateProfileSchema = z
     nickname: z.string().max(100).nullable().optional(),
     bio: z.string().max(2000).nullable().optional(),
     website: z.string().max(2048).nullable().optional(),
+    syntaxHighlighting: z.boolean().optional(),
+    locale: z.string().max(20).optional(),
   })
   .strict();
+
+const applicationPasswordNameSchema = z.object({ name: z.string().min(1).max(200) }).strict();
+const applicationPasswordParamSchema = z.object({ id: z.string().uuid() }).strict();
 
 export const changeOwnPasswordSchema = z
   .object({
@@ -29,6 +39,7 @@ interface ProfileRouteOptions {
   env: Env;
   auth: AuthService;
   users: UserAdminService;
+  appPasswords: ApplicationPasswordService;
 }
 
 /**
@@ -40,7 +51,7 @@ interface ProfileRouteOptions {
  * profile; `UserAdminService` acts only on `principal.userId`.
  */
 export function registerProfileRoutes(app: FastifyInstance, options: ProfileRouteOptions): void {
-  const { env, auth, users } = options;
+  const { env, auth, users, appPasswords } = options;
   const guard = (request: FastifyRequest, reply: FastifyReply) =>
     requireAdmin(request, reply, { env, auth });
 
@@ -60,6 +71,46 @@ export function registerProfileRoutes(app: FastifyInstance, options: ProfileRout
     try {
       const body = updateProfileSchema.parse(request.body);
       return await users.updateOwnProfile(ctx.principal, body);
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
+  app.get('/api/profile/locales', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    return { items: AVAILABLE_LOCALES };
+  });
+
+  app.get('/api/profile/app-passwords', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      return { items: await appPasswords.list(ctx.principal) };
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
+  app.post('/api/profile/app-passwords', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const body = applicationPasswordNameSchema.parse(request.body);
+      const created = await appPasswords.create(ctx.principal, body.name);
+      return reply.code(201).send(created);
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
+  app.delete('/api/profile/app-passwords/:id', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const { id } = applicationPasswordParamSchema.parse(request.params);
+      await appPasswords.revoke(ctx.principal, id);
+      return reply.code(204).send();
     } catch (error) {
       return sendRouteError(reply, request, error);
     }

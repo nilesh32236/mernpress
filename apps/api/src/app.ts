@@ -22,10 +22,12 @@ import {
   createPrivacyService,
   createImportService,
   createConnectorService,
+  createApplicationPasswordService,
   type AuthConfig,
 } from '@mernpress/cms-core';
 import { checkDatabase, createDatabaseClient } from '@mernpress/database';
 import Fastify, { type FastifyInstance } from 'fastify';
+import { SESSION_COOKIE } from './auth/cookies.js';
 import { loadEnv, type Env } from './config/env.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerContentRoutes } from './routes/content.js';
@@ -139,6 +141,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const users = createUserAdminService({ prisma: database });
   app.decorate('users', users);
 
+  const appPasswords = createApplicationPasswordService({ prisma: database });
+  app.decorate('appPasswords', appPasswords);
+
   const optionService = createOptionService({ prisma: database });
 
   const schedule = createScheduleService({
@@ -197,6 +202,19 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
       return;
     }
 
+    // Application-password clients authenticate with explicit Basic
+    // credentials and send no cookies, so browser CSRF does not apply and
+    // WordPress-compatible API clients (which have no Origin) must be allowed.
+    const hasSessionCookie = typeof request.cookies?.[SESSION_COOKIE] === 'string';
+    const authorization = request.headers.authorization;
+    if (
+      !hasSessionCookie &&
+      typeof authorization === 'string' &&
+      /^Basic\s+/i.test(authorization)
+    ) {
+      return;
+    }
+
     const origin = request.headers.origin;
     if (typeof origin !== 'string' || !env.CORS_ORIGINS.includes(origin)) {
       request.log.warn('origin rejected');
@@ -222,7 +240,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerContentRoutes(app, { env, auth, content });
   registerTaxonomyRoutes(app, { env, auth, taxonomy });
   registerUserRoutes(app, { env, auth, users });
-  registerProfileRoutes(app, { env, auth, users });
+  registerProfileRoutes(app, { env, auth, users, appPasswords });
   registerOptionRoutes(app, { env, auth, options: optionService });
   registerScheduleRoutes(app, { env, auth, schedule });
   registerContentBulkRoutes(app, { env, auth, bulk });

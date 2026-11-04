@@ -21,38 +21,59 @@ enum UserStatus {
 }
 
 model User {
-  id           String     @id @default(uuid(7)) @db.Uuid
-  username     String     @unique @db.VarChar(32)
+  id                 String     @id @default(uuid(7)) @db.Uuid
+  username           String     @unique @db.VarChar(32)
   /// Optional contact email (WordPress-style Name/Email columns).
-  email        String?    @unique @db.VarChar(254)
+  email              String?    @unique @db.VarChar(254)
   /// Optional display name shown in the admin.
-  displayName  String?    @map("display_name") @db.VarChar(100)
+  displayName        String?    @map("display_name") @db.VarChar(100)
   /// WordPress "First Name".
-  firstName    String?    @map("first_name") @db.VarChar(100)
+  firstName          String?    @map("first_name") @db.VarChar(100)
   /// WordPress "Last Name".
-  lastName     String?    @map("last_name") @db.VarChar(100)
+  lastName           String?    @map("last_name") @db.VarChar(100)
   /// WordPress "Nickname".
-  nickname     String?    @db.VarChar(100)
+  nickname           String?    @db.VarChar(100)
   /// Optional biographical info (WordPress "About Yourself").
-  bio          String?    @db.Text
+  bio                String?    @db.Text
   /// Optional website URL.
-  website      String?    @db.VarChar(2048)
-  passwordHash String     @map("password_hash") @db.VarChar(255)
-  role         UserRole   @default(administrator)
-  status       UserStatus @default(active)
-  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+  website            String?    @db.VarChar(2048)
+  /// WordPress "Syntax Highlighting": highlight code in the editor.
+  syntaxHighlighting Boolean    @default(true) @map("syntax_highlighting")
+  /// WordPress profile language (per user). Only en_US ships in this build.
+  locale             String     @default("en_US") @db.VarChar(20)
+  passwordHash       String     @map("password_hash") @db.VarChar(255)
+  role               UserRole   @default(administrator)
+  status             UserStatus @default(active)
+  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  sessions            Session[]
-  auditEventsAsActor  AuditEvent[]   @relation("AuditActor")
-  auditEventsAsTarget AuditEvent[]   @relation("AuditTarget")
-  posts               Post[]
-  postRevisions       PostRevision[]
-  mediaItems          MediaItem[]
-  comments            Comment[]
-  dataRequests        DataRequest[]
+  sessions             Session[]
+  auditEventsAsActor   AuditEvent[]          @relation("AuditActor")
+  auditEventsAsTarget  AuditEvent[]          @relation("AuditTarget")
+  posts                Post[]
+  postRevisions        PostRevision[]
+  mediaItems           MediaItem[]
+  comments             Comment[]
+  dataRequests         DataRequest[]
+  applicationPasswords ApplicationPassword[]
 
   @@map("users")
+}
+
+/// WordPress "Application Passwords": revocable per-device credentials for the API.
+model ApplicationPassword {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  name         String    @db.VarChar(200)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  lastUsedAt   DateTime? @map("last_used_at") @db.Timestamptz(6)
+  lastUsedIp   String?   @map("last_used_ip") @db.VarChar(64)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("application_passwords")
 }
 
 model Session {

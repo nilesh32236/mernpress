@@ -2600,3 +2600,34 @@ build uses `aes-256-gcm` for credential encryption.
   bundle contains the new "No comments found." row.
 - Validation: 605 unit/integration tests (API 384, admin 143, block-system 65,
   web 13), 23 Playwright E2E tests and six builds pass.
+
+### 2026-11-04 — Profile personal options and application passwords
+
+- `users.syntax_highlighting` (default true) and `users.locale` (default
+  `en_US`) added with migration `20261104130529_add_profile_prefs_app_passwords`.
+  `GET/PUT /api/profile` round-trip both; `GET /api/profile/locales` lists the
+  installed language(s) and unknown locales are rejected with `INVALID_LOCALE`.
+- Profile → Personal Options now shows Syntax Highlighting (WordPress's
+  "Disable syntax highlighting when editing code" checkbox) before the colour
+  scheme and Language after Infinite Scrolling, matching WordPress 7.1.4.
+- New `application_passwords` table and service: create returns a one-time
+  24-character grouped password, list never returns hashes, revoke is
+  per-credential and scoped to the owner. Password hashes use the same
+  Argon2id service as logins.
+- The admin guard accepts `Authorization: Basic` application passwords when no
+  session cookie is present, skips CSRF for that path (no ambient cookie) and
+  exempts cookie-less Basic requests from the Origin check so API clients work.
+  HTTPS is enforced in production (`APP_PASSWORD_HTTPS_REQUIRED`).
+- Profile → Application Passwords matches WordPress: description, "Add New
+  Application Password" with a name field, the one-time password panel, and a
+  Name / Last Used / Last IP / Revoke table with the WordPress empty state.
+- Verified in the browser and with curl: saving the profile persisted
+  `syntaxHighlighting: false`; creating "Parity verification" showed
+  `Yiew SAAU r2lA Mktn RV9O 6RZF` once and the row appeared; a Basic-auth `GET
+  /api/profile` returned 200, the last-used stamp/IP were recorded, a
+  Basic-auth POST created a credential with no CSRF token, a wrong password
+  returned 401, and revoking the credential made the next Basic request 401.
+  Credentials were revoked and syntax highlighting restored afterwards.
+- Remaining from the WordPress profile surface: the mail transport for comment
+  notifications and Add User's "Send User Notification"; it stays explicitly
+  unavailable until that slice.

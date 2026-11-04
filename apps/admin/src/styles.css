@@ -9454,6 +9454,12 @@ a.glance-chip:hover {
     display: table-cell;
   }
 
+  /* WordPress keeps the "No … found." row visible on narrow screens. */
+  .wp-list-screen .content-table tbody tr.no-items td,
+  .comments-screen .content-table tbody tr.no-items td {
+    display: table-cell;
+  }
+
   .wp-list-screen .content-table.terms thead th.column-name,
   .wp-list-screen .content-table.terms tbody td.column-name,
   .wp-list-screen .content-table.terms tfoot th.column-name {
@@ -11395,4 +11401,83 @@ a.glance-chip:hover {
   color: var(--wp-text);
   font-size: 13px;
   text-align: left;
+}
+
+/* Profile → Application Passwords (WordPress 7.1). */
+.application-passwords {
+  margin-top: 28px;
+  padding-top: 8px;
+  border-top: 1px solid #dcdcde;
+}
+
+.application-passwords-intro {
+  max-width: 780px;
+  margin: 0 0 14px;
+  color: var(--wp-text);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.application-password-new {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 0 14px;
+  padding: 12px 16px;
+  border-left: 4px solid #72aee6;
+  background: #f0f6fc;
+  font-size: 13px;
+}
+
+.application-password-new code {
+  padding: 2px 6px;
+  background: #ffffff;
+  font-family: Consolas, Monaco, monospace;
+  font-size: 13px;
+}
+
+.application-password-add {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.application-password-form .field input {
+  max-width: 25rem;
+}
+
+.application-password-empty {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #c3c4c7;
+  background: #ffffff;
+  color: var(--wp-text);
+  font-size: 13px;
+}
+
+.application-password-table .column-name {
+  width: 34%;
+}
+
+.application-password-table .column-last-used {
+  width: 26%;
+}
+
+.application-password-table .column-last-ip {
+  width: 20%;
+}
+
+.application-password-table .column-actions {
+  width: auto;
+}
+
+.application-password-table .button-link.is-danger {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--wp-danger);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }

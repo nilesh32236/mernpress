@@ -850,8 +850,23 @@ export interface UserProfile {
   nickname: string | null;
   bio: string | null;
   website: string | null;
+  syntaxHighlighting: boolean;
+  locale: string;
   role: UserRole;
   createdAt: string;
+}
+
+export interface LocaleOption {
+  value: string;
+  label: string;
+}
+
+export interface ApplicationPassword {
+  id: string;
+  name: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+  lastUsedIp: string | null;
 }
 
 export type OptionValues = Record<string, unknown>;
@@ -987,6 +1002,8 @@ export async function updateProfile(payload: {
   nickname?: string | null;
   bio?: string | null;
   website?: string | null;
+  syntaxHighlighting?: boolean;
+  locale?: string;
 }): Promise<UserProfile> {
   const response = await fetch('/api/profile', {
     method: 'PUT',
@@ -1000,6 +1017,54 @@ export async function updateProfile(payload: {
     body: JSON.stringify(payload),
   });
   return readJson<UserProfile>(response);
+}
+
+export async function fetchLocales(): Promise<LocaleOption[]> {
+  const response = await fetch('/api/profile/locales', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return (await readJson<{ items: LocaleOption[] }>(response)).items;
+}
+
+export async function fetchApplicationPasswords(): Promise<ApplicationPassword[]> {
+  const response = await fetch('/api/profile/app-passwords', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return (await readJson<{ items: ApplicationPassword[] }>(response)).items;
+}
+
+export async function createApplicationPassword(name: string): Promise<{
+  password: string;
+  item: ApplicationPassword;
+}> {
+  const response = await fetch('/api/profile/app-passwords', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ name }),
+  });
+  return readJson<{ password: string; item: ApplicationPassword }>(response);
+}
+
+export async function revokeApplicationPassword(id: string): Promise<void> {
+  const response = await fetch(`/api/profile/app-passwords/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  if (!response.ok) {
+    await readJson(response);
+  }
 }
 
 export async function changeOwnPassword(payload: {

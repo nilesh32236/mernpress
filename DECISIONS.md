@@ -75,6 +75,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-056 | 2026-11-04 | Settings → Connectors stores provider API keys (OpenAI, Google, Anthropic) encrypted with AES-256-GCM under a key derived from AUTH_HASH_PEPPER, returns only a mask, and offers connect/disconnect per provider. The screen matches WordPress 7.1 (centered column, AI banner, provider rows, footer note) and says plainly that no bundled AI feature consumes the keys yet; the Settings submenu order now matches WordPress. Administrators only. | accepted | [ADR 0017](docs/adr/0017-settings-connectors.md) |
 
+| D-057 | 2026-11-04 | Profile personal options are stored per user: `syntax_highlighting` (default on, rendered as "Disable syntax highlighting when editing code") and `locale` (`en_US` only, others rejected). Application passwords are real revocable credentials in a new `application_passwords` table, Argon2id-hashed, shown once as six 4-character groups, verified via HTTP Basic auth with whitespace ignored, HTTPS required in production, CSRF not applicable and the Origin check skipped for cookie-less Basic requests. Last-used time/IP is recorded at most every five minutes and verification checks at most ten credentials. Self-service only. | accepted | [ADR 0018](docs/adr/0018-profile-application-passwords.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

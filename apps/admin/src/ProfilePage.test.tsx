@@ -3,7 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ApiError,
   changeOwnPassword,
+  createApplicationPassword,
+  fetchApplicationPasswords,
+  fetchLocales,
   fetchProfile,
+  revokeApplicationPassword,
   updateProfile,
   type AuthUser,
   type UserProfile,
@@ -17,6 +21,10 @@ vi.mock('./api.js', async (importOriginal) => {
     fetchProfile: vi.fn(),
     updateProfile: vi.fn(),
     changeOwnPassword: vi.fn(),
+    fetchLocales: vi.fn(),
+    fetchApplicationPasswords: vi.fn(),
+    createApplicationPassword: vi.fn(),
+    revokeApplicationPassword: vi.fn(),
   };
 });
 
@@ -33,6 +41,8 @@ function makeProfile(overrides: Partial<UserProfile> = {}): UserProfile {
     nickname: null,
     bio: null,
     website: null,
+    syntaxHighlighting: true,
+    locale: 'en_US',
     role: 'administrator',
     createdAt: '2026-10-01T09:00:00.000Z',
     ...overrides,
@@ -43,6 +53,8 @@ beforeEach(() => {
   vi.mocked(fetchProfile).mockResolvedValue(makeProfile());
   vi.mocked(updateProfile).mockResolvedValue(makeProfile());
   vi.mocked(changeOwnPassword).mockResolvedValue(undefined);
+  vi.mocked(fetchLocales).mockResolvedValue([{ value: 'en_US', label: 'English (United States)' }]);
+  vi.mocked(fetchApplicationPasswords).mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -83,6 +95,8 @@ describe('profile page', () => {
         email: 'admin@example.com',
         bio: null,
         website: null,
+        syntaxHighlighting: true,
+        locale: 'en_US',
       }),
     );
     expect(await screen.findByText('Profile updated.')).toBeDefined();
@@ -163,5 +177,70 @@ describe('profile page', () => {
     expect(
       await screen.findByText('newPassword: Password must contain at least one uppercase letter.'),
     ).toBeDefined();
+  });
+  it('saves the syntax highlighting and language preferences', async () => {
+    render(<ProfilePage user={admin} />);
+    await screen.findByLabelText('Username');
+
+    fireEvent.click(
+      screen.getByRole('checkbox', { name: 'Disable syntax highlighting when editing code' }),
+    );
+    fireEvent.submit(screen.getByRole('form', { name: 'Account details' }));
+
+    await waitFor(() =>
+      expect(vi.mocked(updateProfile)).toHaveBeenCalledWith(
+        expect.objectContaining({ syntaxHighlighting: false, locale: 'en_US' }),
+      ),
+    );
+  });
+
+  it('creates an application password and shows it once', async () => {
+    vi.mocked(createApplicationPassword).mockResolvedValue({
+      password: 'abcd efgh ijkl mnop qrst uvwx',
+      item: {
+        id: 'ap1',
+        name: 'CI deploy',
+        createdAt: '2026-11-04T10:00:00.000Z',
+        lastUsedAt: null,
+        lastUsedIp: null,
+      },
+    });
+
+    render(<ProfilePage user={admin} />);
+    await screen.findByLabelText('Username');
+    fireEvent.click(screen.getByRole('button', { name: 'Add New Application Password' }));
+    fireEvent.change(screen.getByLabelText('New Application Password Name'), {
+      target: { value: 'CI deploy' },
+    });
+    fireEvent.submit(screen.getByRole('form', { name: 'Add application password' }));
+
+    await waitFor(() =>
+      expect(vi.mocked(createApplicationPassword)).toHaveBeenCalledWith('CI deploy'),
+    );
+    expect(await screen.findByText('abcd efgh ijkl mnop qrst uvwx')).toBeDefined();
+    expect(screen.getByText('CI deploy')).toBeDefined();
+    expect(
+      screen.getByText(/Application password created\. Copy it now; it cannot be shown again\./),
+    ).toBeDefined();
+  });
+
+  it('revokes an application password', async () => {
+    vi.mocked(fetchApplicationPasswords).mockResolvedValue([
+      {
+        id: 'ap1',
+        name: 'CI deploy',
+        createdAt: '2026-11-04T10:00:00.000Z',
+        lastUsedAt: '2026-11-04T10:05:00.000Z',
+        lastUsedIp: '127.0.0.1',
+      },
+    ]);
+    vi.mocked(revokeApplicationPassword).mockResolvedValue(undefined);
+
+    render(<ProfilePage user={admin} />);
+    const revoke = await screen.findByRole('button', { name: 'Revoke' });
+    fireEvent.click(revoke);
+
+    await waitFor(() => expect(vi.mocked(revokeApplicationPassword)).toHaveBeenCalledWith('ap1'));
+    expect(await screen.findByText('Application password revoked: CI deploy.')).toBeDefined();
   });
 });

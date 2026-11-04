@@ -41,6 +41,7 @@ export type {
 // ---- Phase 2 user administration + self-service profile (P2-05) ----
 export {
   createUserAdminService,
+  AVAILABLE_LOCALES,
   UserAdminError,
   type AdminUser,
   type ChangeOwnPasswordInput,
@@ -243,3 +244,11 @@ export {
   type ConnectorService,
 } from './connectors/service.js';
 export type { ConnectorState } from './connectors/service.js';
+
+// ---- Application passwords (Profile self-service) ----
+export {
+  createApplicationPasswordService,
+  type ApplicationPasswordService,
+  type ApplicationPasswordSummary,
+  type CreatedApplicationPassword,
+} from './auth/app-passwords.js';

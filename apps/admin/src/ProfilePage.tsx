@@ -2,9 +2,15 @@ import { useEffect, useState, type FormEvent } from 'react';
 import {
   actionErrorMessage,
   changeOwnPassword,
+  createApplicationPassword,
+  fetchApplicationPasswords,
+  fetchLocales,
   fetchProfile,
+  revokeApplicationPassword,
   updateProfile,
+  type ApplicationPassword,
   type AuthUser,
+  type LocaleOption,
   type UserProfile,
 } from './api.js';
 import { Notice, PageHeader, Skeleton, ErrorState, type NoticeMessage } from './components.js';
@@ -47,8 +53,21 @@ export function ProfilePage({
     () => !infiniteScrollEnabled(),
   );
   const [website, setWebsite] = useState('');
+  const [syntaxHighlighting, setSyntaxHighlighting] = useState(true);
+  const [locale, setLocale] = useState('en_US');
+  const [locales, setLocales] = useState<LocaleOption[]>([
+    { value: 'en_US', label: 'English (United States)' },
+  ]);
   const [accountError, setAccountError] = useState<string | null>(null);
   const [savingAccount, setSavingAccount] = useState(false);
+
+  const [appPasswords, setAppPasswords] = useState<ApplicationPassword[] | null>(null);
+  const [appPasswordName, setAppPasswordName] = useState('');
+  const [appPasswordOpen, setAppPasswordOpen] = useState(false);
+  const [creatingAppPassword, setCreatingAppPassword] = useState(false);
+  const [newAppPassword, setNewAppPassword] = useState<string | null>(null);
+  const [appPasswordError, setAppPasswordError] = useState<string | null>(null);
+  const [revokingAppPassword, setRevokingAppPassword] = useState<string | null>(null);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -74,6 +93,8 @@ export function ProfilePage({
         setEmail(result.email ?? '');
         setBio(result.bio ?? '');
         setWebsite(result.website ?? '');
+        setSyntaxHighlighting(result.syntaxHighlighting !== false);
+        setLocale(result.locale ?? 'en_US');
         setLoading(false);
       })
       .catch((caught) => {
@@ -86,6 +107,73 @@ export function ProfilePage({
       active = false;
     };
   }, [reloadKey]);
+
+  useEffect(() => {
+    let active = true;
+    fetchLocales()
+      .then((items) => {
+        if (active && items.length > 0) setLocales(items);
+      })
+      .catch(() => {
+        // The default en_US option stays selectable.
+      });
+    fetchApplicationPasswords()
+      .then((items) => {
+        if (active) setAppPasswords(items);
+      })
+      .catch((caught) => {
+        if (active) {
+          setAppPasswords([]);
+          setAppPasswordError(actionErrorMessage(caught));
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function addApplicationPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (creatingAppPassword) return;
+    const name = appPasswordName.trim();
+    if (!name) {
+      setAppPasswordError('Enter a name for the application password.');
+      return;
+    }
+    setCreatingAppPassword(true);
+    setAppPasswordError(null);
+    setNewAppPassword(null);
+    try {
+      const created = await createApplicationPassword(name);
+      setAppPasswords((current) => [created.item, ...(current ?? [])]);
+      setNewAppPassword(created.password);
+      setAppPasswordName('');
+      setAppPasswordOpen(false);
+      setNotice({
+        tone: 'success',
+        text: 'Application password created. Copy it now; it cannot be shown again.',
+      });
+    } catch (caught) {
+      setAppPasswordError(actionErrorMessage(caught));
+    } finally {
+      setCreatingAppPassword(false);
+    }
+  }
+
+  async function revokePassword(item: ApplicationPassword) {
+    if (revokingAppPassword) return;
+    setRevokingAppPassword(item.id);
+    setAppPasswordError(null);
+    try {
+      await revokeApplicationPassword(item.id);
+      setAppPasswords((current) => (current ?? []).filter((entry) => entry.id !== item.id));
+      setNotice({ tone: 'success', text: `Application password revoked: ${item.name}.` });
+    } catch (caught) {
+      setAppPasswordError(actionErrorMessage(caught));
+    } finally {
+      setRevokingAppPassword(null);
+    }
+  }
 
   async function handleAccountSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -110,7 +198,9 @@ export function ProfilePage({
       nextNickname === (profile.nickname ?? '') &&
       nextEmail === (profile.email ?? '') &&
       nextBio === (profile.bio ?? '') &&
-      nextWebsite === (profile.website ?? '')
+      nextWebsite === (profile.website ?? '') &&
+      syntaxHighlighting === (profile.syntaxHighlighting !== false) &&
+      locale === (profile.locale ?? 'en_US')
     ) {
       setAccountError(null);
       setNotice({ tone: 'info', text: 'No changes to save.' });
@@ -129,6 +219,8 @@ export function ProfilePage({
         email: nextEmail ? nextEmail : null,
         bio: nextBio ? nextBio : null,
         website: nextWebsite ? nextWebsite : null,
+        syntaxHighlighting,
+        locale,
       });
       setProfile(updated);
       setUsername(updated.username);
@@ -139,6 +231,8 @@ export function ProfilePage({
       setEmail(updated.email ?? '');
       setBio(updated.bio ?? '');
       setWebsite(updated.website ?? '');
+      setSyntaxHighlighting(updated.syntaxHighlighting !== false);
+      setLocale(updated.locale ?? 'en_US');
       setNotice({ tone: 'success', text: 'Profile updated.' });
       onProfileUpdated?.({ username: updated.username });
     } catch (caught) {
@@ -216,6 +310,20 @@ export function ProfilePage({
         <div className="settings-panel profile-panel">
           <form onSubmit={handleAccountSubmit} aria-label="Account details">
             <h2 className="profile-section-title">Personal Options</h2>
+            <div className="field">
+              <span className="field-label">Syntax Highlighting</span>
+              <div>
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={!syntaxHighlighting}
+                    onChange={(event) => setSyntaxHighlighting(!event.target.checked)}
+                  />
+                  <span>Disable syntax highlighting when editing code</span>
+                </label>
+              </div>
+            </div>
+
             <div className="field">
               <span className="field-label">Administration Color Scheme</span>
               <fieldset
@@ -306,6 +414,21 @@ export function ProfilePage({
                   <span>Disable infinite scrolling in the Media Library grid view</span>
                 </label>
               </div>
+            </div>
+
+            <div className="field">
+              <label htmlFor="profile-locale">Language</label>
+              <select
+                id="profile-locale"
+                value={locale}
+                onChange={(event) => setLocale(event.target.value)}
+              >
+                {locales.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <h2 className="profile-section-title">Name</h2>
@@ -537,6 +660,150 @@ export function ProfilePage({
               </>
             )}
           </form>
+
+          <section
+            className="application-passwords"
+            aria-labelledby="application-passwords-heading"
+          >
+            <h2 id="application-passwords-heading" className="profile-section-title">
+              Application Passwords
+            </h2>
+            <p className="application-passwords-intro">
+              Application passwords allow authentication via non-interactive systems, such as the
+              MERNPress API, without providing your actual password. Application passwords can be
+              easily revoked. They cannot be used for traditional logins to this site.
+            </p>
+
+            {newAppPassword ? (
+              <div className="application-password-new" role="status">
+                <p>
+                  Your new application password is <code>{newAppPassword}</code>. Copy it now: it
+                  cannot be shown again.
+                </p>
+                <button
+                  type="button"
+                  className="button secondary-button"
+                  onClick={() => setNewAppPassword(null)}
+                >
+                  Dismiss
+                </button>
+              </div>
+            ) : null}
+
+            {appPasswordError ? (
+              <p className="form-error" role="alert">
+                {appPasswordError}
+              </p>
+            ) : null}
+
+            {!appPasswordOpen ? (
+              <p className="application-password-add">
+                <button
+                  type="button"
+                  className="button secondary-button"
+                  onClick={() => setAppPasswordOpen(true)}
+                >
+                  Add New Application Password
+                </button>
+              </p>
+            ) : (
+              <form
+                className="application-password-form"
+                onSubmit={(event) => void addApplicationPassword(event)}
+                aria-label="Add application password"
+              >
+                <div className="field">
+                  <label htmlFor="application-password-name">New Application Password Name</label>
+                  <input
+                    id="application-password-name"
+                    type="text"
+                    value={appPasswordName}
+                    onChange={(event) => setAppPasswordName(event.target.value)}
+                    maxLength={200}
+                    disabled={creatingAppPassword}
+                    required
+                  />
+                  <p className="field-help">
+                    What is this application password for? Use a memorable name.
+                  </p>
+                </div>
+                <p className="application-password-add">
+                  <button
+                    type="submit"
+                    className="button primary-button"
+                    disabled={creatingAppPassword}
+                  >
+                    {creatingAppPassword ? 'Adding…' : 'Add New Application Password'}
+                  </button>
+                  <button
+                    type="button"
+                    className="button secondary-button"
+                    onClick={() => setAppPasswordOpen(false)}
+                    disabled={creatingAppPassword}
+                  >
+                    Cancel
+                  </button>
+                </p>
+              </form>
+            )}
+
+            {appPasswords === null ? (
+              <Skeleton label="Loading application passwords…" lines={2} />
+            ) : appPasswords.length === 0 ? (
+              <p className="application-password-empty">No application passwords.</p>
+            ) : (
+              <div className="table-scroll">
+                <table className="content-table widefat fixed striped application-password-table">
+                  <caption className="screen-reader-text">Application passwords</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col" className="column-name">
+                        Name
+                      </th>
+                      <th scope="col" className="column-last-used">
+                        Last Used
+                      </th>
+                      <th scope="col" className="column-last-ip">
+                        Last IP
+                      </th>
+                      <th scope="col" className="column-actions">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {appPasswords.map((item) => (
+                      <tr key={item.id}>
+                        <td className="column-name">{item.name}</td>
+                        <td className="column-last-used">
+                          {item.lastUsedAt
+                            ? new Date(item.lastUsedAt).toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                              })
+                            : 'Never'}
+                        </td>
+                        <td className="column-last-ip">{item.lastUsedIp ?? '—'}</td>
+                        <td className="column-actions">
+                          <button
+                            type="button"
+                            className="button-link is-danger"
+                            onClick={() => void revokePassword(item)}
+                            disabled={revokingAppPassword === item.id}
+                          >
+                            Revoke
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
         </div>
       ) : null}
     </>

@@ -10,6 +10,30 @@ import type { Env } from '../config/env.js';
 
 const MUTATING = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
+interface BasicCredentials {
+  username: string;
+  password: string;
+}
+
+/** Parse `Authorization: Basic base64(username:password)`; the password may contain ':'. */
+function parseBasicAuthorization(header: string | undefined): BasicCredentials | null {
+  if (typeof header !== 'string') return null;
+  const match = /^Basic\s+([A-Za-z0-9+/=]+)$/i.exec(header.trim());
+  if (!match) return null;
+  let decoded: string;
+  try {
+    decoded = Buffer.from(match[1]!, 'base64').toString('utf8');
+  } catch {
+    return null;
+  }
+  const separator = decoded.indexOf(':');
+  if (separator <= 0) return null;
+  const username = decoded.slice(0, separator).trim();
+  const password = decoded.slice(separator + 1);
+  if (!username || !password) return null;
+  return { username, password };
+}
+
 export interface AdminContext {
   principal: { userId: string; role: string };
 }
@@ -39,22 +63,52 @@ export async function requireAdmin(
   const { env, auth } = options;
 
   const sessionToken = request.cookies[SESSION_COOKIE];
-  if (typeof sessionToken !== 'string' || sessionToken.length === 0) {
-    sendError(reply, request, 401, 'UNAUTHENTICATED', 'Not authenticated');
-    return null;
-  }
-
-  let session;
-  try {
-    session = await auth.validateSession(sessionToken);
-  } catch {
-    sendError(reply, request, 401, 'UNAUTHENTICATED', 'Not authenticated');
-    return null;
+  let session = null;
+  if (typeof sessionToken === 'string' && sessionToken.length > 0) {
+    try {
+      session = await auth.validateSession(sessionToken);
+    } catch {
+      session = null;
+    }
   }
 
   if (!session) {
-    reply.clearCookie(SESSION_COOKIE, clearSessionCookieOptions(env));
-    reply.clearCookie(CSRF_COOKIE, clearCsrfCookieOptions(env));
+    // WordPress application passwords authenticate API requests with HTTP
+    // Basic auth instead of a browser session; they carry no CSRF token, so
+    // the CSRF check below is skipped for this path.
+    const basic = parseBasicAuthorization(request.headers.authorization);
+    if (basic) {
+      if (env.NODE_ENV === 'production' && request.protocol !== 'https') {
+        sendError(
+          reply,
+          request,
+          401,
+          'APP_PASSWORD_HTTPS_REQUIRED',
+          'Application passwords require HTTPS.',
+        );
+        return null;
+      }
+      let principal;
+      try {
+        principal = await request.server.appPasswords.verify(
+          basic.username,
+          basic.password,
+          request.ip,
+        );
+      } catch {
+        principal = null;
+      }
+      if (!principal) {
+        sendError(reply, request, 401, 'UNAUTHENTICATED', 'Not authenticated');
+        return null;
+      }
+      return { principal };
+    }
+
+    if (typeof sessionToken === 'string' && sessionToken.length > 0) {
+      reply.clearCookie(SESSION_COOKIE, clearSessionCookieOptions(env));
+      reply.clearCookie(CSRF_COOKIE, clearCsrfCookieOptions(env));
+    }
     sendError(reply, request, 401, 'UNAUTHENTICATED', 'Not authenticated');
     return null;
   }

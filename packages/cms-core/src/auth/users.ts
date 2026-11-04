@@ -27,7 +27,8 @@ export type UserAdminErrorCode =
   | 'REASSIGN_REQUIRED'
   | 'REASSIGN_INVALID'
   | 'INVALID_WEBSITE'
-  | 'INVALID_NAME';
+  | 'INVALID_NAME'
+  | 'INVALID_LOCALE';
 
 export class UserAdminError extends Error {
   readonly code: UserAdminErrorCode;
@@ -73,6 +74,10 @@ export interface UserProfile {
   bio: string | null;
   /** WordPress "Website". */
   website: string | null;
+  /** WordPress "Syntax Highlighting" (true = highlight code in the editor). */
+  syntaxHighlighting: boolean;
+  /** WordPress profile language; only en_US ships in this build. */
+  locale: string;
   role: UserRole;
   /** ISO-8601 UTC instant. */
   createdAt: string;
@@ -110,6 +115,10 @@ export interface UpdateProfileInput {
   nickname?: string | null | undefined;
   bio?: string | null | undefined;
   website?: string | null | undefined;
+  /** WordPress "Syntax Highlighting" (true = highlight code in the editor). */
+  syntaxHighlighting?: boolean | undefined;
+  /** WordPress profile language; only en_US ships in this build. */
+  locale?: string | undefined;
 }
 
 export interface ChangeOwnPasswordInput {
@@ -178,6 +187,8 @@ const PROFILE_SELECT = {
   nickname: true,
   bio: true,
   website: true,
+  syntaxHighlighting: true,
+  locale: true,
   role: true,
   createdAt: true,
 } as const;
@@ -204,6 +215,8 @@ type ProfileRow = {
   nickname: string | null;
   bio: string | null;
   website: string | null;
+  syntaxHighlighting: boolean;
+  locale: string;
   role: UserRole;
   createdAt: Date;
 };
@@ -286,9 +299,23 @@ function toProfile(row: ProfileRow): UserProfile {
     nickname: row.nickname,
     bio: row.bio,
     website: row.website,
+    syntaxHighlighting: row.syntaxHighlighting,
+    locale: row.locale,
     role: row.role,
     createdAt: row.createdAt.toISOString(),
   };
+}
+
+/** Locales that ship with this build. Only the default is installed today. */
+export const AVAILABLE_LOCALES: ReadonlyArray<{ value: string; label: string }> = [
+  { value: 'en_US', label: 'English (United States)' },
+];
+
+function normalizeLocale(value: string): string {
+  if (!AVAILABLE_LOCALES.some((locale) => locale.value === value)) {
+    throw new UserAdminError('INVALID_LOCALE', 'That language is not installed.', 400);
+  }
+  return value;
 }
 
 function normalizeNamePart(value: string | null, field: string): string | null {
@@ -781,6 +808,11 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
         : normalizeNamePart(input.nickname, 'Nickname');
     const bio = input.bio === undefined ? current.bio : normalizeBio(input.bio);
     const website = input.website === undefined ? current.website : normalizeWebsite(input.website);
+    const syntaxHighlighting =
+      input.syntaxHighlighting === undefined
+        ? current.syntaxHighlighting
+        : input.syntaxHighlighting;
+    const locale = input.locale === undefined ? current.locale : normalizeLocale(input.locale);
 
     if (
       username === current.username &&
@@ -790,7 +822,9 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
       lastName === current.lastName &&
       nickname === current.nickname &&
       bio === current.bio &&
-      website === current.website
+      website === current.website &&
+      syntaxHighlighting === current.syntaxHighlighting &&
+      locale === current.locale
     ) {
       return toProfile(current);
     }
@@ -818,7 +852,18 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
 
         const updated = await tx.user.update({
           where: { id: current.id },
-          data: { username, email, displayName, firstName, lastName, nickname, bio, website },
+          data: {
+            username,
+            email,
+            displayName,
+            firstName,
+            lastName,
+            nickname,
+            bio,
+            website,
+            syntaxHighlighting,
+            locale,
+          },
           select: PROFILE_SELECT,
         });
 
