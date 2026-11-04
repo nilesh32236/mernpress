@@ -72,7 +72,7 @@ export default function PublicAdminBar({ siteTitle }: { siteTitle: string }) {
 
   return (
     <div className="public-admin-bar" role="navigation" aria-label="Admin bar">
-      <a className="public-admin-site" href="/admin/">
+      <a className="public-admin-site" href="/">
         {siteTitle}
       </a>
       <details className="public-admin-new">
@@ -85,6 +85,7 @@ export default function PublicAdminBar({ siteTitle }: { siteTitle: string }) {
         </div>
       </details>
       <div className="public-admin-right">
+        <a href="/admin/">Dashboard</a>
         <a href="/admin/profile">Howdy, {user.username}</a>
         <button type="button" onClick={() => void signOut()}>
           Sign out

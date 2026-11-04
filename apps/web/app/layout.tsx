@@ -6,6 +6,10 @@ import { getSiteSettings, listPublicPosts } from '@/lib/api';
 import './globals.css';
 import PublicAdminBar from '@/components/PublicAdminBar';
 
+// HTML must never be cached: a stale document can reference static assets
+// from a previous release, which then 404 and render the site unstyled.
+export const dynamic = 'force-dynamic';
+
 const manrope = Manrope({
   subsets: ['latin'],
   weight: ['200', '300', '400', '500', '600', '700', '800'],
@@ -61,14 +65,15 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <Link href="/" className="site-title">
             {siteTitle}
           </Link>
-          <nav className="site-nav" aria-label="Primary">
-            <Link href="/posts">Blog</Link>
-            {pageLinks.map((page) => (
-              <Link key={page.id} href={`/${page.slug}`}>
-                {page.title}
-              </Link>
-            ))}
-          </nav>
+          {pageLinks.length > 0 ? (
+            <nav className="site-nav" aria-label="Primary">
+              {pageLinks.map((page) => (
+                <Link key={page.id} href={`/${page.slug}`}>
+                  {page.title}
+                </Link>
+              ))}
+            </nav>
+          ) : null}
         </header>
         {children}
         <footer className="site-footer">
