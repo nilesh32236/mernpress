@@ -301,3 +301,7 @@ Both verified 200 on `/`, `/admin/` and `/api/health`; no schema changes.
 
 - `20261103T235422Z-c235736` — WordPress contextual Help tabs and docs sidebar.
   Verified 200 on `/`, `/admin/` and `/api/health`; no schema change.
+
+- `20261104T001136Z-f850de3` — global body typography, profile keyboard
+  shortcuts, default post format and login button height. Verified 200 on `/`,
+  `/admin/` and `/api/health`; no schema change.

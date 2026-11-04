@@ -2053,3 +2053,13 @@ icons rather than the WordPress Dashicons font.
   Available Actions / Bulk Actions tabs, a content panel and a "For more
   information" sidebar with per-screen documentation links for posts/pages,
   media, users, terms, settings, profile, dashboard, tools and updates.
+
+### 2026-11-03 — Global type, profile shortcuts and default post format
+
+- Body text now matches wp-admin exactly: #3c434a, 13px/1.4 (18.2px) with the
+  WordPress font stack; headings use #1d2327.
+- Profile Personal Options gains a Keyboard Shortcuts preference that gates the
+  Ctrl/Cmd+K command palette.
+- Writing Settings gains Default Post Format (stored in options) and the editor
+  shows that format for new posts.
+- wp-login submit button is 40px tall.
