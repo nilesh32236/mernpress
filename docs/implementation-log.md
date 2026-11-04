@@ -2335,3 +2335,8 @@ Permalink and Privacy screens.
 (200), `/admin/theme-screenshot.png` returns the 1200×900 PNG, and
 `/api/admin/themes` returns 401 for anonymous callers as designed. The
 production admin bundle contains the Themes, Add Themes and Customize screens.
+
+A follow-up patch (`20261104T102228Z-d2f4ae8`) aligns the Theme Details dialog
+with the WordPress geometry (inset 182/84 → 1237×799) and dims the page behind
+it with a backdrop that does not tint the dialog's own text. `/`, `/admin/`,
+`/admin/themes`, `/admin/theme-screenshot.png` and `/api/health` remain 200.
