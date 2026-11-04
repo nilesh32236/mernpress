@@ -895,7 +895,6 @@ export function UsersPage({ user }: { user: AuthUser }) {
   if (isAddPage) {
     return (
       <AddUserPage
-        onCancel={() => navigate('/users')}
         onCreated={(name) => navigate(`/users?created=${encodeURIComponent(name)}`)}
       />
     );

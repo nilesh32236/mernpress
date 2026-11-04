@@ -148,6 +148,8 @@ export function CommentsPage({ user }: { user: AuthUser }) {
   const showComment = !hiddenColumns.has('comment');
   const showResponse = !hiddenColumns.has('response');
   const showDate = !hiddenColumns.has('date');
+  const commentColumnCount =
+    1 + [showAuthor, showComment, showResponse, showDate].filter(Boolean).length;
 
   function changeTab(next: CommentStatus | '') {
     setStatus(next);
@@ -381,7 +383,7 @@ export function CommentsPage({ user }: { user: AuthUser }) {
               {commentsTableHead}
               <tbody>
                 <tr className="no-items">
-                  <td colSpan={6}>No comments found.</td>
+                  <td colSpan={commentColumnCount}>No comments found.</td>
                 </tr>
               </tbody>
             </table>
