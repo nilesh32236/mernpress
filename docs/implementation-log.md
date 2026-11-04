@@ -2698,3 +2698,20 @@ production and was deleted afterwards:
   disabled.
 - Validation: 623 unit/integration tests (API 395, admin 150, block-system 65,
   web 13), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (mail):** release `20261104T133820Z-03f9f10` (later superseded by
+the plugin-row release). Production has no `SMTP_HOST` configured, so
+`/api/admin/mail/status` correctly reports `configured: false`, the Add User
+checkbox is disabled with "Email delivery is not configured on this server…",
+and no notification is attempted. The mail code is deployed; delivering mail
+requires setting `SMTP_HOST`/`MAIL_FROM` (and credentials) and restarting the
+API, per `docs/operations/production-hosting.md`.
+
+**Deployment (plugin actions):** release `20261104T134818Z-a85ce70` (current).
+Production verification with a temporary administrator: the Installed Plugins
+row showed `Deactivate | View details` while active; View details opened the
+registry description and version; after Deactivate the row showed
+`Activate | Delete | View details`; Delete asked for confirmation and removed
+the plugin (`All (0)`, "No plugins installed."). The plugin was then restored by
+clearing the tombstone and reactivated, leaving production in its original
+state (`All (1)`, `Active (1)`). The temporary administrator was deleted.
