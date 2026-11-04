@@ -2530,3 +2530,11 @@ the API routes exist, and the `data_requests` table is present in production.
   absent (`like '%plaintext-canary%'` = false); disconnecting removed the row.
 - Validation: 605 unit/integration tests (API 384, admin 143, block-system 65,
   web 13), 23 Playwright E2E tests and six builds pass.
+
+**Deployment:** release `20261104T115056Z-6ea66fa` (production symlink
+`/opt/mernpress/current`). `/`, `/admin/`, `/admin/settings/connectors` and
+`/api/health` return 200; `/api/admin/connectors` returns 401 for anonymous
+callers. The production admin bundle contains the Connectors screen copy
+("All of your API keys and credentials are stored here", "Browse plugins",
+"Connected · key"), the API build contains the connector routes, and the cms-core
+build uses `aes-256-gcm` for credential encryption.
