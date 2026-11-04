@@ -935,7 +935,14 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
                   </label>
                 </p>
                 <p className="field-help">
-                  Your theme determines how content is displayed in browsers.
+                  Your theme determines how content is displayed in browsers.{' '}
+                  <a
+                    href="https://wordpress.org/documentation/article/managing-your-blog/#feeds"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Learn more about feeds.
+                  </a>
                 </p>
               </div>
             </div>
@@ -1007,6 +1014,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
             >
               <option value="standard">Standard</option>
               <option value="aside">Aside</option>
+              <option value="chat">Chat</option>
               <option value="gallery">Gallery</option>
               <option value="image">Image</option>
               <option value="link">Link</option>
@@ -1014,7 +1022,6 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
               <option value="status">Status</option>
               <option value="video">Video</option>
               <option value="audio">Audio</option>
-              <option value="chat">Chat</option>
             </select>
           </div>
           <div className="field actions">

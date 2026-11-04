@@ -194,6 +194,7 @@ function AddUserPage({
   const [email, setEmail] = useState('');
   const [website, setWebsite] = useState('');
   const [password, setPassword] = useState('');
+  const [repeatPassword, setRepeatPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<UserRole>(() => {
     try {
@@ -226,6 +227,10 @@ function AddUserPage({
     }
     if (!password) {
       setError('Password is required.');
+      return;
+    }
+    if (password !== repeatPassword) {
+      setError('The passwords do not match.');
       return;
     }
     const displayName = `${firstName.trim()} ${lastName.trim()}`.trim();
@@ -267,7 +272,6 @@ function AddUserPage({
             autoComplete="off"
             required
           />
-          <p className="field-help">Usernames cannot be changed.</p>
         </div>
         <div className="field">
           <label htmlFor="add-user-email">Email (required)</label>
@@ -360,6 +364,19 @@ function AddUserPage({
               </div>
             ) : null}
           </div>
+        </div>
+        <div className="field">
+          <label htmlFor="add-user-repeat-password">Repeat Password (required)</label>
+          <input
+            id="add-user-repeat-password"
+            type={showPassword ? 'text' : 'password'}
+            value={repeatPassword}
+            onChange={(event) => setRepeatPassword(event.target.value)}
+            disabled={saving}
+            autoComplete="new-password"
+            required
+          />
+          <p className="field-help">Type the password again.</p>
         </div>
         <div className="field">
           <label htmlFor="add-user-role">Role</label>

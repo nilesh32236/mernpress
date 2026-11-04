@@ -40,7 +40,7 @@ export default function PostView({
         {!isPage ? (
           <div className="entry-meta">
             <span>Written by </span>
-            {author ? <span>{author}</span> : null}
+            {author ? <Link href={`/author/${encodeURIComponent(author)}`}>{author}</Link> : null}
             <span> in </span>
             {categories.length > 0 ? (
               categories.map((term, index) => (

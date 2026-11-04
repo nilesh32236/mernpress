@@ -102,6 +102,7 @@ export interface PublicPostQuery {
   search?: string;
   category?: string;
   tag?: string;
+  author?: string;
   page?: number;
   perPage?: number;
 }
@@ -114,6 +115,7 @@ export async function listPublicPosts(query: PublicPostQuery = {}): Promise<Post
   if (query.search) params.set('search', query.search);
   if (query.category) params.set('category', query.category);
   if (query.tag) params.set('tag', query.tag);
+  if (query.author) params.set('author', query.author);
   const res = await apiFetch(`/api/public/posts?${params.toString()}`);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Failed to list posts: ${res.status}`);

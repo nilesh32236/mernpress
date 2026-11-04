@@ -224,6 +224,8 @@ export interface PublicListQuery {
   category?: string | undefined;
   /** Tag slug filter (tag archives). */
   tag?: string | undefined;
+  /** Author username filter (author archives). */
+  author?: string | undefined;
   page: number;
   perPage: number;
 }

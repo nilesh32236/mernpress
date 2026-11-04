@@ -1113,7 +1113,13 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
             ) : (
               <div className="main-content-inner">
                 <div id="screen-meta-links" className="screen-meta-links">
-                  {['dashboard', 'posts', 'pages', 'users', 'terms'].includes(currentScreen) ? (
+                  {['dashboard', 'posts', 'pages', 'users', 'terms', 'media'].includes(
+                    currentScreen,
+                  ) &&
+                  !(
+                    route.name === 'users' &&
+                    new URLSearchParams(window.location.search).get('action') === 'add'
+                  ) ? (
                     <button
                       type="button"
                       className={`button show-settings${metaPanel === 'options' ? ' is-active' : ''}`}

@@ -111,6 +111,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
   const [bulkEditStatus, setBulkEditStatus] = useState<'DRAFT' | 'PUBLISHED'>('DRAFT');
   const [bulkBusy, setBulkBusy] = useState(false);
   const [previewBusyId, setPreviewBusyId] = useState<string | null>(null);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const screen = type === 'post' ? 'posts' : 'pages';
   const [hiddenColumns, setHiddenColumns] = useState(() => screenHiddenColumns(screen));
   const [viewMode, setViewMode] = useState(() => screenViewMode(screen));
@@ -919,7 +920,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                   const editable = canEditPost(user, post);
                   return (
                     <Fragment key={post.id}>
-                      <tr>
+                      <tr className={expandedRow === post.id ? 'is-expanded' : undefined}>
                         <th scope="row" className="check-column">
                           <input
                             type="checkbox"
@@ -940,6 +941,19 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                           >
                             {post.title}
                           </a>
+                          <button
+                            type="button"
+                            className="toggle-row"
+                            aria-label={
+                              expandedRow === post.id ? 'Hide row details' : 'Show row details'
+                            }
+                            aria-expanded={expandedRow === post.id}
+                            onClick={() =>
+                              setExpandedRow((current) => (current === post.id ? null : post.id))
+                            }
+                          >
+                            <span className="dashicons dashicons-arrow-down" aria-hidden="true" />
+                          </button>
                           <div className="row-actions">
                             {editable ? (
                               <a

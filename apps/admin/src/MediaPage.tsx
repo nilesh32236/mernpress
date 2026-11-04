@@ -55,17 +55,25 @@ function relativeMediaDate(value: string): string {
   if (Number.isNaN(date.getTime())) {
     return '—';
   }
-  const diffMinutes = Math.round((date.getTime() - Date.now()) / 60_000);
-  const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
-  if (Math.abs(diffMinutes) < 60) {
-    return formatter.format(diffMinutes, 'minute');
+  // WordPress human_time_diff: minutes, hours (including "24 hours"),
+  // then days/weeks/months/years, always followed by "ago".
+  const seconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
+  if (seconds < 3600) {
+    const minutes = Math.max(1, Math.round(seconds / 60));
+    return `${minutes} min${minutes === 1 ? '' : 's'} ago`;
   }
-  const diffHours = Math.round(diffMinutes / 60);
-  if (Math.abs(diffHours) < 24) {
-    return formatter.format(diffHours, 'hour');
+  if (seconds < 86400) {
+    const hours = Math.round(seconds / 3600);
+    return `${hours} hour${hours === 1 ? '' : 's'} ago`;
   }
-  const diffDays = Math.round(diffHours / 24);
-  return formatter.format(diffDays, 'day');
+  const days = Math.round(seconds / 86400);
+  if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`;
+  const weeks = Math.round(days / 7);
+  if (weeks < 5) return `${weeks} week${weeks === 1 ? '' : 's'} ago`;
+  const months = Math.round(days / 30);
+  if (months < 12) return `${months} month${months === 1 ? '' : 's'} ago`;
+  const years = Math.round(days / 365);
+  return `${years} year${years === 1 ? '' : 's'} ago`;
 }
 
 function monthOptions(): Array<{ value: string; label: string }> {
@@ -1134,7 +1142,11 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
                             </a>
                           </div>
                         </td>
-                        {showAuthor ? <td className="column-author">—</td> : null}
+                        {showAuthor ? (
+                          <td className="column-author">
+                            —<span className="media-no-author">(no author)</span>
+                          </td>
+                        ) : null}
                         {showParent ? (
                           <td className="column-parent">
                             <span className="media-unattached">(Unattached)</span>

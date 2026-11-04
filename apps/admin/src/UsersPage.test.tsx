@@ -125,6 +125,9 @@ describe('users page', () => {
 
     fireEvent.change(screen.getByLabelText(/Username/), { target: { value: 'new-user' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'secret-pass' } });
+    fireEvent.change(screen.getByLabelText('Repeat Password (required)'), {
+      target: { value: 'secret-pass' },
+    });
     fireEvent.change(screen.getByLabelText('Role'), { target: { value: 'author' } });
     fireEvent.submit(screen.getByRole('form', { name: 'Add user' }));
 
@@ -205,6 +208,9 @@ describe('users page', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add User' }));
     fireEvent.change(screen.getByLabelText(/Username/), { target: { value: 'new-user' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'secret-pass' } });
+    fireEvent.change(screen.getByLabelText('Repeat Password (required)'), {
+      target: { value: 'secret-pass' },
+    });
     fireEvent.submit(screen.getByRole('form', { name: 'Add user' }));
 
     expect(await screen.findByText('You cannot change your own role.')).toBeDefined();

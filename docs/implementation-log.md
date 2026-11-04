@@ -2188,3 +2188,27 @@ returns 404 with the same 750/905/1035 geometry, and anonymous pages log zero
 console errors. A final spacing release `20261104T072643Z-649658d` aligns the
 Profile (Personal Options at 102px) and Tools (first card at 105px) content
 tops; all production routes remain 200.
+
+### 2026-11-04 — Remaining screens and mobile admin parity
+
+- Audited the screens not covered by the first side-by-side pass against the
+  live WordPress 7.1.4 reference.
+- Reading/Writing: confirmed the 7.1.4 labels match, added the feeds
+  documentation link and restored WordPress's post-format order
+  (Standard, Aside, Chat, Gallery, Link, Image, Quote, Status, Video, Audio).
+- Add User: removed the profile-only "Usernames cannot be changed" helper,
+  added the required Repeat Password row and client-side match validation.
+- Updates: rebuilt as the WordPress 7.1 text layout (intro, current version,
+  MERNPress, Plugins, Themes) without pretending automatic update checks run.
+- Media: list rows use `human_time_diff`-style dates ("24 hours ago") and the
+  `— (no author)` label; Screen Options is now available on Media with its
+  column/pagination options.
+- Mobile admin (≤782px): 46px toolbar, 10px gutters, in-flow Screen
+  Options/Help row, 190px drawer, one primary table column, a per-row details
+  chevron for Posts/Pages, stacked settings/profile forms, full-width search
+  with the button below, and a single-row editor toolbar with the document
+  pills and secondary actions hidden.
+- Public author archives: `?author=` filtering, `/author/[username]` archive
+  and a real byline link, matching WordPress's author page.
+- Validation: 545 unit/integration tests (API 345, admin 122, block-system 65,
+  web 13), 23 Playwright E2E tests and six builds pass.

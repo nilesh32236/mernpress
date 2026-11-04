@@ -10,6 +10,8 @@
    ========================================================================== */
 
 :root {
+  --wp-admin-bar-h: 32px;
+
   /* WP admin chrome (WordPress 7.1 "Fresh" scheme, used by the reference). */
   --wp-admin-bar: #1d2327;
   --wp-sidebar: #1d2327;
@@ -335,8 +337,8 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  height: 32px;
-  min-height: 32px;
+  height: var(--wp-admin-bar-h);
+  min-height: var(--wp-admin-bar-h);
   padding: 0 4px;
   background: var(--wp-admin-bar);
   border-bottom: 1px solid var(--wp-sidebar-border);
@@ -603,8 +605,8 @@ h2 {
   width: 160px;
   flex-shrink: 0;
   position: sticky;
-  top: 32px;
-  height: calc(100vh - 32px);
+  top: var(--wp-admin-bar-h);
+  height: calc(100vh - var(--wp-admin-bar-h));
   overflow-y: auto;
   z-index: 40;
 }
@@ -860,7 +862,7 @@ a.nav-sublink.is-active:hover {
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  min-height: calc(100vh - 32px);
+  min-height: calc(100vh - var(--wp-admin-bar-h));
   background: var(--wp-bg);
 }
 
@@ -2577,12 +2579,12 @@ a.glance-chip:hover {
 @media (max-width: 1023.98px) {
   .admin-sidebar {
     position: fixed;
-    top: 32px;
+    top: var(--wp-admin-bar-h);
     left: 0;
     bottom: 0;
     width: min(18rem, 85vw);
     max-width: 300px;
-    height: calc(100vh - 32px);
+    height: calc(100vh - var(--wp-admin-bar-h));
     transform: translateX(-100%);
     transition: transform 160ms ease;
     box-shadow: 8px 0 24px rgba(0, 0, 0, 0.25);
@@ -2624,7 +2626,7 @@ a.glance-chip:hover {
   .wp-shell.sidebar-open .sidebar-backdrop {
     display: block;
     position: fixed;
-    inset: 32px 0 0 0;
+    inset: var(--wp-admin-bar-h) 0 0 0;
     z-index: 35;
     border: 0;
     padding: 0;
@@ -2724,7 +2726,7 @@ a.glance-chip:hover {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  min-height: calc(100vh - 32px);
+  min-height: calc(100vh - var(--wp-admin-bar-h));
   background: #ffffff;
 }
 
@@ -4581,6 +4583,11 @@ a.glance-chip:hover {
   color: #ffffff;
 }
 
+.media-no-author {
+  display: block;
+  color: var(--wp-muted);
+}
+
 .media-list-file {
   width: 40%;
 }
@@ -6103,7 +6110,7 @@ a.glance-chip:hover {
 
 .admin-bar-visit {
   position: absolute;
-  top: 32px;
+  top: var(--wp-admin-bar-h);
   left: 0;
   display: none;
   min-width: 120px;
@@ -7111,7 +7118,7 @@ a.glance-chip:hover {
 }
 
 .wp-shell.editor-mode .admin-main {
-  min-height: calc(100vh - 32px);
+  min-height: calc(100vh - var(--wp-admin-bar-h));
 }
 
 .wp-shell.editor-mode .main-content {
@@ -9330,4 +9337,259 @@ a.glance-chip:hover {
 
 .settings-panel #timezone {
   width: 220px;
+}
+
+/* WordPress 7.1 Updates screen: plain sections, no card/table. */
+.updates-page > section {
+  margin: 0 0 20px;
+}
+
+.updates-page p {
+  max-width: 960px;
+  margin: 0 0 10px;
+  color: var(--wp-text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.updates-page h2 {
+  margin: 16.9px 0;
+  color: var(--wp-text-strong, #1d2327);
+  font-size: 16.9px;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   WordPress mobile admin (<=782px): 46px toolbar, 10px page gutters, one
+   primary table column and a per-row details toggle.
+   ========================================================================== */
+
+.toggle-row {
+  display: none;
+}
+
+@media (max-width: 782px) {
+  :root {
+    --wp-admin-bar-h: 46px;
+  }
+
+  .admin-bar-left,
+  .admin-bar-right {
+    height: 46px;
+  }
+
+  .admin-bar-site-name .brand-home::before {
+    content: '\f102';
+  }
+
+  .admin-sidebar {
+    width: 190px;
+    max-width: 190px;
+  }
+
+  .wp-shell.sidebar-collapsed .admin-sidebar {
+    width: 190px;
+    max-width: 190px;
+  }
+
+  .main-content {
+    padding: 10px 10px 32px;
+  }
+
+  .main-content-inner {
+    gap: 10px;
+  }
+
+  .screen-meta-links {
+    position: static;
+    justify-content: flex-end;
+    margin: 0 0 13px;
+  }
+
+  .wp-list-screen .content-table {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .list-top {
+    display: block;
+  }
+
+  .list-top .search-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+    width: 100%;
+  }
+
+  .list-top .search-form input[type='search'] {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .list-top .search-form .button {
+    margin-left: 0;
+  }
+
+  .wp-list-screen .tablenav:not(.bottom) {
+    display: none;
+  }
+
+  .wp-list-screen .content-table thead th,
+  .wp-list-screen .content-table tbody td,
+  .wp-list-screen .content-table tfoot th {
+    display: none;
+  }
+
+  .wp-list-screen .content-table thead th.check-column,
+  .wp-list-screen .content-table thead th.column-title,
+  .wp-list-screen .content-table thead th.column-username,
+  .wp-list-screen .content-table tbody th.check-column,
+  .wp-list-screen .content-table tbody td.title,
+  .wp-list-screen .content-table tbody td.username,
+  .wp-list-screen .content-table tbody td.media-list-file,
+  .wp-list-screen .content-table tfoot th.check-column,
+  .wp-list-screen .content-table tfoot th.column-title {
+    display: table-cell;
+  }
+
+  .wp-list-screen .content-table.terms thead th.column-name,
+  .wp-list-screen .content-table.terms tbody td.column-name,
+  .wp-list-screen .content-table.terms tfoot th.column-name {
+    display: table-cell;
+  }
+
+  .wp-list-screen .content-table.posts .column-title,
+  .wp-list-screen .content-table.pages .column-title,
+  .wp-list-screen .content-table.users .column-username,
+  .wp-list-screen .content-table.terms .column-name,
+  .wp-list-screen .content-table.media-list .column-title {
+    width: auto;
+  }
+
+  .wp-list-screen .terms-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .settings-panel .field {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-panel .field > label,
+  .settings-panel .field > .field-label {
+    grid-column: 1;
+    padding: 10px 0 6px;
+  }
+
+  .settings-panel .field > div,
+  .settings-panel .field > input,
+  .settings-panel .field > select,
+  .settings-panel .field > textarea,
+  .settings-panel .field > .field-help {
+    grid-column: 1;
+  }
+
+  .settings-panel .field input:not([type='checkbox']):not([type='radio']),
+  .settings-panel .field select,
+  .settings-panel .field textarea {
+    width: 100%;
+  }
+
+  .site-icon-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wp-list-screen .content-table.posts .row-actions,
+  .wp-list-screen .content-table.pages .row-actions {
+    display: none;
+    position: static;
+    left: auto;
+  }
+
+  .wp-list-screen .content-table tr.is-expanded .row-actions {
+    display: flex;
+  }
+
+  .wp-list-screen .content-table .toggle-row {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--wp-blue);
+    cursor: pointer;
+  }
+
+  .wp-list-screen .content-table td.title {
+    position: relative;
+    padding-right: 44px;
+  }
+
+  .wp-list-screen .content-table tr.is-expanded .toggle-row .dashicons {
+    transform: rotate(180deg);
+  }
+
+  .wp-list-screen .content-table thead th > .sortable-column {
+    padding: 8px 10px;
+  }
+
+  .wp-list-screen .tablenav.bottom {
+    margin-top: 12px;
+  }
+}
+
+@media (max-width: 782px) {
+  .editor-topbar {
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
+    height: 64px;
+    min-height: 64px;
+    padding: 0 8px;
+  }
+
+  .editor-topbar-left,
+  .editor-topbar-actions {
+    width: auto;
+  }
+
+  .editor-topbar-actions {
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+  }
+
+  .editor-topbar-center {
+    display: none;
+  }
+
+  .editor-topbar-actions {
+    gap: 4px;
+    margin-left: auto;
+  }
+
+  .editor-topbar-actions .editor-topbar-view,
+  .editor-topbar-actions .editor-topbar-view-link,
+  .editor-topbar-actions .editor-topbar-text-button {
+    display: none;
+  }
+
+  .editor-sidebar {
+    top: calc(var(--wp-admin-bar-h) + 64px);
+  }
+
+  .editor-sidebar-backdrop {
+    inset: calc(var(--wp-admin-bar-h) + 64px) 0 0 0;
+  }
+
+  .editor-main-column {
+    padding: 16px 16px 32px;
+  }
 }

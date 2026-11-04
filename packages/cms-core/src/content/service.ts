@@ -1155,6 +1155,9 @@ export function createContentService(options: ContentServiceOptions): ContentSer
         terms: { some: { term: { taxonomy: 'tag', slug: query.tag } } },
       });
     }
+    if (query.author) {
+      filters.push({ author: { username: query.author } });
+    }
     if (filters.length > 0) {
       where.AND = filters;
     }

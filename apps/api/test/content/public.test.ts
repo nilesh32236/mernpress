@@ -212,6 +212,23 @@ describe('public search and term archives', () => {
     expect((missing.json() as Paged<PublicPost>).pagination.total).toBe(0);
   });
 
+  it('filters by author username', async () => {
+    await publish(await createPost({ type: 'post', title: 'Authored Post' }));
+    const authored = await app.inject({
+      method: 'GET',
+      url: '/api/public/posts?author=admin',
+    });
+    expect(authored.statusCode).toBe(200);
+    expect((authored.json() as Paged<PublicPost>).items.map((item) => item.title)).toEqual([
+      'Authored Post',
+    ]);
+    const missing = await app.inject({
+      method: 'GET',
+      url: '/api/public/posts?author=nobody',
+    });
+    expect((missing.json() as Paged<PublicPost>).items).toEqual([]);
+  });
+
   it('rejects unknown public query parameters', async () => {
     const response = await app.inject({ method: 'GET', url: '/api/public/posts?nope=1' });
     expect(response.statusCode).toBe(400);
