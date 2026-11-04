@@ -877,6 +877,9 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
                       <span className="media-thumb">
                         <img src={thumbnailUrl(item)} alt={item.altText || ''} loading="lazy" />
                       </span>
+                      <span className="media-card-label" aria-hidden="true">
+                        {item.originalName}
+                      </span>
                       <span className="media-check" aria-hidden="true">
                         <svg viewBox="0 0 20 20" fill="currentColor">
                           <path d="M8.2 14.4 4 10.2l1.4-1.4 2.8 2.8 6.4-6.4L16 6.6z" />

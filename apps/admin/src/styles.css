@@ -9024,3 +9024,31 @@ a.glance-chip:hover {
 .login-card-links {
   margin-top: 26px;
 }
+
+/* WordPress media grid shows the attachment name on hover/focus. */
+.media-grid .media-card {
+  position: relative;
+}
+
+.media-card-label {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+  display: none;
+  padding: 2px 6px;
+  overflow: hidden;
+  border: 1px solid #c3c4c7;
+  background: #ffffff;
+  color: #3c434a;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.media-grid .media-card:hover .media-card-label,
+.media-grid .media-card:focus-visible .media-card-label {
+  display: block;
+}

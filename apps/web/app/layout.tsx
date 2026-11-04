@@ -80,6 +80,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <nav className="site-footer-nav" aria-label="Footer">
                 <Link href="/posts">Blog</Link>
                 <Link href="/">Home</Link>
+                <Link href="/search">Search</Link>
+                <Link href="/feed">Feed</Link>
               </nav>
               {pageLinks.length > 0 ? (
                 <nav className="site-footer-nav" aria-label="Pages">
