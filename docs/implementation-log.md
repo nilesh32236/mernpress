@@ -2369,3 +2369,10 @@ it with a backdrop that does not tint the dialog's own text. `/`, `/admin/`,
   persists.
 - Validation: 568 unit/integration tests (API 363, admin 127, block-system 65,
   web 13), 23 Playwright E2E tests and six builds pass.
+
+**Deployment:** release `20261104T103630Z-1665c63` (production symlink
+`/opt/mernpress/current`). `/`, `/admin/`, `/admin/plugins`,
+`/admin/plugins/new` and `/api/health` return 200; `/api/admin/plugins` returns
+401 for anonymous callers. The production admin bundle contains the Installed
+Plugins/Add Plugins screens and the Hello MERNPress plugin; the API bundle's
+`cms-core` includes the `hello-mernpress` registry entry.
