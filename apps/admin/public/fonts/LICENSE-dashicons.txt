@@ -1,0 +1,6 @@
+Dashicons font
+Copyright (c) WordPress contributors
+Licensed under GPL-2.0-or-later (font exception).
+Source: WordPress core wp-includes/fonts/dashicons.woff2.
+Copied for visual parity with the WordPress admin menu; only the glyphs used by
+the admin menu are declared in apps/admin/src/styles.css.

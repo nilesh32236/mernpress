@@ -644,7 +644,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       label: 'Dashboard',
       active: route.name === 'dashboard',
       show: true,
-      icon: <DashboardGaugeIcon />,
+      icon: <span className="dashicons dashicons-dashboard" />,
       subs: [
         { label: 'Home', to: '/', active: route.name === 'dashboard' },
         ...(isAdmin
@@ -657,7 +657,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       label: 'Posts',
       active: isPostRoute,
       show: canReadContent(user),
-      icon: postIcon,
+      icon: <span className="dashicons dashicons-admin-post" />,
       subs: [
         {
           label: 'All Posts',
@@ -694,7 +694,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       label: 'Media',
       active: route.name === 'media',
       show: canReadContent(user),
-      icon: mediaIcon,
+      icon: <span className="dashicons dashicons-admin-media" />,
       subs: [
         { label: 'Library', to: '/media', active: route.name === 'media' },
         {
@@ -709,7 +709,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       label: 'Pages',
       active: isPageRoute,
       show: canReadContent(user),
-      icon: pageIcon,
+      icon: <span className="dashicons dashicons-admin-page" />,
       subs: [
         {
           label: 'All Pages',
@@ -732,7 +732,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       label: 'Users',
       active: route.name === 'users' || route.name === 'profile',
       show: isAdmin,
-      icon: people,
+      icon: <span className="dashicons dashicons-admin-users" />,
       subs: [
         { label: 'All Users', to: '/users', active: route.name === 'users' },
         { label: 'Add User', to: '/users?action=add', active: false },
@@ -744,7 +744,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       label: 'Tools',
       active: route.name === 'tools',
       show: isAdmin,
-      icon: tool,
+      icon: <span className="dashicons dashicons-admin-tools" />,
       subs: [
         {
           label: 'Available Tools',
@@ -770,7 +770,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       label: 'Settings',
       active: route.name === 'settings',
       show: isAdmin,
-      icon: settingsIcon,
+      icon: <span className="dashicons dashicons-admin-settings" />,
       subs: [
         {
           label: 'General',
@@ -925,7 +925,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
                     go(newContentPath('post'));
                   }}
                 >
-                  <PostIcon />
+                  <span className="dashicons dashicons-admin-post" />
                   <span>Post</span>
                 </a>
                 <a
@@ -936,7 +936,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
                     go('/media?upload=1');
                   }}
                 >
-                  <Icon icon={mediaIcon} size={20} />
+                  <span className="dashicons dashicons-admin-media" />
                   <span>Media</span>
                 </a>
                 <a
@@ -947,7 +947,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
                     go(newContentPath('page'));
                   }}
                 >
-                  <PageIcon />
+                  <span className="dashicons dashicons-admin-page" />
                   <span>Page</span>
                 </a>
                 {isAdmin ? (
@@ -959,7 +959,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
                       go('/users');
                     }}
                   >
-                    <UsersIcon />
+                    <span className="dashicons dashicons-admin-users" />
                     <span>User</span>
                   </a>
                 ) : null}

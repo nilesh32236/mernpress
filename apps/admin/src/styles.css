@@ -9052,3 +9052,87 @@ a.glance-chip:hover {
 .media-grid .media-card:focus-visible .media-card-label {
   display: block;
 }
+
+/* ==========================================================================
+   WordPress Dashicons (GPL-2.0-or-later, see public/fonts/LICENSE-dashicons).
+   Only the glyphs used by the admin menu are declared.
+   ========================================================================== */
+@font-face {
+  font-family: dashicons;
+  src: url('/admin/fonts/dashicons.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
+.dashicons,
+.dashicons-before:before {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  font-family: dashicons;
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1;
+  text-align: center;
+  text-decoration: inherit;
+  text-transform: none;
+  vertical-align: top;
+  speak: never;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.dashicons-dashboard:before {
+  content: '\f226';
+}
+.dashicons-admin-post:before {
+  content: '\f109';
+}
+.dashicons-admin-media:before {
+  content: '\f104';
+}
+.dashicons-admin-page:before {
+  content: '\f105';
+}
+.dashicons-admin-users:before {
+  content: '\f110';
+}
+.dashicons-admin-tools:before {
+  content: '\f107';
+}
+.dashicons-admin-settings:before {
+  content: '\f108';
+}
+.dashicons-update:before {
+  content: '\f463';
+}
+.dashicons-admin-home:before {
+  content: '\f102';
+}
+.dashicons-admin-comments:before {
+  content: '\f101';
+}
+.dashicons-admin-appearance:before {
+  content: '\f100';
+}
+.dashicons-admin-plugins:before {
+  content: '\f106';
+}
+.dashicons-search:before {
+  content: '\f179';
+}
+.dashicons-plus:before {
+  content: '\f132';
+}
+.dashicons-menu-alt:before {
+  content: '\f228';
+}
+
+/* The sidebar's icon slot must not add flex gaps around the font glyph. */
+.admin-sidebar .nav-icon .dashicons {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
