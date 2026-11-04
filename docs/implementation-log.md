@@ -2746,3 +2746,19 @@ state (`All (1)`, `Active (1)`). The temporary administrator was deleted.
   mail containing a working reset link; the invitee set a password and logged in.
 - Validation: 631 unit/integration tests (API 400, admin 153, block-system 65,
   web 13), 23 Playwright E2E tests and six builds pass.
+
+**Deployment:** release `20261104T140553Z-5ca6cfd` (current), with migration
+`20261104135232_add_password_resets` applied and the `password_resets` table
+verified in production. `/`, `/admin/` and `/api/health` return 200.
+- Production has no SMTP configured, so the Login → Lost Password form reports
+  "Password reset email cannot be sent because email delivery is not
+  configured." rather than pretending to send.
+- The Reset Password screen is live at `/admin/?action=rp&key=…&login=…`; a
+  fake token returns "This password reset link is invalid or has expired."
+- With a token inserted for a temporary administrator, the production reset
+  screen set a new password, the temporary administrator logged in with it, and
+  the account was deleted afterwards. Production is back to one user with no
+  reset rows or rate-limit rows.
+- Real lost-password e-mails still require `SMTP_HOST`/`MAIL_FROM` credentials
+  supplied by the owner; the Add User welcome e-mail will then include the reset
+  link automatically.
