@@ -8878,3 +8878,149 @@ a.glance-chip:hover {
   color: #2271b1;
   text-decoration: underline;
 }
+
+/* WordPress form-table selects size to their options; only text inputs and
+   textareas use the 350px column width. */
+.settings-panel .field > select {
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.settings-panel .field > div > select {
+  width: auto;
+  min-width: 0;
+}
+
+/* Grid items stretch by default; WordPress selects align left at their
+   content width. */
+.settings-panel .field > select,
+.settings-panel .field > div > select {
+  justify-self: start;
+  width: auto;
+}
+
+/* Nested settings selects (Reading homepage/posts page) also size to their
+   content in WordPress. */
+.settings-panel .field select {
+  width: auto;
+  max-width: 100%;
+}
+
+/* WordPress login page: full-width canvas with the 320px form at 8vh. */
+.app-frame.login-frame {
+  display: block;
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  gap: 0;
+}
+
+.login-page {
+  width: 100%;
+  padding: 0;
+}
+
+.login-card .field input {
+  border-radius: 2px;
+  padding: 3px 5px;
+  color: #1e1e1e;
+}
+
+.login-card .field input:focus {
+  border-color: #3858e9;
+  box-shadow: 0 0 0 1px #3858e9;
+}
+
+.login-submit {
+  min-width: 70px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 2px;
+  background: #3858e9;
+}
+
+.login-submit:hover:not(:disabled) {
+  background: #2c46c9;
+}
+
+.login-submit-row {
+  min-height: 40px;
+}
+
+.login-card-links a,
+.login-back a {
+  color: #50575e;
+  text-decoration: underline;
+}
+
+.login-card-links a:hover,
+.login-back a:hover {
+  color: #1d2327;
+  text-decoration: underline;
+}
+
+/* Higher specificity than .button.primary-button for the WordPress login
+   action colour. */
+.login-card .login-submit,
+.login-card .button.login-submit {
+  background: #3858e9;
+  border-color: #3858e9;
+  color: #ffffff;
+}
+
+.login-card .login-submit:hover:not(:disabled),
+.login-card .button.login-submit:hover:not(:disabled) {
+  background: #2c46c9;
+  border-color: #2c46c9;
+}
+
+/* WordPress login form rhythm: block fields with 16px gaps, 21px labels and
+   a 40px submit row directly after the password field. */
+.login-card form {
+  display: block;
+}
+
+.login-card .field {
+  margin: 0 0 16px;
+}
+
+.login-card .field label {
+  margin-bottom: 3px;
+  line-height: 21px;
+}
+
+.login-card .field input {
+  margin-top: 0;
+}
+
+.login-submit-row {
+  margin-top: 0;
+  min-height: 40px;
+}
+
+/* The shared .field is a grid; the WordPress login field is a simple block
+   with a 3px label gap. */
+.login-card .field {
+  display: block;
+}
+
+.login-card .field label {
+  display: block;
+  margin: 0 0 3px;
+}
+
+.login-card .field input {
+  display: block;
+  margin: 0;
+}
+
+/* WordPress users list rows are 52px tall. */
+.wp-list-screen .content-table.users tbody tr {
+  height: 52px;
+}
+
+/* WP login links sit 26px below the card. */
+.login-card-links {
+  margin-top: 26px;
+}

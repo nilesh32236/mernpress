@@ -153,7 +153,6 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
 
   const [defaultCategory, setDefaultCategory] = useState('');
   const [defaultFormat, setDefaultFormat] = useState('standard');
-  const [defaultAuthor, setDefaultAuthor] = useState('');
   const [, setWritingDirty] = useState(false);
   const [categoryOptions, setCategoryOptions] = useState<Array<{
     id: string;
@@ -221,7 +220,6 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
         } catch {
           // Storage is optional.
         }
-        setDefaultAuthor(textValue(values.default_author));
         setWritingDirty(false);
       }
       setLoaded((prev) => ({ ...prev, [group]: true }));
@@ -337,7 +335,6 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
       await updateOptions('writing', {
         default_post_category: defaultCategory.trim() === '' ? null : defaultCategory.trim(),
         default_post_format: defaultFormat,
-        default_author: defaultAuthor.trim() === '' ? null : defaultAuthor.trim(),
       });
       try {
         window.localStorage.setItem('mernpress.defaultPostFormat', defaultFormat);
@@ -724,7 +721,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
         <div className="content-card">
           <form onSubmit={saveReading} aria-label="Reading settings">
             <div className="field">
-              <span className="field-label">Homepage displays</span>
+              <span className="field-label">Your homepage displays</span>
               <div>
                 <p className="radio-line">
                   <label>
@@ -799,7 +796,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
               </div>
             </div>
             <div className="field">
-              <label htmlFor="posts_per_page">Blog pages show at most</label>
+              <label htmlFor="posts_per_page">Number of recent posts shown on archive pages</label>
               <div>
                 <input
                   id="posts_per_page"
@@ -877,29 +874,6 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
               <option value="chat">Chat</option>
             </select>
           </div>
-          <div className="field">
-            <label htmlFor="default_author">Default Author</label>
-            <select
-              id="default_author"
-              value={defaultAuthor}
-              onChange={(event) => {
-                setDefaultAuthor(event.target.value);
-                setWritingDirty(true);
-              }}
-              disabled={saving.writing}
-            >
-              <option value="">— None —</option>
-              {(userOptions ?? []).map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.username}
-                </option>
-              ))}
-            </select>
-            <p className="field-help">Used when content is created without an explicit author.</p>
-          </div>
-          <p className="field-help">
-            Post formats, posting by email and update services are not part of this build.
-          </p>
           <div className="field actions">
             <button
               type="submit"

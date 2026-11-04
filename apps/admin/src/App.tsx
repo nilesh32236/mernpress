@@ -79,7 +79,7 @@ export function App() {
 
   if (!user) {
     return (
-      <div className="app-frame">
+      <div className="app-frame login-frame">
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>
