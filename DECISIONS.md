@@ -63,6 +63,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-050 | 2026-11-04 | Appearance is a registry-backed Themes screen, not a theme loader: installed themes are declared in `packages/cms-core/src/themes/registry.ts`, the active theme and auto-update preference are `appearance` options, the Themes grid/Details modal match WordPress 7.1, Add Themes explicitly reports that remote browsing/ZIP install are unavailable, and Customize edits the real `site_title`/`site_tagline` options with a public-site preview. Administrators only. | accepted | [ADR 0011](docs/adr/0011-appearance-themes.md) |
 
+| D-051 | 2026-11-04 | Plugins are bundled packages declared in `packages/cms-core/src/plugins/registry.ts`, with activation persisted as an `active_plugins` option and one real shipped plugin (Hello MERNPress) contributing a toolbar lyric when active. The Installed Plugins screen matches WordPress 7.1 (status filters with counts, bulk activate/deactivate, active-row edge, Automatic Updates column, Screen Options); Add Plugins explicitly reports that WordPress.org browsing, ZIP upload and runtime install are unavailable, and Upload Plugin is disabled. Administrators only; no third-party code is loaded. | accepted | [ADR 0012](docs/adr/0012-plugins.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

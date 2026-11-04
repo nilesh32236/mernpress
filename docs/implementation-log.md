@@ -2340,3 +2340,32 @@ A follow-up patch (`20261104T102228Z-d2f4ae8`) aligns the Theme Details dialog
 with the WordPress geometry (inset 182/84 → 1237×799) and dims the page behind
 it with a backdrop that does not tint the dialog's own text. `/`, `/admin/`,
 `/admin/themes`, `/admin/theme-screenshot.png` and `/api/health` remain 200.
+
+### 2026-11-04 — Expanded scope, slice 4: Plugins
+
+- Added a bundled plugin registry (`packages/cms-core/src/plugins/registry.ts`)
+  with one genuinely functional plugin, Hello MERNPress (the Hello Dolly
+  analogue), plus a plugin service (list/activate/deactivate/auto-update
+  preference/toolbar message) storing `active_plugins` and
+  `plugin_auto_updates` as `plugins` options. The service accepts an injected
+  registry for tests.
+- New administrator-only routes: `GET /api/admin/plugins`,
+  `GET /api/admin/plugins/toolbar`, `POST /api/admin/plugins/:id/activate`,
+  `POST /api/admin/plugins/:id/deactivate`,
+  `POST /api/admin/plugins/auto-updates`.
+- Installed Plugins screen matched to WordPress 7.1: title count bubble, Add
+  Plugin button, All/Active/Inactive filters with counts, "Search installed
+  plugins" label + 199px input, bulk actions wired to activate/deactivate the
+  selection, list table with Plugin (name + row actions), Description (version
+  and author line) and Automatic Updates, active rows with #f0f6fc background
+  and a 4px #72aee6 edge, repeating footer, and Screen Options column/per-page
+  support.
+- Add Plugins screen keeps the WordPress header/count/search and lists installed
+  plugins, with a plain statement that WordPress.org browsing, ZIP upload and
+  runtime install are unavailable; `Upload Plugin` is disabled.
+- Verified in the browser: activating Hello MERNPress shows its lyric in the
+  admin toolbar ("Blocks in the editor, posts on the wire"), deactivating
+  removes it; filter counts and row actions update; auto-update preference
+  persists.
+- Validation: 568 unit/integration tests (API 363, admin 127, block-system 65,
+  web 13), 23 Playwright E2E tests and six builds pass.

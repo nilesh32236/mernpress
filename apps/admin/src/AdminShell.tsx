@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { fetchCommentCounts, fetchPosts, logout, type AdminPost, type AuthUser } from './api.js';
+import {
+  fetchCommentCounts,
+  fetchPluginToolbar,
+  fetchPosts,
+  logout,
+  type AdminPost,
+  type AuthUser,
+} from './api.js';
 import type { Route } from './router.js';
 import { navigate, newContentPath } from './router.js';
 import { useNavigationGuard } from './navigation-guard.js';
@@ -41,6 +48,9 @@ function screenKey(route: Route): string {
     case 'themeInstall':
     case 'customize':
       return 'themes';
+    case 'plugins':
+    case 'pluginInstall':
+      return 'plugins';
     case 'users':
       return 'users';
     case 'terms':
@@ -165,6 +175,31 @@ function screenHelp(route: Route): {
           {
             label: 'Documentation on Themes',
             href: 'https://wordpress.org/documentation/article/appearance-themes-screen/',
+          },
+          support,
+        ],
+      };
+    case 'plugins':
+      return {
+        title: 'Plugins',
+        sections: [
+          {
+            heading: 'Overview',
+            body: 'This screen lists the plugins bundled with this build. Activate or deactivate them with the row actions; active plugins add their behaviour to the admin and the public site.',
+          },
+          {
+            heading: 'Automatic Updates',
+            body: 'The Automatic Updates column stores the auto-update preference for the plugin set. Update checking is a separate slice; nothing is downloaded or replaced yet.',
+          },
+          {
+            heading: 'Adding plugins',
+            body: 'Plugins are trusted packages in the repository. Browsing WordPress.org, uploading a ZIP and installing plugins at runtime are not enabled in this build.',
+          },
+        ],
+        links: [
+          {
+            label: 'Documentation on Plugins',
+            href: 'https://wordpress.org/documentation/article/manage-plugins/',
           },
           support,
         ],
@@ -410,6 +445,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
   const [newMenuOpen, setNewMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [commentPending, setCommentPending] = useState(0);
+  const [pluginLyric, setPluginLyric] = useState<string | null>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const mainRef = useRef<HTMLElement>(null);
@@ -432,6 +468,21 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       active = false;
     };
   }, [user.id, route.name]);
+
+  useEffect(() => {
+    if (user.role !== 'administrator') return;
+    let active = true;
+    fetchPluginToolbar()
+      .then((result) => {
+        if (active) setPluginLyric(result.message);
+      })
+      .catch(() => {
+        if (active) setPluginLyric(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user.role, route.name]);
 
   useEffect(() => {
     const current = window.location.pathname + window.location.search;
@@ -523,9 +574,15 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
   // would duplicate navigation and sit behind the editor toolbar.
   const isEditorRoute = route.name === 'new' || route.name === 'edit';
   const currentScreen = screenKey(route);
-  const supportsPerPage = ['posts', 'pages', 'users', 'terms', 'media', 'comments'].includes(
-    currentScreen,
-  );
+  const supportsPerPage = [
+    'posts',
+    'pages',
+    'users',
+    'terms',
+    'media',
+    'comments',
+    'plugins',
+  ].includes(currentScreen);
   const screenColumns = SCREEN_COLUMNS[currentScreen] ?? [];
   const supportsViewMode = ['posts', 'pages'].includes(currentScreen);
   const isDashboard = currentScreen === 'dashboard';
@@ -759,6 +816,17 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       ],
     },
     {
+      to: '/plugins',
+      label: 'Plugins',
+      active: route.name === 'plugins' || route.name === 'pluginInstall',
+      show: user.role === 'administrator',
+      icon: <span className="dashicons dashicons-admin-plugins" />,
+      subs: [
+        { label: 'Installed Plugins', to: '/plugins', active: route.name === 'plugins' },
+        { label: 'Add Plugin', to: '/plugins/new', active: route.name === 'pluginInstall' },
+      ],
+    },
+    {
       to: '/users',
       label: 'Users',
       active: route.name === 'users' || route.name === 'profile',
@@ -985,6 +1053,11 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
               </div>
             </div>
           ) : null}
+          {pluginLyric ? (
+            <span className="admin-bar-lyric" title="Hello MERNPress plugin">
+              {pluginLyric}
+            </span>
+          ) : null}
           {canReadComments(user) ? (
             <a
               className="admin-bar-comments"
@@ -1182,9 +1255,16 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
             ) : (
               <div className="main-content-inner">
                 <div id="screen-meta-links" className="screen-meta-links">
-                  {['dashboard', 'posts', 'pages', 'users', 'terms', 'media', 'comments'].includes(
-                    currentScreen,
-                  ) &&
+                  {[
+                    'dashboard',
+                    'posts',
+                    'pages',
+                    'users',
+                    'terms',
+                    'media',
+                    'comments',
+                    'plugins',
+                  ].includes(currentScreen) &&
                   !(
                     route.name === 'users' &&
                     new URLSearchParams(window.location.search).get('action') === 'add'

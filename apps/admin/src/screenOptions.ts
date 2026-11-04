@@ -77,6 +77,10 @@ export const SCREEN_COLUMNS: Record<string, ScreenColumn[]> = {
     { id: 'response', label: 'In response to' },
     { id: 'date', label: 'Submitted on' },
   ],
+  plugins: [
+    { id: 'description', label: 'Description' },
+    { id: 'auto-updates', label: 'Automatic Updates' },
+  ],
 };
 
 const COLUMN_PREFIX = 'mernpress.hiddenColumns.';

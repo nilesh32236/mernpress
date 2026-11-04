@@ -10299,3 +10299,196 @@ a.glance-chip:hover {
 .theme-overlay-info .button-link:hover {
   color: var(--wp-blue-hover);
 }
+
+/* ==========================================================================
+   Plugins → Installed Plugins (WordPress 7.1): active rows carry the blue edge,
+   the plugin column holds the name + row actions, and Automatic Updates is a
+   17.7% column.
+   ========================================================================== */
+
+.plugins-screen .content-table.plugins {
+  table-layout: fixed;
+}
+
+.plugins-screen .content-table.plugins .column-plugin {
+  width: 26%;
+}
+
+.plugins-screen .content-table.plugins .column-description {
+  width: auto;
+}
+
+.plugins-screen .content-table.plugins .column-auto-updates {
+  width: 17.7%;
+}
+
+.plugins-screen .content-table.plugins tbody td,
+.plugins-screen .content-table.plugins tbody th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  vertical-align: top;
+}
+
+.plugin-title strong {
+  display: block;
+  color: #1d2327;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.plugin-title .row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-top: 3px;
+}
+
+.plugin-details-text {
+  color: var(--wp-muted);
+  font-size: 13px;
+}
+
+.plugin-description {
+  margin: 0;
+  color: #3c434a;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.plugin-version {
+  margin: 6px 0 0;
+  color: #3c434a;
+  font-size: 13px;
+}
+
+.column-auto-updates .button-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--wp-blue);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.column-auto-updates .button-link:hover:not(:disabled) {
+  color: var(--wp-blue-hover);
+}
+
+.plugins-screen .content-table.plugins tr.active th.check-column {
+  border-left: 4px solid #72aee6;
+}
+
+.plugins-screen .content-table.plugins tr.active td,
+.plugins-screen .content-table.plugins tr.active th {
+  background: #f0f6fc;
+}
+
+.plugins-screen .content-table.plugins tr.active:hover td,
+.plugins-screen .content-table.plugins tr.active:hover th {
+  background: #f0f6fc;
+}
+
+.plugins-empty {
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid var(--wp-border);
+  background: #ffffff;
+  color: var(--wp-text);
+  font-size: 14px;
+}
+
+.admin-bar-lyric {
+  max-width: 320px;
+  overflow: hidden;
+  color: #f0f0f1;
+  font-size: 13px;
+  font-style: italic;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plugins-install-screen .notice {
+  margin: 0 0 16px;
+}
+
+.plugins-install-screen .list-top {
+  margin-bottom: 12px;
+}
+
+.plugin-install-heading {
+  margin: 20px 0 12px;
+  font-size: 16.9px;
+  font-weight: 600;
+}
+
+.plugins-install-screen .content-table.plugins {
+  table-layout: auto;
+}
+
+.plugin-install-name strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.plugin-install-action {
+  width: 160px;
+  text-align: right;
+}
+
+.plugin-activated {
+  color: #00693e;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@media (max-width: 782px) {
+  .plugins-screen .content-table.plugins .column-plugin {
+    width: auto;
+  }
+
+  .admin-bar-lyric {
+    display: none;
+  }
+}
+
+/* WordPress always shows plugin row actions and aligns the search label left. */
+.plugins-screen .plugin-title .row-actions {
+  visibility: visible;
+}
+
+.plugins-screen .plugins-search-label {
+  margin-right: 10px;
+  color: var(--wp-text);
+  font-size: 15px;
+}
+
+.plugins-screen .search-form {
+  gap: 0;
+}
+
+.plugins-screen .displaying-num {
+  margin-left: auto;
+}
+
+@media (max-width: 782px) {
+  .plugins-screen .plugins-search-label {
+    margin: 0 0 4px;
+  }
+}
+
+/* The Plugins screen shows its search label (WordPress does the same). */
+.plugins-screen .search-form > label.plugins-search-label {
+  position: static !important;
+  width: auto;
+  height: auto;
+  margin: 0 10px 0 0;
+  padding: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: nowrap;
+  font-size: 15px;
+}

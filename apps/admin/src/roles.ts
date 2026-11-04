@@ -28,6 +28,10 @@ export function canSwitchThemes(user: AuthUser): boolean {
   return user.role === 'administrator';
 }
 
+export function canManagePlugins(user: AuthUser): boolean {
+  return user.role === 'administrator';
+}
+
 export function canManageTerms(user: AuthUser): boolean {
   return user.role === 'administrator' || user.role === 'editor';
 }

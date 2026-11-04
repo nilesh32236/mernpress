@@ -191,3 +191,14 @@ export type {
 export { createThemeService, type ThemeService } from './themes/service.js';
 export type { ThemeListResult, ThemeState } from './themes/service.js';
 export { THEMES, DEFAULT_THEME_ID, findTheme, type ThemeManifest } from './themes/registry.js';
+
+// ---- Plugins (ADR 0012) ----
+export { createPluginService, type PluginService } from './plugins/service.js';
+export type { PluginListResult, PluginState } from './plugins/service.js';
+export {
+  PLUGINS,
+  HELLO_LYRICS,
+  findPlugin,
+  lyricFor,
+  type PluginManifest,
+} from './plugins/registry.js';

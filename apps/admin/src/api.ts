@@ -1444,3 +1444,69 @@ export async function setThemeAutoUpdates(enabled: boolean): Promise<ThemeListRe
   });
   return readJson<ThemeListResult>(response);
 }
+
+// ---- Plugins (ADR 0012) ----
+export interface AdminPlugin {
+  id: string;
+  name: string;
+  version: string;
+  author: string;
+  description: string;
+  details: string;
+  active: boolean;
+  autoUpdates: boolean;
+}
+
+export interface PluginListResult {
+  plugins: AdminPlugin[];
+  counts: { all: number; active: number; inactive: number };
+}
+
+export async function fetchPlugins(): Promise<PluginListResult> {
+  const response = await fetch('/api/admin/plugins', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<PluginListResult>(response);
+}
+
+export async function activatePlugin(id: string): Promise<PluginListResult> {
+  const response = await fetch(`/api/admin/plugins/${encodeURIComponent(id)}/activate`, {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  return readJson<PluginListResult>(response);
+}
+
+export async function deactivatePlugin(id: string): Promise<PluginListResult> {
+  const response = await fetch(`/api/admin/plugins/${encodeURIComponent(id)}/deactivate`, {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  return readJson<PluginListResult>(response);
+}
+
+export async function setPluginAutoUpdates(enabled: boolean): Promise<PluginListResult> {
+  const response = await fetch('/api/admin/plugins/auto-updates', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', 'content-type': 'application/json', ...csrfHeader() },
+    body: JSON.stringify({ enabled }),
+  });
+  return readJson<PluginListResult>(response);
+}
+
+export async function fetchPluginToolbar(): Promise<{ message: string | null }> {
+  const response = await fetch('/api/admin/plugins/toolbar', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<{ message: string | null }>(response);
+}

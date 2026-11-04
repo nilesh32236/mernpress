@@ -14,6 +14,8 @@ export type Route =
   | { name: 'themes' }
   | { name: 'themeInstall' }
   | { name: 'customize' }
+  | { name: 'plugins' }
+  | { name: 'pluginInstall' }
   | { name: 'users' }
   | { name: 'profile' }
   | { name: 'settings' }
@@ -71,6 +73,12 @@ export function parseRoute(pathname: string): Route {
   }
   if (typeSegment === 'themes' && parts.length === 2 && second === 'customize') {
     return { name: 'customize' };
+  }
+  if (typeSegment === 'plugins' && parts.length === 1) {
+    return { name: 'plugins' };
+  }
+  if (typeSegment === 'plugins' && parts.length === 2 && second === 'new') {
+    return { name: 'pluginInstall' };
   }
   if (typeSegment === 'users' && parts.length === 1) {
     return { name: 'users' };
@@ -197,6 +205,14 @@ export function breadcrumbs(route: Route): Array<{ label: string; to?: string }>
         { label: 'Dashboard', to: '/' },
         { label: 'Appearance', to: '/themes' },
         { label: 'Customize' },
+      ];
+    case 'plugins':
+      return [{ label: 'Dashboard', to: '/' }, { label: 'Plugins' }];
+    case 'pluginInstall':
+      return [
+        { label: 'Dashboard', to: '/' },
+        { label: 'Plugins', to: '/plugins' },
+        { label: 'Add Plugins' },
       ];
     case 'users':
       return [{ label: 'Dashboard', to: '/' }, { label: 'Users' }];
