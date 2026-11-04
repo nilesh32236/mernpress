@@ -11481,3 +11481,63 @@ a.glance-chip:hover {
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* Plugin row actions: WordPress separates them with pipes and colours Delete. */
+.plugins-screen .plugin-title .row-actions {
+  align-items: center;
+  gap: 4px;
+}
+
+.plugin-title .row-action-sep {
+  color: #a7aaad;
+  font-size: 13px;
+}
+
+.row-action-link.is-danger {
+  color: #b32d2e;
+}
+
+.row-action-link.is-danger:hover {
+  color: #8a2424;
+}
+
+.button.is-danger {
+  border-color: #b32d2e;
+  background: #b32d2e;
+  color: #ffffff;
+}
+
+.button.is-danger:hover:not(:disabled) {
+  border-color: #8a2424;
+  background: #8a2424;
+  color: #ffffff;
+}
+
+.plugin-details p {
+  margin: 0 0 12px;
+  color: var(--wp-text);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.plugin-details-meta {
+  color: var(--wp-muted) !important;
+}
+
+.plugin-details-note {
+  padding: 10px 12px;
+  border-left: 4px solid #72aee6;
+  background: #f0f6fc;
+}
+
+.plugin-details-auto {
+  color: var(--wp-muted) !important;
+  font-size: 12px !important;
+}
+
+.plugin-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}

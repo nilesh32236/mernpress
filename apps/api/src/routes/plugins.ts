@@ -62,6 +62,17 @@ export function registerPluginRoutes(app: FastifyInstance, options: PluginRouteO
     }
   });
 
+  app.delete('/api/admin/plugins/:id', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const { id } = pluginParamSchema.parse(request.params);
+      return await plugins.remove(ctx.principal, id);
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
   app.post('/api/admin/plugins/:id/deactivate', async (request, reply) => {
     const ctx = await guard(request, reply);
     if (!ctx) return;

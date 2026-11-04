@@ -1580,6 +1580,16 @@ export async function deactivatePlugin(id: string): Promise<PluginListResult> {
   return readJson<PluginListResult>(response);
 }
 
+export async function deletePlugin(id: string): Promise<PluginListResult> {
+  const response = await fetch(`/api/admin/plugins/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  return readJson<PluginListResult>(response);
+}
+
 export async function setPluginAutoUpdates(enabled: boolean): Promise<PluginListResult> {
   const response = await fetch('/api/admin/plugins/auto-updates', {
     method: 'POST',

@@ -2681,3 +2681,20 @@ production and was deleted afterwards:
     checkbox was enabled and checked.
 - Validation: 620 unit/integration tests (API 394, admin 148, block-system 65,
   web 13), 23 Playwright E2E tests and six builds pass.
+
+### 2026-11-04 — Plugin row actions: View details and Delete
+
+- Installed Plugins rows now offer **View details** for every plugin and
+  **Delete** for inactive plugins, matching WordPress. Details come from the
+  plugin registry (name, version, author, description, short details line,
+  automatic-update state); no marketplace figures are invented.
+- Delete asks for confirmation, then records the plugin id in
+  `deleted_plugins`, removes its activation and filters it from the list,
+  counts and toolbar. Deleting an active plugin returns 409 ("Deactivate the
+  plugin before deleting it.") and a repeat delete returns 404. Because plugins
+  are bundled in releases, the confirmation states that the code remains in the
+  release; the action removes the plugin from the site.
+- The footer select-all checkbox now mirrors the header instead of staying
+  disabled.
+- Validation: 623 unit/integration tests (API 395, admin 150, block-system 65,
+  web 13), 23 Playwright E2E tests and six builds pass.

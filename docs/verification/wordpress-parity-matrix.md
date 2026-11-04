@@ -38,7 +38,7 @@ owner decision.
 | Appearance → Themes | D/P | Grid, details dialog, search, Customize |
 | Appearance → Editor | D/P | Design sidebar, template list, live canvas |
 | Appearance → Fonts | D/P | Library, weights, samples, unavailable upload/install |
-| Plugins → Installed | D/P | Filters, bulk, active edge, auto-update column |
+| Plugins → Installed | D/P | Filters, bulk, active edge, auto-update column, View details, Delete (inactive only) |
 | Plugins → Add Plugin | D/P | Honest no-marketplace boundary |
 | Users / Add User / Profile | D/P | Roles, display name select, colour schemes, syntax highlighting, language, application passwords, password; Send User Notification enabled when mail is configured |
 | Tools → Available Tools / Export / Site Health | D/P | Cards, export JSON, health checks |

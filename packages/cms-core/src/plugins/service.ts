@@ -23,6 +23,7 @@ export interface PluginServiceOptions {
 }
 
 const ACTIVE_PLUGINS_KEY = 'active_plugins';
+const DELETED_PLUGINS_KEY = 'deleted_plugins';
 const AUTO_UPDATES_KEY = 'plugin_auto_updates';
 
 async function readOption<T>(prisma: DatabaseClient, key: string, fallback: T): Promise<T> {
@@ -48,23 +49,37 @@ export function createPluginService({
   plugins = PLUGINS,
   now = () => new Date(),
 }: PluginServiceOptions) {
-  async function activeIds(): Promise<string[]> {
-    const stored = await readOption<string[]>(prisma, ACTIVE_PLUGINS_KEY, []);
+  async function deletedIds(): Promise<string[]> {
+    const stored = await readOption<string[]>(prisma, DELETED_PLUGINS_KEY, []);
     const known = new Set(plugins.map((plugin) => plugin.id));
     return Array.isArray(stored) ? stored.filter((id) => known.has(id)) : [];
   }
 
+  async function activeIds(): Promise<string[]> {
+    const [stored, deleted] = await Promise.all([
+      readOption<string[]>(prisma, ACTIVE_PLUGINS_KEY, []),
+      deletedIds(),
+    ]);
+    const known = new Set(plugins.map((plugin) => plugin.id));
+    const deletedSet = new Set(deleted);
+    return Array.isArray(stored) ? stored.filter((id) => known.has(id) && !deletedSet.has(id)) : [];
+  }
+
   async function state(): Promise<PluginListResult> {
-    const [active, autoUpdates] = await Promise.all([
+    const [active, autoUpdates, deleted] = await Promise.all([
       activeIds(),
       readOption<boolean>(prisma, AUTO_UPDATES_KEY, false),
+      deletedIds(),
     ]);
     const activeSet = new Set(active);
-    const list = plugins.map((plugin) => ({
-      ...plugin,
-      active: activeSet.has(plugin.id),
-      autoUpdates,
-    }));
+    const deletedSet = new Set(deleted);
+    const list = plugins
+      .filter((plugin) => !deletedSet.has(plugin.id))
+      .map((plugin) => ({
+        ...plugin,
+        active: activeSet.has(plugin.id),
+        autoUpdates,
+      }));
     return {
       plugins: list,
       counts: {
@@ -101,6 +116,24 @@ export function createPluginService({
     return state();
   }
 
+  async function remove(principal: Principal, id: string): Promise<PluginListResult> {
+    requireCapability(principal, 'manage_options');
+    if (!findPluginIn(plugins, id)) {
+      throw new ContentError('NOT_FOUND', 'Plugin not found', 404);
+    }
+    const deleted = await deletedIds();
+    if (deleted.includes(id)) {
+      throw new ContentError('NOT_FOUND', 'Plugin not found', 404);
+    }
+    const active = await activeIds();
+    if (active.includes(id)) {
+      throw new ContentError('VALIDATION_ERROR', 'Deactivate the plugin before deleting it.', 409);
+    }
+    deleted.push(id);
+    await writeOption(prisma, DELETED_PLUGINS_KEY, deleted);
+    return state();
+  }
+
   async function setAutoUpdates(principal: Principal, enabled: boolean): Promise<PluginListResult> {
     requireCapability(principal, 'manage_options');
     await writeOption(prisma, AUTO_UPDATES_KEY, enabled);
@@ -121,7 +154,7 @@ export function createPluginService({
     return { message: lyricFor(minute) };
   }
 
-  return { list, activate, deactivate, setAutoUpdates, toolbar };
+  return { list, activate, deactivate, remove, setAutoUpdates, toolbar };
 }
 
 function findPluginIn(plugins: readonly PluginManifest[], id: string): PluginManifest | undefined {

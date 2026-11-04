@@ -141,4 +141,57 @@ describe('plugins api', () => {
     const toolbar = await service.toolbar(principal);
     expect(toolbar.message).toBeNull();
   });
+  it('deletes an inactive plugin, hides it, and refuses to delete an active one', async () => {
+    const headers = await adminHeaders();
+    const { 'content-type': _contentType, ...noBody } = headers;
+
+    const active = await app.inject({
+      method: 'POST',
+      url: '/api/admin/plugins/hello-mernpress/activate',
+      headers: noBody,
+    });
+    expect(active.statusCode).toBe(200);
+
+    const refused = await app.inject({
+      method: 'DELETE',
+      url: '/api/admin/plugins/hello-mernpress',
+      headers: noBody,
+    });
+    expect(refused.statusCode).toBe(409);
+    expect((refused.json() as { error: { message: string } }).error.message).toBe(
+      'Deactivate the plugin before deleting it.',
+    );
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/admin/plugins/hello-mernpress/deactivate',
+      headers: noBody,
+    });
+    const deleted = await app.inject({
+      method: 'DELETE',
+      url: '/api/admin/plugins/hello-mernpress',
+      headers: noBody,
+    });
+    expect(deleted.statusCode).toBe(200);
+    const body = deleted.json() as {
+      plugins: unknown[];
+      counts: { all: number; active: number; inactive: number };
+    };
+    expect(body.plugins).toHaveLength(0);
+    expect(body.counts).toEqual({ all: 0, active: 0, inactive: 0 });
+
+    const toolbar = await app.inject({
+      method: 'GET',
+      url: '/api/admin/plugins/toolbar',
+      headers: { cookie: headers.cookie },
+    });
+    expect(toolbar.json()).toEqual({ message: null });
+
+    const missing = await app.inject({
+      method: 'DELETE',
+      url: '/api/admin/plugins/hello-mernpress',
+      headers: noBody,
+    });
+    expect(missing.statusCode).toBe(404);
+  });
 });

@@ -79,7 +79,7 @@ associated code changes. Superseded decisions stay visible.
 
 | D-058 | 2026-11-04 | Outbound mail is a single service with SMTP transport (Nodemailer 10.3.1, pinned, MIT-0) configured from `SMTP_HOST`/`SMTP_PORT`/`SMTP_FROM` and short timeouts, or an in-memory sink allowed only outside production; no transport means mail is reported as not configured and never faked. Approved comments notify the post author (else the admin email) when `comments_notify` is on; held comments notify the admin address when `moderation_notify` is on. Add User → Send User Notification is enabled only when mail is configured, requires the user's email and sends username/display name/login URL without the password (no reset flow exists yet). Delivery failures are logged, not fatal. | accepted | [ADR 0019](docs/adr/0019-mail-transport.md) |
 
-## Proposed / unresolved
+| D-059 | 2026-11-04 | Plugin rows gain WordPress's View details and Delete actions. Details come from the plugin registry (no invented marketplace metadata). Delete is allowed only for inactive plugins (409 otherwise), records a `deleted_plugins` tombstone, removes activation and filters the plugin from lists/counts/toolbar; a repeat delete is 404. Bundled plugin code remains in the release, which the confirmation states. The footer select-all now mirrors the header. | accepted | [ADR 0020](docs/adr/0020-plugin-row-actions.md) |\n\n## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.
 

@@ -3,13 +3,21 @@ import {
   actionErrorMessage,
   activatePlugin,
   deactivatePlugin,
+  deletePlugin,
   fetchPlugins,
   setPluginAutoUpdates,
   type AdminPlugin,
   type AuthUser,
   type PluginListResult,
 } from './api.js';
-import { ErrorState, Notice, PageHeader, Skeleton, type NoticeMessage } from './components.js';
+import {
+  ErrorState,
+  Modal,
+  Notice,
+  PageHeader,
+  Skeleton,
+  type NoticeMessage,
+} from './components.js';
 import { navigate } from './router.js';
 import { canManagePlugins } from './roles.js';
 import {
@@ -37,6 +45,8 @@ export function PluginsPage({ user }: { user: AuthUser }) {
   const [bulkAction, setBulkAction] = useState<'activate' | 'deactivate' | ''>('');
   const [bulkBusy, setBulkBusy] = useState(false);
   const [hiddenColumns, setHiddenColumns] = useState(() => screenHiddenColumns('plugins'));
+  const [details, setDetails] = useState<AdminPlugin | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<AdminPlugin | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -144,6 +154,27 @@ export function PluginsPage({ user }: { user: AuthUser }) {
       setNotice({ tone: 'error', text: actionErrorMessage(caught) });
     } finally {
       setBulkBusy(false);
+    }
+  }
+
+  async function remove(plugin: AdminPlugin) {
+    if (busyId) return;
+    setBusyId(plugin.id);
+    setNotice(null);
+    try {
+      const result = await deletePlugin(plugin.id);
+      setData(result);
+      setPendingDelete(null);
+      setSelected((current) => {
+        const next = new Set(current);
+        next.delete(plugin.id);
+        return next;
+      });
+      setNotice({ tone: 'success', text: `Plugin deleted: ${plugin.name}.` });
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setBusyId(null);
     }
   }
 
@@ -301,6 +332,31 @@ export function PluginsPage({ user }: { user: AuthUser }) {
                             {plugin.active ? 'Deactivate' : 'Activate'}
                           </button>
                         ) : null}
+                        {allowed && !plugin.active ? (
+                          <>
+                            <span className="row-action-sep" aria-hidden="true">
+                              |
+                            </span>
+                            <button
+                              type="button"
+                              className="row-action-link is-danger"
+                              onClick={() => setPendingDelete(plugin)}
+                              disabled={busyId === plugin.id}
+                            >
+                              Delete
+                            </button>
+                          </>
+                        ) : null}
+                        <span className="row-action-sep" aria-hidden="true">
+                          |
+                        </span>
+                        <button
+                          type="button"
+                          className="row-action-link"
+                          onClick={() => setDetails(plugin)}
+                        >
+                          View details
+                        </button>
                       </div>
                     </td>
                     {showDescription ? (
@@ -330,7 +386,12 @@ export function PluginsPage({ user }: { user: AuthUser }) {
               <tfoot>
                 <tr>
                   <th scope="col" className="check-column">
-                    <input type="checkbox" aria-label="Select all plugins" disabled />
+                    <input
+                      type="checkbox"
+                      aria-label="Select all plugins"
+                      checked={visible.length > 0 && selected.size === visible.length}
+                      onChange={toggleSelectAll}
+                    />
                   </th>
                   <th scope="col" className="column-plugin">
                     Plugin
@@ -351,6 +412,62 @@ export function PluginsPage({ user }: { user: AuthUser }) {
           </div>
         )}
       </div>
+
+      {details ? (
+        <Modal title={details.name} onClose={() => setDetails(null)}>
+          <div className="plugin-details">
+            <p className="plugin-details-meta">
+              Version {details.version} <span aria-hidden="true">|</span> By {details.author}
+            </p>
+            <p>{details.description}</p>
+            <p className="plugin-details-note">{details.details}</p>
+            <p className="plugin-details-auto">
+              Automatic updates are {details.autoUpdates ? 'enabled' : 'disabled'} for this plugin
+              set.
+            </p>
+          </div>
+          <div className="plugin-modal-actions">
+            <button
+              type="button"
+              className="button primary-button"
+              onClick={() => setDetails(null)}
+            >
+              Close
+            </button>
+          </div>
+        </Modal>
+      ) : null}
+
+      {pendingDelete ? (
+        <Modal title="Delete plugin" onClose={() => setPendingDelete(null)}>
+          <p>
+            Are you sure you want to delete <strong>{pendingDelete.name}</strong>? Its saved state
+            and activation are removed and it disappears from this list.
+          </p>
+          <p className="field-help">
+            Bundled plugin code ships with MERNPress releases; deleting removes the plugin from this
+            site but does not remove files from the release.
+          </p>
+          <div className="plugin-modal-actions">
+            <button
+              type="button"
+              className="button secondary-button"
+              onClick={() => setPendingDelete(null)}
+              disabled={busyId === pendingDelete.id}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="button is-danger"
+              onClick={() => void remove(pendingDelete)}
+              disabled={busyId === pendingDelete.id}
+            >
+              {busyId === pendingDelete.id ? 'Deleting…' : 'Delete'}
+            </button>
+          </div>
+        </Modal>
+      ) : null}
     </>
   );
 }
