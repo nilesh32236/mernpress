@@ -894,9 +894,7 @@ export function UsersPage({ user }: { user: AuthUser }) {
   const isAddPage = new URLSearchParams(location.search).get('action') === 'add';
   if (isAddPage) {
     return (
-      <AddUserPage
-        onCreated={(name) => navigate(`/users?created=${encodeURIComponent(name)}`)}
-      />
+      <AddUserPage onCreated={(name) => navigate(`/users?created=${encodeURIComponent(name)}`)} />
     );
   }
 

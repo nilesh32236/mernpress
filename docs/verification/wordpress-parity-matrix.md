@@ -66,6 +66,14 @@ owner decision.
   connectors, updates, site editor, fonts, login. Write paths were exercised
   live: updates "Check again", connector save/disconnect, and a media upload
   (201, served 200).
+- **Production public templates (2026-11-04)**: captured anonymously at 1440px
+  after the admin pass — home, blog, single post, page, search, 404, author and
+  feed. Measured geometry matches the WordPress reference: home/blog/search
+  titles at `(398,141,645,54)` 48px/400, the search block `645×61` with a 498px
+  input and 129px button, the 404 at title `(745,750)` / form `(745,905)` /
+  photo `645×826` / footer 1035, and no horizontal overflow on any page. The
+  RSS feed returns `application/rss+xml` XML. Category/tag archives 404 because
+  production has no published terms, which matches WordPress.
 - **Production bug found and fixed by this pass**: `mernpress-api.service` runs
   with `ProtectSystem=strict`, which made `/opt/mernpress/media` read-only to the
   process even though the directory was owned by `mernpress`. Site Health
@@ -80,5 +88,6 @@ owner decision.
 2. Third-party importers (Blogger, LiveJournal, Movable Type, RSS, Tumblr) and
    the plugin marketplace are listed as unavailable by design; they need
    external services and an install/runtime story the project has not accepted.
-3. Per-screen pixel comparison is complete for the WordPress chrome and layout;
-   content differences (fewer posts/pages in production) are expected.
+3. Per-screen pixel comparison is complete for the WordPress chrome and layout,
+   in development and production; content differences (fewer posts/pages in
+   production) are expected and documented above.

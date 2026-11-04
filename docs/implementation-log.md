@@ -2575,3 +2575,28 @@ build uses `aes-256-gcm` for credential encryption.
   (AGENTS.md) and updated the parity matrix and production hosting notes.
 - No application code changed in this pass; the previously verified release
   `20261104T115855Z-168e829` stays live.
+
+### 2026-11-04 — Remaining screenshot review and public template verification
+
+- Reviewed the production screenshots that the first pass had captured but not
+  inspected: pages, comments, plugins, users, add user, profile, tools, import,
+  export personal data, settings (general and discussion). Fixed the deltas
+  found:
+  - Empty posts/pages/comments lists now render a WordPress-style
+    "No … found." row inside the list table instead of a standalone card.
+  - `PageHeader` keeps the description on its own line under the title (the
+    count bubble stays beside the h1), matching Add User and other WordPress
+    screens.
+  - Add User drops the extra Repeat Password field and Cancel button; it now
+    matches WordPress 7.1.4's single password field with the strength meter.
+- Captured and measured the production public templates anonymously after the
+  admin pass: home, blog, single, page, search, 404, author and feed. Geometry
+  matches the reference (48px titles at x=398, 645×61 search block with 498/129
+  input/button, 404 at 745/750 with the 645×826 photo and 1035 footer, no
+  horizontal overflow); feed returns RSS XML. Category/tag archives 404 because
+  production has no published terms.
+- Deployed as `20261104T130133Z-ca743bc`; `/`, `/admin/`, `/admin/comments` and
+  `/api/health` return 200, public routes behave as above, and the production
+  bundle contains the new "No comments found." row.
+- Validation: 605 unit/integration tests (API 384, admin 143, block-system 65,
+  web 13), 23 Playwright E2E tests and six builds pass.
