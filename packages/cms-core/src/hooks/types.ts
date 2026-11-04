@@ -88,6 +88,13 @@ export interface ActionMap {
   'taxonomy.term.created': TermActionPayload;
   'taxonomy.term.updated': TermActionPayload;
   'taxonomy.term.deleted': TermActionPayload;
+  'taxonomy.terms.converted': {
+    from: 'category' | 'tag';
+    to: 'category' | 'tag';
+    converted: number;
+    created: number;
+    movedPosts: number;
+  };
 }
 
 export interface FilterMap {

@@ -706,6 +706,23 @@ export async function assignTerms(
   return readJson<AdminPost>(response);
 }
 
+export async function convertTerms(
+  from: TaxonomyType,
+): Promise<{ converted: number; created: number; movedPosts: number }> {
+  const response = await fetch('/api/admin/terms/convert', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ from }),
+  });
+  return readJson<{ converted: number; created: number; movedPosts: number }>(response);
+}
+
 export async function fetchTerms(
   params: {
     taxonomy?: TaxonomyType;

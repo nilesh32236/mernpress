@@ -122,6 +122,12 @@ export const createTermSchema = z
   })
   .strict();
 
+export const convertTermsSchema = z
+  .object({
+    from: taxonomyType,
+  })
+  .strict();
+
 export const updateTermSchema = z
   .object({
     name: termName.optional(),

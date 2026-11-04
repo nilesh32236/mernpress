@@ -9208,3 +9208,16 @@ a.glance-chip:hover {
   vertical-align: text-bottom;
   color: #646970;
 }
+
+/* WordPress General Settings control widths (measured from wp-admin). */
+.settings-panel #default_role {
+  width: 134px;
+}
+
+.settings-panel #site_language {
+  width: 275px;
+}
+
+.settings-panel #timezone {
+  width: 220px;
+}

@@ -4,6 +4,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { requireAdmin } from '../auth/require-admin.js';
 import type { Env } from '../config/env.js';
 import {
+  convertTermsSchema,
   createTermSchema,
   idParamSchema,
   termListQuerySchema,
@@ -69,6 +70,16 @@ export function registerTaxonomyRoutes(app: FastifyInstance, options: TaxonomyRo
       const term = await taxonomy.createTerm(principal, parsed.data);
       reply.code(201);
       return term;
+    }),
+  );
+
+  app.post('/api/admin/terms/convert', async (request, reply) =>
+    handle(request, reply, async (principal) => {
+      const parsed = convertTermsSchema.safeParse(request.body);
+      if (!parsed.success) {
+        throw new ContentError('VALIDATION_ERROR', validationMessage(parsed.error.issues), 400);
+      }
+      return taxonomy.convertTerms(principal, parsed.data.from);
     }),
   );
 

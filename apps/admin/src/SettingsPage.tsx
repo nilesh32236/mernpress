@@ -550,18 +550,18 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
                 disabled={saving.general}
               >
                 {[
-                  'UTC',
-                  'Asia/Kolkata',
-                  'Asia/Dubai',
-                  'Europe/London',
-                  'Europe/Berlin',
-                  'America/New_York',
-                  'America/Chicago',
-                  'America/Los_Angeles',
-                  'Australia/Sydney',
-                ].map((zone) => (
+                  ['UTC', 'UTC+0'],
+                  ['Asia/Kolkata', 'Asia/Kolkata'],
+                  ['Asia/Dubai', 'Asia/Dubai'],
+                  ['Europe/London', 'Europe/London'],
+                  ['Europe/Berlin', 'Europe/Berlin'],
+                  ['America/New_York', 'America/New_York'],
+                  ['America/Chicago', 'America/Chicago'],
+                  ['America/Los_Angeles', 'America/Los_Angeles'],
+                  ['Australia/Sydney', 'Australia/Sydney'],
+                ].map(([zone, label]) => (
                   <option key={zone} value={zone}>
-                    {zone}
+                    {label}
                   </option>
                 ))}
               </select>

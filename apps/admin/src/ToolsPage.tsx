@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import {
   actionErrorMessage,
+  convertTerms,
   fetchPosts,
   fetchSiteHealth,
   type AdminPost,
   type SiteHealth,
+  type TaxonomyType,
 } from './api.js';
 import { Notice, PageHeader, type NoticeMessage } from './components.js';
 import { navigate, useLocation } from './router.js';
@@ -26,6 +28,7 @@ export function ToolsPage() {
   const [exporting, setExporting] = useState(false);
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
   const [health, setHealth] = useState<SiteHealth | null>(null);
+  const [converting, setConverting] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -97,12 +100,34 @@ export function ToolsPage() {
     }
   }
 
+  async function convert(from: TaxonomyType): Promise<void> {
+    if (converting) return;
+    const label = from === 'category' ? 'categories to tags' : 'tags to categories';
+    if (!window.confirm(`Convert all ${label}? This cannot be undone.`)) {
+      return;
+    }
+    setConverting(true);
+    setNotice(null);
+    try {
+      const result = await convertTerms(from);
+      setNotice({
+        tone: 'success',
+        text: `Converted ${result.converted} ${from === 'category' ? 'categories' : 'tags'} to ${from === 'category' ? 'tags' : 'categories'} (${result.movedPosts} post links moved).`,
+      });
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setConverting(false);
+    }
+  }
+
   const section = new URLSearchParams(location.search).get('section');
 
   if (section !== 'export' && section !== 'health') {
     return (
       <>
         <PageHeader title="Tools" />
+        {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
         <div className="wp-tools-grid">
           <section className="card" aria-labelledby="tool-export-heading">
             <h2 id="tool-export-heading">Export</h2>
@@ -130,6 +155,32 @@ export function ToolsPage() {
                 onClick={() => navigate('/tools?section=health')}
               >
                 Open Site Health
+              </button>
+            </p>
+          </section>
+          <section className="card" aria-labelledby="tool-convert-heading">
+            <h2 id="tool-convert-heading">Categories and Tags Converter</h2>
+            <p>
+              Convert all categories to tags or all tags to categories. Posts keep their content.
+            </p>
+            <p>
+              <button
+                type="button"
+                className="button"
+                disabled={converting}
+                onClick={() => void convert('category')}
+              >
+                Convert categories to tags
+              </button>
+            </p>
+            <p>
+              <button
+                type="button"
+                className="button"
+                disabled={converting}
+                onClick={() => void convert('tag')}
+              >
+                Convert tags to categories
               </button>
             </p>
           </section>

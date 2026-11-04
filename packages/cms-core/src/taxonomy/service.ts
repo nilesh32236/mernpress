@@ -362,6 +362,77 @@ export function createTaxonomyService(options: TaxonomyServiceOptions) {
     return { detachedPostCount };
   }
 
+  // ---- convert ----
+
+  /**
+   * WordPress Tools → Categories and Tags Converter. Moves every post
+   * relationship from the source taxonomy to a same-slug term in the target
+   * taxonomy, creating the target term when needed, then removes the source.
+   * Posts and their content are never deleted.
+   */
+  async function convertTerms(
+    principal: Principal,
+    from: TaxonomyType,
+  ): Promise<{ converted: number; created: number; movedPosts: number }> {
+    requireAdmin(principal);
+    assertTaxonomy(from);
+    const to: TaxonomyType = from === 'category' ? 'tag' : 'category';
+
+    const result = await prisma.$transaction(async (tx) => {
+      const sourceTerms = await tx.term.findMany({
+        where: { taxonomy: from },
+        include: { posts: true },
+      });
+      let created = 0;
+      let movedPosts = 0;
+
+      for (const source of sourceTerms) {
+        await lockSlug(tx, to, source.slug);
+        let target = await tx.term.findFirst({
+          where: { taxonomy: to, slug: source.slug },
+        });
+        if (!target) {
+          target = await tx.term.create({
+            data: {
+              taxonomy: to,
+              name: source.name,
+              slug: source.slug,
+              description: source.description,
+              parentId: null,
+            },
+          });
+          created += 1;
+        }
+
+        for (const link of source.posts) {
+          const existing = await tx.postTerm.findUnique({
+            where: { postId_termId: { postId: link.postId, termId: target.id } },
+          });
+          if (!existing) {
+            await tx.postTerm.create({
+              data: {
+                postId: link.postId,
+                termId: target.id,
+                position: link.position,
+              },
+            });
+            movedPosts += 1;
+          }
+          await tx.postTerm.delete({
+            where: { postId_termId: { postId: link.postId, termId: source.id } },
+          });
+        }
+
+        await tx.term.delete({ where: { id: source.id } });
+      }
+
+      return { converted: sourceTerms.length, created, movedPosts };
+    });
+
+    await hooks.doAction('taxonomy.terms.converted', { from, to, ...result });
+    return result;
+  }
+
   // ---- list ----
 
   async function listTerms(
@@ -412,7 +483,7 @@ export function createTaxonomyService(options: TaxonomyServiceOptions) {
     };
   }
 
-  return { createTerm, getTerm, updateTerm, deleteTerm, listTerms };
+  return { createTerm, getTerm, updateTerm, deleteTerm, listTerms, convertTerms };
 }
 
 export type TaxonomyService = ReturnType<typeof createTaxonomyService>;

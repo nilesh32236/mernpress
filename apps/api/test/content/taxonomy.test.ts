@@ -566,4 +566,67 @@ describe('admin taxonomy: terms', () => {
       expect(list.items[0]?.parentId).toBeNull();
     });
   });
+
+  describe('categories and tags converter', () => {
+    it('converts all categories to tags and back without deleting posts', async () => {
+      const category = await mustCreateTerm({ taxonomy: 'category', name: 'Convertible' });
+      const post = await createPost('Conversion post');
+      const assigned = await app.inject({
+        method: 'PUT',
+        url: `/api/admin/posts/${post.id}/terms`,
+        headers: adminHeaders(),
+        payload: { baseVersion: post.version, categoryIds: [category.id], tagIds: [] },
+      });
+      expect(assigned.statusCode).toBe(200);
+
+      const convert = await app.inject({
+        method: 'POST',
+        url: '/api/admin/terms/convert',
+        headers: adminHeaders(),
+        payload: { from: 'category' },
+      });
+      expect(convert.statusCode).toBe(200);
+      const result = convert.json() as { converted: number; created: number; movedPosts: number };
+      expect(result.converted).toBeGreaterThanOrEqual(1);
+      expect(result.movedPosts).toBeGreaterThanOrEqual(1);
+
+      const categories = await app.inject({
+        method: 'GET',
+        url: '/api/admin/terms?taxonomy=category&perPage=100',
+        headers: { cookie: cookieHeader },
+      });
+      expect((categories.json() as TermListShape).pagination.total).toBe(0);
+
+      const tags = await app.inject({
+        method: 'GET',
+        url: '/api/admin/terms?taxonomy=tag&search=Convertible',
+        headers: { cookie: cookieHeader },
+      });
+      expect((tags.json() as TermListShape).items[0]?.name).toBe('Convertible');
+
+      const refreshed = await app.inject({
+        method: 'GET',
+        url: `/api/admin/posts/${post.id}`,
+        headers: { cookie: cookieHeader },
+      });
+      const body = refreshed.json() as AdminPostShape;
+      expect(body.terms.categories).toHaveLength(0);
+      expect(body.terms.tags.some((term) => term.name === 'Convertible')).toBe(true);
+
+      const back = await app.inject({
+        method: 'POST',
+        url: '/api/admin/terms/convert',
+        headers: adminHeaders(),
+        payload: { from: 'tag' },
+      });
+      expect(back.statusCode).toBe(200);
+
+      const categoriesAgain = await app.inject({
+        method: 'GET',
+        url: '/api/admin/terms?taxonomy=category&search=Convertible',
+        headers: { cookie: cookieHeader },
+      });
+      expect((categoriesAgain.json() as TermListShape).items[0]?.name).toBe('Convertible');
+    });
+  });
 });
