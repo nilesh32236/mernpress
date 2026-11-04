@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  Icon,
   media as mediaIcon,
   page as pageIcon,
   people,
@@ -926,6 +927,17 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
                 >
                   <PostIcon />
                   <span>Post</span>
+                </a>
+                <a
+                  href="/media?upload=1"
+                  tabIndex={newMenuOpen ? undefined : -1}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    go('/media?upload=1');
+                  }}
+                >
+                  <Icon icon={mediaIcon} size={20} />
+                  <span>Media</span>
                 </a>
                 <a
                   href={newContentPath('page')}

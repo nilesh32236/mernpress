@@ -572,3 +572,17 @@ a:hover {
     margin: 10px 0 0;
   }
 }
+
+/* WordPress two-column footer navigation. */
+.site-footer-navs {
+  display: flex;
+  align-items: flex-start;
+  gap: 140px;
+}
+
+@media (max-width: 900px) {
+  .site-footer-navs {
+    flex-direction: column;
+    gap: 20px;
+  }
+}
