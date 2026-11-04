@@ -2179,3 +2179,10 @@ statuses; the 404 title/form/footer land at 750/905/1035 and the search block is
 61px high with a 498px input and 129px pill button (the live WordPress 7.1.4
 reference measures 751/905/1035 and 498/129). Anonymous public pages log zero
 console errors after the session probe moved to `/api/public/session`.
+
+Final follow-up release `20261104T072305Z-bdbd3b5` adds the TT5 404 photo,
+disabled clean Save state, WordPress activity dates, editor word count/relative
+last-edited line and the content-derived blog excerpt. Production `/`,
+`/admin/`, `/api/health`, `/feed`, `/search?q=test` return 200, the 404 route
+returns 404 with the same 750/905/1035 geometry, and anonymous pages log zero
+console errors.
