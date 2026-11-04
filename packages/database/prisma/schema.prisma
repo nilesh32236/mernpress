@@ -50,6 +50,7 @@ model User {
   postRevisions       PostRevision[]
   mediaItems          MediaItem[]
   comments            Comment[]
+  dataRequests        DataRequest[]
 
   @@map("users")
 }
@@ -215,6 +216,35 @@ model Comment {
   @@index([parentId])
   @@index([authorEmail])
   @@map("comments")
+}
+
+/// GDPR-style personal data requests (Tools → Export/Erase Personal Data).
+enum DataRequestType {
+  EXPORT
+  ERASE
+}
+
+enum DataRequestStatus {
+  PENDING
+  COMPLETED
+}
+
+model DataRequest {
+  id          String            @id @default(uuid(7)) @db.Uuid
+  type        DataRequestType
+  email       String            @db.VarChar(254)
+  userId      String?           @map("user_id") @db.Uuid
+  status      DataRequestStatus @default(PENDING)
+  requestedBy String            @map("requested_by") @db.Uuid
+  note        String?           @db.Text
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  completedAt DateTime?         @map("completed_at") @db.Timestamptz(6)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([type, status])
+  @@index([email])
+  @@map("data_requests")
 }
 
 /// Media library items (Phase 6). Files live under MEDIA_STORAGE_DIR with

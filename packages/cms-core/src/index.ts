@@ -221,3 +221,16 @@ export {
   type DashboardFeedService,
 } from './dashboard/service.js';
 export type { DashboardEvent, DashboardFeeds, DashboardNews } from './dashboard/service.js';
+
+// ---- Personal data requests (ADR 0016) ----
+export { createPrivacyService, type PrivacyService } from './privacy/service.js';
+export type {
+  DataRequest,
+  DataRequestStatus,
+  DataRequestType,
+  PersonalDataExport,
+} from './privacy/service.js';
+
+// ---- WordPress import (ADR 0016) ----
+export { createImportService, parseWxr, type ImportService } from './import/service.js';
+export type { ImportResult } from './import/service.js';

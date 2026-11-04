@@ -11066,3 +11066,171 @@ a.glance-chip:hover {
     padding: 12px;
   }
 }
+
+/* ==========================================================================
+   Tools → Import / Export Personal Data / Erase Personal Data (WordPress 7.1).
+   ========================================================================== */
+
+.import-screen,
+.personal-data-screen {
+  max-width: 1100px;
+}
+
+.import-intro {
+  max-width: 900px;
+  margin: 0 0 16px;
+  color: var(--wp-text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.importers-table {
+  table-layout: auto;
+  margin-bottom: 20px;
+}
+
+.importers-table td {
+  padding: 14px 12px !important;
+  vertical-align: top;
+}
+
+.import-name strong {
+  display: block;
+  color: var(--wp-text-strong, #1d2327);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.import-actions {
+  margin: 4px 0;
+  font-size: 13px;
+}
+
+.import-actions .button-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--wp-blue);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.import-unavailable {
+  color: var(--wp-muted);
+  font-size: 13px;
+}
+
+.import-description {
+  margin: 6px 0 0;
+  color: #3c434a;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.import-form-panel,
+.personal-data-panel {
+  margin: 0 0 20px;
+  padding: 16px 20px;
+  border: 1px solid #c3c4c7;
+  background: #ffffff;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.import-form-panel h2,
+.personal-data-panel h2 {
+  margin: 0 0 12px;
+  font-size: 16.9px;
+  font-weight: 600;
+}
+
+.import-form-panel .field label,
+.personal-data-panel .field label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--wp-text-strong, #1d2327);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.import-form-panel .field input[type='file'] {
+  font-size: 13px;
+}
+
+.import-errors {
+  margin-top: 12px;
+  color: var(--wp-danger);
+  font-size: 13px;
+}
+
+.import-errors h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.personal-data-panel .field.actions {
+  display: flex;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.personal-data-panel .field input#requester-EXPORT,
+.personal-data-panel .field input#requester-ERASE {
+  width: 25rem;
+  max-width: 100%;
+}
+
+.personal-data-list {
+  margin-top: 20px;
+}
+
+.personal-data-filter {
+  margin: 0 0 8px;
+  color: var(--wp-text);
+  font-size: 14px;
+}
+
+.personal-data-empty {
+  margin: 0;
+  padding: 20px;
+  border: 1px solid #c3c4c7;
+  background: #ffffff;
+  color: var(--wp-text);
+  font-size: 14px;
+}
+
+.personal-data-screen .column-requester {
+  width: 32%;
+}
+
+.personal-data-screen .column-status {
+  width: 12%;
+}
+
+.personal-data-screen .column-requested {
+  width: 22%;
+}
+
+.personal-data-screen .column-next-steps {
+  width: auto;
+}
+
+.personal-data-screen .column-next-steps .button-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--wp-blue);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.personal-data-screen .column-next-steps .button-link.is-danger {
+  color: var(--wp-danger);
+}
+
+.personal-data-done {
+  color: var(--wp-muted);
+  font-size: 13px;
+}

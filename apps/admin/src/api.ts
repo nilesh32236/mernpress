@@ -1588,3 +1588,103 @@ export async function fetchDashboardFeeds(location = ''): Promise<DashboardFeeds
   );
   return readJson<DashboardFeeds>(response);
 }
+
+// ---- Tools: WordPress import and personal data requests (ADR 0016) ----
+export interface ImportResult {
+  imported: number;
+  posts: number;
+  pages: number;
+  skipped: number;
+  failed: number;
+  terms: number;
+  errors: Array<{ title: string; message: string }>;
+}
+
+export async function importWordPress(content: string): Promise<ImportResult> {
+  const response = await fetch('/api/admin/import/wordpress', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ content }),
+  });
+  return readJson<ImportResult>(response);
+}
+
+export type DataRequestType = 'EXPORT' | 'ERASE';
+export type DataRequestStatus = 'PENDING' | 'COMPLETED';
+
+export interface DataRequest {
+  id: string;
+  type: DataRequestType;
+  email: string;
+  userId: string | null;
+  status: DataRequestStatus;
+  requestedBy: string;
+  note: string | null;
+  createdAt: string;
+  completedAt: string | null;
+}
+
+export async function fetchDataRequests(type: DataRequestType): Promise<DataRequest[]> {
+  const response = await fetch(`/api/admin/data-requests?type=${type}`, {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return (await readJson<{ items: DataRequest[] }>(response)).items;
+}
+
+export async function createDataRequest(
+  type: DataRequestType,
+  email: string,
+): Promise<DataRequest> {
+  const response = await fetch('/api/admin/data-requests', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ type, email }),
+  });
+  return readJson<DataRequest>(response);
+}
+
+export async function completeDataRequest(id: string): Promise<DataRequest> {
+  const response = await fetch(`/api/admin/data-requests/${encodeURIComponent(id)}/complete`, {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', 'content-type': 'application/json', ...csrfHeader() },
+    body: JSON.stringify({}),
+  });
+  return readJson<DataRequest>(response);
+}
+
+export async function downloadPersonalData(id: string): Promise<void> {
+  const response = await fetch(`/api/admin/data-requests/${encodeURIComponent(id)}/export`, {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  if (!response.ok) {
+    await readJson(response);
+    return;
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `personal-data-${id}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}

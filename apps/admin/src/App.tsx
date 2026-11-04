@@ -11,6 +11,8 @@ import { PluginsPage } from './PluginsPage.js';
 import { PluginInstallPage } from './PluginInstallPage.js';
 import { SiteEditorPage } from './SiteEditorPage.js';
 import { FontsPage } from './FontsPage.js';
+import { ImportPage } from './ImportPage.js';
+import { PersonalDataPage } from './PersonalDataPage.js';
 import { ContentList } from './ContentList.js';
 import { TermsPage } from './TermsPage.js';
 import { MediaPage } from './MediaPage.js';
@@ -177,6 +179,12 @@ function pageTitle(route: Route): string {
       return 'MERNPress admin · Editor';
     case 'fonts':
       return 'MERNPress admin · Fonts';
+    case 'import':
+      return 'MERNPress admin · Import';
+    case 'exportPersonalData':
+      return 'MERNPress admin · Export Personal Data';
+    case 'erasePersonalData':
+      return 'MERNPress admin · Erase Personal Data';
     case 'plugins':
       return 'MERNPress admin · Plugins';
     case 'pluginInstall':
@@ -239,6 +247,12 @@ function RouteView({
       return user.role === 'administrator' ? <SiteEditorPage user={user} /> : <Forbidden />;
     case 'fonts':
       return user.role === 'administrator' ? <FontsPage /> : <Forbidden />;
+    case 'import':
+      return user.role === 'administrator' ? <ImportPage /> : <Forbidden />;
+    case 'exportPersonalData':
+      return user.role === 'administrator' ? <PersonalDataPage type="EXPORT" /> : <Forbidden />;
+    case 'erasePersonalData':
+      return user.role === 'administrator' ? <PersonalDataPage type="ERASE" /> : <Forbidden />;
     case 'plugins':
       return user.role === 'administrator' ? <PluginsPage user={user} /> : <Forbidden />;
     case 'pluginInstall':

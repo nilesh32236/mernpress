@@ -71,6 +71,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-054 | 2026-11-04 | Appearance → Editor is a real template browser: the WordPress Design sidebar (Identity, Styles, Pages, Navigation, Patterns, Templates), a canvas iframe previewing the actual public routes, and content-resolved entries for single post/page/category/tag from the latest published content. Identity links to Customize, Pages to the list, and Styles/Navigation/Patterns state that templates ship in code. Appearance → Fonts mirrors the WordPress font library from the active theme registry (families, weights, samples, N of N active) with Upload/Install disabled and explained. Administrators only. | accepted | [ADR 0015](docs/adr/0015-site-editor-fonts.md) |
 
+| D-055 | 2026-11-04 | Tools → Import ships a real WordPress WXR importer (posts/pages, categories/tags, statuses, dates, collision-safe slugs, per-item error report; attachments/comments/users skipped and stated) and Tools → Export/Erase Personal Data ship a real request workflow backed by a new `data_requests` table: exports download the account profile/posts/comments as JSON, erasure anonymises profile fields and comment authorship in one transaction and keeps the account. Third-party importers are listed but unavailable; the Theme/Plugin File Editors remain excluded as a code-execution surface. | accepted | [ADR 0016](docs/adr/0016-tools-import-personal-data.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

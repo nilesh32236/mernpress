@@ -52,6 +52,11 @@ function screenKey(route: Route): string {
       return 'site-editor';
     case 'fonts':
       return 'fonts';
+    case 'import':
+      return 'import';
+    case 'exportPersonalData':
+    case 'erasePersonalData':
+      return 'personal-data';
     case 'plugins':
     case 'pluginInstall':
       return 'plugins';
@@ -221,6 +226,49 @@ function screenHelp(route: Route): {
           {
             label: 'Documentation on Fonts',
             href: 'https://wordpress.org/documentation/article/font-library/',
+          },
+          support,
+        ],
+      };
+    case 'import':
+      return {
+        title: 'Import',
+        sections: [
+          {
+            heading: 'Overview',
+            body: 'Choose a system to import from. The WordPress importer reads a WXR export file and creates posts, pages, categories and tags.',
+          },
+          {
+            heading: 'What is imported',
+            body: 'Posts, pages, their categories/tags and publish dates. Attachments, comments, users and custom fields are skipped and reported.',
+          },
+        ],
+        links: [
+          {
+            label: 'Documentation on Importing',
+            href: 'https://wordpress.org/documentation/article/importing-content/',
+          },
+          support,
+        ],
+      };
+    case 'exportPersonalData':
+    case 'erasePersonalData':
+      return {
+        title: 'Personal Data',
+        sections: [
+          {
+            heading: 'Overview',
+            body: 'Create export or erasure requests for an account, then follow the next steps in the list. Export requests can download the account data as JSON.',
+          },
+          {
+            heading: 'What is included',
+            body: 'The account profile, its posts and its comments. Erasure anonymises those fields and comment authorship; the account itself is kept.',
+          },
+        ],
+        links: [
+          {
+            label: 'Documentation on Personal Data',
+            href: 'https://wordpress.org/documentation/article/tools-export-personal-data-screen/',
           },
           support,
         ],
@@ -897,7 +945,11 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
     {
       to: '/tools',
       label: 'Tools',
-      active: route.name === 'tools',
+      active:
+        route.name === 'tools' ||
+        route.name === 'import' ||
+        route.name === 'exportPersonalData' ||
+        route.name === 'erasePersonalData',
       show: isAdmin,
       icon: <span className="dashicons dashicons-admin-tools" />,
       subs: [
@@ -909,6 +961,11 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
             !['export', 'health'].includes(searchParams.get('section') ?? ''),
         },
         {
+          label: 'Import',
+          to: '/tools/import',
+          active: route.name === 'import',
+        },
+        {
           label: 'Export',
           to: '/tools?section=export',
           active: route.name === 'tools' && searchParams.get('section') === 'export',
@@ -917,6 +974,16 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
           label: 'Site Health',
           to: '/tools?section=health',
           active: route.name === 'tools' && searchParams.get('section') === 'health',
+        },
+        {
+          label: 'Export Personal Data',
+          to: '/tools/export-personal-data',
+          active: route.name === 'exportPersonalData',
+        },
+        {
+          label: 'Erase Personal Data',
+          to: '/tools/erase-personal-data',
+          active: route.name === 'erasePersonalData',
         },
       ],
     },

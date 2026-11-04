@@ -2471,3 +2471,31 @@ anonymous callers. The production admin bundle contains the Site Editor
 ("Customize the appearance of your website using the block editor") and the
 Fonts library ("Install Fonts", the sample sentence), and the deployed cms-core
 registry carries the `fonts` field with Manrope.
+
+### 2026-11-04 — Expanded scope, slice 8: Tools import and personal data
+
+- Added the `data_requests` table and migration
+  `20261104112457_add_data_requests` (EXPORT/ERASE, PENDING/COMPLETED, matched
+  user, requester, timestamps).
+- Tools → Import lists the importers WordPress shows. The WordPress importer is
+  real: the browser reads a WXR file, `POST /api/admin/import/wordpress` parses
+  posts/pages, categories/tags, statuses and publish dates, re-slugs collisions
+  and returns imported/skipped/failed counts with per-item errors. Attachments,
+  comments and users are skipped and the screen says so. Other importers are
+  marked unavailable; the Categories and Tags Converter links to the existing
+  tool.
+- Tools → Export Personal Data and Erase Personal Data match WordPress 7.1:
+  "Add Data Export/Erasure Request" form, All (n) filter line and the
+  Requester | Status | Requested | Next steps table with the empty state.
+  Exports download real JSON (profile, posts, comments); erasure anonymises
+  profile fields and comment authorship in one transaction and keeps the
+  account, recording the action taken.
+- New administrator-only routes for imports and data requests; duplicates
+  return 409, unknown accounts 404, invalid emails 400.
+- Verified in the browser: importing a WXR file reported "Import finished: 1
+  post, 0 pages, 2 terms"; creating an export request listed it as Pending and
+  downloaded `personal-data-<id>.json` with the profile; creating and completing
+  an erasure request anonymised the user row (email/display name cleared) and
+  recorded the note.
+- Validation: 600 unit/integration tests (API 381, admin 141, block-system 65,
+  web 13), 23 Playwright E2E tests and six builds pass.

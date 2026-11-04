@@ -16,6 +16,9 @@ export type Route =
   | { name: 'customize' }
   | { name: 'siteEditor' }
   | { name: 'fonts' }
+  | { name: 'import' }
+  | { name: 'exportPersonalData' }
+  | { name: 'erasePersonalData' }
   | { name: 'plugins' }
   | { name: 'pluginInstall' }
   | { name: 'users' }
@@ -99,6 +102,15 @@ export function parseRoute(pathname: string): Route {
   }
   if (typeSegment === 'tools' && parts.length === 1) {
     return { name: 'tools' };
+  }
+  if (typeSegment === 'tools' && parts.length === 2 && second === 'import') {
+    return { name: 'import' };
+  }
+  if (typeSegment === 'tools' && parts.length === 2 && second === 'export-personal-data') {
+    return { name: 'exportPersonalData' };
+  }
+  if (typeSegment === 'tools' && parts.length === 2 && second === 'erase-personal-data') {
+    return { name: 'erasePersonalData' };
   }
   if (typeSegment === 'updates' && parts.length === 1) {
     return { name: 'updates' };
@@ -242,6 +254,24 @@ export function breadcrumbs(route: Route): Array<{ label: string; to?: string }>
       return [{ label: 'Dashboard', to: '/' }, { label: 'Settings' }];
     case 'tools':
       return [{ label: 'Dashboard', to: '/' }, { label: 'Tools' }];
+    case 'import':
+      return [
+        { label: 'Dashboard', to: '/' },
+        { label: 'Tools', to: '/tools' },
+        { label: 'Import' },
+      ];
+    case 'exportPersonalData':
+      return [
+        { label: 'Dashboard', to: '/' },
+        { label: 'Tools', to: '/tools' },
+        { label: 'Export Personal Data' },
+      ];
+    case 'erasePersonalData':
+      return [
+        { label: 'Dashboard', to: '/' },
+        { label: 'Tools', to: '/tools' },
+        { label: 'Erase Personal Data' },
+      ];
     case 'updates':
       return [{ label: 'Dashboard', to: '/' }, { label: 'Updates' }];
     case 'notFound':
