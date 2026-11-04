@@ -1395,3 +1395,52 @@ export async function bulkSetCommentStatus(ids: string[], status: CommentStatus)
   });
   if (!response.ok) await readJson(response);
 }
+
+// ---- Appearance: themes (ADR 0011) ----
+export interface AdminTheme {
+  id: string;
+  name: string;
+  version: string;
+  author: { name: string; url: string | null };
+  description: string;
+  tags: string[];
+  features: string[];
+  screenshot: string;
+  active: boolean;
+  autoUpdates: boolean;
+}
+
+export interface ThemeListResult {
+  themes: AdminTheme[];
+  active: string;
+}
+
+export async function fetchThemes(): Promise<ThemeListResult> {
+  const response = await fetch('/api/admin/themes', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<ThemeListResult>(response);
+}
+
+export async function activateTheme(id: string): Promise<ThemeListResult> {
+  const response = await fetch(`/api/admin/themes/${encodeURIComponent(id)}/activate`, {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  return readJson<ThemeListResult>(response);
+}
+
+export async function setThemeAutoUpdates(enabled: boolean): Promise<ThemeListResult> {
+  const response = await fetch('/api/admin/themes/auto-updates', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', 'content-type': 'application/json', ...csrfHeader() },
+    body: JSON.stringify({ enabled }),
+  });
+  return readJson<ThemeListResult>(response);
+}

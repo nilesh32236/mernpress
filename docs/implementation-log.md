@@ -2301,3 +2301,30 @@ the avatar preference are live without further migration (the new groups are
 option rows written on first save). The production API build contains the
 extended `group` enum and the admin bundle contains the Discussion, Media,
 Permalink and Privacy screens.
+
+### 2026-11-04 — Expanded scope, slice 3: Appearance → Themes
+
+- Added a theme registry (`packages/cms-core/src/themes/registry.ts`) describing
+  the installed MERNPress theme, a theme service (list/activate/auto-update
+  preference stored as `appearance` options) and administrator-only routes
+  `GET /api/admin/themes`, `POST /api/admin/themes/:id/activate`,
+  `POST /api/admin/themes/auto-updates`.
+- Admin Appearance menu entry and Themes screen matched to WordPress 7.1
+  measurements: title count bubble, "Add Theme" button, "Search installed
+  themes", 379×304 cards with a 283px screenshot and 51px dark name bar, active
+  card showing "Active: MERNPress" + Customize, hover/Theme Details actions and
+  the dashed Add Theme card.
+- Theme Details overlay: 46px toolbar with close, 615px preview, Active Theme
+  badge, 32px/100 theme name with version, author line, auto-update link,
+  description, tags, features and footer actions.
+- Add Themes screen keeps the WordPress header/count/search but states plainly
+  that WordPress.org browsing, ZIP upload and runtime install are not enabled;
+  `Upload Theme` is disabled rather than faked.
+- Customize screen: "Customizing: MERNPress" header, Site Identity (title,
+  tagline) writing the real general options with Save & Publish and a public
+  site preview iframe. Verified saving updates the option and the preview
+  reloads.
+- The theme screenshot is a real capture of the public site
+  (`apps/admin/public/theme-screenshot.png`).
+- Validation: 561 unit/integration tests (API 358, admin 125, block-system 65,
+  web 13), 23 Playwright E2E tests and six builds pass.

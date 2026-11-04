@@ -61,6 +61,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-049 | 2026-11-04 | WordPress-only settings are implemented as first-class option groups (discussion/media/permalinks/privacy) plus WordPress Address on General and Post-via-email/Update Services on Writing. Discussion keys drive the comment service (closed comments, old-post close, registration, moderation, previously-approved, max links, moderation/disallowed keys, order); media sizes add `WxH` derivatives to new uploads; `permalink_base` drives real `/<base>/<slug>/` URLs with a catch-all route; privacy stores a published page id. Mail transports and XML-RPC pings are stored but explicitly reported as unavailable rather than faked. UUID validation now accepts UUIDv7. | accepted | [ADR 0010](docs/adr/0010-wordpress-only-settings.md) |
 
+| D-050 | 2026-11-04 | Appearance is a registry-backed Themes screen, not a theme loader: installed themes are declared in `packages/cms-core/src/themes/registry.ts`, the active theme and auto-update preference are `appearance` options, the Themes grid/Details modal match WordPress 7.1, Add Themes explicitly reports that remote browsing/ZIP install are unavailable, and Customize edits the real `site_title`/`site_tagline` options with a public-site preview. Administrators only. | accepted | [ADR 0011](docs/adr/0011-appearance-themes.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

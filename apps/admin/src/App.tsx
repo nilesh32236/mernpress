@@ -4,6 +4,9 @@ import { ContentEditor } from './ContentEditor.js';
 import { ToolsPage } from './ToolsPage.js';
 import { UpdatesPage } from './UpdatesPage.js';
 import { CommentsPage } from './CommentsPage.js';
+import { ThemesPage } from './ThemesPage.js';
+import { ThemeInstallPage } from './ThemeInstallPage.js';
+import { CustomizePage } from './CustomizePage.js';
 import { ContentList } from './ContentList.js';
 import { TermsPage } from './TermsPage.js';
 import { MediaPage } from './MediaPage.js';
@@ -160,6 +163,12 @@ function pageTitle(route: Route): string {
       return 'MERNPress admin · Media';
     case 'comments':
       return 'MERNPress admin · Comments';
+    case 'themes':
+      return 'MERNPress admin · Themes';
+    case 'themeInstall':
+      return 'MERNPress admin · Add Themes';
+    case 'customize':
+      return 'MERNPress admin · Customize';
     case 'users':
       return 'MERNPress admin · Users';
     case 'profile':
@@ -208,6 +217,12 @@ function RouteView({
       return <MediaPage user={user} />;
     case 'comments':
       return user.role === 'subscriber' ? <Forbidden /> : <CommentsPage user={user} />;
+    case 'themes':
+      return user.role === 'administrator' ? <ThemesPage user={user} /> : <Forbidden />;
+    case 'themeInstall':
+      return user.role === 'administrator' ? <ThemeInstallPage user={user} /> : <Forbidden />;
+    case 'customize':
+      return user.role === 'administrator' ? <CustomizePage /> : <Forbidden />;
     case 'users':
       return user.role === 'administrator' ? <UsersPage user={user} /> : <Forbidden />;
     case 'profile':

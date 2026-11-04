@@ -37,6 +37,10 @@ function screenKey(route: Route): string {
       return 'media';
     case 'comments':
       return 'comments';
+    case 'themes':
+    case 'themeInstall':
+    case 'customize':
+      return 'themes';
     case 'users':
       return 'users';
     case 'terms':
@@ -136,6 +140,31 @@ function screenHelp(route: Route): {
           {
             label: 'Documentation on Comments',
             href: 'https://wordpress.org/documentation/article/comments-screen/',
+          },
+          support,
+        ],
+      };
+    case 'themes':
+      return {
+        title: 'Appearance',
+        sections: [
+          {
+            heading: 'Overview',
+            body: 'This screen shows the themes installed from the repository. The active theme is marked Active and can be customized; other installed themes can be activated.',
+          },
+          {
+            heading: 'Theme Details',
+            body: 'Open Theme Details on a theme to see its version, author, description, tags and features, and to enable or disable automatic update preferences.',
+          },
+          {
+            heading: 'Adding themes',
+            body: 'Themes are trusted packages in the repository. Browsing WordPress.org, uploading a ZIP and installing themes at runtime are not enabled in this build.',
+          },
+        ],
+        links: [
+          {
+            label: 'Documentation on Themes',
+            href: 'https://wordpress.org/documentation/article/appearance-themes-screen/',
           },
           support,
         ],
@@ -713,6 +742,21 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       icon: <span className="dashicons dashicons-admin-comments" />,
       badge: commentPending > 0 ? commentPending : undefined,
       subs: [{ label: 'All Comments', to: '/comments', active: route.name === 'comments' }],
+    },
+    {
+      to: '/themes',
+      label: 'Appearance',
+      active:
+        route.name === 'themes' || route.name === 'themeInstall' || route.name === 'customize',
+      show: user.role === 'administrator',
+      icon: <span className="dashicons dashicons-admin-appearance" />,
+      subs: [
+        {
+          label: 'Themes',
+          to: '/themes',
+          active: route.name === 'themes' || route.name === 'customize',
+        },
+      ],
     },
     {
       to: '/users',

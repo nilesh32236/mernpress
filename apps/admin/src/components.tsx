@@ -189,17 +189,25 @@ export function PageHeader({
   title,
   description,
   actions,
+  count,
 }: {
   /** Legacy prop kept for callers; WordPress page headers have no eyebrow. */
   eyebrow?: string;
   title: string;
   description?: string;
   actions?: ReactNode;
+  /** WordPress count bubble printed next to the title (Themes, Plugins). */
+  count?: number | undefined;
 }) {
   return (
     <div className="page-header">
-      <div>
+      <div className="page-header-title">
         <h1>{title}</h1>
+        {typeof count === 'number' ? (
+          <span className="page-count" aria-hidden="true">
+            {count}
+          </span>
+        ) : null}
         {description ? <p className="lede">{description}</p> : null}
       </div>
       {actions ? <div className="page-actions">{actions}</div> : null}

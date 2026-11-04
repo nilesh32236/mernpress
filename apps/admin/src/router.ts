@@ -11,6 +11,9 @@ export type Route =
   | { name: 'terms' }
   | { name: 'comments' }
   | { name: 'media' }
+  | { name: 'themes' }
+  | { name: 'themeInstall' }
+  | { name: 'customize' }
   | { name: 'users' }
   | { name: 'profile' }
   | { name: 'settings' }
@@ -59,6 +62,15 @@ export function parseRoute(pathname: string): Route {
   }
   if (typeSegment === 'media' && parts.length === 1) {
     return { name: 'media' };
+  }
+  if (typeSegment === 'themes' && parts.length === 1) {
+    return { name: 'themes' };
+  }
+  if (typeSegment === 'themes' && parts.length === 2 && second === 'new') {
+    return { name: 'themeInstall' };
+  }
+  if (typeSegment === 'themes' && parts.length === 2 && second === 'customize') {
+    return { name: 'customize' };
   }
   if (typeSegment === 'users' && parts.length === 1) {
     return { name: 'users' };
@@ -172,6 +184,20 @@ export function breadcrumbs(route: Route): Array<{ label: string; to?: string }>
       return [{ label: 'Dashboard', to: '/' }, { label: 'Media' }];
     case 'comments':
       return [{ label: 'Dashboard', to: '/' }, { label: 'Comments' }];
+    case 'themes':
+      return [{ label: 'Dashboard', to: '/' }, { label: 'Appearance' }, { label: 'Themes' }];
+    case 'themeInstall':
+      return [
+        { label: 'Dashboard', to: '/' },
+        { label: 'Appearance', to: '/themes' },
+        { label: 'Add Themes' },
+      ];
+    case 'customize':
+      return [
+        { label: 'Dashboard', to: '/' },
+        { label: 'Appearance', to: '/themes' },
+        { label: 'Customize' },
+      ];
     case 'users':
       return [{ label: 'Dashboard', to: '/' }, { label: 'Users' }];
     case 'profile':
