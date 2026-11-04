@@ -9142,14 +9142,43 @@ a.glance-chip:hover {
   height: 1px;
 }
 
-
-.dashicons-arrow-up-alt2:before { content: '\f343'; }
-.dashicons-arrow-down-alt2:before { content: '\f347'; }
-.dashicons-arrow-up:before { content: '\f142'; }
-.dashicons-arrow-down:before { content: '\f140'; }
+.dashicons-arrow-up-alt2:before {
+  content: '\f343';
+}
+.dashicons-arrow-down-alt2:before {
+  content: '\f347';
+}
+.dashicons-arrow-up:before {
+  content: '\f142';
+}
+.dashicons-arrow-down:before {
+  content: '\f140';
+}
 
 /* WordPress keeps the postbox order/collapse controls visible. */
 .postbox .handle-order-higher,
 .postbox .handle-order-lower {
   visibility: visible;
+}
+
+/* WordPress update-core table. */
+.update-table {
+  margin: 12px 0;
+  border: 1px solid #c3c4c7;
+  border-collapse: collapse;
+  background: #ffffff;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.update-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f1;
+  font-size: 13px;
+  color: #3c434a;
+}
+
+.update-table .update-version {
+  width: 220px;
+  font-weight: 600;
+  color: #1d2327;
 }
