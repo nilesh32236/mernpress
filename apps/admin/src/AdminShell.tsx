@@ -1,25 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  Icon,
-  media as mediaIcon,
-  page as pageIcon,
-  people,
-  post as postIcon,
-  settings as settingsIcon,
-  tool,
-} from '@wordpress/icons';
 import { fetchCommentCounts, fetchPosts, logout, type AdminPost, type AuthUser } from './api.js';
 import type { Route } from './router.js';
 import { navigate, newContentPath } from './router.js';
-import { ADMIN_BASE } from './router.js';
 import { useNavigationGuard } from './navigation-guard.js';
 import { keyboardShortcutsEnabled } from './preferences.js';
-import {
-  canCreateContent,
-  canManageTerms,
-  canReadComments,
-  canReadContent,
-} from './roles.js';
+import { canCreateContent, canManageTerms, canReadComments, canReadContent } from './roles.js';
 import {
   DASHBOARD_COLUMNS_EVENT,
   DASHBOARD_WIDGETS,
@@ -338,63 +323,6 @@ function initials(name: string): string {
     return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
   }
   return trimmed.substring(0, 2).toUpperCase();
-}
-
-function DashboardGaugeIcon() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <path d="M3.5 17a8.5 8.5 0 1 1 17 0" />
-      <path d="M12 17l4.2-5.2" />
-      <circle cx="12" cy="17" r="1.4" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
-function PostIcon() {
-  return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-    </svg>
-  );
-}
-
-function PageIcon() {
-  return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-    </svg>
-  );
 }
 
 function UsersIcon() {
@@ -845,6 +773,26 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
           label: 'Reading',
           to: '/settings#reading',
           active: route.name === 'settings' && hash === '#reading',
+        },
+        {
+          label: 'Discussion',
+          to: '/settings#discussion',
+          active: route.name === 'settings' && hash === '#discussion',
+        },
+        {
+          label: 'Media',
+          to: '/settings#media',
+          active: route.name === 'settings' && hash === '#media',
+        },
+        {
+          label: 'Permalinks',
+          to: '/settings#permalinks',
+          active: route.name === 'settings' && hash === '#permalinks',
+        },
+        {
+          label: 'Privacy',
+          to: '/settings#privacy',
+          active: route.name === 'settings' && hash === '#privacy',
         },
       ],
     },

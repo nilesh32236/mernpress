@@ -1,14 +1,16 @@
 import Link from 'next/link';
-import { mediaUrl, type PublicPost } from '@/lib/api';
+import { mediaUrl, postPath, type PublicPost } from '@/lib/api';
 import MorePosts from './MorePosts';
 import Comments from './Comments';
 
 export default function PostView({
   post,
   morePosts = [],
+  base = 'posts',
 }: {
   post: PublicPost;
   morePosts?: PublicPost[];
+  base?: string;
 }) {
   const isPage = post.type === 'page';
   const author = post.author?.username ?? null;
@@ -76,14 +78,14 @@ export default function PostView({
             <nav className="post-navigation" aria-label="Post navigation">
               <span className="post-navigation-slot">
                 {older ? (
-                  <Link className="post-navigation-link" href={`/posts/${older.slug}`}>
+                  <Link className="post-navigation-link" href={postPath(older.slug, base)}>
                     <span aria-hidden="true">←</span> {older.title}
                   </Link>
                 ) : null}
               </span>
               <span className="post-navigation-slot is-next">
                 {newer ? (
-                  <Link className="post-navigation-link" href={`/posts/${newer.slug}`}>
+                  <Link className="post-navigation-link" href={postPath(newer.slug, base)}>
                     {newer.title} <span aria-hidden="true">→</span>
                   </Link>
                 ) : null}
@@ -92,7 +94,7 @@ export default function PostView({
           </div>
 
           <Comments postId={post.id} postTitle={post.title} />
-          <MorePosts posts={morePosts} />
+          <MorePosts posts={morePosts} base={base} />
         </>
       ) : null}
     </main>

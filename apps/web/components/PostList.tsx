@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { mediaUrl, type PublicPost } from '@/lib/api';
+import { mediaUrl, postPath, type PublicPost } from '@/lib/api';
 
 function formatDate(iso: string | null): string | null {
   if (!iso) return null;
@@ -23,7 +23,13 @@ function excerptText(post: PublicPost): string | null {
 }
 
 /** WordPress query loop used by the blog, archives and search results. */
-export default function PostList({ posts }: { posts: PublicPost[] }) {
+export default function PostList({
+  posts,
+  base = 'posts',
+}: {
+  posts: PublicPost[];
+  base?: string;
+}) {
   return (
     <ul className="post-list">
       {posts.map((post) => {
@@ -33,7 +39,7 @@ export default function PostList({ posts }: { posts: PublicPost[] }) {
           <li key={post.id} className="post-item">
             {post.featuredImage ? (
               <figure className="post-featured">
-                <Link href={`/posts/${post.slug}`}>
+                <Link href={postPath(post.slug, base)}>
                   <img
                     src={mediaUrl(post.featuredImage.derivatives['1200'] ?? post.featuredImage.url)}
                     alt={post.featuredImage.altText}
@@ -44,12 +50,12 @@ export default function PostList({ posts }: { posts: PublicPost[] }) {
               </figure>
             ) : null}
             <h2 className="post-title">
-              <Link href={`/posts/${post.slug}`}>{post.title}</Link>
+              <Link href={postPath(post.slug, base)}>{post.title}</Link>
             </h2>
             {excerpt ? <p className="post-excerpt">{excerpt}</p> : null}
             {date ? (
               <p className="post-date">
-                <Link href={`/posts/${post.slug}`}>
+                <Link href={postPath(post.slug, base)}>
                   <time dateTime={post.publishedAt ?? undefined}>{date}</time>
                 </Link>
               </p>

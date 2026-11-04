@@ -379,6 +379,19 @@ function AddUserPage({
           <p className="field-help">Type the password again.</p>
         </div>
         <div className="field">
+          <span className="field-label">Send User Notification</span>
+          <div>
+            <label className="checkbox-row">
+              <input type="checkbox" disabled />
+              <span>Send the new user an email about their account.</span>
+            </label>
+            <p className="field-help">
+              Email delivery is not configured in this build, so no notification is sent. The
+              account is created with the password you enter.
+            </p>
+          </div>
+        </div>
+        <div className="field">
           <label htmlFor="add-user-role">Role</label>
           <select
             id="add-user-role"

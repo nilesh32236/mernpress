@@ -1,5 +1,12 @@
 import { notFound } from 'next/navigation';
-import { getPublishedBySlug, listPublishedPosts, mediaUrl, siteUrl } from '@/lib/api';
+import {
+  getPermalinkBase,
+  getPublishedBySlug,
+  listPublishedPosts,
+  mediaUrl,
+  postPath,
+  siteUrl,
+} from '@/lib/api';
 import type { PublicPost } from '@/lib/api';
 import PostView from '@/components/PostView';
 import type { Metadata } from 'next';
@@ -24,6 +31,10 @@ function fallbackDescription(post: PublicPost): string {
 export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   let error = false;
+  // The canonical post URL is driven by the Permalinks setting. When the base
+  // is not "posts", /posts/<slug> is not a valid permalink (the catch-all
+  // /[base]/[slug] route serves the post instead).
+  if ((await getPermalinkBase()) !== 'posts') notFound();
   const post = await getPublishedBySlug('post', slug).catch(() => {
     error = true;
     return null;
@@ -47,8 +58,9 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   // post itself rather than breaking the page.
   const recent = await listPublishedPosts(1, 10).catch(() => null);
   const morePosts = recent?.items ?? [];
+  const base = await getPermalinkBase();
 
-  return <PostView post={post} morePosts={morePosts} />;
+  return <PostView post={post} morePosts={morePosts} base={base} />;
 }
 
 export async function generateMetadata({
@@ -67,7 +79,8 @@ export async function generateMetadata({
     description: description || undefined,
     robots: post.robots ?? undefined,
     alternates: {
-      canonical: post.canonicalUrl ?? `${siteUrl()}/posts/${post.slug}`,
+      canonical:
+        post.canonicalUrl ?? `${siteUrl()}${postPath(post.slug, await getPermalinkBase())}`,
     },
     openGraph: {
       title: post.ogTitle ?? title,

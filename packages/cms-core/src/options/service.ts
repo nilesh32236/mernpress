@@ -8,7 +8,15 @@ export interface OptionServiceOptions {
   prisma: DatabaseClient;
 }
 
-const ALLOWED_GROUPS: ReadonlySet<string> = new Set(['general', 'reading', 'writing']);
+const ALLOWED_GROUPS: ReadonlySet<string> = new Set([
+  'general',
+  'reading',
+  'writing',
+  'discussion',
+  'media',
+  'permalinks',
+  'privacy',
+]);
 
 type Validator = (value: unknown) => unknown;
 
@@ -19,7 +27,8 @@ interface OptionSpec {
 }
 
 function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+  // Accept any RFC 9562 UUID version (this project uses UUIDv7 primary keys).
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 function throwValidation(message: string): never {
@@ -98,6 +107,19 @@ const SPECS: Record<string, OptionSpec> = {
       }
       if (!urlValid(value)) {
         throwValidation('site_url must be a valid http(s) URL.');
+      }
+      return value;
+    },
+  },
+  wordpress_url: {
+    group: 'general',
+    defaultValue: '',
+    validate: (value) => {
+      if (typeof value !== 'string') {
+        throwValidation('wordpress_url must be a string.');
+      }
+      if (!urlValid(value)) {
+        throwValidation('wordpress_url must be a valid http(s) URL.');
       }
       return value;
     },
@@ -317,6 +339,365 @@ const SPECS: Record<string, OptionSpec> = {
       return value;
     },
   },
+  mailserver_url: {
+    group: 'writing',
+    defaultValue: 'mail.example.com',
+    validate: (value) => {
+      if (typeof value !== 'string' || value.length > 200) {
+        throwValidation('mailserver_url must be a short host name.');
+      }
+      return value;
+    },
+  },
+  mailserver_port: {
+    group: 'writing',
+    defaultValue: 110,
+    validate: (value) => {
+      if (typeof value !== 'number' || !Number.isInteger(value) || value < 1 || value > 65535) {
+        throwValidation('mailserver_port must be 1-65535.');
+      }
+      return value;
+    },
+  },
+  mailserver_login: {
+    group: 'writing',
+    defaultValue: '',
+    validate: (value) => {
+      if (typeof value !== 'string' || value.length > 200) {
+        throwValidation('mailserver_login must be a short string.');
+      }
+      return value;
+    },
+  },
+  mailserver_pass: {
+    group: 'writing',
+    defaultValue: '',
+    validate: (value) => {
+      if (typeof value !== 'string' || value.length > 200) {
+        throwValidation('mailserver_pass must be a short string.');
+      }
+      return value;
+    },
+  },
+  default_email_category: {
+    group: 'writing',
+    defaultValue: 'uncategorized',
+    validate: (value) => {
+      if (typeof value !== 'string' || value.length > 200) {
+        throwValidation('default_email_category must be a category slug.');
+      }
+      return value;
+    },
+  },
+  ping_sites: {
+    group: 'writing',
+    defaultValue:
+      'http://rpc.pingomatic.com/\nhttp://rpc.twingly.com/\nhttp://api.feedster.com/ping\nhttp://api.moreover.com/RPC2\nhttp://api.moreover.com/ping\nhttp://www.blogdigger.com/RPC2\nhttp://www.blogshares.com/rpc.php\nhttp://www.blogsnow.com/ping\nhttp://www.blogstreet.com/xrbin/xmlrpc.cgi\nhttp://bulkfeeds.net/rpc\nhttp://www.newsisfree.com/xmlrpctest.php\nhttp://ping.blo.gs/\nhttp://ping.feedburner.com\nhttp://ping.syndic8.com/xmlrpc.php\nhttp://ping.weblogalot.com/rpc.php\nhttp://rpc.blogrolling.com/pinger/\nhttp://rpc.technorati.com/rpc/ping\nhttp://rpc.weblogs.com/RPC2\nhttp://www.feedsubmitter.com\nhttp://blo.gs/ping.php\nhttp://www.pingerati.net/\nhttp://www.pingmyblog.com\nhttp://geourl.org/ping\nhttp://ipings.com\nhttp://www.weblogalot.com/ping',
+    validate: (value) => {
+      if (typeof value !== 'string' || value.length > 5000) {
+        throwValidation('ping_sites must be a list of URLs.');
+      }
+      return value;
+    },
+  },
+  default_comment_status: {
+    group: 'discussion',
+    defaultValue: 'open',
+    validate: (value) => {
+      if (value !== 'open' && value !== 'closed') {
+        throwValidation("default_comment_status must be 'open' or 'closed'.");
+      }
+      return value;
+    },
+  },
+  default_ping_status: {
+    group: 'discussion',
+    defaultValue: 'open',
+    validate: (value) => {
+      if (value !== 'open' && value !== 'closed') {
+        throwValidation("default_ping_status must be 'open' or 'closed'.");
+      }
+      return value;
+    },
+  },
+  comments_per_page: {
+    group: 'discussion',
+    defaultValue: 50,
+    validate: (value) => {
+      if (typeof value !== 'number' || !Number.isInteger(value) || value < 1 || value > 200) {
+        throwValidation('comments_per_page must be 1-200.');
+      }
+      return value;
+    },
+  },
+  default_comments_page: {
+    group: 'discussion',
+    defaultValue: 'newest',
+    validate: (value) => {
+      if (value !== 'newest' && value !== 'oldest') {
+        throwValidation("default_comments_page must be 'newest' or 'oldest'.");
+      }
+      return value;
+    },
+  },
+  comment_order: {
+    group: 'discussion',
+    defaultValue: 'asc',
+    validate: (value) => {
+      if (value !== 'asc' && value !== 'desc') {
+        throwValidation("comment_order must be 'asc' or 'desc'.");
+      }
+      return value;
+    },
+  },
+  require_name_email: {
+    group: 'discussion',
+    defaultValue: true,
+    validate: (value) => {
+      if (typeof value !== 'boolean') throwValidation('require_name_email must be a boolean.');
+      return value;
+    },
+  },
+  comment_registration: {
+    group: 'discussion',
+    defaultValue: false,
+    validate: (value) => {
+      if (typeof value !== 'boolean') throwValidation('comment_registration must be a boolean.');
+      return value;
+    },
+  },
+  close_comments_for_old_posts: {
+    group: 'discussion',
+    defaultValue: false,
+    validate: (value) => {
+      if (typeof value !== 'boolean') {
+        throwValidation('close_comments_for_old_posts must be a boolean.');
+      }
+      return value;
+    },
+  },
+  close_comments_days_old: {
+    group: 'discussion',
+    defaultValue: 14,
+    validate: (value) => {
+      if (typeof value !== 'number' || !Number.isInteger(value) || value < 1 || value > 3650) {
+        throwValidation('close_comments_days_old must be 1-3650.');
+      }
+      return value;
+    },
+  },
+  thread_comments: {
+    group: 'discussion',
+    defaultValue: true,
+    validate: (value) => {
+      if (typeof value !== 'boolean') throwValidation('thread_comments must be a boolean.');
+      return value;
+    },
+  },
+  thread_comments_depth: {
+    group: 'discussion',
+    defaultValue: 5,
+    validate: (value) => {
+      if (typeof value !== 'number' || !Number.isInteger(value) || value < 1 || value > 10) {
+        throwValidation('thread_comments_depth must be 1-10.');
+      }
+      return value;
+    },
+  },
+  page_comments: {
+    group: 'discussion',
+    defaultValue: false,
+    validate: (value) => {
+      if (typeof value !== 'boolean') throwValidation('page_comments must be a boolean.');
+      return value;
+    },
+  },
+  comment_moderation: {
+    group: 'discussion',
+    defaultValue: false,
+    validate: (value) => {
+      if (typeof value !== 'boolean') throwValidation('comment_moderation must be a boolean.');
+      return value;
+    },
+  },
+  comment_previously_approved: {
+    group: 'discussion',
+    defaultValue: true,
+    validate: (value) => {
+      if (typeof value !== 'boolean') {
+        throwValidation('comment_previously_approved must be a boolean.');
+      }
+      return value;
+    },
+  },
+  show_avatars: {
+    group: 'discussion',
+    defaultValue: true,
+    validate: (value) => {
+      if (typeof value !== 'boolean') throwValidation('show_avatars must be a boolean.');
+      return value;
+    },
+  },
+  avatar_rating: {
+    group: 'discussion',
+    defaultValue: 'G',
+    validate: (value) => {
+      const ratings = ['G', 'PG', 'R', 'X'];
+      if (typeof value !== 'string' || !ratings.includes(value)) {
+        throwValidation('avatar_rating must be G, PG, R or X.');
+      }
+      return value;
+    },
+  },
+  comment_max_links: {
+    group: 'discussion',
+    defaultValue: 2,
+    validate: (value) => {
+      if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > 100) {
+        throwValidation('comment_max_links must be 0-100.');
+      }
+      return value;
+    },
+  },
+  moderation_keys: {
+    group: 'discussion',
+    defaultValue: '',
+    validate: (value) => {
+      if (typeof value !== 'string' || value.length > 5000) {
+        throwValidation('moderation_keys must be a short list.');
+      }
+      return value;
+    },
+  },
+  disallowed_keys: {
+    group: 'discussion',
+    defaultValue: '',
+    validate: (value) => {
+      if (typeof value !== 'string' || value.length > 5000) {
+        throwValidation('disallowed_keys must be a short list.');
+      }
+      return value;
+    },
+  },
+  comments_notify: {
+    group: 'discussion',
+    defaultValue: true,
+    validate: (value) => {
+      if (typeof value !== 'boolean') throwValidation('comments_notify must be a boolean.');
+      return value;
+    },
+  },
+  moderation_notify: {
+    group: 'discussion',
+    defaultValue: true,
+    validate: (value) => {
+      if (typeof value !== 'boolean') throwValidation('moderation_notify must be a boolean.');
+      return value;
+    },
+  },
+  thumbnail_size_w: {
+    group: 'media',
+    defaultValue: 150,
+    validate: (value) => {
+      if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > 5000) {
+        throwValidation('thumbnail_size_w must be 0-5000.');
+      }
+      return value;
+    },
+  },
+  thumbnail_size_h: {
+    group: 'media',
+    defaultValue: 150,
+    validate: (value) => {
+      if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > 5000) {
+        throwValidation('thumbnail_size_h must be 0-5000.');
+      }
+      return value;
+    },
+  },
+  thumbnail_crop: {
+    group: 'media',
+    defaultValue: true,
+    validate: (value) => {
+      if (typeof value !== 'boolean') throwValidation('thumbnail_crop must be a boolean.');
+      return value;
+    },
+  },
+  medium_size_w: {
+    group: 'media',
+    defaultValue: 300,
+    validate: (value) => {
+      if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > 5000) {
+        throwValidation('medium_size_w must be 0-5000.');
+      }
+      return value;
+    },
+  },
+  medium_size_h: {
+    group: 'media',
+    defaultValue: 300,
+    validate: (value) => {
+      if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > 5000) {
+        throwValidation('medium_size_h must be 0-5000.');
+      }
+      return value;
+    },
+  },
+  large_size_w: {
+    group: 'media',
+    defaultValue: 1024,
+    validate: (value) => {
+      if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > 10000) {
+        throwValidation('large_size_w must be 0-10000.');
+      }
+      return value;
+    },
+  },
+  large_size_h: {
+    group: 'media',
+    defaultValue: 1024,
+    validate: (value) => {
+      if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > 10000) {
+        throwValidation('large_size_h must be 0-10000.');
+      }
+      return value;
+    },
+  },
+  uploads_use_yearmonth_folders: {
+    group: 'media',
+    defaultValue: true,
+    validate: (value) => {
+      if (typeof value !== 'boolean') {
+        throwValidation('uploads_use_yearmonth_folders must be a boolean.');
+      }
+      return value;
+    },
+  },
+  permalink_base: {
+    group: 'permalinks',
+    defaultValue: 'posts',
+    validate: (value) => {
+      if (
+        typeof value !== 'string' ||
+        !/^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/.test(value) ||
+        ['admin', 'api', 'author', 'category', 'feed', 'preview', 'search', 'tag'].includes(value)
+      ) {
+        throwValidation('permalink_base must be a short URL slug.');
+      }
+      return value;
+    },
+  },
+  wp_page_for_privacy_policy: {
+    group: 'privacy',
+    defaultValue: null,
+    validate: (value) => {
+      if (value === null) return null;
+      if (typeof value !== 'string' || !isUuid(value)) {
+        throwValidation('wp_page_for_privacy_policy must be a page UUID or null.');
+      }
+      return value;
+    },
+  },
 };
 
 function keysForGroups(groups: readonly string[]): string[] {
@@ -360,7 +741,7 @@ export function createOptionService(options: OptionServiceOptions) {
 
     let groups: string[];
     if (input?.group === undefined || input.group === '' || input.group === null) {
-      groups = ['general', 'reading', 'writing'];
+      groups = ['general', 'reading', 'writing', 'discussion', 'media', 'permalinks', 'privacy'];
     } else {
       if (!ALLOWED_GROUPS.has(input.group)) {
         throw new ContentError('INVALID_OPTION_GROUP', `Unknown option group: ${input.group}`, 400);
@@ -428,6 +809,8 @@ export function createOptionService(options: OptionServiceOptions) {
       'blog_public',
       'posts_per_rss',
       'rss_use_excerpt',
+      'permalink_base',
+      'show_avatars',
     ]);
     return {
       siteTitle: typeof values.site_title === 'string' ? values.site_title : 'MERNPress',
@@ -438,6 +821,11 @@ export function createOptionService(options: OptionServiceOptions) {
           ? values.posts_per_rss
           : 10,
       rssUseExcerpt: values.rss_use_excerpt === true,
+      permalinkBase:
+        typeof values.permalink_base === 'string' && values.permalink_base
+          ? values.permalink_base
+          : 'posts',
+      showAvatars: values.show_avatars !== false,
     };
   }
 

@@ -30,7 +30,7 @@ export type MediaExtension = (typeof MEDIA_ALLOWED_EXTENSIONS)[number];
  */
 export const MEDIA_ALLOWED_IMAGE_FORMATS = ['jpeg', 'png', 'webp', 'gif'] as const;
 
-export type MediaDerivatives = Record<`${MediaDerivativeWidth}`, string>;
+export type MediaDerivatives = Record<string, string>;
 
 /** Admin-facing media DTO. Storage paths never cross the API boundary. */
 export interface MediaDto {

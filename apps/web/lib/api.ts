@@ -51,6 +51,17 @@ export interface SiteSettings {
   blogPublic: boolean;
   postsPerRss: number;
   rssUseExcerpt: boolean;
+  permalinkBase: string;
+  showAvatars: boolean;
+}
+
+export function postPath(slug: string, base = 'posts'): string {
+  return `/${base}/${encodeURIComponent(slug)}`;
+}
+
+export async function getPermalinkBase(): Promise<string> {
+  const settings = await getSiteSettings().catch(() => null);
+  return settings?.permalinkBase ?? 'posts';
 }
 
 export interface PostsPage {
@@ -156,9 +167,7 @@ export async function getPublicTerm(
   taxonomy: 'category' | 'tag',
   slug: string,
 ): Promise<PublicTermInfo | null> {
-  const res = await apiFetch(
-    `/api/public/terms/${taxonomy}/${encodeURIComponent(slug)}`,
-  );
+  const res = await apiFetch(`/api/public/terms/${taxonomy}/${encodeURIComponent(slug)}`);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Failed to load ${taxonomy} "${slug}": ${res.status}`);
   return (await res.json()) as PublicTermInfo;

@@ -59,6 +59,8 @@ associated code changes. Superseded decisions stay visible.
 | D-047 | 2026-10-29 | qrolichealth-cms components/designs are reused with owner authorization (its checkout came from the owner's archive; the project is the owner's own). Mechanisms are ported to MERNPress's Fastify/Prisma/capability architecture and tightened (no code copied verbatim; provenance recorded here and in ADR 0008). | accepted | [ADR 0008](docs/adr/0008-media-revisions-preview-scheduling.md) |
 | D-048 | 2026-11-04 | Owner approved expanding beyond the original MVP boundary. Comments are implemented as a first-class domain (plain-text public submissions, PENDING/APPROVED/SPAM/TRASHED states, capability-checked moderation, no email transport yet); see ADR 0009. Appearance/Plugins/update checks remain separate slices. | accepted | [ADR 0009](docs/adr/0009-comments.md) |
 
+| D-049 | 2026-11-04 | WordPress-only settings are implemented as first-class option groups (discussion/media/permalinks/privacy) plus WordPress Address on General and Post-via-email/Update Services on Writing. Discussion keys drive the comment service (closed comments, old-post close, registration, moderation, previously-approved, max links, moderation/disallowed keys, order); media sizes add `WxH` derivatives to new uploads; `permalink_base` drives real `/<base>/<slug>/` URLs with a catch-all route; privacy stores a published page id. Mail transports and XML-RPC pings are stored but explicitly reported as unavailable rather than faked. UUID validation now accepts UUIDv7. | accepted | [ADR 0010](docs/adr/0010-wordpress-only-settings.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

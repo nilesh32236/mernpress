@@ -39,7 +39,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
-  let pageLinks: Array<{ id: string; title: string; slug: string }> = [];
+  let pageLinks: Array<{ id: string; title: string; slug: string }>;
   let settings = null;
   try {
     const [pages, site] = await Promise.all([

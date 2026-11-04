@@ -2254,3 +2254,41 @@ empty comment list and form, with the footer at 427px and no horizontal
 overflow. A follow-up mobile-table patch was released as
 `20261104T092742Z-c26f870`; a recursive reply rendering fix followed as
 `20261104T092931Z-fc94543`. `/`, `/admin/` and `/api/health` remain 200.
+
+### 2026-11-04 — Expanded scope, slice 2: WordPress-only settings
+
+- New option groups with WordPress defaults and validators: `discussion`,
+  `media`, `permalinks`, `privacy` (ADR 0010). API `group` enum, admin
+  `OptionGroup` type, Settings submenu and page titles all derive from them.
+- Discussion options now drive real behaviour in the comment service:
+  `default_comment_status=closed` rejects submissions with 403 "Comments are
+  closed.", `close_comments_for_old_posts`/`_days_old` closes old posts,
+  `comment_registration` requires a session, `comment_moderation` and
+  `moderation_keys` hold comments for moderation, `disallowed_keys` and
+  `comment_max_links` mark spam/pending, `comment_previously_approved`
+  publishes only returning commenters, `comment_order` orders the public list,
+  and `show_avatars` hides the public initials avatars. Verified in the browser:
+  with moderation and "previously approved" off a first-time comment is
+  `APPROVED`; with comments closed the API returns 403.
+- Media sizes are applied to new uploads as extra WebP derivatives keyed
+  `WxH` (verified: a 2000×1200 PNG produced `150x150`, `300x300`, `1024x1024`
+  plus the existing `300`, `600`, `1200`, and the `150x150` file serves 200
+  `image/webp`).
+- Permalinks: `permalink_base` changes real URLs. With `blog`, list/archive
+  pages, the single post, feed and sitemap all use `/blog/<slug>`,
+  `/blog/<slug>` returns 200, `/posts/<slug>` returns 404, and the catch-all
+  `/[base]/[postSlug]` route serves the post. Restored to `posts` afterwards.
+- Privacy: `wp_page_for_privacy_policy` selects a published page and persists.
+  This exposed a real bug — the option UUID validator only accepted UUID
+  versions 1–5 and rejected this project's UUIDv7 ids (also breaking Site Icon
+  and Default Author saves); it now accepts any RFC 9562 version.
+- General gains "WordPress Address (URL)"; Writing gains "Post via email"
+  (mail server, port, login, password, default category) and "Update Services".
+  Both sections state plainly that no inbound mail or XML-RPC ping transport
+  exists in this build. Add User gains the WordPress "Send User Notification"
+  row, disabled with the same explanation.
+- Admin Settings sidebar now lists Discussion, Media, Permalinks and Privacy;
+  a generic `OptionGroupForm` renders them with WordPress form-table layout,
+  inline help and save feedback.
+- Validation: 555 unit/integration tests (API 354, admin 123, block-system 65,
+  web 13), 23 Playwright E2E tests and six builds pass.

@@ -8,15 +8,7 @@
  */
 
 export type ColorScheme =
-  | 'modern'
-  | 'fresh'
-  | 'light'
-  | 'blue'
-  | 'coffee'
-  | 'ectoplasm'
-  | 'midnight'
-  | 'ocean'
-  | 'sunrise';
+  'modern' | 'fresh' | 'light' | 'blue' | 'coffee' | 'ectoplasm' | 'midnight' | 'ocean' | 'sunrise';
 
 export interface ColorSchemeOption {
   id: ColorScheme;

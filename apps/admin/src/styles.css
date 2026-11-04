@@ -9778,3 +9778,26 @@ a.glance-chip:hover {
     width: auto;
   }
 }
+
+.inline-fields {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.inline-fields input[type='text'] {
+  width: 250px;
+}
+
+.inline-fields .small-text {
+  width: 70px;
+}
+
+/* WordPress settings sections: 16.9px/600 headings above their fields. */
+.option-section-title {
+  margin: 16.9px 0;
+  color: var(--wp-text-strong, #1d2327);
+  font-size: 16.9px;
+  font-weight: 600;
+}

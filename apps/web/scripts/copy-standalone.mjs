@@ -1,3 +1,4 @@
+/* global console, process */
 /**
  * Next.js `output: 'standalone'` produces a minimal server bundle, but the
  * static asset directory and `public/` are not copied automatically. The

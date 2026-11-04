@@ -56,10 +56,12 @@ describe('comments screen', () => {
     expect(await screen.findByText('Reader')).toBeDefined();
     expect(screen.getByText('A pending comment.')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('/api/admin/comments/c1/status'),
-      expect.objectContaining({ method: 'PATCH' }),
-    ));
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/api/admin/comments/c1/status'),
+        expect.objectContaining({ method: 'PATCH' }),
+      ),
+    );
     expect(await screen.findByText('Comment approved.')).toBeDefined();
   });
 });

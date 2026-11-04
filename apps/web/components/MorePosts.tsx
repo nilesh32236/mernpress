@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { PublicPost } from '@/lib/api';
+import { postPath, type PublicPost } from '@/lib/api';
 
 function formatDate(iso: string | null): string | null {
   if (!iso) return null;
@@ -12,7 +12,13 @@ function formatDate(iso: string | null): string | null {
 }
 
 /** Twenty Twenty-Five "More posts" pattern: title + date, four most recent. */
-export default function MorePosts({ posts }: { posts: PublicPost[] }) {
+export default function MorePosts({
+  posts,
+  base = 'posts',
+}: {
+  posts: PublicPost[];
+  base?: string;
+}) {
   if (posts.length === 0) return null;
   return (
     <section className="entry-wide more-posts" aria-labelledby="more-posts-heading">
@@ -22,11 +28,11 @@ export default function MorePosts({ posts }: { posts: PublicPost[] }) {
           const date = formatDate(post.publishedAt);
           return (
             <li key={post.id}>
-              <Link className="more-posts-title" href={`/posts/${post.slug}`}>
+              <Link className="more-posts-title" href={postPath(post.slug, base)}>
                 {post.title}
               </Link>
               {date ? (
-                <Link className="more-posts-date" href={`/posts/${post.slug}`}>
+                <Link className="more-posts-date" href={postPath(post.slug, base)}>
                   <time dateTime={post.publishedAt ?? undefined}>{date}</time>
                 </Link>
               ) : null}

@@ -55,7 +55,9 @@ describe('profile page', () => {
     render(<ProfilePage user={admin} />);
 
     expect(((await screen.findByLabelText('Username')) as HTMLInputElement).value).toBe('admin');
-    expect((screen.getByLabelText('Display name publicly as') as HTMLInputElement).value).toBe('Admin');
+    expect((screen.getByLabelText('Display name publicly as') as HTMLInputElement).value).toBe(
+      'Admin',
+    );
     expect((screen.getByLabelText('Email (required)') as HTMLInputElement).value).toBe(
       'admin@example.com',
     );
@@ -66,7 +68,9 @@ describe('profile page', () => {
     render(<ProfilePage user={admin} onProfileUpdated={onProfileUpdated} />);
 
     await screen.findByLabelText('Username');
-    fireEvent.change(screen.getByLabelText('Display name publicly as'), { target: { value: 'admin' } });
+    fireEvent.change(screen.getByLabelText('Display name publicly as'), {
+      target: { value: 'admin' },
+    });
     fireEvent.submit(screen.getByRole('form', { name: 'Account details' }));
 
     await waitFor(() =>

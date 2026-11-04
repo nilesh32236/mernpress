@@ -41,6 +41,7 @@ function toPublic(row: {
   authorName: string;
   authorUrl: string | null;
   content: string;
+  status: string;
   createdAt: Date;
 }): PublicComment {
   return {
@@ -49,6 +50,7 @@ function toPublic(row: {
     authorName: row.authorName,
     authorUrl: row.authorUrl,
     content: row.content,
+    status: row.status as CommentStatus,
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -58,10 +60,21 @@ export interface CommentServiceOptions {
 }
 
 export function createCommentService({ prisma }: CommentServiceOptions) {
+  async function setting<T>(key: string, fallback: T): Promise<T> {
+    const row = await prisma.option.findUnique({ where: { key } });
+    if (!row) return fallback;
+    try {
+      return JSON.parse(row.value) as T;
+    } catch {
+      return fallback;
+    }
+  }
+
   async function publicList(postId: string): Promise<PublicComment[]> {
+    const order = await setting<'asc' | 'desc'>('comment_order', 'asc');
     const rows = await prisma.comment.findMany({
       where: { postId, status: 'APPROVED' },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: order },
       take: PUBLIC_LIMIT,
     });
     return rows.map(toPublic);
@@ -70,13 +83,49 @@ export function createCommentService({ prisma }: CommentServiceOptions) {
   async function createPublic(postId: string, input: CreateCommentInput): Promise<PublicComment> {
     const post = await prisma.post.findFirst({
       where: { id: postId, status: 'PUBLISHED', publishedAt: { lte: new Date() } },
-      select: { id: true, type: true },
+      select: { id: true, type: true, publishedAt: true },
     });
     if (!post) {
       throw new ContentError('NOT_FOUND', 'Not found', 404);
     }
-    const authorName = clean(input.authorName);
-    const authorEmail = clean(input.authorEmail).toLowerCase();
+    const [
+      defaultStatus,
+      registrationRequired,
+      closeForOld,
+      closeDays,
+      moderationOn,
+      previouslyApproved,
+      maxLinks,
+      moderationKeys,
+      disallowedKeys,
+    ] = await Promise.all([
+      setting<'open' | 'closed'>('default_comment_status', 'open'),
+      setting<boolean>('comment_registration', false),
+      setting<boolean>('close_comments_for_old_posts', false),
+      setting<number>('close_comments_days_old', 14),
+      setting<boolean>('comment_moderation', false),
+      setting<boolean>('comment_previously_approved', true),
+      setting<number>('comment_max_links', 2),
+      setting<string>('moderation_keys', ''),
+      setting<string>('disallowed_keys', ''),
+    ]);
+    if (defaultStatus === 'closed') {
+      throw new ContentError('FORBIDDEN', 'Comments are closed.', 403);
+    }
+    if (
+      closeForOld &&
+      post.publishedAt &&
+      post.publishedAt.getTime() < Date.now() - closeDays * 24 * 60 * 60 * 1000
+    ) {
+      throw new ContentError('FORBIDDEN', 'Comments are closed.', 403);
+    }
+    if (registrationRequired && !input.userId) {
+      throw new ContentError('FORBIDDEN', 'You must be logged in to comment.', 403);
+    }
+    const rawName = clean(input.authorName);
+    const rawEmail = clean(input.authorEmail).toLowerCase();
+    const authorName = rawName || 'Anonymous';
+    const authorEmail = rawEmail || 'anonymous@example.com';
     const content = clean(input.content);
     const authorUrl = input.authorUrl ? clean(input.authorUrl) : null;
     if (!authorName || authorName.length > MAX_NAME) {
@@ -97,7 +146,11 @@ export function createCommentService({ prisma }: CommentServiceOptions) {
         select: { id: true },
       });
       if (!parent) {
-        throw new ContentError('VALIDATION_ERROR', 'The comment you replied to was not found.', 400);
+        throw new ContentError(
+          'VALIDATION_ERROR',
+          'The comment you replied to was not found.',
+          400,
+        );
       }
     }
     const flood = await prisma.comment.count({
@@ -109,15 +162,39 @@ export function createCommentService({ prisma }: CommentServiceOptions) {
     if (flood > 0) {
       throw new ContentError('VALIDATION_ERROR', 'You are posting comments too quickly.', 429);
     }
+    const linkCount = (content.match(/https?:\/\//gi) ?? []).length;
+    const normalized = content.toLowerCase();
+    const disallowed = disallowedKeys
+      .split(/[,\n]/)
+      .map((value) => value.trim().toLowerCase())
+      .filter(Boolean)
+      .some((word) => normalized.includes(word));
+    const needsModeration = moderationKeys
+      .split(/[,\n]/)
+      .map((value) => value.trim().toLowerCase())
+      .filter(Boolean)
+      .some((word) => normalized.includes(word));
+    let status: CommentStatus = 'APPROVED';
+    if (disallowed || (maxLinks > 0 && linkCount > maxLinks)) {
+      status = disallowed ? 'SPAM' : 'PENDING';
+    } else if (moderationOn || needsModeration) {
+      status = 'PENDING';
+    } else if (previouslyApproved) {
+      const approvedBefore = await prisma.comment.count({
+        where: { authorEmail, status: 'APPROVED' },
+      });
+      status = approvedBefore > 0 ? 'APPROVED' : 'PENDING';
+    }
     const row = await prisma.comment.create({
       data: {
         postId,
         parentId: input.parentId ?? null,
+        userId: input.userId ?? null,
         authorName,
         authorEmail,
         authorUrl: authorUrl || null,
         content,
-        status: 'APPROVED',
+        status,
       },
     });
     return toPublic(row);

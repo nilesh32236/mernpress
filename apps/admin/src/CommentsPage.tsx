@@ -11,7 +11,15 @@ import {
   type CommentStatus,
   type AuthUser,
 } from './api.js';
-import { EmptyState, ErrorState, Modal, Notice, PageHeader, Skeleton, type NoticeMessage } from './components.js';
+import {
+  EmptyState,
+  ErrorState,
+  Modal,
+  Notice,
+  PageHeader,
+  Skeleton,
+  type NoticeMessage,
+} from './components.js';
 import { navigate } from './router.js';
 import { canModerateComments } from './roles.js';
 import {
@@ -21,13 +29,14 @@ import {
   screenPerPage,
 } from './screenOptions.js';
 
-const STATUS_TABS: Array<{ id: CommentStatus | ''; label: string; countKey: keyof CommentCounts }> = [
-  { id: '', label: 'All', countKey: 'all' },
-  { id: 'PENDING', label: 'Pending', countKey: 'pending' },
-  { id: 'APPROVED', label: 'Approved', countKey: 'approved' },
-  { id: 'SPAM', label: 'Spam', countKey: 'spam' },
-  { id: 'TRASHED', label: 'Trash', countKey: 'trashed' },
-];
+const STATUS_TABS: Array<{ id: CommentStatus | ''; label: string; countKey: keyof CommentCounts }> =
+  [
+    { id: '', label: 'All', countKey: 'all' },
+    { id: 'PENDING', label: 'Pending', countKey: 'pending' },
+    { id: 'APPROVED', label: 'Approved', countKey: 'approved' },
+    { id: 'SPAM', label: 'Spam', countKey: 'spam' },
+    { id: 'TRASHED', label: 'Trash', countKey: 'trashed' },
+  ];
 
 function formatCommentDate(value: string): string {
   const date = new Date(value);
@@ -333,7 +342,11 @@ export function CommentsPage({ user }: { user: AuthUser }) {
         ) : items.length === 0 ? (
           <EmptyState
             title="No comments found."
-            message={search ? 'Try a different search.' : 'Comments will appear here when readers submit them.'}
+            message={
+              search
+                ? 'Try a different search.'
+                : 'Comments will appear here when readers submit them.'
+            }
           />
         ) : (
           <>
@@ -386,97 +399,109 @@ export function CommentsPage({ user }: { user: AuthUser }) {
                         />
                       </th>
                       {showAuthor ? (
-                      <td className="author column-author">
-                        <span className="comment-avatar" aria-hidden="true">
-                          {item.authorName.slice(0, 1).toUpperCase()}
-                        </span>
-                        <div className="comment-author-meta">
-                          <strong>{item.authorName}</strong>
-                          <a href={`mailto:${item.authorEmail}`}>{item.authorEmail}</a>
-                          {item.authorUrl ? (
-                            <a href={item.authorUrl} target="_blank" rel="noreferrer">
-                              {item.authorUrl}
-                            </a>
-                          ) : null}
-                        </div>
-                      </td>
+                        <td className="author column-author">
+                          <span className="comment-avatar" aria-hidden="true">
+                            {item.authorName.slice(0, 1).toUpperCase()}
+                          </span>
+                          <div className="comment-author-meta">
+                            <strong>{item.authorName}</strong>
+                            <a href={`mailto:${item.authorEmail}`}>{item.authorEmail}</a>
+                            {item.authorUrl ? (
+                              <a href={item.authorUrl} target="_blank" rel="noreferrer">
+                                {item.authorUrl}
+                              </a>
+                            ) : null}
+                          </div>
+                        </td>
                       ) : null}
                       {showComment ? (
-                      <td className="comment column-comment">
-                        <span className={`comment-status is-${item.status.toLowerCase()}`}>
-                          {statusLabel(item.status)}
-                        </span>{' '}
-                        {excerpt(item.content)}
-                        <div className="row-actions">
-                          {moderator ? (
-                            <>
-                              {item.status !== 'APPROVED' ? (
+                        <td className="comment column-comment">
+                          <span className={`comment-status is-${item.status.toLowerCase()}`}>
+                            {statusLabel(item.status)}
+                          </span>{' '}
+                          {excerpt(item.content)}
+                          <div className="row-actions">
+                            {moderator ? (
+                              <>
+                                {item.status !== 'APPROVED' ? (
+                                  <button
+                                    type="button"
+                                    className="row-action-link"
+                                    onClick={() => void applyStatus(item, 'APPROVED')}
+                                  >
+                                    Approve
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="row-action-link"
+                                    onClick={() => void applyStatus(item, 'PENDING')}
+                                  >
+                                    Unapprove
+                                  </button>
+                                )}
+                                <span className="row-action-sep" aria-hidden="true">
+                                  {' '}
+                                  |{' '}
+                                </span>
                                 <button
                                   type="button"
                                   className="row-action-link"
-                                  onClick={() => void applyStatus(item, 'APPROVED')}
+                                  onClick={() => void applyStatus(item, 'SPAM')}
                                 >
-                                  Approve
+                                  Spam
                                 </button>
-                              ) : (
+                                <span className="row-action-sep" aria-hidden="true">
+                                  {' '}
+                                  |{' '}
+                                </span>
                                 <button
                                   type="button"
                                   className="row-action-link"
-                                  onClick={() => void applyStatus(item, 'PENDING')}
+                                  onClick={() => void applyStatus(item, 'TRASHED')}
                                 >
-                                  Unapprove
+                                  Trash
                                 </button>
-                              )}
-                              <span className="row-action-sep" aria-hidden="true"> | </span>
-                              <button
-                                type="button"
-                                className="row-action-link"
-                                onClick={() => void applyStatus(item, 'SPAM')}
-                              >
-                                Spam
-                              </button>
-                              <span className="row-action-sep" aria-hidden="true"> | </span>
-                              <button
-                                type="button"
-                                className="row-action-link"
-                                onClick={() => void applyStatus(item, 'TRASHED')}
-                              >
-                                Trash
-                              </button>
-                              <span className="row-action-sep" aria-hidden="true"> | </span>
-                              <button
-                                type="button"
-                                className="row-action-link"
-                                onClick={() => openEdit(item)}
-                              >
-                                Edit
-                              </button>
-                              <span className="row-action-sep" aria-hidden="true"> | </span>
-                              <button
-                                type="button"
-                                className="row-action-link is-danger"
-                                onClick={() => void remove(item)}
-                                disabled={busyId === item.id}
-                              >
-                                Delete Permanently
-                              </button>
-                            </>
-                          ) : null}
-                        </div>
-                      </td>
+                                <span className="row-action-sep" aria-hidden="true">
+                                  {' '}
+                                  |{' '}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="row-action-link"
+                                  onClick={() => openEdit(item)}
+                                >
+                                  Edit
+                                </button>
+                                <span className="row-action-sep" aria-hidden="true">
+                                  {' '}
+                                  |{' '}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="row-action-link is-danger"
+                                  onClick={() => void remove(item)}
+                                  disabled={busyId === item.id}
+                                >
+                                  Delete Permanently
+                                </button>
+                              </>
+                            ) : null}
+                          </div>
+                        </td>
                       ) : null}
                       {showResponse ? (
-                      <td className="response column-response">
-                        <a
-                          href={`/posts/${item.postId}/edit`}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            navigate(`/posts/${item.postId}/edit`);
-                          }}
-                        >
-                          {item.postTitle}
-                        </a>
-                      </td>
+                        <td className="response column-response">
+                          <a
+                            href={`/posts/${item.postId}/edit`}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              navigate(`/posts/${item.postId}/edit`);
+                            }}
+                          >
+                            {item.postTitle}
+                          </a>
+                        </td>
                       ) : null}
                       {showDate ? (
                         <td className="date column-date">{formatCommentDate(item.createdAt)}</td>

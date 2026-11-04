@@ -65,7 +65,7 @@ async function addComment(postId: string, content = 'A public comment.') {
 }
 
 describe('public comments', () => {
-  it('accepts an approved comment on a published post and lists it', async () => {
+  it('holds a first-time comment for moderation and lists it after approval', async () => {
     const post = await publish(await createPost({ type: 'post', title: 'Commented' }));
     const created = await addComment(post.id, 'Hello from a reader.');
     expect(created.statusCode).toBe(201);
@@ -73,14 +73,29 @@ describe('public comments', () => {
       parentId: null,
       authorName: 'Commenter',
       content: 'Hello from a reader.',
+      status: 'PENDING',
     });
 
-    const list = await app.inject({
+    const hidden = await app.inject({
       method: 'GET',
       url: `/api/public/posts/${post.id}/comments`,
     });
-    expect(list.statusCode).toBe(200);
-    expect((list.json() as { items: unknown[] }).items).toHaveLength(1);
+    expect((hidden.json() as { items: unknown[] }).items).toHaveLength(0);
+
+    const list = await app.inject({ method: 'GET', url: '/api/admin/comments', headers });
+    const id = (list.json() as { items: AdminComment[] }).items[0]!.id;
+    await app.inject({
+      method: 'PATCH',
+      url: `/api/admin/comments/${id}/status`,
+      headers,
+      payload: { status: 'APPROVED' },
+    });
+
+    const visible = await app.inject({
+      method: 'GET',
+      url: `/api/public/posts/${post.id}/comments`,
+    });
+    expect((visible.json() as { items: unknown[] }).items).toHaveLength(1);
   });
 
   it('rejects comments on drafts and invalid submissions', async () => {
@@ -96,6 +111,41 @@ describe('public comments', () => {
       payload: { authorName: 'A', authorEmail: 'not-an-email', content: 'x' },
     });
     expect(badEmail.statusCode).toBe(400);
+  });
+
+  it('honours the Discussion settings for moderation and closed comments', async () => {
+    const setGroup = async (values: Record<string, unknown>) => {
+      const current = await app.inject({
+        method: 'GET',
+        url: '/api/options?group=discussion',
+        headers,
+      });
+      const response = await app.inject({
+        method: 'PUT',
+        url: '/api/options',
+        headers,
+        payload: { group: 'discussion', values: { ...(current.json() as object), ...values } },
+      });
+      expect(response.statusCode).toBe(200);
+    };
+
+    // No moderation and no "previously approved" requirement: first-time
+    // comments publish immediately, like WordPress with both boxes unchecked.
+    await setGroup({ comment_moderation: false, comment_previously_approved: false });
+    const post = await publish(await createPost({ type: 'post', title: 'Open comments' }));
+    const approved = await addComment(post.id, 'Publishes immediately.');
+    expect(approved.statusCode).toBe(201);
+    expect((approved.json() as { status: string }).status).toBe('APPROVED');
+
+    // Closing comments rejects new submissions.
+    await setGroup({ default_comment_status: 'closed' });
+    const closed = await addComment(post.id, 'Should be rejected.');
+    expect(closed.statusCode).toBe(403);
+    expect((closed.json() as { error: { message: string } }).error.message).toBe(
+      'Comments are closed.',
+    );
+
+    await setGroup({ default_comment_status: 'open', comment_previously_approved: true });
   });
 
   it('rate-limits repeated comments from the same email', async () => {
@@ -115,10 +165,10 @@ describe('admin comment moderation', () => {
     expect(list.statusCode).toBe(200);
     const body = list.json() as {
       items: AdminComment[];
-      counts: { all: number; approved: number };
+      counts: { all: number; approved: number; pending: number };
     };
     expect(body.items).toHaveLength(1);
-    expect(body.counts).toMatchObject({ all: 1, approved: 1 });
+    expect(body.counts).toMatchObject({ all: 1, pending: 1, approved: 0 });
 
     const id = body.items[0]!.id;
     const spam = await app.inject({
@@ -135,7 +185,7 @@ describe('admin comment moderation', () => {
       url: '/api/admin/comments/counts',
       headers,
     });
-    expect(counts.json()).toMatchObject({ spam: 1, approved: 0 });
+    expect(counts.json()).toMatchObject({ spam: 1, approved: 0, pending: 0 });
 
     const deleteHeaders = { ...headers };
     delete deleteHeaders['content-type'];

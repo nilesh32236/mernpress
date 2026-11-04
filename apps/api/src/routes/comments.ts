@@ -1,7 +1,8 @@
-import type { AuthService, CommentService, CommentStatus, Principal } from '@mernpress/cms-core';
+import type { AuthService, CommentService, CommentStatus } from '@mernpress/cms-core';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { requireAdmin } from '../auth/require-admin.js';
+import { SESSION_COOKIE } from '../auth/cookies.js';
 import type { Env } from '../config/env.js';
 import { sendRouteError } from './send-error.js';
 
@@ -48,9 +49,9 @@ const bulkCommentSchema = z
 
 export function registerPublicCommentRoutes(
   app: FastifyInstance,
-  options: { comments: CommentService },
+  options: { comments: CommentService; auth: AuthService },
 ): void {
-  const { comments } = options;
+  const { comments, auth } = options;
 
   app.get('/api/public/posts/:postId/comments', async (request, reply) => {
     try {
@@ -64,7 +65,14 @@ export function registerPublicCommentRoutes(
   app.post('/api/public/posts/:postId/comments', async (request, reply) => {
     try {
       const { postId } = postIdParamSchema.parse(request.params);
-      const created = await comments.createPublic(postId, createCommentSchema.parse(request.body));
+      const body = createCommentSchema.parse(request.body);
+      const token = request.cookies[SESSION_COOKIE];
+      let userId: string | null = null;
+      if (typeof token === 'string' && token) {
+        const session = await auth.validateSession(token).catch(() => null);
+        userId = session?.user.id ?? null;
+      }
+      const created = await comments.createPublic(postId, { ...body, userId });
       return reply.code(201).send(created);
     } catch (error) {
       return sendRouteError(reply, request, error);

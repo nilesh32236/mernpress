@@ -26,18 +26,22 @@ function CommentItem({
   comment,
   byParent,
   onReply,
+  showAvatars,
 }: {
   comment: PublicComment;
   byParent: Map<string, PublicComment[]>;
   onReply: (comment: PublicComment) => void;
+  showAvatars: boolean;
 }) {
   const replies = byParent.get(comment.id) ?? [];
   return (
     <li className="comment-item">
       <article className="comment-body">
-        <span className="comment-avatar" aria-hidden="true">
-          {comment.authorName.slice(0, 1).toUpperCase()}
-        </span>
+        {showAvatars ? (
+          <span className="comment-avatar" aria-hidden="true">
+            {comment.authorName.slice(0, 1).toUpperCase()}
+          </span>
+        ) : null}
         <div className="comment-main">
           <div className="comment-meta">
             {comment.authorUrl ? (
@@ -58,7 +62,13 @@ function CommentItem({
       {replies.length > 0 ? (
         <ol className="children">
           {replies.map((reply) => (
-            <CommentItem key={reply.id} comment={reply} byParent={byParent} onReply={onReply} />
+            <CommentItem
+              key={reply.id}
+              comment={reply}
+              byParent={byParent}
+              onReply={onReply}
+              showAvatars={showAvatars}
+            />
           ))}
         </ol>
       ) : null}
@@ -66,13 +76,8 @@ function CommentItem({
   );
 }
 
-export default function Comments({
-  postId,
-  postTitle,
-}: {
-  postId: string;
-  postTitle: string;
-}) {
+export default function Comments({ postId, postTitle }: { postId: string; postTitle: string }) {
+  const [showAvatars, setShowAvatars] = useState(true);
   const [comments, setComments] = useState<PublicComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -84,6 +89,21 @@ export default function Comments({
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/public/site')
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body: { showAvatars?: boolean } | null) => {
+        if (active && body && body.showAvatars === false) setShowAvatars(false);
+      })
+      .catch(() => {
+        // Keep the local initials fallback.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -125,25 +145,24 @@ export default function Comments({
     setError(null);
     setNotice(null);
     try {
-      const response = await fetch(
-        `/api/public/posts/${encodeURIComponent(postId)}/comments`,
-        {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            authorName,
-            authorEmail,
-            authorUrl: authorUrl.trim() ? authorUrl.trim() : null,
-            content,
-            parentId,
-          }),
-        },
-      );
+      const response = await fetch(`/api/public/posts/${encodeURIComponent(postId)}/comments`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          authorName,
+          authorEmail,
+          authorUrl: authorUrl.trim() ? authorUrl.trim() : null,
+          content,
+          parentId,
+        }),
+      });
       const body = await response.json().catch(() => null);
       if (!response.ok) {
         throw new Error(body?.error?.message ?? 'We could not post your comment.');
       }
-      setComments((current) => [...current, body as PublicComment]);
+      if (body.status === 'APPROVED') {
+        setComments((current) => [...current, body as PublicComment]);
+      }
       setContent('');
       setParentId(null);
       setNotice(
@@ -183,6 +202,7 @@ export default function Comments({
               comment={comment}
               byParent={replies}
               onReply={(target) => setParentId(target.id)}
+              showAvatars={showAvatars}
             />
           ))}
         </ol>

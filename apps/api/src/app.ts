@@ -193,7 +193,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerAdminHealthRoutes(app, { env, auth, database });
   registerPublicContentRoutes(app, { content, options: optionService });
   registerCommentRoutes(app, { env, auth, comments });
-  registerPublicCommentRoutes(app, { comments });
+  registerPublicCommentRoutes(app, { comments, auth });
 
   if (env.SCHEDULER_ENABLED) {
     startPublishScheduler(app, { schedule });

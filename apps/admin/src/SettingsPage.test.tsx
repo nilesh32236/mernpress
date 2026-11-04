@@ -44,7 +44,14 @@ describe('settings page', () => {
     expect(await screen.findByDisplayValue('My Site')).toBeDefined();
     expect(screen.getByDisplayValue('A tagline')).toBeDefined();
     expect(screen.getByDisplayValue('admin@example.com')).toBeDefined();
-    expect(screen.getByDisplayValue('https://example.com')).toBeDefined();
+    // WordPress Address and Site Address fall back to the same URL when the
+    // former has never been saved.
+    expect((document.getElementById('wordpress_url') as HTMLInputElement).value).toBe(
+      'https://example.com',
+    );
+    expect((document.getElementById('site_url') as HTMLInputElement).value).toBe(
+      'https://example.com',
+    );
   });
 
   it('switches to Reading and loads the reading group', async () => {

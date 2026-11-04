@@ -1201,9 +1201,7 @@ export function ContentEditor({
                   type="button"
                   className="button primary-button editor-topbar-publish"
                   onClick={() => void handleSave(primaryAction.intent)}
-                  disabled={
-                    saving || Boolean(conflict) || (post?.status === 'PUBLISHED' && !dirty)
-                  }
+                  disabled={saving || Boolean(conflict) || (post?.status === 'PUBLISHED' && !dirty)}
                   aria-busy={saving}
                   aria-keyshortcuts="Control+S Meta+S"
                   title={`${primaryAction.label} (Ctrl/Cmd+S)`}
@@ -1560,8 +1558,8 @@ export function ContentEditor({
                       {form.excerpt.trim() ? 'Edit excerpt' : 'Add an excerpt…'}
                     </button>
                     <p className="editor-word-count">
-                      {wordCount} {wordCount === 1 ? 'word' : 'words'}, {readingMinutes} minute
-                      read time.
+                      {wordCount} {wordCount === 1 ? 'word' : 'words'}, {readingMinutes} minute read
+                      time.
                     </p>
                     <p className="editor-last-edited">
                       {post

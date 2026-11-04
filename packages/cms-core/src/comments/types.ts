@@ -6,6 +6,7 @@ export interface PublicComment {
   authorName: string;
   authorUrl: string | null;
   content: string;
+  status: CommentStatus;
   createdAt: string;
 }
 
@@ -43,6 +44,7 @@ export interface CommentCounts {
 }
 
 export interface CreateCommentInput {
+  userId?: string | null | undefined;
   authorName: string;
   authorEmail: string;
   authorUrl?: string | null | undefined;

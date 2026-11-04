@@ -10,7 +10,15 @@ interface OptionRouteOptions {
   options: OptionService;
 }
 
-const groupEnum = z.enum(['general', 'reading', 'writing']);
+const groupEnum = z.enum([
+  'general',
+  'reading',
+  'writing',
+  'discussion',
+  'media',
+  'permalinks',
+  'privacy',
+]);
 
 const getQuerySchema = z.object({ group: groupEnum }).strict();
 

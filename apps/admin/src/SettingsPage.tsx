@@ -14,6 +14,7 @@ import {
   type OptionValues,
 } from './api.js';
 import { ErrorState, Notice, PageHeader, Skeleton, type NoticeMessage } from './components.js';
+import { OptionGroupForm } from './OptionGroupForm.js';
 import { useLocation } from './router.js';
 import { cacheSiteFormats, formatSettingsDate, formatSettingsTime } from './format.js';
 
@@ -71,8 +72,19 @@ function FieldLabel({ children }: { icon?: ReactNode; children: ReactNode }) {
 function tabFromHash(hash: string): SettingsTab {
   if (hash === '#reading') return 'reading';
   if (hash === '#writing') return 'writing';
+  if (hash === '#discussion') return 'discussion';
+  if (hash === '#media') return 'media';
+  if (hash === '#permalinks') return 'permalinks';
+  if (hash === '#privacy') return 'privacy';
   return 'general';
 }
+
+const SIMPLE_GROUPS: ReadonlySet<SettingsTab> = new Set([
+  'discussion',
+  'media',
+  'permalinks',
+  'privacy',
+]);
 
 function textValue(value: unknown): string {
   if (value === null || value === undefined) {
@@ -112,21 +124,37 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
     general: false,
     reading: false,
     writing: false,
+    discussion: false,
+    media: false,
+    permalinks: false,
+    privacy: false,
   });
   const [loading, setLoading] = useState<Record<OptionGroup, boolean>>({
     general: false,
     reading: false,
     writing: false,
+    discussion: false,
+    media: false,
+    permalinks: false,
+    privacy: false,
   });
   const [errors, setErrors] = useState<Record<OptionGroup, string | null>>({
     general: null,
     reading: null,
     writing: null,
+    discussion: null,
+    media: null,
+    permalinks: null,
+    privacy: null,
   });
   const [saving, setSaving] = useState<Record<OptionGroup, boolean>>({
     general: false,
     reading: false,
     writing: false,
+    discussion: false,
+    media: false,
+    permalinks: false,
+    privacy: false,
   });
 
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
@@ -135,6 +163,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
   const [siteTagline, setSiteTagline] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [siteUrl, setSiteUrl] = useState('');
+  const [wordpressUrl, setWordpressUrl] = useState('');
   const [siteIcon, setSiteIcon] = useState<string | null>(null);
   const [siteIconMedia, setSiteIconMedia] = useState<MediaItem | null>(null);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
@@ -161,6 +190,12 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
 
   const [defaultCategory, setDefaultCategory] = useState('');
   const [defaultFormat, setDefaultFormat] = useState('standard');
+  const [mailServer, setMailServer] = useState('mail.example.com');
+  const [mailPort, setMailPort] = useState('110');
+  const [mailLogin, setMailLogin] = useState('');
+  const [mailPass, setMailPass] = useState('');
+  const [defaultEmailCategory, setDefaultEmailCategory] = useState('uncategorized');
+  const [pingSites, setPingSites] = useState('');
   const [, setWritingDirty] = useState(false);
   const [categoryOptions, setCategoryOptions] = useState<Array<{
     id: string;
@@ -182,7 +217,9 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
         setSiteTagline(textValue(values.site_tagline));
         setAdminEmail(textValue(values.admin_email));
         const storedSiteUrl = textValue(values.site_url);
-        setSiteUrl(storedSiteUrl || (typeof window === 'undefined' ? '' : window.location.origin));
+        const fallbackUrl = typeof window === 'undefined' ? '' : window.location.origin;
+        setSiteUrl(storedSiteUrl || fallbackUrl);
+        setWordpressUrl(textValue(values.wordpress_url) || storedSiteUrl || fallbackUrl);
         const iconId = typeof values.site_icon === 'string' ? values.site_icon : null;
         setSiteIcon(iconId);
         if (iconId) {
@@ -203,10 +240,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
         setTimeFormat(loadedTimeFormat);
         setCustomTimeFormat(loadedTimeFormat);
         setWeekStartsOn(textValue(values.week_starts_on) || '1');
-        cacheSiteFormats(
-          loadedDateFormat,
-          loadedTimeFormat,
-        );
+        cacheSiteFormats(loadedDateFormat, loadedTimeFormat);
         try {
           window.localStorage.setItem(
             'mernpress.defaultRole',
@@ -225,6 +259,12 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
       } else {
         setDefaultCategory(textValue(values.default_post_category));
         setDefaultFormat(textValue(values.default_post_format) || 'standard');
+        setMailServer(textValue(values.mailserver_url) || 'mail.example.com');
+        setMailPort(textValue(values.mailserver_port) || '110');
+        setMailLogin(textValue(values.mailserver_login));
+        setMailPass(textValue(values.mailserver_pass));
+        setDefaultEmailCategory(textValue(values.default_email_category) || 'uncategorized');
+        setPingSites(textValue(values.ping_sites));
         try {
           window.localStorage.setItem(
             'mernpress.defaultPostFormat',
@@ -251,7 +291,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
     const tab = tabFromHash(window.location.hash);
     setActiveTab(tab);
     setNotice(null);
-    if (!loaded[tab] && !loading[tab]) {
+    if (!SIMPLE_GROUPS.has(tab) && !loaded[tab] && !loading[tab]) {
       void loadGroup(tab);
     }
   }, [location]);
@@ -293,6 +333,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
         site_title: siteTitle,
         site_tagline: siteTagline,
         admin_email: adminEmail,
+        wordpress_url: wordpressUrl,
         site_url: siteUrl,
         site_icon: siteIcon,
         users_can_register: usersCanRegister,
@@ -351,6 +392,12 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
       await updateOptions('writing', {
         default_post_category: defaultCategory.trim() === '' ? null : defaultCategory.trim(),
         default_post_format: defaultFormat,
+        mailserver_url: mailServer,
+        mailserver_port: Number(mailPort) || 110,
+        mailserver_login: mailLogin,
+        mailserver_pass: mailPass,
+        default_email_category: defaultEmailCategory,
+        ping_sites: pingSites,
       });
       try {
         window.localStorage.setItem('mernpress.defaultPostFormat', defaultFormat);
@@ -366,8 +413,24 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
     }
   }
 
-  const tabLabel = (tab: SettingsTab) =>
-    tab === 'general' ? 'General' : tab === 'reading' ? 'Reading' : 'Writing';
+  const tabLabel = (tab: SettingsTab) => {
+    switch (tab) {
+      case 'general':
+        return 'General';
+      case 'reading':
+        return 'Reading';
+      case 'writing':
+        return 'Writing';
+      case 'discussion':
+        return 'Discussion';
+      case 'media':
+        return 'Media';
+      case 'permalinks':
+        return 'Permalinks';
+      case 'privacy':
+        return 'Privacy';
+    }
+  };
 
   const sampleDate = new Date();
 
@@ -463,6 +526,25 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
               </div>
             </div>
 
+            <div className="field">
+              <label htmlFor="wordpress_url">
+                <FieldLabel icon={<GeneralIcon />}>WordPress Address (URL)</FieldLabel>
+              </label>
+              <input
+                id="wordpress_url"
+                type="url"
+                value={wordpressUrl}
+                onChange={(event) => {
+                  setWordpressUrl(event.target.value);
+                  setGeneralDirty(true);
+                }}
+                disabled={saving.general}
+              />
+              <p className="field-help">
+                The address where your MERNPress installation lives. This build serves the site and
+                admin from one origin.
+              </p>
+            </div>
             <div className="field">
               <label htmlFor="site_url">
                 <FieldLabel icon={<GeneralIcon />}>Site Address (URL)</FieldLabel>
@@ -684,9 +766,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
                     disabled={saving.general}
                   />
                 </label>
-                <p className="field-help">
-                  Preview: {formatSettingsTime(sampleDate, timeFormat)}
-                </p>
+                <p className="field-help">Preview: {formatSettingsTime(sampleDate, timeFormat)}</p>
               </div>
             </div>
 
@@ -979,6 +1059,10 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
       );
     }
 
+    if (SIMPLE_GROUPS.has(activeTab)) {
+      return <OptionGroupForm group={activeTab} />;
+    }
+
     return (
       <div className="content-card">
         <form onSubmit={saveWriting} aria-label="Writing settings">
@@ -1024,6 +1108,102 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
               <option value="audio">Audio</option>
             </select>
           </div>
+          <h2 className="profile-section-title">Post via email</h2>
+          <p className="field-help">
+            Mail posting settings are stored for parity, but this build has no inbound mail
+            transport configured, so messages are not imported.
+          </p>
+          <div className="field">
+            <label htmlFor="mailserver_url">Mail Server</label>
+            <div className="inline-fields">
+              <input
+                id="mailserver_url"
+                type="text"
+                value={mailServer}
+                onChange={(event) => {
+                  setMailServer(event.target.value);
+                  setWritingDirty(true);
+                }}
+                disabled={saving.writing}
+              />
+              <label htmlFor="mailserver_port">Port</label>
+              <input
+                id="mailserver_port"
+                className="small-text"
+                type="number"
+                min={1}
+                max={65535}
+                value={mailPort}
+                onChange={(event) => {
+                  setMailPort(event.target.value);
+                  setWritingDirty(true);
+                }}
+                disabled={saving.writing}
+              />
+            </div>
+          </div>
+          <div className="field">
+            <label htmlFor="mailserver_login">Login Name</label>
+            <input
+              id="mailserver_login"
+              type="text"
+              value={mailLogin}
+              onChange={(event) => {
+                setMailLogin(event.target.value);
+                setWritingDirty(true);
+              }}
+              disabled={saving.writing}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="mailserver_pass">Password</label>
+            <input
+              id="mailserver_pass"
+              type="password"
+              value={mailPass}
+              onChange={(event) => {
+                setMailPass(event.target.value);
+                setWritingDirty(true);
+              }}
+              disabled={saving.writing}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="default_email_category">Default Mail Category</label>
+            <select
+              id="default_email_category"
+              value={defaultEmailCategory}
+              onChange={(event) => {
+                setDefaultEmailCategory(event.target.value);
+                setWritingDirty(true);
+              }}
+              disabled={saving.writing}
+            >
+              <option value="uncategorized">Uncategorized</option>
+              {(categoryOptions ?? []).map((term) => (
+                <option key={term.id} value={term.slug}>
+                  {term.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <h2 className="profile-section-title">Update Services</h2>
+          <p className="field-help">
+            These services are stored for parity; this build does not send XML-RPC pings.
+          </p>
+          <div className="field">
+            <label htmlFor="ping_sites">Update Services</label>
+            <textarea
+              id="ping_sites"
+              rows={6}
+              value={pingSites}
+              onChange={(event) => {
+                setPingSites(event.target.value);
+                setWritingDirty(true);
+              }}
+              disabled={saving.writing}
+            />
+          </div>
           <div className="field actions">
             <button
               type="submit"
@@ -1050,7 +1230,15 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
             ? 'General Settings'
             : activeTab === 'reading'
               ? 'Reading Settings'
-              : 'Writing Settings'
+              : activeTab === 'writing'
+                ? 'Writing Settings'
+                : activeTab === 'discussion'
+                  ? 'Discussion Settings'
+                  : activeTab === 'media'
+                    ? 'Media Settings'
+                    : activeTab === 'permalinks'
+                      ? 'Permalink Settings'
+                      : 'Privacy Settings'
         }
       />
       {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}

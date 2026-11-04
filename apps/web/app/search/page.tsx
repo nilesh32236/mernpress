@@ -1,4 +1,4 @@
-import { listPublicPosts } from '@/lib/api';
+import { getPermalinkBase, listPublicPosts } from '@/lib/api';
 import type { PublicPost } from '@/lib/api';
 import PostList from '@/components/PostList';
 import Pagination from '@/components/Pagination';
@@ -36,6 +36,8 @@ export default async function SearchPage({
     }
   }
 
+  const base = await getPermalinkBase();
+
   return (
     <main id="main-content" className="site-main">
       <div className="site-content">
@@ -60,7 +62,7 @@ export default async function SearchPage({
             Sorry, but nothing was found. Please try a search with different keywords.
           </p>
         ) : (
-          <PostList posts={items} />
+          <PostList posts={items} base={base} />
         )}
       </div>
       {!error ? (
@@ -71,7 +73,7 @@ export default async function SearchPage({
           query={query ? { q: query } : {}}
         />
       ) : null}
-      <MorePosts posts={morePosts} />
+      <MorePosts posts={morePosts} base={base} />
     </main>
   );
 }

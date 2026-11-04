@@ -821,7 +821,8 @@ export function loginErrorMessage(error: unknown): string {
 }
 
 export type UserStatus = 'active' | 'disabled';
-export type OptionGroup = 'general' | 'reading' | 'writing';
+export type OptionGroup =
+  'general' | 'reading' | 'writing' | 'discussion' | 'media' | 'permalinks' | 'privacy';
 
 export interface AdminUser {
   id: string;
@@ -1335,9 +1336,7 @@ export async function fetchRecentComments(limit = 5): Promise<AdminComment[]> {
   return (await readJson<{ items: AdminComment[] }>(response)).items;
 }
 
-export async function fetchCommentCountsByPost(
-  postIds: string[],
-): Promise<Record<string, number>> {
+export async function fetchCommentCountsByPost(postIds: string[]): Promise<Record<string, number>> {
   if (postIds.length === 0) return {};
   const response = await fetch(
     `/api/admin/comments/counts-by-post?ids=${encodeURIComponent(postIds.join(','))}`,
@@ -1346,10 +1345,7 @@ export async function fetchCommentCountsByPost(
   return readJson<Record<string, number>>(response);
 }
 
-export async function setCommentStatus(
-  id: string,
-  status: CommentStatus,
-): Promise<AdminComment> {
+export async function setCommentStatus(id: string, status: CommentStatus): Promise<AdminComment> {
   const response = await fetch(`/api/admin/comments/${encodeURIComponent(id)}/status`, {
     method: 'PATCH',
     credentials: 'include',
@@ -1389,10 +1385,7 @@ export async function deleteComment(id: string): Promise<void> {
   if (!response.ok) await readJson(response);
 }
 
-export async function bulkSetCommentStatus(
-  ids: string[],
-  status: CommentStatus,
-): Promise<void> {
+export async function bulkSetCommentStatus(ids: string[], status: CommentStatus): Promise<void> {
   const response = await fetch('/api/admin/comments/bulk', {
     method: 'POST',
     credentials: 'include',

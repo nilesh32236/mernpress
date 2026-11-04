@@ -10,6 +10,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   const base = siteUrl();
+  const postBase = settings?.permalinkBase ?? 'posts';
   const entries: MetadataRoute.Sitemap = [
     { url: base, lastModified: new Date() },
     { url: `${base}/posts`, lastModified: new Date() },
@@ -19,7 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     try {
       const data = await listPublished(type, 1, 100);
       for (const post of data?.items ?? []) {
-        const url = type === 'post' ? `${base}/posts/${post.slug}` : `${base}/${post.slug}`;
+        const url = type === 'post' ? `${base}/${postBase}/${post.slug}` : `${base}/${post.slug}`;
         entries.push({
           url,
           lastModified: new Date(post.updatedAt),

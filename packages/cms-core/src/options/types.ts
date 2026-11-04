@@ -1,6 +1,7 @@
 import type { Principal } from '../content/types.js';
 
-export type OptionGroup = 'general' | 'reading' | 'writing';
+export type OptionGroup =
+  'general' | 'reading' | 'writing' | 'discussion' | 'media' | 'permalinks' | 'privacy';
 
 export interface GetOptionsInput {
   group?: string;
@@ -18,6 +19,8 @@ export interface SiteSettings {
   blogPublic: boolean;
   postsPerRss: number;
   rssUseExcerpt: boolean;
+  permalinkBase: string;
+  showAvatars: boolean;
 }
 
 export interface OptionService {

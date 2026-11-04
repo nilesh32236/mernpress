@@ -107,15 +107,16 @@ function toPublicUrl(id: string, fileName: string): string {
 function toMediaDto(row: MediaRow): MediaDto {
   const stored = readDerivatives(row.derivatives);
   const base = row.fileName.replace(/\.webp$/i, '');
-  const derivatives = {} as MediaDerivatives;
+  const derivatives: MediaDerivatives = {};
+  for (const [key, storedPath] of Object.entries(stored)) {
+    derivatives[key] = toPublicUrl(row.id, path.posix.basename(storedPath));
+  }
   for (const width of MEDIA_DERIVATIVE_WIDTHS) {
     const key = derivativeKey(width);
-    const storedPath = stored[key];
+    if (derivatives[key]) continue;
     // Fall back to the naming convention if a legacy row lacks a variant, so the
     // DTO shape stays stable; the serving route still 404s if the file is gone.
-    const name =
-      storedPath === undefined ? `${base}-${width}.webp` : path.posix.basename(storedPath);
-    derivatives[key] = toPublicUrl(row.id, name);
+    derivatives[key] = toPublicUrl(row.id, `${base}-${width}.webp`);
   }
   return {
     id: row.id,
@@ -198,6 +199,28 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
   const storageRoot = path.resolve(options.storageRoot);
   const logger = options.logger;
   const now = options.now ?? (() => new Date());
+
+  async function setting(key: string, fallback: number): Promise<number> {
+    const row = await prisma.option.findUnique({ where: { key } });
+    if (!row) return fallback;
+    try {
+      const value = JSON.parse(row.value);
+      return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  async function boolSetting(key: string, fallback: boolean): Promise<boolean> {
+    const row = await prisma.option.findUnique({ where: { key } });
+    if (!row) return fallback;
+    try {
+      const value = JSON.parse(row.value);
+      return typeof value === 'boolean' ? value : fallback;
+    } catch {
+      return fallback;
+    }
+  }
 
   async function inspectImage(buffer: Buffer): Promise<{ width: number; height: number }> {
     let format: string | undefined;
@@ -324,6 +347,52 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
           .webp({ quality: DERIVATIVE_WEBP_QUALITY })
           .toFile(derivativePath);
         derivatives[derivativeKey(derivativeWidth)] = `${year}/${month}/${derivativeName}`;
+      }
+
+      const configured = new Map<string, { width: number; height: number; crop: boolean }>();
+      const thumbnailW = await setting('thumbnail_size_w', 150);
+      const thumbnailH = await setting('thumbnail_size_h', 150);
+      const thumbnailCrop = await boolSetting('thumbnail_crop', true);
+      if (thumbnailW > 0 || thumbnailH > 0) {
+        configured.set(`${thumbnailW}x${thumbnailH}`, {
+          width: thumbnailW,
+          height: thumbnailH,
+          crop: thumbnailCrop,
+        });
+      }
+      const mediumW = await setting('medium_size_w', 300);
+      const mediumH = await setting('medium_size_h', 300);
+      if (mediumW > 0 || mediumH > 0) {
+        configured.set(`${mediumW}x${mediumH}`, {
+          width: mediumW,
+          height: mediumH,
+          crop: false,
+        });
+      }
+      const largeW = await setting('large_size_w', 1024);
+      const largeH = await setting('large_size_h', 1024);
+      if (largeW > 0 || largeH > 0) {
+        configured.set(`${largeW}x${largeH}`, {
+          width: largeW,
+          height: largeH,
+          crop: false,
+        });
+      }
+      for (const [key, size] of configured) {
+        if (derivatives[key]) continue;
+        const derivativeName = `${base}-${key}.webp`;
+        const derivativePath = path.join(dir, derivativeName);
+        derivativePaths.push(derivativePath);
+        await sharp(mainPath)
+          .resize({
+            ...(size.width > 0 ? { width: size.width } : {}),
+            ...(size.height > 0 ? { height: size.height } : {}),
+            fit: size.crop ? 'cover' : 'inside',
+            withoutEnlargement: true,
+          })
+          .webp({ quality: DERIVATIVE_WEBP_QUALITY })
+          .toFile(derivativePath);
+        derivatives[key] = `${year}/${month}/${derivativeName}`;
       }
 
       const stats = await fs.stat(mainPath);

@@ -1,4 +1,4 @@
-import { listPublishedPosts } from '@/lib/api';
+import { getPermalinkBase, listPublishedPosts } from '@/lib/api';
 import type { PublicPost } from '@/lib/api';
 import PostList from '@/components/PostList';
 import Pagination from '@/components/Pagination';
@@ -25,6 +25,8 @@ export default async function PostsPage({
     error = true;
   }
 
+  const base = await getPermalinkBase();
+
   return (
     <main id="main-content" className="site-main">
       <div className="site-content">
@@ -39,9 +41,8 @@ export default async function PostsPage({
             Sorry, but nothing was found. Please try a search with different keywords.
           </p>
         ) : (
-          <PostList posts={items} />
+          <PostList posts={items} base={base} />
         )}
-
       </div>
       {!error ? <Pagination page={page} totalPages={totalPages} basePath="/posts" /> : null}
     </main>

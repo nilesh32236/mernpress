@@ -141,6 +141,97 @@ describe('options (settings) api', () => {
     expect((response.json() as ErrorEnvelope).error.code).toBe('VALIDATION_ERROR');
   });
 
+  it('serves the WordPress-only groups with their defaults', async () => {
+    for (const group of ['discussion', 'media', 'permalinks', 'privacy'] as const) {
+      const response = await app.inject({
+        method: 'GET',
+        url: `/api/options?group=${group}`,
+        headers: { cookie: adminCookie },
+      });
+      expect(response.statusCode).toBe(200);
+    }
+
+    const discussion = await app.inject({
+      method: 'GET',
+      url: '/api/options?group=discussion',
+      headers: { cookie: adminCookie },
+    });
+    expect(discussion.json()).toMatchObject({
+      default_comment_status: 'open',
+      comment_previously_approved: true,
+      thread_comments: true,
+      show_avatars: true,
+      avatar_rating: 'G',
+    });
+
+    const media = await app.inject({
+      method: 'GET',
+      url: '/api/options?group=media',
+      headers: { cookie: adminCookie },
+    });
+    expect(media.json()).toMatchObject({ thumbnail_size_w: 150, large_size_w: 1024 });
+
+    const permalinks = await app.inject({
+      method: 'GET',
+      url: '/api/options?group=permalinks',
+      headers: { cookie: adminCookie },
+    });
+    expect(permalinks.json()).toMatchObject({ permalink_base: 'posts' });
+
+    const privacy = await app.inject({
+      method: 'GET',
+      url: '/api/options?group=privacy',
+      headers: { cookie: adminCookie },
+    });
+    expect(privacy.json()).toMatchObject({ wp_page_for_privacy_policy: null });
+  });
+
+  it('persists discussion, media and permalink values', async () => {
+    const put = await app.inject({
+      method: 'PUT',
+      url: '/api/options',
+      headers: adminHeaders(),
+      payload: {
+        group: 'permalinks',
+        values: { permalink_base: 'blog' },
+      },
+    });
+    expect(put.statusCode).toBe(200);
+    expect((put.json() as Record<string, unknown>).permalink_base).toBe('blog');
+
+    const badBase = await app.inject({
+      method: 'PUT',
+      url: '/api/options',
+      headers: adminHeaders(),
+      payload: { group: 'permalinks', values: { permalink_base: 'admin' } },
+    });
+    expect(badBase.statusCode).toBe(400);
+
+    const site = await app.inject({ method: 'GET', url: '/api/public/site' });
+    expect(site.statusCode).toBe(200);
+    expect(site.json()).toMatchObject({ permalinkBase: 'blog', showAvatars: true });
+  });
+
+  it('accepts a UUIDv7 privacy page id', async () => {
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/admin/posts',
+      headers: adminHeaders(),
+      payload: { type: 'page', title: 'Privacy Policy' },
+    });
+    expect(created.statusCode).toBe(201);
+    const pageId = (created.json() as { id: string }).id;
+
+    const put = await app.inject({
+      method: 'PUT',
+      url: '/api/options',
+      headers: adminHeaders(),
+      payload: { group: 'privacy', values: { wp_page_for_privacy_policy: pageId } },
+    });
+    expect(put.statusCode).toBe(200);
+    expect((put.json() as Record<string, unknown>).wp_page_for_privacy_policy).toBe(pageId);
+  });
+
   it('requires CSRF on PUT (missing token -> 403)', async () => {
     const response = await app.inject({
       method: 'PUT',

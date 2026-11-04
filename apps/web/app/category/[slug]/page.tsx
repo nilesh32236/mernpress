@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getPublicTerm, listPublicPosts } from '@/lib/api';
+import { getPermalinkBase, getPublicTerm, listPublicPosts } from '@/lib/api';
 import type { PublicPost, PublicTermInfo } from '@/lib/api';
 import PostList from '@/components/PostList';
 import Pagination from '@/components/Pagination';
@@ -31,7 +31,7 @@ export default async function CategoryArchive({
   if (!term) notFound();
 
   let items: PublicPost[];
-  let totalPages = 1;
+  let totalPages: number;
   try {
     const data = await listPublicPosts({ category: slug, page, perPage: 10 });
     items = data?.items ?? [];
@@ -48,15 +48,15 @@ export default async function CategoryArchive({
     );
   }
 
+  const base = await getPermalinkBase();
+
   return (
     <main id="main-content" className="site-main">
       <div className="site-content">
         <h1 className="blog-title">Category: {term.name}</h1>
-        {term.description ? (
-          <p className="archive-description">{term.description}</p>
-        ) : null}
+        {term.description ? <p className="archive-description">{term.description}</p> : null}
         {items.length > 0 ? (
-          <PostList posts={items} />
+          <PostList posts={items} base={base} />
         ) : (
           <p role="status" className="status archive-empty">
             Sorry, but nothing was found. Please try a search with different keywords.

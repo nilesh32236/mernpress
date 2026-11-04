@@ -149,7 +149,9 @@ function Postbox({
 export function Dashboard({ user }: { user: AuthUser }) {
   const [counts, setCounts] = useState<Counts>(EMPTY_COUNTS);
   const [recent, setRecent] = useState<AdminPost[]>([]);
-  const [recentComments, setRecentComments] = useState<Awaited<ReturnType<typeof fetchRecentComments>>>([]);
+  const [recentComments, setRecentComments] = useState<
+    Awaited<ReturnType<typeof fetchRecentComments>>
+  >([]);
   const [health, setHealth] = useState<SiteHealth | null>(null);
   const [quickTitle, setQuickTitle] = useState('');
   const [quickBody, setQuickBody] = useState('');
