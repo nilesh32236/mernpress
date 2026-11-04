@@ -2463,3 +2463,11 @@ hit ENOSPC; releases were pruned to the current and previous build (14 removed,
 - Extracted the public-site preview helper used by Customize and the Site Editor.
 - Validation: 590 unit/integration tests (API 375, admin 137, block-system 65,
   web 13), 23 Playwright E2E tests and six builds pass.
+
+**Deployment:** release `20261104T112145Z-595382f` (production symlink
+`/opt/mernpress/current`). `/`, `/admin/`, `/admin/site-editor`,
+`/admin/fonts` and `/api/health` return 200; `/api/admin/themes` returns 401 for
+anonymous callers. The production admin bundle contains the Site Editor
+("Customize the appearance of your website using the block editor") and the
+Fonts library ("Install Fonts", the sample sentence), and the deployed cms-core
+registry carries the `fonts` field with Manrope.
