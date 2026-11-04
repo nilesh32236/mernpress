@@ -9768,3 +9768,13 @@ a.glance-chip:hover {
   font-size: 10px;
   line-height: 16px;
 }
+
+@media (max-width: 782px) {
+  .wp-list-screen .content-table.comments thead th.column-author,
+  .wp-list-screen .content-table.comments tbody td.column-author,
+  .wp-list-screen .content-table.comments thead th.column-comment,
+  .wp-list-screen .content-table.comments tbody td.column-comment {
+    display: table-cell;
+    width: auto;
+  }
+}
