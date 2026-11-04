@@ -2401,3 +2401,13 @@ Plugins/Add Plugins screens and the Hello MERNPress plugin; the API bundle's
   after navigating away and back.
 - Validation: 576 unit/integration tests (API 371, admin 130, block-system 65,
   web 13), 23 Playwright E2E tests and six builds pass.
+
+**Deployment:** release `20261104T105023Z-209a0fa` (production symlink
+`/opt/mernpress/current`). `/`, `/admin/`, `/admin/updates` and `/api/health`
+return 200; `/api/admin/updates` returns 401 for anonymous callers. The
+production admin bundle contains the new Updates screen ("Check again", the
+no-service notice) and the API build contains the update routes, the
+`UPDATE_MANIFEST_URL` env key and the `updates_last_result` persistence key.
+Production has no manifest configured, so it reports installed versions and
+says so rather than claiming everything is current; set `UPDATE_MANIFEST_URL`
+and restart the API to enable remote checks.
