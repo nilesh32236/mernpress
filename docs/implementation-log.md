@@ -2162,6 +2162,9 @@ shown as empty screens.
   outlined Move to Trash, View Post link), Users labels (`Add User`/`Add New`),
   Profile color swatches/widths, inline username help, the display-name select,
   date-format presets/custom inputs and Tools card width.
+- The 404 illustration is now the actual Twenty Twenty-Five 404 image
+  (`apps/web/public/404-tree.webp`, GPL-2.0-or-later, licence note beside it)
+  instead of a vector approximation.
 - Validation: 544 unit/integration tests (API 344, admin 122, block-system 65,
   web 13), 23 Playwright E2E tests and six production builds pass.
 

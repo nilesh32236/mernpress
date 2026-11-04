@@ -6,10 +6,10 @@ export default function NotFound() {
       <div className="not-found-columns">
         <figure className="not-found-image">
           <img
-            src="/404-illustration.svg"
-            alt="A windswept tree on a quiet ridge"
-            width={645}
-            height={826}
+            src="/404-tree.webp"
+            alt="Small totara tree on ridge above Long Point"
+            width={1048}
+            height={1342}
           />
         </figure>
         <div className="not-found-content">

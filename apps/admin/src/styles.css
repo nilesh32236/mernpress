@@ -2985,6 +2985,13 @@ a.glance-chip:hover {
   color: #ffffff;
 }
 
+.editor-topbar-publish:disabled {
+  opacity: 1;
+  background: var(--wp-button);
+  border-color: transparent;
+  color: rgba(255, 255, 255, 0.4);
+}
+
 .editor-topbar-gear {
   display: inline-flex;
   align-items: center;

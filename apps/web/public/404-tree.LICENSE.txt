@@ -1,0 +1,4 @@
+404-tree.webp is the Twenty Twenty-Five theme's 404 image.
+Source: WordPress Twenty Twenty-Five 1.0, assets/images/404-image.webp.
+Licensed under the GNU General Public License v2 or later (GPL-2.0-or-later).
+https://www.gnu.org/licenses/gpl-2.0.html

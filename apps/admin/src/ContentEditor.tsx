@@ -1194,7 +1194,9 @@ export function ContentEditor({
                   type="button"
                   className="button primary-button editor-topbar-publish"
                   onClick={() => void handleSave(primaryAction.intent)}
-                  disabled={saving || Boolean(conflict)}
+                  disabled={
+                    saving || Boolean(conflict) || (post?.status === 'PUBLISHED' && !dirty)
+                  }
                   aria-busy={saving}
                   aria-keyshortcuts="Control+S Meta+S"
                   title={`${primaryAction.label} (Ctrl/Cmd+S)`}
