@@ -18,6 +18,7 @@ import {
   createThemeService,
   createPluginService,
   createUpdateService,
+  createDashboardFeedService,
   type AuthConfig,
 } from '@mernpress/cms-core';
 import { checkDatabase, createDatabaseClient } from '@mernpress/database';
@@ -38,6 +39,7 @@ import { registerCommentRoutes, registerPublicCommentRoutes } from './routes/com
 import { registerThemeRoutes } from './routes/themes.js';
 import { registerPluginRoutes } from './routes/plugins.js';
 import { registerUpdateRoutes } from './routes/updates.js';
+import { registerDashboardRoutes } from './routes/dashboard.js';
 import { registerAdminHealthRoutes } from './routes/admin-health.js';
 import { startPublishScheduler } from './scheduler.js';
 import { resolveRequestId } from './http/request-id.js';
@@ -169,6 +171,13 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const updates = createUpdateService({ prisma: database, manifestUrl: env.UPDATE_MANIFEST_URL });
   app.decorate('updates', updates);
 
+  const dashboardFeeds = createDashboardFeedService({
+    prisma: database,
+    eventsUrl: env.EVENTS_API_URL ?? undefined,
+    newsUrl: env.NEWS_FEED_URL ?? undefined,
+  });
+  app.decorate('dashboardFeeds', dashboardFeeds);
+
   app.addHook('onRequest', async (request, reply) => {
     if (!MUTATING_METHODS.has(request.method)) {
       return;
@@ -211,6 +220,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerThemeRoutes(app, { env, auth, themes });
   registerPluginRoutes(app, { env, auth, plugins });
   registerUpdateRoutes(app, { env, auth, updates });
+  registerDashboardRoutes(app, { env, auth, dashboardFeeds });
   registerPublicCommentRoutes(app, { comments, auth });
 
   if (env.SCHEDULER_ENABLED) {

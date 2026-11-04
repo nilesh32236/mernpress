@@ -2411,3 +2411,27 @@ no-service notice) and the API build contains the update routes, the
 Production has no manifest configured, so it reports installed versions and
 says so rather than claiming everything is current; set `UPDATE_MANIFEST_URL`
 and restart the API to enable remote checks.
+
+### 2026-11-04 — Expanded scope, slice 6: Dashboard Events and News
+
+- Added a dashboard feed service reading the public WordPress.org events API and
+  news feed (overridable with `EVENTS_API_URL` / `NEWS_FEED_URL`), with 6-second
+  timeouts, RSS item parsing (title/link/pubDate, entity decoding, non-http links
+  rejected), per-location events caching and a location-independent news cache
+  (10-minute TTL, failures never cached).
+- New authenticated route `GET /api/admin/dashboard/feeds?location=…`; visible
+  to every signed-in admin user, like the WordPress widget.
+- Dashboard gained the "MERNPress Events and News" widget under Quick Draft:
+  intro + location control, two event rows with calendar icons and right-aligned
+  dates, the "Help organize the next one!" line, five news links and the
+  Meetups | WordCamps | News footer. Added to Screen Options as "Events and
+  News".
+- Fixed a regression found while comparing: the Appearance count-bubble class
+  `.page-count` also matched the "Published page" list item in At a Glance,
+  painting it as a dark pill. The bubble styles are now scoped to
+  `.page-header-title .page-count`.
+- Verified in the browser: with no location the widget shows "Choose a location
+  to see nearby events."; searching "Manchester" loaded two real events
+  (WordCamp Manchester 2026, BeeWUG) and five news items.
+- Validation: 586 unit/integration tests (API 375, admin 133, block-system 65,
+  web 13), 23 Playwright E2E tests and six builds pass.

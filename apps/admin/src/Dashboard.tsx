@@ -11,6 +11,7 @@ import {
   type SiteHealth,
 } from './api.js';
 import { EmptyState, ErrorState, Skeleton } from './components.js';
+import { EventsNewsWidget } from './EventsNewsWidget.js';
 import { canCreateContent, canManageTerms, canReadContent } from './roles.js';
 import { editContentPath, listPath, navigate, newContentPath } from './router.js';
 import {
@@ -30,13 +31,14 @@ const EMPTY_COUNTS: Counts = {
 
 const STATUSES: PostStatus[] = ['PUBLISHED', 'DRAFT', 'TRASHED'];
 
-type WidgetKey = 'siteHealth' | 'glance' | 'activity' | 'quickDraft';
+type WidgetKey = 'siteHealth' | 'glance' | 'activity' | 'quickDraft' | 'events';
 
 const WIDGET_IDS: Record<WidgetKey, string> = {
   siteHealth: 'dashboard_site_health',
   glance: 'dashboard_right_now',
   activity: 'dashboard_activity',
   quickDraft: 'dashboard_quick_press',
+  events: 'dashboard_primary',
 };
 
 const WIDGET_TITLES: Record<WidgetKey, string> = {
@@ -44,6 +46,7 @@ const WIDGET_TITLES: Record<WidgetKey, string> = {
   glance: 'At a Glance',
   activity: 'Activity',
   quickDraft: 'Quick Draft',
+  events: 'MERNPress Events and News',
 };
 
 function formatActivityDate(value: string | null): string {
@@ -165,7 +168,7 @@ export function Dashboard({ user }: { user: AuthUser }) {
     }
   });
   const [leftOrder, setLeftOrder] = useState<WidgetKey[]>(['siteHealth', 'glance', 'activity']);
-  const [rightOrder, setRightOrder] = useState<WidgetKey[]>(['quickDraft']);
+  const [rightOrder, setRightOrder] = useState<WidgetKey[]>(['quickDraft', 'events']);
   const [hiddenWidgets, setHiddenWidgets] = useState(() => dashboardHiddenWidgets());
   const [columns, setColumns] = useState<DashboardColumns>(() => dashboardColumns());
 
@@ -536,6 +539,8 @@ export function Dashboard({ user }: { user: AuthUser }) {
             </div>
           </div>
         );
+      case 'events':
+        return <EventsNewsWidget />;
       case 'quickDraft':
         return (
           <form

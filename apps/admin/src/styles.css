@@ -9814,7 +9814,7 @@ a.glance-chip:hover {
   flex-wrap: wrap;
 }
 
-.page-count {
+.page-header-title .page-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -10529,6 +10529,163 @@ a.glance-chip:hover {
 
 .update-auto {
   display: block;
+  color: var(--wp-muted);
+  font-size: 13px;
+}
+
+/* ==========================================================================
+   Dashboard → Events and News (WordPress 7.1 dashboard_primary): intro line,
+   two event rows with light-blue backgrounds, news links and footer links.
+   ========================================================================== */
+
+.events-news-widget {
+  margin: -6px -12px -12px;
+}
+
+.events-intro {
+  margin: 0;
+  padding: 8px 12px 10px;
+  color: var(--wp-text);
+  font-size: 13px;
+}
+
+.events-location-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--wp-blue);
+  font: inherit;
+  cursor: pointer;
+}
+
+.events-location-link:hover {
+  color: var(--wp-blue-hover);
+}
+
+.events-pin {
+  font-size: 14px;
+}
+
+.events-location-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px 10px;
+  font-size: 13px;
+}
+
+.events-location-form input {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+}
+
+.events-location-form .button {
+  height: 30px;
+  min-height: 30px;
+}
+
+.events-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.events-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f0f6fc;
+}
+
+.events-list li + li {
+  border-top: 1px solid #dcdcde;
+}
+
+.events-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--wp-muted);
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.dashicons-calendar-alt:before {
+  content: '\f508';
+}
+
+.events-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.events-copy a {
+  color: var(--wp-blue);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.events-copy a:hover {
+  color: var(--wp-blue-hover);
+  text-decoration: underline;
+}
+
+.events-row-source {
+  display: block;
+  margin: 0;
+  color: var(--wp-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.events-date {
+  color: var(--wp-text);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.events-more {
+  margin: 0;
+  padding: 8px 12px;
+  border-top: 1px solid #f0f0f1;
+  border-bottom: 1px solid #f0f0f1;
+  color: var(--wp-text);
+  font-size: 13px;
+}
+
+.events-more a,
+.events-news-list a,
+.events-footer a {
+  color: var(--wp-blue);
+  text-decoration: none;
+}
+
+.events-more a:hover,
+.events-news-list a:hover,
+.events-footer a:hover {
+  color: var(--wp-blue-hover);
+  text-decoration: underline;
+}
+
+.events-news-list {
+  margin: 0;
+  padding: 4px 12px 8px;
+  list-style: none;
+}
+
+.events-news-list li {
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.events-footer {
+  margin: 0;
+  padding: 8px 12px;
+  border-top: 1px solid #f0f0f1;
   color: var(--wp-muted);
   font-size: 13px;
 }

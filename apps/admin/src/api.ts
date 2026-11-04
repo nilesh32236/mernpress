@@ -1549,3 +1549,35 @@ export async function checkUpdates(): Promise<UpdateStatus> {
   });
   return readJson<UpdateStatus>(response);
 }
+
+// ---- Dashboard events and news (ADR 0014) ----
+export interface DashboardEvent {
+  title: string;
+  url: string;
+  location: string;
+  date: string;
+}
+
+export interface DashboardNews {
+  title: string;
+  url: string;
+  publishedAt: string | null;
+}
+
+export interface DashboardFeeds {
+  events: DashboardEvent[];
+  news: DashboardNews[];
+  eventsConfigured: boolean;
+  newsConfigured: boolean;
+  eventsError: string | null;
+  newsError: string | null;
+  location: string;
+}
+
+export async function fetchDashboardFeeds(location = ''): Promise<DashboardFeeds> {
+  const response = await fetch(
+    `/api/admin/dashboard/feeds${location ? `?location=${encodeURIComponent(location)}` : ''}`,
+    { credentials: 'include', cache: 'no-store', headers: { accept: 'application/json' } },
+  );
+  return readJson<DashboardFeeds>(response);
+}

@@ -67,6 +67,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-052 | 2026-11-04 | Update checking is real and scoped: the service reports core/theme/plugin versions plus stored auto-update preferences, fetches a configured `UPDATE_MANIFEST_URL` JSON manifest (5 s timeout, semver comparison), persists the last checked time and last published versions (`updates_last_checked`, `updates_last_result`) and surfaces transport failures as 502 UPDATE_CHECK_FAILED. Without a manifest it re-reads installed versions and the screen says so instead of claiming everything is current. Updates are discovered, not auto-installed; deploys remain the release process. Administrators only. | accepted | [ADR 0013](docs/adr/0013-update-checking.md) |
 
+| D-053 | 2026-11-04 | The dashboard Events and News widget is backed by a real feed service: the public WordPress.org events API and news feed by default (overridable via EVENTS_API_URL/NEWS_FEED_URL), 6 s timeouts, per-location events cache and location-independent news cache with 10-minute TTL, and no caching of failures. Events require a location and the widget says so; rendering matches WordPress (two event rows, five news links, Meetups/WordCamps/News footer, Screen Options entry). | accepted | [ADR 0014](docs/adr/0014-dashboard-events-news.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

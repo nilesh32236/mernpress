@@ -51,6 +51,9 @@ const rawEnvSchema = z.object({
   CORS_ORIGINS: z.string().optional(),
   /** Optional release manifest endpoint for the Updates screen. */
   UPDATE_MANIFEST_URL: z.string().url().optional(),
+  /** Optional overrides for the dashboard Events and News feeds. */
+  EVENTS_API_URL: z.string().url().optional(),
+  NEWS_FEED_URL: z.string().url().optional(),
   AUTH_HASH_PEPPER: z
     .string()
     .min(32, 'AUTH_HASH_PEPPER must be at least 32 characters')
@@ -90,6 +93,8 @@ export type Env = {
   MEDIA_STORAGE_DIR: string;
   SCHEDULER_ENABLED: boolean;
   UPDATE_MANIFEST_URL: string | undefined;
+  EVENTS_API_URL: string | undefined;
+  NEWS_FEED_URL: string | undefined;
 };
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
@@ -175,5 +180,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     CORS_ORIGINS: normalizedOrigins,
     MEDIA_STORAGE_DIR: storageDir,
     UPDATE_MANIFEST_URL: parsed.data.UPDATE_MANIFEST_URL,
+    EVENTS_API_URL: parsed.data.EVENTS_API_URL,
+    NEWS_FEED_URL: parsed.data.NEWS_FEED_URL,
   };
 }

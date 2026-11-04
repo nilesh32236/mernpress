@@ -211,3 +211,13 @@ export {
   type UpdateService,
 } from './updates/service.js';
 export type { UpdateItem, UpdateSource, UpdateStatus } from './updates/service.js';
+
+// ---- Dashboard events and news (ADR 0014) ----
+export {
+  createDashboardFeedService,
+  parseRssItems,
+  DEFAULT_EVENTS_API_URL,
+  DEFAULT_NEWS_FEED_URL,
+  type DashboardFeedService,
+} from './dashboard/service.js';
+export type { DashboardEvent, DashboardFeeds, DashboardNews } from './dashboard/service.js';

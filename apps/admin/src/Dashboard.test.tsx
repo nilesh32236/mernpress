@@ -44,6 +44,20 @@ describe('dashboard', () => {
       status: 200,
       json: async () => ({ database: 'ok', mediaWritable: true, schedulerEnabled: true }),
     } as Response);
+    // Events and News widget feeds.
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        events: [],
+        news: [],
+        eventsConfigured: true,
+        newsConfigured: true,
+        eventsError: null,
+        newsError: null,
+        location: '',
+      }),
+    } as Response);
     vi.stubGlobal('fetch', fetchMock);
 
     render(<Dashboard user={admin} />);
@@ -52,8 +66,8 @@ describe('dashboard', () => {
     // At a Glance shows published totals, like WordPress ("N Published posts").
     expect(await screen.findByRole('link', { name: /3\s*Published posts/ })).toBeDefined();
     expect(await screen.findByRole('link', { name: /2\s*Published pages/ })).toBeDefined();
-    // Six count queries + one site-health check (dashboard card).
-    expect(fetchMock).toHaveBeenCalledTimes(8);
+    // Six count queries + site health + recent comments + events/news feeds.
+    expect(fetchMock).toHaveBeenCalledTimes(9);
     const urls = fetchMock.mock.calls.map(([url]) => String(url));
     expect(urls.some((url) => url.includes('type=post') && url.includes('status=DRAFT'))).toBe(
       true,

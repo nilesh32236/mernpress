@@ -154,6 +154,7 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
   { id: 'glance', label: 'At a Glance' },
   { id: 'activity', label: 'Activity' },
   { id: 'quickDraft', label: 'Quick Draft' },
+  { id: 'events', label: 'Events and News' },
 ];
 
 const DASH_WIDGETS_PREFIX = 'mernpress.dashboardHidden.';
