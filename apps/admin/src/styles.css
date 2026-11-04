@@ -10014,12 +10014,17 @@ a.glance-chip:hover {
 /* Theme Details: full-height white overlay under the admin bar. */
 .theme-overlay {
   position: fixed;
-  inset: 32px 0 0 160px;
+  /* WordPress opens the details dialog inside the content area, leaving the
+     title row and a small right/bottom gutter visible. */
+  inset: 84px 21px 17px 182px;
   z-index: 100;
   display: flex;
   flex-direction: column;
   background: #ffffff;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+  /* Dim the page outside the dialog without painting over its own content. */
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.15),
+    0 0 0 100vmax rgba(0, 0, 0, 0.7);
 }
 
 .theme-overlay-bar {
