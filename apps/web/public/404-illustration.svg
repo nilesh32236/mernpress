@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="645" height="826" viewBox="0 0 645 826" role="img" aria-label="A windswept tree on a quiet ridge">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f4f4f4"/>
+      <stop offset="0.65" stop-color="#e3e3e3"/>
+      <stop offset="1" stop-color="#d6d6d6"/>
+    </linearGradient>
+    <linearGradient id="hill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#bdbdbd"/>
+      <stop offset="1" stop-color="#8f8f8f"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a9a9a9"/>
+      <stop offset="1" stop-color="#777777"/>
+    </linearGradient>
+  </defs>
+  <rect width="645" height="826" fill="url(#sky)"/>
+  <g fill="#eeeeee" opacity="0.9">
+    <ellipse cx="120" cy="150" rx="90" ry="26"/>
+    <ellipse cx="250" cy="120" rx="130" ry="34"/>
+    <ellipse cx="470" cy="180" rx="110" ry="28"/>
+  </g>
+  <path d="M0 520 C90 470 170 500 250 470 C340 436 430 470 520 440 C570 424 615 430 645 418 L645 826 L0 826 Z" fill="url(#hill)"/>
+  <path d="M0 600 C120 560 220 596 320 570 C430 540 520 570 645 540 L645 826 L0 826 Z" fill="url(#ground)"/>
+  <g fill="#545454">
+    <path d="M300 826 C306 700 310 590 318 500 C322 460 330 430 342 400 L352 404 C344 438 338 470 336 506 C330 600 330 700 332 826 Z"/>
+    <path d="M330 470 C270 430 220 410 160 400 C120 394 92 380 70 360 C110 372 150 376 186 388 C236 404 286 430 330 462 Z"/>
+    <path d="M332 430 C380 390 430 372 486 366 C526 362 558 348 584 330 C552 356 514 370 478 378 C426 390 380 406 336 442 Z"/>
+    <path d="M320 500 C286 492 258 500 236 520 C264 506 294 504 322 514 Z"/>
+    <path d="M330 520 C368 510 404 516 432 534 C402 522 370 520 338 532 Z"/>
+  </g>
+  <g fill="#666666" opacity="0.55">
+    <path d="M350 826 C360 748 362 676 358 610 C356 574 350 546 342 520 L352 516 C362 546 368 576 370 612 C374 682 370 756 364 826 Z"/>
+    <path d="M90 700 C140 676 190 668 240 672 C200 678 150 690 104 712 Z"/>
+    <path d="M420 720 C470 700 520 694 570 700 C530 706 480 716 436 734 Z"/>
+  </g>
+</svg>

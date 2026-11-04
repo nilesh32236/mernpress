@@ -347,6 +347,7 @@ function toPublic(row: PostWithTerms, logger?: ContentServiceOptions['logger']):
     ogDescription: row.ogDescription,
     publishedAt: row.publishedAt?.toISOString() ?? null,
     updatedAt: row.updatedAt.toISOString(),
+    author: row.author ? { id: row.author.id, username: row.author.username } : null,
     terms: splitTerms(row),
   };
 }
@@ -1131,6 +1132,29 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     };
     if (query.type) {
       where.type = query.type;
+    }
+    const filters: Prisma.PostWhereInput[] = [];
+    if (query.search) {
+      filters.push({
+        OR: [
+          { title: { contains: query.search, mode: 'insensitive' } },
+          { excerpt: { contains: query.search, mode: 'insensitive' } },
+          { content: { contains: query.search, mode: 'insensitive' } },
+        ],
+      });
+    }
+    if (query.category) {
+      filters.push({
+        terms: { some: { term: { taxonomy: 'category', slug: query.category } } },
+      });
+    }
+    if (query.tag) {
+      filters.push({
+        terms: { some: { term: { taxonomy: 'tag', slug: query.tag } } },
+      });
+    }
+    if (filters.length > 0) {
+      where.AND = filters;
     }
     const [rows, total] = await prisma.$transaction([
       prisma.post.findMany({

@@ -90,6 +90,9 @@ export const adminListQuerySchema = z
 export const publicListQuerySchema = z
   .object({
     type: contentType.optional(),
+    search: z.string().trim().min(1).max(200).optional(),
+    category: z.string().min(1).max(200).optional(),
+    tag: z.string().min(1).max(200).optional(),
     ...pagination,
   })
   .strict();

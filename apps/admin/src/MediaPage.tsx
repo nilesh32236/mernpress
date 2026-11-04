@@ -24,7 +24,7 @@ import {
   type NoticeMessage,
   Pagination,
 } from './components.js';
-import { formatDateTime, pluralize } from './format.js';
+import { formatDateTime } from './format.js';
 
 const DEFAULT_PER_PAGE = 24;
 

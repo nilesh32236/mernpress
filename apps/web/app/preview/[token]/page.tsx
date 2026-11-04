@@ -16,10 +16,12 @@ export default async function PreviewPage({ params }: { params: Promise<{ token:
   }
   if (error) {
     return (
-      <main id="main-content" className="container py-12">
-        <p role="status" className="text-slate-600 dark:text-slate-300">
-          We couldn’t load this preview right now. Please try again later.
-        </p>
+      <main id="main-content" className="site-main">
+        <div className="site-content">
+          <p role="status" className="status">
+            We couldn’t load this preview right now. Please try again later.
+          </p>
+        </div>
       </main>
     );
   }

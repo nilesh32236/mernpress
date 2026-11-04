@@ -47,7 +47,7 @@ describe('home page', () => {
       }),
     );
     const html = renderToStaticMarkup(await HomePage());
-    expect(html).toContain('MERNPress');
+    expect(html).toContain('Blog');
     expect(html).toContain('Hello World');
     expect(html).toContain('An excerpt');
     expect(html).toContain('/posts/hello-world');

@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getPublishedBySlug, mediaUrl, siteUrl } from '@/lib/api';
+import { getPublishedBySlug, listPublishedPosts, mediaUrl, siteUrl } from '@/lib/api';
 import type { PublicPost } from '@/lib/api';
 import PostView from '@/components/PostView';
 import type { Metadata } from 'next';
@@ -30,16 +30,25 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   });
   if (error) {
     return (
-      <main id="main-content" className="container py-12">
-        <p role="status" className="text-slate-600 dark:text-slate-300">
-          We couldn\u2019t load content right now. Content is temporarily unavailable. Please try
-          again later.
-        </p>
+      <main id="main-content" className="site-main">
+        <div className="site-content">
+          <p role="status" className="status">
+            We couldn\u2019t load content right now. Content is temporarily unavailable. Please try
+            again later.
+          </p>
+        </div>
       </main>
     );
   }
   if (!post) notFound();
-  return <PostView post={post} />;
+
+  // WordPress's single-post template ends with the previous post and a
+  // "More posts" list. Fetch the newest posts once; failures degrade to the
+  // post itself rather than breaking the page.
+  const recent = await listPublishedPosts(1, 10).catch(() => null);
+  const morePosts = recent?.items ?? [];
+
+  return <PostView post={post} morePosts={morePosts} />;
 }
 
 export async function generateMetadata({

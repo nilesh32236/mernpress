@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  dashboard,
   media as mediaIcon,
   page as pageIcon,
   people,
@@ -1336,7 +1335,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
                             <a
                               href={`#help-panel-${index}`}
                               aria-controls={`help-panel-${index}`}
-                              aria-selected={index === helpTab}
+                              aria-current={index === helpTab ? 'true' : undefined}
                               onClick={(event) => {
                                 event.preventDefault();
                                 setHelpTab(index);

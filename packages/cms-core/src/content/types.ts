@@ -133,7 +133,7 @@ export interface AdminTermSummary {
   slug: string;
 }
 
-/** Public published-only DTO. No author, no version/status internals. */
+/** Public published-only DTO. No version/status internals. */
 export interface PublicPost {
   id: string;
   type: ContentType;
@@ -155,6 +155,7 @@ export interface PublicPost {
   ogDescription: string | null;
   publishedAt: string | null;
   updatedAt: string;
+  author: { id: string; username: string } | null;
   terms: { categories: AdminTermSummary[]; tags: AdminTermSummary[] };
 }
 
@@ -210,6 +211,12 @@ export interface AdminListQuery {
 
 export interface PublicListQuery {
   type?: ContentType | undefined;
+  /** WordPress-style search across title, excerpt and content. */
+  search?: string | undefined;
+  /** Category slug filter (category archives). */
+  category?: string | undefined;
+  /** Tag slug filter (tag archives). */
+  tag?: string | undefined;
   page: number;
   perPage: number;
 }

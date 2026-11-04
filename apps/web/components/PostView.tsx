@@ -1,79 +1,126 @@
+import Link from 'next/link';
 import { mediaUrl, type PublicPost } from '@/lib/api';
 
-function formatDateUtc(iso: string | null): string | null {
+function formatDate(iso: string | null): string | null {
   if (!iso) return null;
-  return new Date(iso).toLocaleString('en-US', {
+  return new Date(iso).toLocaleDateString('en-US', {
     timeZone: 'UTC',
     dateStyle: 'medium',
-    timeStyle: 'short',
   });
 }
 
-export default function PostView({ post }: { post: PublicPost }) {
-  const date = formatDateUtc(post.publishedAt);
+export default function PostView({
+  post,
+  morePosts = [],
+}: {
+  post: PublicPost;
+  morePosts?: PublicPost[];
+}) {
+  const isPage = post.type === 'page';
+  const author = post.author?.username ?? null;
+  const categories = post.terms.categories;
+  const tags = post.terms.tags;
+
+  // WordPress's single-post template shows the previous (older) and next
+  // (newer) posts around the current one.
+  const currentIndex = morePosts.findIndex((entry) => entry.id === post.id);
+  const newer = currentIndex > 0 ? morePosts[currentIndex - 1] : undefined;
+  const older = currentIndex >= 0 ? morePosts[currentIndex + 1] : undefined;
+
+  const featured = post.featuredImage ? (
+    <figure className="entry-featured">
+      <img
+        src={mediaUrl(post.featuredImage.derivatives['1200'] ?? post.featuredImage.url)}
+        alt={post.featuredImage.altText}
+        width={post.featuredImage.width ?? undefined}
+        height={post.featuredImage.height ?? undefined}
+      />
+    </figure>
+  ) : null;
+
   return (
-    <main id="main-content" className="container py-12">
-      <article>
-        {post.featuredImage ? (
-          <figure className="mb-8">
-            <img
-              src={mediaUrl(post.featuredImage.derivatives['1200'] ?? post.featuredImage.url)}
-              alt={post.featuredImage.altText}
-              width={post.featuredImage.width ?? undefined}
-              height={post.featuredImage.height ?? undefined}
-              className="w-full rounded-xl"
-            />
-          </figure>
+    <main id="main-content" className="site-main">
+      <article className={`site-content entry${isPage ? ' page' : ''}`}>
+        {isPage ? featured : null}
+        <h1 className="entry-title">{post.title}</h1>
+        {!isPage ? featured : null}
+        {!isPage ? (
+          <div className="entry-meta">
+            <span>Written by </span>
+            {author ? (
+              <Link href={`/posts?author=${encodeURIComponent(author)}`}>{author}</Link>
+            ) : null}
+            <span> in </span>
+            {categories.length > 0 ? (
+              categories.map((term, index) => (
+                <span key={term.id}>
+                  {index > 0 ? ', ' : ''}
+                  <Link href={`/category/${term.slug}`}>{term.name}</Link>
+                </span>
+              ))
+            ) : (
+              <span>Uncategorized</span>
+            )}
+          </div>
         ) : null}
-        <header className="mb-8">
-          <h1 className="text-3xl font-semibold tracking-tight">{post.title}</h1>
-          {date ? (
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-              <time dateTime={post.publishedAt ?? undefined}>{date} UTC</time>
-            </p>
-          ) : null}
-          {post.terms.categories.length > 0 || post.terms.tags.length > 0 ? (
-            <div className="mt-3 flex flex-wrap gap-1" aria-label="Terms">
-              {post.terms.categories.map((term) => (
-                <span key={`c-${term.id}`} className="chip">
-                  {term.name}
-                </span>
-              ))}
-              {post.terms.tags.map((term) => (
-                <span key={`t-${term.id}`} className="chip">
-                  {term.name}
-                </span>
-              ))}
-            </div>
-          ) : null}
-        </header>
-
-        <div className="flex flex-col gap-8 lg:flex-row">
-          {post.toc.length > 1 ? (
-            <aside aria-label="Table of contents" className="lg:w-56 lg:shrink-0">
-              <nav>
-                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-                  On this page
-                </p>
-                <ul className="mt-2 flex flex-col gap-1 text-sm">
-                  {post.toc.map((entry) => (
-                    <li key={entry.id} style={{ paddingLeft: `${(entry.level - 1) * 0.75}rem` }}>
-                      <a href={`#${entry.id}`} className="hover:underline focus-visible:underline">
-                        {entry.text}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </nav>
-            </aside>
-          ) : null}
-
-          <div
-            className="prose flex-1"
-            dangerouslySetInnerHTML={{ __html: post.renderedContent }}
-          />
-        </div>
+        <div className="entry-content" dangerouslySetInnerHTML={{ __html: post.renderedContent }} />
+        {!isPage && tags.length > 0 ? (
+          <div className="entry-tags">
+            {tags.map((term, index) => (
+              <span key={term.id}>
+                {index > 0 ? '  ' : ''}
+                <Link href={`/tag/${term.slug}`}>{term.name}</Link>
+              </span>
+            ))}
+          </div>
+        ) : null}
       </article>
+
+      {!isPage ? (
+        <>
+          <div className="entry-wide">
+            <nav className="post-navigation" aria-label="Post navigation">
+              <span className="post-navigation-slot">
+                {older ? (
+                  <Link className="post-navigation-link" href={`/posts/${older.slug}`}>
+                    <span aria-hidden="true">←</span> {older.title}
+                  </Link>
+                ) : null}
+              </span>
+              <span className="post-navigation-slot is-next">
+                {newer ? (
+                  <Link className="post-navigation-link" href={`/posts/${newer.slug}`}>
+                    {newer.title} <span aria-hidden="true">→</span>
+                  </Link>
+                ) : null}
+              </span>
+            </nav>
+          </div>
+
+          {morePosts.length > 0 ? (
+            <section className="entry-wide more-posts" aria-labelledby="more-posts-heading">
+              <h2 id="more-posts-heading">More posts</h2>
+              <ul>
+                {morePosts.slice(0, 4).map((entry) => {
+                  const entryDate = formatDate(entry.publishedAt);
+                  return (
+                    <li key={entry.id}>
+                      <Link className="more-posts-title" href={`/posts/${entry.slug}`}>
+                        {entry.title}
+                      </Link>
+                      {entryDate ? (
+                        <Link className="more-posts-date" href={`/posts/${entry.slug}`}>
+                          <time dateTime={entry.publishedAt ?? undefined}>{entryDate}</time>
+                        </Link>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ) : null}
+        </>
+      ) : null}
     </main>
   );
 }

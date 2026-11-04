@@ -148,6 +148,76 @@ describe('GET /api/public/posts', () => {
   });
 });
 
+describe('public search and term archives', () => {
+  it('searches title, excerpt and content case-insensitively', async () => {
+    await publish(
+      await createPost({
+        type: 'post',
+        title: 'Alpha Title',
+        excerpt: 'An excerpt about orchids',
+        content: '<!-- wp:paragraph --><p>Body text</p><!-- /wp:paragraph -->',
+      }),
+    );
+    await publish(
+      await createPost({
+        type: 'post',
+        title: 'Beta',
+        excerpt: 'Plain excerpt',
+        content: '<!-- wp:paragraph --><p>Mentions ORCHIDS in the body</p><!-- /wp:paragraph -->',
+      }),
+    );
+    await createPost({ type: 'post', title: 'Orchids draft' });
+
+    const byTitle = await app.inject({ method: 'GET', url: '/api/public/posts?search=alpha' });
+    expect(byTitle.statusCode).toBe(200);
+    const titleBody = byTitle.json() as Paged<PublicPost>;
+    expect(titleBody.items.map((item) => item.title)).toEqual(['Alpha Title']);
+
+    const byExcerpt = await app.inject({ method: 'GET', url: '/api/public/posts?search=orchids' });
+    const excerptBody = byExcerpt.json() as Paged<PublicPost>;
+    expect(excerptBody.pagination.total).toBe(2);
+    expect(excerptBody.items.map((item) => item.title).sort()).toEqual(['Alpha Title', 'Beta']);
+  });
+
+  it('filters category and tag archives by slug', async () => {
+    const category = await createTerm({ taxonomy: 'category', name: 'Archive Cat' });
+    const tag = await createTerm({ taxonomy: 'tag', name: 'Archive Tag' });
+    const tagged = await createPost({ type: 'post', title: 'Tagged Post' });
+    const assigned = await app.inject({
+      method: 'PUT',
+      url: `/api/admin/posts/${tagged.id}/terms`,
+      headers,
+      payload: { baseVersion: tagged.version, categoryIds: [category.id], tagIds: [tag.id] },
+    });
+    expect(assigned.statusCode).toBe(200);
+    await publish(assigned.json() as AdminPost);
+    await publish(await createPost({ type: 'post', title: 'Unrelated Post' }));
+
+    const categoryRes = await app.inject({
+      method: 'GET',
+      url: `/api/public/posts?category=${category.slug}`,
+    });
+    expect(categoryRes.statusCode).toBe(200);
+    expect((categoryRes.json() as Paged<PublicPost>).items.map((item) => item.title)).toEqual([
+      'Tagged Post',
+    ]);
+
+    const tagRes = await app.inject({ method: 'GET', url: `/api/public/posts?tag=${tag.slug}` });
+    expect(tagRes.statusCode).toBe(200);
+    expect((tagRes.json() as Paged<PublicPost>).items.map((item) => item.title)).toEqual([
+      'Tagged Post',
+    ]);
+
+    const missing = await app.inject({ method: 'GET', url: '/api/public/posts?category=nope' });
+    expect((missing.json() as Paged<PublicPost>).pagination.total).toBe(0);
+  });
+
+  it('rejects unknown public query parameters', async () => {
+    const response = await app.inject({ method: 'GET', url: '/api/public/posts?nope=1' });
+    expect(response.statusCode).toBe(400);
+  });
+});
+
 describe('GET /api/public/posts/:slug', () => {
   it('returns a published post with its terms', async () => {
     const category = await createTerm({ taxonomy: 'category', name: 'Public Cat' });

@@ -34,6 +34,7 @@ export interface PublicPost {
   ogDescription: string | null;
   publishedAt: string | null;
   updatedAt: string;
+  author: { id: string; username: string } | null;
   terms: { categories: PublicTerm[]; tags: PublicTerm[] };
 }
 
@@ -81,20 +82,40 @@ async function apiFetch(path: string): Promise<Response> {
   return fetch(url, { next: { revalidate: 60 } } as RequestInit);
 }
 
+export interface PublicPostQuery {
+  type?: ContentType;
+  search?: string;
+  category?: string;
+  tag?: string;
+  page?: number;
+  perPage?: number;
+}
+
+export async function listPublicPosts(query: PublicPostQuery = {}): Promise<PostsPage | null> {
+  const params = new URLSearchParams();
+  if (query.type) params.set('type', query.type);
+  params.set('page', String(query.page ?? 1));
+  params.set('perPage', String(query.perPage ?? 10));
+  if (query.search) params.set('search', query.search);
+  if (query.category) params.set('category', query.category);
+  if (query.tag) params.set('tag', query.tag);
+  const res = await apiFetch(`/api/public/posts?${params.toString()}`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Failed to list posts: ${res.status}`);
+  return (await res.json()) as PostsPage;
+}
+
+export async function listPublishedPosts(page = 1, perPage = 10): Promise<PostsPage | null> {
+  return listPublicPosts({ type: 'post', page, perPage });
+}
+
+/** Backwards-compatible alias used by sitemap generation. */
 export async function listPublished(
   type: ContentType = 'post',
   page = 1,
   perPage = 10,
 ): Promise<PostsPage | null> {
-  const path = `/api/public/posts?type=${type}&page=${page}&perPage=${perPage}`;
-  const res = await apiFetch(path);
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`Failed to list ${type}s: ${res.status}`);
-  return (await res.json()) as PostsPage;
-}
-
-export async function listPublishedPosts(page = 1, perPage = 10): Promise<PostsPage | null> {
-  return listPublished('post', page, perPage);
+  return listPublicPosts({ type, page, perPage });
 }
 
 export async function getPublishedBySlug(

@@ -53,11 +53,12 @@ test('public site boots without console or asset errors', async ({ page }) => {
   const errors = trackBrowserErrors(page);
 
   await page.goto(WEB_URL);
-  await expect(page.getByRole('heading', { level: 1, name: 'MERNPress' })).toBeVisible();
-  // The site renders real content now: either the latest posts or the empty state.
+  await expect(page.getByRole('heading', { level: 1, name: 'Blog' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'MERNPress' }).first()).toBeVisible();
   await expect(
     page
-      .getByText('Latest published posts.')
+      .locator('.post-item')
+      .first()
       .or(page.getByText('No posts published yet. Nothing to read yet.')),
   ).toBeVisible();
 

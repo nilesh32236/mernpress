@@ -53,7 +53,7 @@ describe('post page', () => {
     expect(html).toContain('Tag');
   });
 
-  it('renders toc aside when more than one entry', async () => {
+  it('uses the WordPress single-post template without the legacy TOC', async () => {
     const post = {
       ...samplePost,
       toc: [
@@ -64,7 +64,9 @@ describe('post page', () => {
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(jsonResponse(post));
     const params = Promise.resolve({ slug: 'hello-world' });
     const html = renderToStaticMarkup(await PostPage({ params }));
-    expect(html).toContain('On this page');
+    expect(html).toContain('Hello World');
+    expect(html).toContain('<p>Body <strong>bold</strong></p>');
+    expect(html).not.toContain('On this page');
   });
 
   it('renders the featured image with the 1200 derivative and its alt text', async () => {

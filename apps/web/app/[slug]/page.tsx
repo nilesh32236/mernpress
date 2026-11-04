@@ -34,11 +34,13 @@ export default async function PageBySlug({ params }: { params: Promise<{ slug: s
   }
   if (error) {
     return (
-      <main id="main-content" className="container py-12">
-        <p role="status" className="text-slate-600 dark:text-slate-300">
-          We couldn\u2019t load content right now. Content is temporarily unavailable. Please try
-          again later.
-        </p>
+      <main id="main-content" className="site-main">
+        <div className="site-content">
+          <p role="status" className="status">
+            We couldn\u2019t load content right now. Content is temporarily unavailable. Please try
+            again later.
+          </p>
+        </div>
       </main>
     );
   }
