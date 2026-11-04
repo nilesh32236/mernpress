@@ -2164,3 +2164,11 @@ shown as empty screens.
   date-format presets/custom inputs and Tools card width.
 - Validation: 544 unit/integration tests (API 344, admin 122, block-system 65,
   web 13), 23 Playwright E2E tests and six production builds pass.
+
+**Deployment:** release `20261104T071236Z-ab1f4e5` (production symlink
+`/opt/mernpress/current`). Production smoke checks: `/`, `/admin/`,
+`/api/health`, `/feed`, `/search?q=test` and the 404 route return the expected
+statuses; the 404 title/form/footer land at 750/905/1035 and the search block is
+61px high with a 498px input and 129px pill button (the live WordPress 7.1.4
+reference measures 751/905/1035 and 498/129). Anonymous public pages log zero
+console errors after the session probe moved to `/api/public/session`.
