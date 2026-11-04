@@ -5,6 +5,7 @@ import {
   safeEqualHex,
   verifyCsrfToken,
   type AuthService,
+  type PasswordResetService,
 } from '@mernpress/cms-core';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
@@ -28,9 +29,20 @@ const loginSchema = z
   })
   .strict();
 
+const lostPasswordSchema = z.object({ identifier: z.string().min(1).max(254) }).strict();
+
+const resetPasswordSchema = z
+  .object({
+    key: z.string().min(16).max(300),
+    login: z.string().min(1).max(254),
+    password: z.string().min(1).max(128),
+  })
+  .strict();
+
 interface AuthRouteOptions {
   env: Env;
   auth: AuthService;
+  passwordResets: PasswordResetService;
 }
 
 function noStore(reply: FastifyReply): void {
@@ -91,7 +103,7 @@ function handleAuthError(
 }
 
 export function registerAuthRoutes(app: FastifyInstance, options: AuthRouteOptions): void {
-  const { env, auth } = options;
+  const { env, auth, passwordResets } = options;
 
   // Login-token bootstrap for anonymous and authenticated callers. It writes
   // only the pre-auth cookie: it never reads, rotates or clears the session or
@@ -141,6 +153,49 @@ export function registerAuthRoutes(app: FastifyInstance, options: AuthRouteOptio
         csrfToken: result.csrfToken,
         expiresAt: result.expiresAt.toISOString(),
       };
+    } catch (error) {
+      return handleAuthError(error, reply, request);
+    }
+  });
+
+  app.post('/api/auth/lost-password', async (request, reply) => {
+    noStore(reply);
+    const parsed = lostPasswordSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return sendError(reply, request, 400, 'VALIDATION_ERROR', 'Invalid request');
+    }
+    if (!preAuthCsrfValid(request)) {
+      return sendError(reply, request, 403, 'CSRF_INVALID', 'Invalid CSRF token');
+    }
+    try {
+      await passwordResets.request({
+        identifier: parsed.data.identifier,
+        ip: request.ip,
+      });
+      // Always generic: a different response would enumerate accounts.
+      return { sent: true };
+    } catch (error) {
+      return handleAuthError(error, reply, request);
+    }
+  });
+
+  app.post('/api/auth/reset-password', async (request, reply) => {
+    noStore(reply);
+    const parsed = resetPasswordSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return sendError(reply, request, 400, 'VALIDATION_ERROR', 'Invalid request');
+    }
+    if (!preAuthCsrfValid(request)) {
+      return sendError(reply, request, 403, 'CSRF_INVALID', 'Invalid CSRF token');
+    }
+    try {
+      await passwordResets.reset({
+        token: parsed.data.key,
+        login: parsed.data.login,
+        password: parsed.data.password,
+        ip: request.ip,
+      });
+      return reply.code(204).send();
     } catch (error) {
       return handleAuthError(error, reply, request);
     }

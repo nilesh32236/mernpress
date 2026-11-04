@@ -19,6 +19,7 @@ import { TermsPage } from './TermsPage.js';
 import { MediaPage } from './MediaPage.js';
 import { Dashboard } from './Dashboard.js';
 import { LoginForm } from './LoginForm.js';
+import { ResetPasswordForm } from './ResetPasswordForm.js';
 import { UsersPage } from './UsersPage.js';
 import { ProfilePage } from './ProfilePage.js';
 import { SettingsPage } from './SettingsPage.js';
@@ -61,6 +62,24 @@ export function App() {
     });
     return () => setUnauthorizedHandler(undefined);
   }, []);
+
+  // WordPress serves the reset form from a link with `action=rp&key&login`;
+  // it must render even when a session exists, because using it signs out.
+  const resetParams = new URLSearchParams(window.location.search);
+  const resetKey = resetParams.get('key');
+  const resetLogin = resetParams.get('login');
+  if (resetParams.get('action') === 'rp' && resetKey && resetLogin) {
+    return (
+      <div className="app-frame login-frame">
+        <a className="skip-link" href="#main-content">
+          Skip to content
+        </a>
+        <main id="main-content" className="login-page" tabIndex={-1}>
+          <ResetPasswordForm resetKey={resetKey} login={resetLogin} />
+        </main>
+      </div>
+    );
+  }
 
   if (user === undefined) {
     return (

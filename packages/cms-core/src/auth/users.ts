@@ -4,6 +4,7 @@ import { hashPassword, passwordPolicyError, verifyPassword } from './password.js
 import { normalizeUsername, usernamePolicyError } from './username.js';
 import type { Paged, Principal } from '../content/types.js';
 import type { MailService } from '../mail/service.js';
+import type { PasswordResetService } from './password-reset.js';
 
 /**
  * User-administration domain errors. Like `ContentError`, they carry a stable
@@ -160,6 +161,8 @@ export interface UserAdminServiceOptions {
   prisma: DatabaseClient;
   /** Optional outbound mail used by "Send User Notification". */
   mail?: MailService | undefined;
+  /** Optional reset-token issuer so the welcome e-mail can link to a reset. */
+  passwordResets?: PasswordResetService | undefined;
   now?: () => Date;
 }
 
@@ -412,7 +415,7 @@ function isUniqueViolation(error: unknown): boolean {
  * avoids editing `service.ts`.
  */
 export function createUserAdminService(options: UserAdminServiceOptions): UserAdminService {
-  const { prisma, mail } = options;
+  const { prisma, mail, passwordResets } = options;
   const now = options.now ?? (() => new Date());
 
   function requireManageUsers(principal: Principal): void {
@@ -600,10 +603,12 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
     if (input.sendNotification && mail && mail.status().configured && email) {
       // A delivery failure must not undo the created account; the mail service
       // reports and logs it, mirroring WordPress.
+      const resetToken = passwordResets ? await passwordResets.createToken(created.id) : null;
       await mail.notifyNewUser({
         username: created.username,
         email,
         displayName: created.displayName,
+        ...(resetToken === null ? {} : { resetToken }),
       });
     }
     return created;

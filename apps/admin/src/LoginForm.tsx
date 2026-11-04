@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { login, loginErrorMessage } from './api.js';
+import { actionErrorMessage, login, loginErrorMessage, requestPasswordReset } from './api.js';
 import type { AuthUser } from './api.js';
 
 interface LoginFormProps {
@@ -12,6 +12,10 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [lostPassword, setLostPassword] = useState(false);
+  const [lostIdentifier, setLostIdentifier] = useState('');
+  const [lostSent, setLostSent] = useState(false);
+  const [lostError, setLostError] = useState<string | null>(null);
+  const [lostSubmitting, setLostSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const usernameRef = useRef<HTMLInputElement>(null);
@@ -36,6 +40,26 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     }
   }
 
+  async function handleLostPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (lostSubmitting) return;
+    const identifier = lostIdentifier.trim();
+    if (!identifier) {
+      setLostError('Enter your username or email address.');
+      return;
+    }
+    setLostSubmitting(true);
+    setLostError(null);
+    try {
+      await requestPasswordReset(identifier);
+      setLostSent(true);
+    } catch (caught) {
+      setLostError(actionErrorMessage(caught));
+    } finally {
+      setLostSubmitting(false);
+    }
+  }
+
   if (lostPassword) {
     return (
       <section className="login-screen" aria-labelledby="lost-password-heading">
@@ -44,21 +68,76 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         </div>
         <div className="login-card">
           <h1 id="lost-password-heading">Lost Password</h1>
-          <p className="login-help">
-            Password resets are handled by your site administrator. Ask an administrator to reset
-            your password from Users → your account.
-          </p>
-          <p className="login-back">
-            <a
-              href="#login"
-              onClick={(event) => {
-                event.preventDefault();
-                setLostPassword(false);
-              }}
-            >
-              ← Back to Log In
-            </a>
-          </p>
+          {lostSent ? (
+            <>
+              <p className="login-help" role="status">
+                Check your email for the reset link. If the account exists and email delivery is
+                configured, a message with instructions is on its way.
+              </p>
+              <p className="login-back">
+                <a
+                  href="#login"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setLostPassword(false);
+                    setLostSent(false);
+                  }}
+                >
+                  ← Back to Log In
+                </a>
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="login-help">
+                Please enter your username or email address. You will receive an email message with
+                instructions on how to reset your password.
+              </p>
+              <form className="auth-form" onSubmit={(event) => void handleLostPassword(event)}>
+                {lostError ? (
+                  <p className="login-error" role="alert">
+                    {lostError}
+                  </p>
+                ) : null}
+                <div className="field">
+                  <label htmlFor="lost-identifier">Username or Email Address</label>
+                  <input
+                    id="lost-identifier"
+                    name="identifier"
+                    type="text"
+                    autoComplete="username"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    maxLength={254}
+                    required
+                    value={lostIdentifier}
+                    onChange={(event) => setLostIdentifier(event.target.value)}
+                  />
+                </div>
+                <p className="login-submit">
+                  <button
+                    type="submit"
+                    className="button primary-button button-large"
+                    disabled={lostSubmitting}
+                  >
+                    {lostSubmitting ? 'Sending…' : 'Get New Password'}
+                  </button>
+                </p>
+              </form>
+              <p className="login-back">
+                <a
+                  href="#login"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setLostPassword(false);
+                    setLostError(null);
+                  }}
+                >
+                  ← Back to Log In
+                </a>
+              </p>
+            </>
+          )}
         </div>
       </section>
     );

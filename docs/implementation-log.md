@@ -2715,3 +2715,34 @@ registry description and version; after Deactivate the row showed
 the plugin (`All (0)`, "No plugins installed."). The plugin was then restored by
 clearing the tombstone and reactivated, leaving production in its original
 state (`All (1)`, `Active (1)`). The temporary administrator was deleted.
+
+### 2026-11-04 — Lost-password request and reset tokens
+
+- Added `password_resets` (migration `20261104135232_add_password_resets`):
+  SHA-256 token hash, optional HMAC of the requester IP, 24-hour expiry and
+  `used_at`. A new request replaces any unused token for the user.
+- `POST /api/auth/lost-password` accepts a username or email, requires pre-auth
+  CSRF and always answers `{sent:true}` for valid-shaped input so accounts
+  cannot be enumerated. Requests are limited to 3 per identifier and 10 per IP
+  per 15 minutes; unknown/inactive accounts send nothing. Without a mail
+  transport it returns `503 MAIL_NOT_CONFIGURED` instead of pretending.
+- `POST /api/auth/reset-password` validates the policy, then atomically updates
+  the password hash, deletes every session for the user, marks the token used,
+  removes other unused tokens and audits the change. Replays/expired keys return
+  `400 INVALID_RESET_KEY`; failed attempts are IP rate-limited.
+- Login form: "Lost your password?" now opens a real Lost Password form
+  ("Get New Password") with a generic check-your-email confirmation. The reset
+  link renders a Reset Password screen (`?action=rp&key&login`) with New
+  password/Confirm and Save Password, available signed in or out.
+- Add User → Send User Notification now issues a reset token and includes
+  WordPress's "To set your password, visit the following address" link.
+  `ADMIN_URL` optionally points e-mail links at a split-origin admin in
+  development; production uses the site origin.
+- Verified in the browser against the local SMTP sink: requested a reset for
+  admin@example.com, received `[MERNPress] Password Reset` with a working link,
+  set a new password, logged in with it, replayed the link and got "This
+  password reset link is invalid or has expired.", then reset the password back.
+  Creating `invitee-reset-dev` with Send User Notification produced a welcome
+  mail containing a working reset link; the invitee set a password and logged in.
+- Validation: 631 unit/integration tests (API 400, admin 153, block-system 65,
+  web 13), 23 Playwright E2E tests and six builds pass.

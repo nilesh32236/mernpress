@@ -24,6 +24,7 @@ import {
   createConnectorService,
   createApplicationPasswordService,
   createMailService,
+  createPasswordResetService,
   createMemoryMailTransport,
   createSmtpMailTransport,
   type AuthConfig,
@@ -161,11 +162,22 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     prisma: database,
     transport: mailTransport,
     ...(env.MAIL_FROM ? { from: env.MAIL_FROM } : {}),
+    ...(env.ADMIN_URL ? { adminUrl: env.ADMIN_URL } : {}),
     logger: (message, meta) => app.log.warn({ ...meta }, message),
   });
   app.decorate('mail', mail);
 
-  const users = createUserAdminService({ prisma: database, mail });
+  const passwordResets = createPasswordResetService({
+    prisma: database,
+    config: {
+      hashPepper: env.AUTH_HASH_PEPPER,
+      ...(options.now === undefined ? {} : { now: options.now }),
+    },
+    mail,
+  });
+  app.decorate('passwordResets', passwordResets);
+
+  const users = createUserAdminService({ prisma: database, mail, passwordResets });
   app.decorate('users', users);
 
   const appPasswords = createApplicationPasswordService({ prisma: database });
@@ -263,7 +275,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     await database.$disconnect();
   });
 
-  registerAuthRoutes(app, { env, auth });
+  registerAuthRoutes(app, { env, auth, passwordResets });
   registerContentRoutes(app, { env, auth, content });
   registerTaxonomyRoutes(app, { env, auth, taxonomy });
   registerUserRoutes(app, { env, auth, users });

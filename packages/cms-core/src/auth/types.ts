@@ -6,7 +6,9 @@ export type AuthErrorCode =
   | 'INVALID_ROLE'
   | 'INVALID_CREDENTIALS'
   | 'RATE_LIMITED'
-  | 'UNAUTHENTICATED';
+  | 'UNAUTHENTICATED'
+  | 'INVALID_RESET_KEY'
+  | 'MAIL_NOT_CONFIGURED';
 
 export class AuthError extends Error {
   readonly code: AuthErrorCode;

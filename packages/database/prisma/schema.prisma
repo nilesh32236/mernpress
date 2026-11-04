@@ -56,6 +56,7 @@ model User {
   comments             Comment[]
   dataRequests         DataRequest[]
   applicationPasswords ApplicationPassword[]
+  passwordResets       PasswordReset[]
 
   @@map("users")
 }
@@ -74,6 +75,24 @@ model ApplicationPassword {
 
   @@index([userId])
   @@map("application_passwords")
+}
+
+/// Single-use password reset tokens (lost-password flow). Only the SHA-256 hash
+/// of the token is stored; the plaintext exists only in the e-mail link.
+model PasswordReset {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  tokenHash   String    @unique @map("token_hash") @db.Char(64)
+  requestedIp String?   @map("requested_ip") @db.Char(64)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt   DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt      DateTime? @map("used_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_resets")
 }
 
 model Session {

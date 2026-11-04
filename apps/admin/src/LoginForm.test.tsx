@@ -105,4 +105,31 @@ describe('LoginForm', () => {
 
     expect((await screen.findByRole('alert')).textContent).toContain('Too many attempts.');
   });
+  it('requests a password reset from the lost-password screen', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(200, { csrfToken: 'pre-auth-token' }))
+      .mockResolvedValueOnce(jsonResponse(200, { sent: true }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<LoginForm onSuccess={vi.fn()} />);
+    fireEvent.click(screen.getByRole('link', { name: 'Lost your password?' }));
+
+    expect(await screen.findByRole('heading', { name: 'Lost Password' })).toBeDefined();
+    fireEvent.change(screen.getByLabelText('Username or Email Address'), {
+      target: { value: 'admin@example.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Get New Password' }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/auth/lost-password',
+        expect.objectContaining({ method: 'POST' }),
+      ),
+    );
+    expect(await screen.findByText(/Check your email for the reset link/)).toBeDefined();
+    const init = fetchMock.mock.calls[1]?.[1] as RequestInit;
+    expect(JSON.parse(String(init.body))).toEqual({ identifier: 'admin@example.com' });
+    expect((init.headers as Record<string, string>)['x-csrf-token']).toBe('pre-auth-token');
+  });
 });

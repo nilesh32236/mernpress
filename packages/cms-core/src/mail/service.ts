@@ -39,6 +39,8 @@ export interface MailServiceOptions {
   transport: MailTransport | null;
   /** Default From header; the site title is used when unset. */
   from?: string | undefined;
+  /** Admin base URL when the admin is on a different origin (development). */
+  adminUrl?: string | undefined;
   logger?: (message: string, meta?: Record<string, unknown>) => void;
 }
 
@@ -70,6 +72,15 @@ export interface NewUserMailInput {
   username: string;
   email: string;
   displayName: string | null;
+  /** Single-use reset token, so the welcome email matches WordPress. */
+  resetToken?: string | undefined;
+}
+
+export interface PasswordResetMailInput {
+  to: string;
+  username: string;
+  token: string;
+  expiresInMinutes: number;
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -121,7 +132,13 @@ export function createMemoryMailTransport(now: () => Date = () => new Date()): M
   };
 }
 
-export function createMailService({ prisma, transport, from, logger }: MailServiceOptions) {
+export function createMailService({
+  prisma,
+  transport,
+  from,
+  adminUrl,
+  logger,
+}: MailServiceOptions) {
   async function option<T>(key: string, fallback: T): Promise<T> {
     const row = await prisma.option.findUnique({ where: { key } });
     if (!row) return fallback;
@@ -155,8 +172,18 @@ export function createMailService({ prisma, transport, from, logger }: MailServi
     return siteUrl ? `${siteUrl}${path}` : path;
   }
 
-  function adminUrl(siteUrl: string, path: string): string {
-    return siteUrl ? `${siteUrl}${path}` : path;
+  function adminBase(siteUrl: string): string {
+    if (adminUrl && adminUrl.trim()) return adminUrl.trim().replace(/\/+$/, '');
+    return `${siteUrl}/admin`.replace(/\/+$/, '');
+  }
+
+  function adminLink(siteUrl: string, path: string): string {
+    const base = adminBase(siteUrl);
+    return `${base}${path.startsWith('/') ? path : `/${path}`}`;
+  }
+
+  function resetLink(siteUrl: string, token: string, username: string): string {
+    return `${adminBase(siteUrl)}/?action=rp&key=${encodeURIComponent(token)}&login=${encodeURIComponent(username)}`;
   }
 
   function defaultFrom(siteTitle: string): string {
@@ -222,7 +249,7 @@ export function createMailService({ prisma, transport, from, logger }: MailServi
           'Comment:',
           excerpt(input.content),
           '',
-          `Approve it: ${adminUrl(context.siteUrl, '/admin/comments?status=PENDING')}`,
+          `Approve it: ${adminLink(context.siteUrl, '/comments?status=PENDING')}`,
         ].join('\n'),
       };
     });
@@ -250,7 +277,29 @@ export function createMailService({ prisma, transport, from, logger }: MailServi
           'Comment:',
           excerpt(input.content),
           '',
-          `Manage comments: ${adminUrl(context.siteUrl, '/admin/comments')}`,
+          `Manage comments: ${adminLink(context.siteUrl, '/comments')}`,
+        ].join('\n'),
+      };
+    });
+  }
+
+  async function notifyPasswordReset(input: PasswordResetMailInput): Promise<MailResult> {
+    return deliver(input.to, async () => {
+      const context = await siteContext();
+      const hours = Math.max(1, Math.round(input.expiresInMinutes / 60));
+      return {
+        subject: `[${context.siteTitle}] Password Reset`,
+        text: [
+          'Someone requested a password reset for the following account:',
+          '',
+          `Username: ${input.username}`,
+          '',
+          'If this was a mistake, ignore this email and nothing will happen.',
+          '',
+          'To reset your password, visit the following address:',
+          resetLink(context.siteUrl, input.token, input.username),
+          '',
+          `This link expires in ${hours} hour${hours === 1 ? '' : 's'}.`,
         ].join('\n'),
       };
     });
@@ -267,8 +316,18 @@ export function createMailService({ prisma, transport, from, logger }: MailServi
           `Username: ${input.username}`,
           ...(input.displayName ? [`Display name: ${input.displayName}`] : []),
           '',
-          `Log in: ${adminUrl(context.siteUrl, '/admin/')}`,
-          'An administrator created this account and set its password. If you do not know it, ask the site administrator to reset it.',
+          `Log in: ${adminLink(context.siteUrl, '/')}`,
+          ...(input.resetToken
+            ? [
+                '',
+                'To set your password, visit the following address:',
+                resetLink(context.siteUrl, input.resetToken, input.username),
+                '',
+                'If this was a mistake, ignore this email.',
+              ]
+            : [
+                'An administrator created this account and set its password. If you do not know it, ask the site administrator to reset it.',
+              ]),
         ].join('\n'),
       };
     });
@@ -287,6 +346,7 @@ export function createMailService({ prisma, transport, from, logger }: MailServi
     notifyModeration,
     notifyComment,
     notifyNewUser,
+    notifyPasswordReset,
     /** Messages captured by the in-memory transport (tests/dev only). */
     outbox: transport?.outbox ?? [],
   };

@@ -77,6 +77,8 @@ const rawEnvSchema = z.object({
   ),
   SMTP_USER: optionalEnvString(320),
   SMTP_PASS: optionalEnvString(500),
+  /** Admin base URL when it is not the site origin (development). */
+  ADMIN_URL: optionalEnvString(500),
   MAIL_FROM: z.preprocess(
     (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
     z.string().min(3).max(320).optional(),
@@ -129,6 +131,7 @@ export type Env = {
   SMTP_USER: string | undefined;
   SMTP_PASS: string | undefined;
   MAIL_FROM: string | undefined;
+  ADMIN_URL: string | undefined;
 };
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
@@ -236,5 +239,6 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     SMTP_USER: parsed.data.SMTP_USER,
     SMTP_PASS: parsed.data.SMTP_PASS,
     MAIL_FROM: parsed.data.MAIL_FROM,
+    ADMIN_URL: parsed.data.ADMIN_URL,
   };
 }

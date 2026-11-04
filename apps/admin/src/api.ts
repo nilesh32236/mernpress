@@ -478,6 +478,46 @@ export async function login(
   };
 }
 
+export async function requestPasswordReset(identifier: string): Promise<void> {
+  const csrfToken = await fetchCsrfToken();
+  const response = await fetch('/api/auth/lost-password', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      'x-csrf-token': csrfToken,
+    },
+    body: JSON.stringify({ identifier }),
+  });
+  if (!response.ok) {
+    throw await toApiError(response);
+  }
+}
+
+export async function resetPassword(input: {
+  key: string;
+  login: string;
+  password: string;
+}): Promise<void> {
+  const csrfToken = await fetchCsrfToken();
+  const response = await fetch('/api/auth/reset-password', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      'x-csrf-token': csrfToken,
+    },
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) {
+    throw await toApiError(response);
+  }
+}
+
 export async function logout(): Promise<void> {
   const csrfToken = getCookie('mernpress_csrf');
   const response = await fetch('/api/auth/logout', {

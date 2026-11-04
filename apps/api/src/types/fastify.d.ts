@@ -6,6 +6,7 @@ import type {
   ContentService,
   HookRegistry,
   MailService,
+  PasswordResetService,
   MediaService,
   ScheduleService,
   TaxonomyService,
@@ -19,6 +20,7 @@ declare module 'fastify' {
     auth: AuthService;
     appPasswords: ApplicationPasswordService;
     mail: MailService;
+    passwordResets: PasswordResetService;
     content: ContentService;
     taxonomy: TaxonomyService;
     contentHooks: HookRegistry;

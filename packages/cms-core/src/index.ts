@@ -245,6 +245,14 @@ export {
 } from './connectors/service.js';
 export type { ConnectorState } from './connectors/service.js';
 
+// ---- Lost-password reset flow ----
+export {
+  createPasswordResetService,
+  type PasswordResetConfig,
+  type PasswordResetService,
+  type PasswordResetServiceOptions,
+} from './auth/password-reset.js';
+
 // ---- Application passwords (Profile self-service) ----
 export {
   createApplicationPasswordService,
@@ -266,6 +274,7 @@ export {
   type MailStatus,
   type MailTransport,
   type NewUserMailInput,
+  type PasswordResetMailInput,
   type SentMail,
   type SmtpTransportOptions,
 } from './mail/service.js';

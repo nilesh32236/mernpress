@@ -38,10 +38,10 @@ and can e-mail a newly created user. MERNPress stored `comments_notify` and
    API requires an email address and a configured transport (400
    `MAIL_NOT_CONFIGURED` otherwise) and sends the username, display name and
    login URL. The password is never included.
-4. **Honest difference from WordPress.** WordPress's new-user e-mail contains a
-   password-reset link. MERNPress has no password-reset flow yet, so the message
-   tells the user an administrator set the password and to ask for a reset. This
-   is documented rather than simulated.
+4. **New-user e-mail reset link (updated by ADR 0021).** The lost-password flow
+   now exists, so Add User → Send User Notification issues a single-use token and
+   includes WordPress's "To set your password" link. With no reset service, the
+   message falls back to asking the administrator.
 5. **No HTML, no user-controlled headers.** Messages are plain text; subjects
    are single-lined; recipients must be valid stored addresses; SMTP credentials
    live only in environment variables. Message bodies include user content,

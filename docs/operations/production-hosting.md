@@ -352,3 +352,10 @@ reports `configured: false`, the Discussion e-mail preferences are stored but
 nothing is sent, and the Add User checkbox is disabled with that explanation.
 `MAIL_TRANSPORT=memory` is a development/test sink and is rejected in production.
 Credentials belong only in this environment file; never commit them.
+
+The lost-password form uses the same transport: without SMTP it returns
+`503 MAIL_NOT_CONFIGURED` and tells the user delivery is not configured. When
+mail is enabled, reset links are valid for 24 hours, single-use, and resetting a
+password signs out every existing session. `ADMIN_URL` is only needed when the
+admin is served from a different origin (development); production uses the site
+origin.

@@ -13,17 +13,20 @@ export interface IdentifierHasher {
   ip(value: string): string;
   /** HMAC of the already-normalized username. */
   username(value: string): string;
+  /** HMAC of any value under an explicit domain (rate-limit namespaces). */
+  scope(domain: string, value: string): string;
 }
 
 const UNKNOWN_IP = 'unknown';
 
 export function createIdentifierHasher(pepper: string): IdentifierHasher {
-  function hash(domain: 'ip' | 'user', value: string): string {
+  function hash(domain: string, value: string): string {
     return createHmac('sha256', pepper).update(`${domain}:${value}`).digest('hex');
   }
 
   return {
     ip: (value) => hash('ip', value || UNKNOWN_IP),
     username: (value) => hash('user', value),
+    scope: (domain, value) => hash(`scope:${domain}`, value),
   };
 }

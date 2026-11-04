@@ -37,6 +37,8 @@ export interface AuthAudit {
   rateLimitThreshold(input: { ip: string; identifierHash: string }): Promise<void>;
   logout(input: { userId: string }): Promise<void>;
   sessionRevoked(input: { userId: string; reason: string }): Promise<void>;
+  passwordResetRequested(input: { userId: string; ip: string }): Promise<void>;
+  passwordResetCompleted(input: { userId: string; ip: string }): Promise<void>;
 }
 
 export function createAuthAudit(prisma: DatabaseClient, hasher: IdentifierHasher): AuthAudit {
@@ -118,6 +120,30 @@ export function createAuthAudit(prisma: DatabaseClient, hasher: IdentifierHasher
           actorUserId: input.userId,
           targetUserId: input.userId,
           metadata: { reason: input.reason },
+        },
+      });
+    },
+
+    async passwordResetRequested(input) {
+      await prisma.auditEvent.create({
+        data: {
+          eventType: 'auth.password_reset.requested',
+          actorUserId: input.userId,
+          targetUserId: input.userId,
+          ipHash: hasher.ip(input.ip),
+          metadata: { source: 'self-service' },
+        },
+      });
+    },
+
+    async passwordResetCompleted(input) {
+      await prisma.auditEvent.create({
+        data: {
+          eventType: 'auth.password_reset.completed',
+          actorUserId: input.userId,
+          targetUserId: input.userId,
+          ipHash: hasher.ip(input.ip),
+          metadata: { source: 'self-service' },
         },
       });
     },
