@@ -4,6 +4,7 @@ import {
   ApiError,
   createUser,
   deleteUser,
+  fetchMailStatus,
   fetchUsers,
   updateUserRole,
   type AdminUser,
@@ -17,6 +18,7 @@ vi.mock('./api.js', async (importOriginal) => {
   return {
     ...actual,
     fetchUsers: vi.fn(),
+    fetchMailStatus: vi.fn(),
     createUser: vi.fn(),
     updateUserRole: vi.fn(),
     updateUserStatus: vi.fn(),
@@ -75,6 +77,11 @@ function rowFor(username: string): HTMLElement {
 beforeEach(() => {
   window.history.replaceState(null, '', '/users');
   vi.mocked(fetchUsers).mockResolvedValue(list([SELF, EDITOR, AUTHOR]));
+  vi.mocked(fetchMailStatus).mockResolvedValue({
+    configured: false,
+    transport: null,
+    from: null,
+  });
   vi.mocked(createUser).mockResolvedValue(makeUser({ id: 'u4', username: 'new-user' }));
   vi.mocked(updateUserRole).mockResolvedValue(makeUser({ role: 'editor' }));
   vi.mocked(deleteUser).mockResolvedValue(undefined);
@@ -220,5 +227,52 @@ describe('users page', () => {
 
     expect(await screen.findByText('No user management access')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Add User' })).toBeNull();
+  });
+  it('sends the new-user notification when mail is configured', async () => {
+    vi.mocked(fetchMailStatus).mockResolvedValue({
+      configured: true,
+      transport: 'smtp',
+      from: 'MERNPress <no-reply@example.com>',
+    });
+
+    render(<UsersPage user={admin} />);
+    await screen.findByText('editor-b');
+    fireEvent.click(screen.getByRole('button', { name: 'Add User' }));
+
+    const checkbox = (await screen.findByRole('checkbox', {
+      name: 'Send the new user an email about their account.',
+    })) as HTMLInputElement;
+    expect(checkbox.disabled).toBe(false);
+    expect(checkbox.checked).toBe(true);
+
+    fireEvent.change(screen.getByLabelText(/Username/), { target: { value: 'new-user' } });
+    fireEvent.change(screen.getByLabelText('Email (required)'), {
+      target: { value: 'new-user@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'secret-pass' } });
+    fireEvent.submit(screen.getByRole('form', { name: 'Add user' }));
+
+    await waitFor(() =>
+      expect(vi.mocked(createUser)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          username: 'new-user',
+          email: 'new-user@example.com',
+          sendNotification: true,
+        }),
+      ),
+    );
+  });
+
+  it('disables the notification checkbox when mail is not configured', async () => {
+    render(<UsersPage user={admin} />);
+    await screen.findByText('editor-b');
+    fireEvent.click(screen.getByRole('button', { name: 'Add User' }));
+
+    const checkbox = (await screen.findByRole('checkbox', {
+      name: 'Send the new user an email about their account.',
+    })) as HTMLInputElement;
+    expect(checkbox.disabled).toBe(true);
+    expect(checkbox.checked).toBe(false);
+    expect(screen.getByText(/Email delivery is not configured on this server/)).toBeDefined();
   });
 });

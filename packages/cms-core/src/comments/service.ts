@@ -2,6 +2,7 @@ import type { DatabaseClient } from '@mernpress/database';
 import { requireCapability, FULL_VISIBILITY_ROLES } from '../auth/capabilities.js';
 import { ContentError } from '../content/errors.js';
 import type { Principal } from '../content/types.js';
+import type { MailService } from '../mail/service.js';
 import type {
   AdminComment,
   CommentCounts,
@@ -57,9 +58,11 @@ function toPublic(row: {
 
 export interface CommentServiceOptions {
   prisma: DatabaseClient;
+  /** Optional outbound mail for comment/moderation notifications. */
+  mail?: MailService | undefined;
 }
 
-export function createCommentService({ prisma }: CommentServiceOptions) {
+export function createCommentService({ prisma, mail }: CommentServiceOptions) {
   async function setting<T>(key: string, fallback: T): Promise<T> {
     const row = await prisma.option.findUnique({ where: { key } });
     if (!row) return fallback;
@@ -83,7 +86,14 @@ export function createCommentService({ prisma }: CommentServiceOptions) {
   async function createPublic(postId: string, input: CreateCommentInput): Promise<PublicComment> {
     const post = await prisma.post.findFirst({
       where: { id: postId, status: 'PUBLISHED', publishedAt: { lte: new Date() } },
-      select: { id: true, type: true, publishedAt: true },
+      select: {
+        id: true,
+        type: true,
+        publishedAt: true,
+        title: true,
+        slug: true,
+        author: { select: { email: true } },
+      },
     });
     if (!post) {
       throw new ContentError('NOT_FOUND', 'Not found', 404);
@@ -197,6 +207,25 @@ export function createCommentService({ prisma }: CommentServiceOptions) {
         status,
       },
     });
+
+    if (mail && mail.status().configured) {
+      const input = {
+        postTitle: post.title,
+        postSlug: post.slug,
+        authorName,
+        authorEmail,
+        content,
+      };
+      if (status === 'PENDING') {
+        await mail.notifyModeration(input);
+      } else if (status === 'APPROVED') {
+        await mail.notifyComment({
+          ...input,
+          postAuthorEmail: post.author?.email ?? null,
+        });
+      }
+    }
+
     return toPublic(row);
   }
 

@@ -109,13 +109,13 @@ const DISCUSSION_FIELDS: Field[] = [
     section: 'Email me whenever',
     label: 'Email me whenever anyone posts a comment',
     type: 'checkbox',
-    help: 'Email delivery is not configured in this build; the preference is stored.',
+    help: 'Sent to the administration email address when outbound mail is configured on the server.',
   },
   {
     key: 'moderation_notify',
     label: 'Email me whenever a comment is held for moderation',
     type: 'checkbox',
-    help: 'Email delivery is not configured in this build; the preference is stored.',
+    help: 'Sent to the administration email address when outbound mail is configured on the server.',
   },
   {
     key: 'comment_moderation',

@@ -23,7 +23,11 @@ import {
   createImportService,
   createConnectorService,
   createApplicationPasswordService,
+  createMailService,
+  createMemoryMailTransport,
+  createSmtpMailTransport,
   type AuthConfig,
+  type MailTransport,
 } from '@mernpress/cms-core';
 import { checkDatabase, createDatabaseClient } from '@mernpress/database';
 import Fastify, { type FastifyInstance } from 'fastify';
@@ -48,6 +52,7 @@ import { registerDashboardRoutes } from './routes/dashboard.js';
 import { registerImportRoutes } from './routes/import.js';
 import { registerPrivacyRoutes } from './routes/privacy.js';
 import { registerConnectorRoutes } from './routes/connectors.js';
+import { registerMailRoutes } from './routes/mail.js';
 import { registerAdminHealthRoutes } from './routes/admin-health.js';
 import { startPublishScheduler } from './scheduler.js';
 import { resolveRequestId } from './http/request-id.js';
@@ -138,7 +143,29 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const taxonomy = createTaxonomyService({ prisma: database, hooks: contentHooks });
   app.decorate('taxonomy', taxonomy);
 
-  const users = createUserAdminService({ prisma: database });
+  // Outbound mail: SMTP when configured, an in-memory sink in tests/dev. The
+  // environment schema rejects the memory transport in production.
+  const mailTransport: MailTransport | null =
+    env.MAIL_TRANSPORT === 'memory'
+      ? createMemoryMailTransport()
+      : env.SMTP_HOST
+        ? createSmtpMailTransport({
+            host: env.SMTP_HOST,
+            port: env.SMTP_PORT,
+            secure: env.SMTP_SECURE,
+            user: env.SMTP_USER,
+            pass: env.SMTP_PASS,
+          })
+        : null;
+  const mail = createMailService({
+    prisma: database,
+    transport: mailTransport,
+    ...(env.MAIL_FROM ? { from: env.MAIL_FROM } : {}),
+    logger: (message, meta) => app.log.warn({ ...meta }, message),
+  });
+  app.decorate('mail', mail);
+
+  const users = createUserAdminService({ prisma: database, mail });
   app.decorate('users', users);
 
   const appPasswords = createApplicationPasswordService({ prisma: database });
@@ -170,7 +197,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const autosave = createAutosaveService({ prisma: database });
   app.decorate('autosave', autosave);
 
-  const comments = createCommentService({ prisma: database });
+  const comments = createCommentService({ prisma: database, mail });
   app.decorate('comments', comments);
 
   const themes = createThemeService({ prisma: database });
@@ -256,6 +283,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerImportRoutes(app, { env, auth, imports });
   registerPrivacyRoutes(app, { env, auth, privacy });
   registerConnectorRoutes(app, { env, auth, connectors });
+  registerMailRoutes(app, { env, auth, mail });
   registerPublicCommentRoutes(app, { comments, auth });
 
   if (env.SCHEDULER_ENABLED) {

@@ -3,6 +3,7 @@ import { requireCapability } from './capabilities.js';
 import { hashPassword, passwordPolicyError, verifyPassword } from './password.js';
 import { normalizeUsername, usernamePolicyError } from './username.js';
 import type { Paged, Principal } from '../content/types.js';
+import type { MailService } from '../mail/service.js';
 
 /**
  * User-administration domain errors. Like `ContentError`, they carry a stable
@@ -28,7 +29,8 @@ export type UserAdminErrorCode =
   | 'REASSIGN_INVALID'
   | 'INVALID_WEBSITE'
   | 'INVALID_NAME'
-  | 'INVALID_LOCALE';
+  | 'INVALID_LOCALE'
+  | 'MAIL_NOT_CONFIGURED';
 
 export class UserAdminError extends Error {
   readonly code: UserAdminErrorCode;
@@ -104,6 +106,8 @@ export interface CreateUserInput {
   lastName?: string | null | undefined;
   nickname?: string | null | undefined;
   website?: string | null | undefined;
+  /** WordPress "Send User Notification": email the new account details. */
+  sendNotification?: boolean | undefined;
 }
 
 export interface UpdateProfileInput {
@@ -154,6 +158,8 @@ export interface UserAdminService {
 
 export interface UserAdminServiceOptions {
   prisma: DatabaseClient;
+  /** Optional outbound mail used by "Send User Notification". */
+  mail?: MailService | undefined;
   now?: () => Date;
 }
 
@@ -406,7 +412,7 @@ function isUniqueViolation(error: unknown): boolean {
  * avoids editing `service.ts`.
  */
 export function createUserAdminService(options: UserAdminServiceOptions): UserAdminService {
-  const { prisma } = options;
+  const { prisma, mail } = options;
   const now = options.now ?? (() => new Date());
 
   function requireManageUsers(principal: Principal): void {
@@ -521,10 +527,24 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
 
     const username = validatedUsername(input.username);
     assertPasswordPolicy(input.password);
+    const email = normalizeEmail(input.email);
+    if (input.sendNotification) {
+      if (!email) {
+        throw new UserAdminError(
+          'INVALID_EMAIL',
+          'An email address is required to send the notification.',
+          400,
+        );
+      }
+      if (!mail || !mail.status().configured) {
+        throw new UserAdminError('MAIL_NOT_CONFIGURED', 'Email delivery is not configured.', 400);
+      }
+    }
     const passwordHash = await hashPassword(input.password);
 
+    let created: AdminUser;
     try {
-      return await prisma.$transaction(async (tx) => {
+      created = await prisma.$transaction(async (tx) => {
         const existing = await tx.user.findUnique({ where: { username }, select: { id: true } });
         if (existing) {
           throw new UserAdminError('USERNAME_TAKEN', 'That username is already in use.', 409);
@@ -536,7 +556,7 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
             passwordHash,
             role: input.role,
             status: 'active',
-            email: normalizeEmail(input.email),
+            email,
             displayName: normalizeDisplayName(input.displayName),
             firstName:
               input.firstName === undefined || input.firstName === null
@@ -576,6 +596,17 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
       }
       throw error;
     }
+
+    if (input.sendNotification && mail && mail.status().configured && email) {
+      // A delivery failure must not undo the created account; the mail service
+      // reports and logs it, mirroring WordPress.
+      await mail.notifyNewUser({
+        username: created.username,
+        email,
+        displayName: created.displayName,
+      });
+    }
+    return created;
   }
 
   async function updateUserRole(

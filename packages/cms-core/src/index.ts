@@ -252,3 +252,20 @@ export {
   type ApplicationPasswordSummary,
   type CreatedApplicationPassword,
 } from './auth/app-passwords.js';
+
+// ---- Transactional mail (SMTP or in-memory sink) ----
+export {
+  createMailService,
+  createMemoryMailTransport,
+  createSmtpMailTransport,
+  type CommentMailInput,
+  type CommentNotificationInput,
+  type MailMessage,
+  type MailResult,
+  type MailService,
+  type MailStatus,
+  type MailTransport,
+  type NewUserMailInput,
+  type SentMail,
+  type SmtpTransportOptions,
+} from './mail/service.js';

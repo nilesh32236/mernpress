@@ -77,6 +77,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-057 | 2026-11-04 | Profile personal options are stored per user: `syntax_highlighting` (default on, rendered as "Disable syntax highlighting when editing code") and `locale` (`en_US` only, others rejected). Application passwords are real revocable credentials in a new `application_passwords` table, Argon2id-hashed, shown once as six 4-character groups, verified via HTTP Basic auth with whitespace ignored, HTTPS required in production, CSRF not applicable and the Origin check skipped for cookie-less Basic requests. Last-used time/IP is recorded at most every five minutes and verification checks at most ten credentials. Self-service only. | accepted | [ADR 0018](docs/adr/0018-profile-application-passwords.md) |
 
+| D-058 | 2026-11-04 | Outbound mail is a single service with SMTP transport (Nodemailer 10.3.1, pinned, MIT-0) configured from `SMTP_HOST`/`SMTP_PORT`/`SMTP_FROM` and short timeouts, or an in-memory sink allowed only outside production; no transport means mail is reported as not configured and never faked. Approved comments notify the post author (else the admin email) when `comments_notify` is on; held comments notify the admin address when `moderation_notify` is on. Add User → Send User Notification is enabled only when mail is configured, requires the user's email and sends username/display name/login URL without the password (no reset flow exists yet). Delivery failures are logged, not fatal. | accepted | [ADR 0019](docs/adr/0019-mail-transport.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

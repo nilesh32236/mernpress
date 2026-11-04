@@ -33,6 +33,7 @@ export const createUserSchema = z
     lastName: z.string().max(100).nullable().optional(),
     nickname: z.string().max(100).nullable().optional(),
     website: z.string().max(2048).nullable().optional(),
+    sendNotification: z.boolean().optional(),
   })
   .strict();
 

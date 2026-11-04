@@ -27,6 +27,19 @@ function loadLocalEnv(): void {
 
 loadLocalEnv();
 
+/** Treat an empty environment value the same as an unset one. */
+const optionalEnvString = (max: number) =>
+  z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+    z.string().min(1).max(max).optional(),
+  );
+
+const optionalEnvUrl = () =>
+  z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+    z.string().url().optional(),
+  );
+
 const rawEnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']),
   HOST: z.string().min(1, 'HOST must not be empty').default('127.0.0.1'),
@@ -50,10 +63,24 @@ const rawEnvSchema = z.object({
     }, 'DATABASE_URL must be a valid postgresql:// connection URL'),
   CORS_ORIGINS: z.string().optional(),
   /** Optional release manifest endpoint for the Updates screen. */
-  UPDATE_MANIFEST_URL: z.string().url().optional(),
+  UPDATE_MANIFEST_URL: optionalEnvUrl(),
   /** Optional overrides for the dashboard Events and News feeds. */
-  EVENTS_API_URL: z.string().url().optional(),
-  NEWS_FEED_URL: z.string().url().optional(),
+  EVENTS_API_URL: optionalEnvUrl(),
+  NEWS_FEED_URL: optionalEnvUrl(),
+  /** Outbound mail: SMTP in production, in-memory sink for tests/development. */
+  MAIL_TRANSPORT: z.enum(['smtp', 'memory']).default('smtp'),
+  SMTP_HOST: optionalEnvString(255),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(587),
+  SMTP_SECURE: z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+    z.enum(['true', 'false']).optional(),
+  ),
+  SMTP_USER: optionalEnvString(320),
+  SMTP_PASS: optionalEnvString(500),
+  MAIL_FROM: z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+    z.string().min(3).max(320).optional(),
+  ),
   AUTH_HASH_PEPPER: z
     .string()
     .min(32, 'AUTH_HASH_PEPPER must be at least 32 characters')
@@ -95,6 +122,13 @@ export type Env = {
   UPDATE_MANIFEST_URL: string | undefined;
   EVENTS_API_URL: string | undefined;
   NEWS_FEED_URL: string | undefined;
+  MAIL_TRANSPORT: 'smtp' | 'memory';
+  SMTP_HOST: string | undefined;
+  SMTP_PORT: number;
+  SMTP_SECURE: boolean;
+  SMTP_USER: string | undefined;
+  SMTP_PASS: string | undefined;
+  MAIL_FROM: string | undefined;
 };
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
@@ -170,6 +204,16 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     }
   }
 
+  if (isProduction && parsed.data.MAIL_TRANSPORT === 'memory') {
+    throw new Error('MAIL_TRANSPORT=memory is not allowed in production');
+  }
+  if (Boolean(parsed.data.SMTP_USER) !== Boolean(parsed.data.SMTP_PASS)) {
+    throw new Error('SMTP_USER and SMTP_PASS must be set together');
+  }
+  if (parsed.data.SMTP_HOST && !parsed.data.MAIL_FROM) {
+    throw new Error('MAIL_FROM is required when SMTP_HOST is configured');
+  }
+
   const storageDir = path.isAbsolute(parsed.data.MEDIA_STORAGE_DIR)
     ? parsed.data.MEDIA_STORAGE_DIR
     : path.resolve(process.cwd(), parsed.data.MEDIA_STORAGE_DIR);
@@ -182,5 +226,15 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     UPDATE_MANIFEST_URL: parsed.data.UPDATE_MANIFEST_URL,
     EVENTS_API_URL: parsed.data.EVENTS_API_URL,
     NEWS_FEED_URL: parsed.data.NEWS_FEED_URL,
+    MAIL_TRANSPORT: parsed.data.MAIL_TRANSPORT,
+    SMTP_HOST: parsed.data.SMTP_HOST,
+    SMTP_PORT: parsed.data.SMTP_PORT,
+    SMTP_SECURE:
+      parsed.data.SMTP_SECURE === undefined
+        ? parsed.data.SMTP_PORT === 465
+        : parsed.data.SMTP_SECURE === 'true',
+    SMTP_USER: parsed.data.SMTP_USER,
+    SMTP_PASS: parsed.data.SMTP_PASS,
+    MAIL_FROM: parsed.data.MAIL_FROM,
   };
 }

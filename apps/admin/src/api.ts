@@ -871,6 +871,22 @@ export interface ApplicationPassword {
 
 export type OptionValues = Record<string, unknown>;
 
+// ---- Outbound mail status (Add User notification) ----
+export interface MailStatus {
+  configured: boolean;
+  transport: 'smtp' | 'memory' | null;
+  from: string | null;
+}
+
+export async function fetchMailStatus(): Promise<MailStatus> {
+  const response = await fetch('/api/admin/mail/status', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<MailStatus>(response);
+}
+
 export async function fetchUsers(
   params: {
     search?: string;
@@ -910,6 +926,7 @@ export async function createUser(payload: {
   lastName?: string;
   nickname?: string;
   website?: string;
+  sendNotification?: boolean;
 }): Promise<AdminUser> {
   const response = await fetch('/api/users', {
     method: 'POST',

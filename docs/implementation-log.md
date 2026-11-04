@@ -2648,3 +2648,36 @@ production and was deleted afterwards:
   `401 APP_PASSWORD_HTTPS_REQUIRED`.
 - Both credentials were revoked (rows disappeared) and syntax highlighting was
   restored. Production is back to one user and zero application passwords.
+
+### 2026-11-04 — Outbound mail and notifications
+
+- Added a mail service (`packages/cms-core/src/mail`) with an SMTP transport
+  (Nodemailer 10.3.1, pinned; MIT-0, no transitive dependencies) and an
+  in-memory sink for tests/development. Transport is selected from
+  `MAIL_TRANSPORT`, `SMTP_HOST`/`SMTP_PORT`/`SMTP_SECURE`/`SMTP_USER`/
+  `SMTP_PASS` and `MAIL_FROM`; the memory transport is rejected in production and
+  `MAIL_FROM` is required with SMTP. Connection/greeting/socket timeouts keep a
+  dead relay from hanging requests.
+- Comment notifications now work: a held comment e-mails the administration
+  address when `moderation_notify` is on; an approved comment e-mails the post
+  author (or the administration address when the author has no email) when
+  `comments_notify` is on. Delivery failures are logged and never fail the
+  comment. The Discussion help text now says notifications need outbound mail
+  configured rather than claiming it is unavailable.
+- Add User → Send User Notification is live: `GET /api/admin/mail/status`
+  drives the checkbox (checked by default, disabled with an explanation when no
+  transport exists). Sending requires the account email and a configured
+  transport (400 `MAIL_NOT_CONFIGURED`), and the message contains the username,
+  display name and login URL — never the password. WordPress sends a reset link;
+  MERNPress has no reset flow yet, so the message asks the administrator to
+  reset instead (documented in ADR 0019).
+- Verified end to end against a local SMTP sink:
+  - a held comment produced `Please moderate: "Welcome to MERNPress"` to
+    admin@example.com with the comment and moderation link;
+  - an approved comment produced `New comment on "Welcome to MERNPress"` with the
+    post URL and manage-comments link;
+  - creating `mail-invitee-dev` through Add User produced `Your new account` to
+    invitee-dev@example.com with the username and `/admin/` login URL, and the
+    checkbox was enabled and checked.
+- Validation: 620 unit/integration tests (API 394, admin 148, block-system 65,
+  web 13), 23 Playwright E2E tests and six builds pass.

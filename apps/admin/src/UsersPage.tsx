@@ -12,6 +12,7 @@ import {
   actionErrorMessage,
   createUser,
   deleteUser,
+  fetchMailStatus,
   fetchUsers,
   resetUserPassword,
   updateUserRole,
@@ -19,6 +20,7 @@ import {
   type AdminUser,
   type AdminUserList,
   type AuthUser,
+  type MailStatus,
   type UserRole,
 } from './api.js';
 import {
@@ -208,7 +210,25 @@ function AddUserPage({ onCreated }: { onCreated: (username: string) => void }) {
   });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [mailStatus, setMailStatus] = useState<MailStatus | null>(null);
+  const [sendNotification, setSendNotification] = useState(true);
   const strength = passwordStrength(password);
+
+  useEffect(() => {
+    let active = true;
+    fetchMailStatus()
+      .then((status) => {
+        if (active) setMailStatus(status);
+      })
+      .catch(() => {
+        if (active) setMailStatus({ configured: false, transport: null, from: null });
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const mailConfigured = mailStatus?.configured === true;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -235,6 +255,7 @@ function AddUserPage({ onCreated }: { onCreated: (username: string) => void }) {
         ...(lastName.trim() ? { lastName: lastName.trim() } : {}),
         ...(email.trim() ? { email: email.trim() } : {}),
         ...(website.trim() ? { website: website.trim() } : {}),
+        ...(mailConfigured && sendNotification ? { sendNotification: true } : {}),
       });
       onCreated(name);
     } catch (caught) {
@@ -358,12 +379,18 @@ function AddUserPage({ onCreated }: { onCreated: (username: string) => void }) {
           <span className="field-label">Send User Notification</span>
           <div>
             <label className="checkbox-row">
-              <input type="checkbox" disabled />
+              <input
+                type="checkbox"
+                checked={mailConfigured && sendNotification}
+                onChange={(event) => setSendNotification(event.target.checked)}
+                disabled={!mailConfigured || saving}
+              />
               <span>Send the new user an email about their account.</span>
             </label>
             <p className="field-help">
-              Email delivery is not configured in this build, so no notification is sent. The
-              account is created with the password you enter.
+              {mailConfigured
+                ? 'The new user receives a welcome email with their username and the login address.'
+                : 'Email delivery is not configured on this server, so no notification can be sent. Configure SMTP to enable it.'}
             </p>
           </div>
         </div>

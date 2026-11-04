@@ -34,19 +34,19 @@ owner decision.
 | Categories / Tags | D/P | Add/edit/delete, hierarchy, counts |
 | Media library / grid / list / details | D/P | Upload, derivatives, alt text, grid/list toggle |
 | Pages list / editor | D/P | Same editor chrome as posts |
-| Comments | D/P | Status tabs, moderation, edit, bulk, dashboard widget |
+| Comments | D/P | Status tabs, moderation, edit, bulk, dashboard widget, e-mail notifications when mail is configured |
 | Appearance → Themes | D/P | Grid, details dialog, search, Customize |
 | Appearance → Editor | D/P | Design sidebar, template list, live canvas |
 | Appearance → Fonts | D/P | Library, weights, samples, unavailable upload/install |
 | Plugins → Installed | D/P | Filters, bulk, active edge, auto-update column |
 | Plugins → Add Plugin | D/P | Honest no-marketplace boundary |
-| Users / Add User / Profile | D/P | Roles, display name select, colour schemes, syntax highlighting, language, application passwords, password |
+| Users / Add User / Profile | D/P | Roles, display name select, colour schemes, syntax highlighting, language, application passwords, password; Send User Notification enabled when mail is configured |
 | Tools → Available Tools / Export / Site Health | D/P | Cards, export JSON, health checks |
 | Tools → Import | D/P | Real WordPress WXR import |
 | Tools → Export/Erase Personal Data | D/P | Request queue, JSON export, anonymising erasure |
 | Tools → Theme/Plugin File Editor | X | In-browser server-code editing excluded (RCE surface) |
 | Settings → General/Reading/Writing | D/P | Site identity, formats, feed options, mail fields |
-| Settings → Discussion/Media/Permalinks/Privacy | D/P | Options drive comments, uploads, URLs, privacy page |
+| Settings → Discussion/Media/Permalinks/Privacy | D/P | Options drive comments, uploads, URLs, privacy page; comment/moderation e-mails sent when mail is configured |
 | Settings → Connectors | D/P | Encrypted provider credentials, masked state |
 | Updates | D/P | Version report, "Check again", manifest checks |
 | Public: home/blog/single/page/archives/search/404/author/feed/sitemap | D/P | Twenty Twenty-Five geometry, comments, pagination |

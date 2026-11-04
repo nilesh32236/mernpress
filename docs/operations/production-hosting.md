@@ -330,3 +330,25 @@ the previous build.
   scrolling/Profile preference, Tools categories/tags converter, Updates
   screen, postbox controls, General Settings detail). Production `/`,
   `/admin/`, `/api/health` verified 200; no schema change.
+
+## Outbound mail
+
+Comment notifications and Add User → Send User Notification need an SMTP relay.
+Set these in `/etc/mernpress/mernpress.env` and restart `mernpress-api`:
+
+```bash
+MAIL_TRANSPORT=smtp
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=...
+SMTP_PASS=...
+MAIL_FROM="MERNPress <no-reply@example.com>"
+```
+
+`SMTP_HOST` and `MAIL_FROM` must be set together; `SMTP_USER`/`SMTP_PASS` must be
+set together. With no `SMTP_HOST`, the API starts normally, `/api/admin/mail/status`
+reports `configured: false`, the Discussion e-mail preferences are stored but
+nothing is sent, and the Add User checkbox is disabled with that explanation.
+`MAIL_TRANSPORT=memory` is a development/test sink and is rejected in production.
+Credentials belong only in this environment file; never commit them.
