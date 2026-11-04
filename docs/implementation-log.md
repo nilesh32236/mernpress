@@ -2631,3 +2631,20 @@ build uses `aes-256-gcm` for credential encryption.
 - Remaining from the WordPress profile surface: the mail transport for comment
   notifications and Add User's "Send User Notification"; it stays explicitly
   unavailable until that slice.
+
+**Deployment:** release `20261104T132118Z-f74800e` (production symlink
+`/opt/mernpress/current`), with migration
+`20261104130529_add_profile_prefs_app_passwords` applied (both `users` columns
+and the `application_passwords` table verified in production). `/`, `/admin/`
+and `/api/health` return 200. A temporary administrator verified the screen in
+production and was deleted afterwards:
+- Profile showed Syntax Highlighting, Language (`en_US`) and the Application
+  Passwords section; saving persisted `syntaxHighlighting: false`.
+- Creating "Production Basic auth" returned the one-time password; a Basic-auth
+  `GET /api/profile` over HTTPS returned 200 and recorded last-used
+  `43.204.100.114`; a Basic-auth POST created a second credential with no CSRF
+  token (201).
+- The same Basic credential over plain HTTP loopback was rejected with
+  `401 APP_PASSWORD_HTTPS_REQUIRED`.
+- Both credentials were revoked (rows disappeared) and syntax highlighting was
+  restored. Production is back to one user and zero application passwords.

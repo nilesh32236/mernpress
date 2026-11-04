@@ -74,6 +74,13 @@ owner decision.
   photo `645×826` / footer 1035, and no horizontal overflow on any page. The
   RSS feed returns `application/rss+xml` XML. Category/tag archives 404 because
   production has no published terms, which matches WordPress.
+- **Production Profile verification (2026-11-04)**: the Profile screen showed
+  WordPress's Syntax Highlighting and Language rows and the Application
+  Passwords section. A credential created there authenticated a Basic-auth API
+  request over HTTPS (200), recorded its last-used time/IP, allowed a
+  cookie-less mutation (201) and was rejected over plain HTTP
+  (`APP_PASSWORD_HTTPS_REQUIRED`); revoking it removed access. The temporary
+  administrator and its credentials were deleted afterwards.
 - **Production bug found and fixed by this pass**: `mernpress-api.service` runs
   with `ProtectSystem=strict`, which made `/opt/mernpress/media` read-only to the
   process even though the directory was owned by `mernpress`. Site Health
