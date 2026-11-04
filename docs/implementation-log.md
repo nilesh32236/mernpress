@@ -2244,3 +2244,11 @@ toggles. 545 unit/integration tests, 23 E2E tests and six builds pass.
 - Validation: 551 unit/integration tests (API 350, admin 123, block-system 65,
   web 13) and six builds pass; the public form and admin screen were exercised
   end to end in the browser.
+
+**Deployment:** release `20261104T092522Z-584e2e9` (production symlink
+`/opt/mernpress/current`), including migrations `20261104090209_add_comments`
+and `20261104090233_restore_featured_media_index`. Production `/`, `/admin/`,
+`/api/health` return 200; a public comment was created through the production
+API (201), listed (200) and removed. The public single-post page renders the
+empty comment list and form, with the footer at 427px and no horizontal
+overflow.
