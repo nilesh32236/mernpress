@@ -2212,3 +2212,10 @@ tops; all production routes remain 200.
   and a real byline link, matching WordPress's author page.
 - Validation: 545 unit/integration tests (API 345, admin 122, block-system 65,
   web 13), 23 Playwright E2E tests and six builds pass.
+
+**Deployment:** release `20261104T075000Z-811ba05` (production symlink
+`/opt/mernpress/current`). Production `/`, `/admin/`, `/api/health`,
+`/search?q=test` return 200, `/nope` returns 404, `/author/admin` returns 200
+with the `test.com` post, and `?author=admin` returns the same published post.
+The built admin stylesheet contains the 46px mobile toolbar and row-detail
+toggles. 545 unit/integration tests, 23 E2E tests and six builds pass.
