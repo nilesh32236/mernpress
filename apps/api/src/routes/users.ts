@@ -29,6 +29,9 @@ export const createUserSchema = z
     role,
     email: z.string().max(254).nullable().optional(),
     displayName: z.string().max(100).nullable().optional(),
+    firstName: z.string().max(100).nullable().optional(),
+    lastName: z.string().max(100).nullable().optional(),
+    nickname: z.string().max(100).nullable().optional(),
     website: z.string().max(2048).nullable().optional(),
   })
   .strict();

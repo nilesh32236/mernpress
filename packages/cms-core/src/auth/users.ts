@@ -26,7 +26,8 @@ export type UserAdminErrorCode =
   | 'SELF_DELETE'
   | 'REASSIGN_REQUIRED'
   | 'REASSIGN_INVALID'
-  | 'INVALID_WEBSITE';
+  | 'INVALID_WEBSITE'
+  | 'INVALID_NAME';
 
 export class UserAdminError extends Error {
   readonly code: UserAdminErrorCode;
@@ -62,6 +63,12 @@ export interface UserProfile {
   username: string;
   email: string | null;
   displayName: string | null;
+  /** WordPress "First Name". */
+  firstName: string | null;
+  /** WordPress "Last Name". */
+  lastName: string | null;
+  /** WordPress "Nickname". */
+  nickname: string | null;
   /** WordPress "Biographical Info". */
   bio: string | null;
   /** WordPress "Website". */
@@ -88,6 +95,9 @@ export interface CreateUserInput {
   role: UserRole;
   email?: string | null | undefined;
   displayName?: string | null | undefined;
+  firstName?: string | null | undefined;
+  lastName?: string | null | undefined;
+  nickname?: string | null | undefined;
   website?: string | null | undefined;
 }
 
@@ -95,6 +105,9 @@ export interface UpdateProfileInput {
   username?: string | undefined;
   email?: string | null | undefined;
   displayName?: string | null | undefined;
+  firstName?: string | null | undefined;
+  lastName?: string | null | undefined;
+  nickname?: string | null | undefined;
   bio?: string | null | undefined;
   website?: string | null | undefined;
 }
@@ -160,6 +173,9 @@ const PROFILE_SELECT = {
   username: true,
   email: true,
   displayName: true,
+  firstName: true,
+  lastName: true,
+  nickname: true,
   bio: true,
   website: true,
   role: true,
@@ -183,6 +199,9 @@ type ProfileRow = {
   username: string;
   email: string | null;
   displayName: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  nickname: string | null;
   bio: string | null;
   website: string | null;
   role: UserRole;
@@ -262,11 +281,24 @@ function toProfile(row: ProfileRow): UserProfile {
     username: row.username,
     email: row.email,
     displayName: row.displayName,
+    firstName: row.firstName,
+    lastName: row.lastName,
+    nickname: row.nickname,
     bio: row.bio,
     website: row.website,
     role: row.role,
     createdAt: row.createdAt.toISOString(),
   };
+}
+
+function normalizeNamePart(value: string | null, field: string): string | null {
+  if (value === null) return null;
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return null;
+  if (trimmed.length > 100) {
+    throw new UserAdminError('INVALID_NAME', `${field} is too long.`, 400);
+  }
+  return trimmed;
 }
 
 function normalizeBio(value: string | null): string | null {
@@ -479,6 +511,18 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
             status: 'active',
             email: normalizeEmail(input.email),
             displayName: normalizeDisplayName(input.displayName),
+            firstName:
+              input.firstName === undefined || input.firstName === null
+                ? null
+                : normalizeNamePart(input.firstName, 'First name'),
+            lastName:
+              input.lastName === undefined || input.lastName === null
+                ? null
+                : normalizeNamePart(input.lastName, 'Last name'),
+            nickname:
+              input.nickname === undefined || input.nickname === null
+                ? null
+                : normalizeNamePart(input.nickname, 'Nickname'),
             website:
               input.website === undefined || input.website === null
                 ? null
@@ -723,6 +767,18 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
       input.displayName === undefined
         ? current.displayName
         : normalizeDisplayName(input.displayName);
+    const firstName =
+      input.firstName === undefined
+        ? current.firstName
+        : normalizeNamePart(input.firstName, 'First name');
+    const lastName =
+      input.lastName === undefined
+        ? current.lastName
+        : normalizeNamePart(input.lastName, 'Last name');
+    const nickname =
+      input.nickname === undefined
+        ? current.nickname
+        : normalizeNamePart(input.nickname, 'Nickname');
     const bio = input.bio === undefined ? current.bio : normalizeBio(input.bio);
     const website = input.website === undefined ? current.website : normalizeWebsite(input.website);
 
@@ -730,6 +786,9 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
       username === current.username &&
       email === current.email &&
       displayName === current.displayName &&
+      firstName === current.firstName &&
+      lastName === current.lastName &&
+      nickname === current.nickname &&
       bio === current.bio &&
       website === current.website
     ) {
@@ -759,7 +818,7 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
 
         const updated = await tx.user.update({
           where: { id: current.id },
-          data: { username, email, displayName, bio, website },
+          data: { username, email, displayName, firstName, lastName, nickname, bio, website },
           select: PROFILE_SELECT,
         });
 

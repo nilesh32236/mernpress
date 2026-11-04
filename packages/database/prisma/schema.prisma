@@ -27,6 +27,12 @@ model User {
   email        String?    @unique @db.VarChar(254)
   /// Optional display name shown in the admin.
   displayName  String?    @map("display_name") @db.VarChar(100)
+  /// WordPress "First Name".
+  firstName    String?    @map("first_name") @db.VarChar(100)
+  /// WordPress "Last Name".
+  lastName     String?    @map("last_name") @db.VarChar(100)
+  /// WordPress "Nickname".
+  nickname     String?    @db.VarChar(100)
   /// Optional biographical info (WordPress "About Yourself").
   bio          String?    @db.Text
   /// Optional website URL.

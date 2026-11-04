@@ -237,6 +237,8 @@ function AddUserPage({
         password,
         role,
         ...(displayName ? { displayName } : {}),
+        ...(firstName.trim() ? { firstName: firstName.trim() } : {}),
+        ...(lastName.trim() ? { lastName: lastName.trim() } : {}),
         ...(email.trim() ? { email: email.trim() } : {}),
         ...(website.trim() ? { website: website.trim() } : {}),
       });

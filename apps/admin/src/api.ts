@@ -827,6 +827,9 @@ export interface UserProfile {
   username: string;
   email: string | null;
   displayName: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  nickname: string | null;
   bio: string | null;
   website: string | null;
   role: UserRole;
@@ -870,6 +873,9 @@ export async function createUser(payload: {
   role: UserRole;
   email?: string;
   displayName?: string;
+  firstName?: string;
+  lastName?: string;
+  nickname?: string;
   website?: string;
 }): Promise<AdminUser> {
   const response = await fetch('/api/users', {
@@ -958,6 +964,9 @@ export async function updateProfile(payload: {
   username?: string;
   email?: string | null;
   displayName?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  nickname?: string | null;
   bio?: string | null;
   website?: string | null;
 }): Promise<UserProfile> {

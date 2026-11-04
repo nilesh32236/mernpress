@@ -28,6 +28,9 @@ export function ProfilePage({
 
   const [username, setUsername] = useState(user.username);
   const [displayName, setDisplayName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
   const [bio, setBio] = useState('');
   const [adminColor, setAdminColor] = useState(getColorScheme);
@@ -54,6 +57,9 @@ export function ProfilePage({
         setProfile(result);
         setUsername(result.username);
         setDisplayName(result.displayName ?? '');
+        setFirstName(result.firstName ?? '');
+        setLastName(result.lastName ?? '');
+        setNickname(result.nickname ?? '');
         setEmail(result.email ?? '');
         setBio(result.bio ?? '');
         setWebsite(result.website ?? '');
@@ -79,12 +85,18 @@ export function ProfilePage({
       return;
     }
     const nextDisplayName = displayName.trim();
+    const nextFirstName = firstName.trim();
+    const nextLastName = lastName.trim();
+    const nextNickname = nickname.trim();
     const nextEmail = email.trim();
     const nextBio = bio.trim();
     const nextWebsite = website.trim();
     if (
       name === profile.username &&
       nextDisplayName === (profile.displayName ?? '') &&
+      nextFirstName === (profile.firstName ?? '') &&
+      nextLastName === (profile.lastName ?? '') &&
+      nextNickname === (profile.nickname ?? '') &&
       nextEmail === (profile.email ?? '') &&
       nextBio === (profile.bio ?? '') &&
       nextWebsite === (profile.website ?? '')
@@ -100,6 +112,9 @@ export function ProfilePage({
       const updated = await updateProfile({
         username: name,
         displayName: nextDisplayName ? nextDisplayName : null,
+        firstName: nextFirstName ? nextFirstName : null,
+        lastName: nextLastName ? nextLastName : null,
+        nickname: nextNickname ? nextNickname : null,
         email: nextEmail ? nextEmail : null,
         bio: nextBio ? nextBio : null,
         website: nextWebsite ? nextWebsite : null,
@@ -107,6 +122,9 @@ export function ProfilePage({
       setProfile(updated);
       setUsername(updated.username);
       setDisplayName(updated.displayName ?? '');
+      setFirstName(updated.firstName ?? '');
+      setLastName(updated.lastName ?? '');
+      setNickname(updated.nickname ?? '');
       setEmail(updated.email ?? '');
       setBio(updated.bio ?? '');
       setWebsite(updated.website ?? '');
@@ -247,9 +265,48 @@ export function ProfilePage({
             </div>
 
             <div className="field">
-              <label htmlFor="profile-name">Name</label>
+              <label htmlFor="profile-first-name">First Name</label>
               <input
-                id="profile-name"
+                id="profile-first-name"
+                type="text"
+                maxLength={100}
+                value={firstName}
+                onChange={(event) => setFirstName(event.target.value)}
+                disabled={savingAccount}
+                autoComplete="given-name"
+              />
+            </div>
+
+            <div className="field">
+              <label htmlFor="profile-last-name">Last Name</label>
+              <input
+                id="profile-last-name"
+                type="text"
+                maxLength={100}
+                value={lastName}
+                onChange={(event) => setLastName(event.target.value)}
+                disabled={savingAccount}
+                autoComplete="family-name"
+              />
+            </div>
+
+            <div className="field">
+              <label htmlFor="profile-nickname">Nickname</label>
+              <input
+                id="profile-nickname"
+                type="text"
+                maxLength={100}
+                value={nickname}
+                onChange={(event) => setNickname(event.target.value)}
+                disabled={savingAccount}
+                autoComplete="nickname"
+              />
+            </div>
+
+            <div className="field">
+              <label htmlFor="profile-display-name">Display Name</label>
+              <input
+                id="profile-display-name"
                 type="text"
                 maxLength={100}
                 value={displayName}
@@ -257,6 +314,7 @@ export function ProfilePage({
                 disabled={savingAccount}
                 autoComplete="name"
               />
+              <p className="field-help">This is how your name will be displayed on the site.</p>
             </div>
 
             <h2 className="profile-section-title">Contact Info</h2>
