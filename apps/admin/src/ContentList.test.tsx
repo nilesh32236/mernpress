@@ -148,8 +148,8 @@ describe('content lists', () => {
 
     render(<ContentList user={admin} type="page" />);
 
-    expect(await screen.findByText('No pages yet')).toBeDefined();
-    expect(screen.getAllByRole('link', { name: 'Add New Page' }).length).toBeGreaterThan(0);
+    expect(await screen.findByText('No pages found.')).toBeDefined();
+    expect(screen.getByRole('link', { name: 'Add Page' })).toBeDefined();
   });
 
   it('shows an error with retry', async () => {
@@ -177,7 +177,7 @@ describe('content lists', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     render(<ContentList user={admin} type="post" />);
-    await screen.findByText('No posts yet');
+    await screen.findByText('No posts found.');
 
     fireEvent.change(screen.getByLabelText(/search posts/i), { target: { value: 'hello' } });
     fireEvent.click(screen.getByRole('button', { name: 'Search Posts' }));
@@ -225,7 +225,7 @@ describe('content lists', () => {
 
     render(<ContentList user={admin} type="post" />);
 
-    await screen.findByText('No posts yet');
+    await screen.findByText('No posts found.');
     expect(screen.getByRole('button', { name: 'All (0)' }).getAttribute('aria-current')).toBe(
       'true',
     );
@@ -238,7 +238,7 @@ describe('content lists', () => {
     );
 
     render(<ContentList user={admin} type="post" />);
-    await screen.findByText('No posts yet');
+    await screen.findByText('No posts found.');
 
     // navigate to a filtered URL
     window.history.pushState(null, '', '/posts?status=TRASHED&page=2');
@@ -261,7 +261,7 @@ describe('content lists', () => {
     );
 
     render(<ContentList user={admin} type="post" />);
-    await screen.findByText('No posts yet');
+    await screen.findByText('No posts found.');
 
     fireEvent.click(screen.getByRole('button', { name: /^Published/ }));
     await waitFor(() => expect(window.location.search).toContain('status=PUBLISHED'));

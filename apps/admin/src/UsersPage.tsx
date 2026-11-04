@@ -181,20 +181,13 @@ function generatePassword(): string {
   return Array.from(values, (value) => chars[value % chars.length]).join('');
 }
 
-function AddUserPage({
-  onCancel,
-  onCreated,
-}: {
-  onCancel: () => void;
-  onCreated: (username: string) => void;
-}) {
+function AddUserPage({ onCreated }: { onCreated: (username: string) => void }) {
   const [username, setUsername] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [website, setWebsite] = useState('');
   const [password, setPassword] = useState('');
-  const [repeatPassword, setRepeatPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<UserRole>(() => {
     try {
@@ -227,10 +220,6 @@ function AddUserPage({
     }
     if (!password) {
       setError('Password is required.');
-      return;
-    }
-    if (password !== repeatPassword) {
-      setError('The passwords do not match.');
       return;
     }
     const displayName = `${firstName.trim()} ${lastName.trim()}`.trim();
@@ -366,19 +355,6 @@ function AddUserPage({
           </div>
         </div>
         <div className="field">
-          <label htmlFor="add-user-repeat-password">Repeat Password (required)</label>
-          <input
-            id="add-user-repeat-password"
-            type={showPassword ? 'text' : 'password'}
-            value={repeatPassword}
-            onChange={(event) => setRepeatPassword(event.target.value)}
-            disabled={saving}
-            autoComplete="new-password"
-            required
-          />
-          <p className="field-help">Type the password again.</p>
-        </div>
-        <div className="field">
           <span className="field-label">Send User Notification</span>
           <div>
             <label className="checkbox-row">
@@ -419,14 +395,6 @@ function AddUserPage({
             aria-busy={saving}
           >
             {saving ? 'Creating…' : 'Add User'}
-          </button>
-          <button
-            type="button"
-            className="button secondary-button"
-            onClick={onCancel}
-            disabled={saving}
-          >
-            Cancel
           </button>
         </div>
       </form>

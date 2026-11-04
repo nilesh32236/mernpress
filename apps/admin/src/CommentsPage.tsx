@@ -12,7 +12,6 @@ import {
   type AuthUser,
 } from './api.js';
 import {
-  EmptyState,
   ErrorState,
   Modal,
   Notice,
@@ -258,6 +257,42 @@ export function CommentsPage({ user }: { user: AuthUser }) {
     }
   }
 
+  const commentsTableHead = (
+    <thead>
+      <tr>
+        <th scope="col" className="check-column">
+          <input
+            type="checkbox"
+            aria-label="Select all comments"
+            checked={items.length > 0 && selected.size === items.length}
+            onChange={toggleSelectAll}
+            disabled={!moderator}
+          />
+        </th>
+        {showAuthor ? (
+          <th scope="col" className="column-author">
+            Author
+          </th>
+        ) : null}
+        {showComment ? (
+          <th scope="col" className="column-comment">
+            Comment
+          </th>
+        ) : null}
+        {showResponse ? (
+          <th scope="col" className="column-response">
+            In response to
+          </th>
+        ) : null}
+        {showDate ? (
+          <th scope="col" className="column-date">
+            Submitted on
+          </th>
+        ) : null}
+      </tr>
+    </thead>
+  );
+
   return (
     <>
       <PageHeader title="Comments" />
@@ -340,52 +375,23 @@ export function CommentsPage({ user }: { user: AuthUser }) {
         ) : loading ? (
           <Skeleton label="Loading comments…" lines={6} />
         ) : items.length === 0 ? (
-          <EmptyState
-            title="No comments found."
-            message={
-              search
-                ? 'Try a different search.'
-                : 'Comments will appear here when readers submit them.'
-            }
-          />
+          <div className="table-scroll">
+            <table className="content-table widefat fixed striped comments">
+              <caption className="screen-reader-text">Comments</caption>
+              {commentsTableHead}
+              <tbody>
+                <tr className="no-items">
+                  <td colSpan={6}>No comments found.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         ) : (
           <>
             <div className="table-scroll">
               <table className="content-table widefat fixed striped comments">
                 <caption className="screen-reader-text">Comments</caption>
-                <thead>
-                  <tr>
-                    <th scope="col" className="check-column">
-                      <input
-                        type="checkbox"
-                        aria-label="Select all comments"
-                        checked={items.length > 0 && selected.size === items.length}
-                        onChange={toggleSelectAll}
-                        disabled={!moderator}
-                      />
-                    </th>
-                    {showAuthor ? (
-                      <th scope="col" className="column-author">
-                        Author
-                      </th>
-                    ) : null}
-                    {showComment ? (
-                      <th scope="col" className="column-comment">
-                        Comment
-                      </th>
-                    ) : null}
-                    {showResponse ? (
-                      <th scope="col" className="column-response">
-                        In response to
-                      </th>
-                    ) : null}
-                    {showDate ? (
-                      <th scope="col" className="column-date">
-                        Submitted on
-                      </th>
-                    ) : null}
-                  </tr>
-                </thead>
+                {commentsTableHead}
                 <tbody>
                   {items.map((item) => (
                     <tr key={item.id} className={selected.has(item.id) ? 'is-selected' : undefined}>

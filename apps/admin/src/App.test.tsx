@@ -155,7 +155,7 @@ describe('admin application shell', () => {
 
     const posts = await screen.findByRole('link', { name: 'Posts' });
     expect(posts.getAttribute('aria-current')).toBe('page');
-    expect(await screen.findByText('No posts yet')).toBeDefined();
+    expect(await screen.findByText('No posts found.')).toBeDefined();
   });
 });
 

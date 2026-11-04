@@ -202,12 +202,14 @@ export function PageHeader({
   return (
     <div className="page-header">
       <div className="page-header-title">
-        <h1>{title}</h1>
-        {typeof count === 'number' ? (
-          <span className="page-count" aria-hidden="true">
-            {count}
-          </span>
-        ) : null}
+        <div className="page-header-heading">
+          <h1>{title}</h1>
+          {typeof count === 'number' ? (
+            <span className="page-count" aria-hidden="true">
+              {count}
+            </span>
+          ) : null}
+        </div>
         {description ? <p className="lede">{description}</p> : null}
       </div>
       {actions ? <div className="page-actions">{actions}</div> : null}

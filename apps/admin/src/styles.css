@@ -9808,6 +9808,12 @@ a.glance-chip:hover {
    ========================================================================== */
 
 .page-header-title {
+  display: block;
+  min-width: 0;
+}
+
+/* The count bubble sits beside the h1; the description stays on its own line. */
+.page-header-heading {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -11381,4 +11387,12 @@ a.glance-chip:hover {
     flex: 1;
     width: auto;
   }
+}
+
+/* WordPress list-table empty state: a full-width row inside the table. */
+.content-table .no-items td {
+  padding: 8px 10px;
+  color: var(--wp-text);
+  font-size: 13px;
+  text-align: left;
 }

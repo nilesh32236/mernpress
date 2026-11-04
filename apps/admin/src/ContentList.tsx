@@ -584,6 +584,73 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
 
   const totalPages = Math.max(data?.pagination.totalPages ?? 1, 1);
 
+  const listTableHead = (
+    <thead>
+      <tr>
+        <th scope="col" className="check-column">
+          <input
+            type="checkbox"
+            aria-label="Select all"
+            checked={
+              (data?.items ?? []).filter((post) => canEditPost(user, post)).length > 0 &&
+              (data?.items ?? [])
+                .filter((post) => canEditPost(user, post))
+                .every((post) => selected.has(post.id))
+            }
+            onChange={() => toggleSelectAll()}
+          />
+        </th>
+        <th scope="col" className="column-title">
+          <button
+            type="button"
+            className="sortable-column"
+            aria-label="Sort by title"
+            onClick={() => toggleSort('title')}
+          >
+            Title
+            <SortIndicator direction={sort === 'title' ? order : null} />
+          </button>
+        </th>
+        {showAuthor ? (
+          <th scope="col" className="column-author">
+            Author
+          </th>
+        ) : null}
+        {showCategories ? (
+          <th scope="col" className="column-categories">
+            Categories
+          </th>
+        ) : null}
+        {showTags ? (
+          <th scope="col" className="column-tags">
+            Tags
+          </th>
+        ) : null}
+        {showComments ? (
+          <th scope="col" className="column-comments">
+            <span className="screen-reader-text">Comments</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 4h16v12H8l-4 4V4z" fill="none" stroke="currentColor" strokeWidth="1.6" />
+            </svg>
+          </th>
+        ) : null}
+        {showDate ? (
+          <th scope="col" className="column-date">
+            <button
+              type="button"
+              className="sortable-column"
+              aria-label={`Sort by date${sort === 'updatedAt' && order === 'desc' ? ', descending' : ''}`}
+              onClick={() => toggleSort('updatedAt')}
+            >
+              Date
+              <SortIndicator direction={sort === 'updatedAt' ? order : null} />
+            </button>
+          </th>
+        ) : null}
+      </tr>
+    </thead>
+  );
+
   return (
     <div className={`wp-list-screen${viewMode === 'compact' ? ' compact-view' : ''}`}>
       <div className="list-title-row">
@@ -799,28 +866,23 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
       ) : loading ? (
         <Skeleton label={`Loading ${label.toLowerCase()}…`} lines={5} />
       ) : !data || data.items.length === 0 ? (
-        <EmptyState
-          title={search || status ? 'No matching content' : `No ${label.toLowerCase()} yet`}
-          message={
-            search || status
-              ? 'Try a different search term or status filter.'
-              : `Create your first ${type} to get started.`
-          }
-          action={
-            canCreateContent(user) ? (
-              <a
-                className="button primary-button"
-                href={newContentPath(type)}
-                onClick={(event) => {
-                  event.preventDefault();
-                  navigate(newContentPath(type));
-                }}
-              >
-                Add New {type === 'post' ? 'Post' : 'Page'}
-              </a>
-            ) : null
-          }
-        />
+        <div className="table-scroll">
+          <table
+            className={`content-table widefat fixed striped ${type === 'page' ? 'pages' : 'posts'}`}
+          >
+            <caption className="screen-reader-text">{label}</caption>
+            {listTableHead}
+            <tbody>
+              <tr className="no-items">
+                <td colSpan={type === 'page' ? 5 : 7}>
+                  {search || status
+                    ? 'No matching content found.'
+                    : `No ${label.toLowerCase()} found.`}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       ) : (
         <>
           {bulkEditOpen ? (
@@ -866,75 +928,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
               className={`content-table widefat fixed striped ${type === 'page' ? 'pages' : 'posts'}`}
             >
               <caption className="screen-reader-text">{label}</caption>
-              <thead>
-                <tr>
-                  <th scope="col" className="check-column">
-                    <input
-                      type="checkbox"
-                      aria-label="Select all"
-                      checked={
-                        data.items.filter((post) => canEditPost(user, post)).length > 0 &&
-                        data.items
-                          .filter((post) => canEditPost(user, post))
-                          .every((post) => selected.has(post.id))
-                      }
-                      onChange={() => toggleSelectAll()}
-                    />
-                  </th>
-                  <th scope="col" className="column-title">
-                    <button
-                      type="button"
-                      className="sortable-column"
-                      aria-label="Sort by title"
-                      onClick={() => toggleSort('title')}
-                    >
-                      Title
-                      <SortIndicator direction={sort === 'title' ? order : null} />
-                    </button>
-                  </th>
-                  {showAuthor ? (
-                    <th scope="col" className="column-author">
-                      Author
-                    </th>
-                  ) : null}
-                  {showCategories ? (
-                    <th scope="col" className="column-categories">
-                      Categories
-                    </th>
-                  ) : null}
-                  {showTags ? (
-                    <th scope="col" className="column-tags">
-                      Tags
-                    </th>
-                  ) : null}
-                  {showComments ? (
-                    <th scope="col" className="column-comments">
-                      <span className="screen-reader-text">Comments</span>
-                      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-                        <path
-                          d="M4 4h16v12H8l-4 4V4z"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.6"
-                        />
-                      </svg>
-                    </th>
-                  ) : null}
-                  {showDate ? (
-                    <th scope="col" className="column-date">
-                      <button
-                        type="button"
-                        className="sortable-column"
-                        aria-label={`Sort by date${sort === 'updatedAt' && order === 'desc' ? ', descending' : ''}`}
-                        onClick={() => toggleSort('updatedAt')}
-                      >
-                        Date
-                        <SortIndicator direction={sort === 'updatedAt' ? order : null} />
-                      </button>
-                    </th>
-                  ) : null}
-                </tr>
-              </thead>
+              {listTableHead}
               <tbody>
                 {data.items.map((post) => {
                   const transitions = availableTransitions(user, post);
