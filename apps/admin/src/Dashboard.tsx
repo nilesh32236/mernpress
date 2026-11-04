@@ -100,9 +100,7 @@ function Postbox({
             aria-label={`Move ${title} box up`}
             onClick={canMoveUp ? onMoveUp : undefined}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="m18 15-6-6-6 6" fill="none" stroke="currentColor" strokeWidth="2" />
-            </svg>
+            <span className="dashicons dashicons-arrow-up-alt2" aria-hidden="true" />
           </button>
           <button
             type="button"
@@ -111,9 +109,7 @@ function Postbox({
             aria-label={`Move ${title} box down`}
             onClick={canMoveDown ? onMoveDown : undefined}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" />
-            </svg>
+            <span className="dashicons dashicons-arrow-down-alt2" aria-hidden="true" />
           </button>
           <button
             type="button"
@@ -122,15 +118,10 @@ function Postbox({
             aria-label={`Toggle panel: ${title}`}
             onClick={() => setOpen((value) => !value)}
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
+            <span
+              className={`dashicons ${open ? 'dashicons-arrow-up' : 'dashicons-arrow-down'}`}
               aria-hidden="true"
-              style={{ transform: open ? 'none' : 'rotate(180deg)' }}
-            >
-              <path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" />
-            </svg>
+            />
           </button>
         </div>
       </div>
