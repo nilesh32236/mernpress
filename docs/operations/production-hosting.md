@@ -320,3 +320,8 @@ MERNPRESS_API_URL=http://127.0.0.1:4000 pnpm build`, symlinked at
 Rollback: repoint the symlink to the previous release and restart
 `mernpress-api`/`mernpress-web`; the name-part columns are additive and inert to
 the previous build.
+
+- `20261104T025333Z-87e4eae` — final parity batch (Dashicons, media infinite
+  scrolling/Profile preference, Tools categories/tags converter, Updates
+  screen, postbox controls, General Settings detail). Production `/`,
+  `/admin/`, `/api/health` verified 200; no schema change.

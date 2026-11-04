@@ -2119,3 +2119,24 @@ update-checking, post-by-email/update-services, feeds' per-post editor UI,
 Discussion/Media/Permalinks/Privacy settings, Tools import/personal-data/editors,
 profile language/syntax-highlighting options. These are documented rather than
 shown as empty screens.
+
+### 2026-11-04 — Final parity batch (Dashicons, media scrolling, tools, updates)
+
+- Sidebar, admin-bar New menu, collapse control and admin-bar search now use the
+  WordPress Dashicons font; postbox order/collapse controls use its arrow
+  glyphs and stay visible like wp-admin.
+- Media Library grid uses WordPress infinite scrolling; the Profile gains the
+  "Disable infinite scrolling in the Media Library grid view" preference.
+  Grid tiles reveal the attachment filename on hover/focus.
+- Tools gained a transactional Categories and Tags Converter
+  (`POST /api/admin/terms/convert`) with a Tools landing card and confirmation.
+- Updates now follows the update-core layout (Updates → MERNPress → version
+  table → latest-version message).
+- General Settings restores the Site Icon row under Tagline, adds the
+  translation glyph to Site Language, uses UTC+0 and the measured WordPress
+  select widths.
+- Profile adds Toolbar and First/Last/Nickname/Display Name; login matches the
+  wp-login geometry and #3858e9 action colour; public footer is 427px with the
+  theme/credit bottom row and `F j, Y` dates.
+- All 541 unit/integration tests (API 341, admin 122, block-system 65, web 13),
+  23 E2E tests, lint, typecheck and build pass.
