@@ -2292,3 +2292,12 @@ overflow. A follow-up mobile-table patch was released as
   inline help and save feedback.
 - Validation: 555 unit/integration tests (API 354, admin 123, block-system 65,
   web 13), 23 Playwright E2E tests and six builds pass.
+
+**Deployment:** release `20261104T100143Z-c2d5505` (production symlink
+`/opt/mernpress/current`). `/`, `/admin/`, `/api/health`, `/api/public/site`,
+`/feed` return 200 and `/nope` returns 404. The public settings payload now
+includes `"permalinkBase":"posts"` and `"showAvatars":true`, so URL building and
+the avatar preference are live without further migration (the new groups are
+option rows written on first save). The production API build contains the
+extended `group` enum and the admin bundle contains the Discussion, Media,
+Permalink and Privacy screens.
