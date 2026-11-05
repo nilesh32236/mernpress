@@ -3922,3 +3922,14 @@ notes/replies, note-author mail on deletion, and suppression when
   eligible editor only, once, including `notes_notify` off; panel hint.
 - Validation: 815 unit/integration tests (API 493, admin 211, web 38,
   block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.
+
+**Deployment (@mentions):** release `20261105T181524Z-a370f1c` (current).
+Production verification with a temporary administrator: the Notes panel showed
+the mention hint (“Type @username to notify a teammate. Only people who can
+edit this post receive mention emails.”); a note containing
+`@verify-temp-admin` was accepted and stored verbatim. Production mail is
+unconfigured (`{configured:false}`), so no mention message could be delivered;
+the delivery path is covered by the in-memory transport tests (eligible editor
+notified once, ineligible users/self skipped, `notes_notify` respected). The
+temporary post/admin were deleted; production is back to 1 user, 2 posts and 0
+notes, with `/`, `/admin/`, `/api/health` and `/posts/testcom` at 200.
