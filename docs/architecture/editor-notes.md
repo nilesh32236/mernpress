@@ -69,8 +69,14 @@ account policy, ignores email addresses, deduplicates and caps at ten. On note
 or reply creation, `NoteService` looks the users up, skips disabled accounts,
 the actor, the post author (already notified) and anyone failing
 `canEditPost`, then calls `MailService.notifyNoteMention`. Mention mail shares
-the `notes_notify` switch and the mail log; it is best effort. The panel shows a
-hint above the thread list.
+the `notes_notify` switch and the mail log; it is best effort.
+
+The composer uses `apps/admin/src/editor/MentionTextarea.tsx`: typing `@query`
+debounces 150 ms and calls `GET /api/admin/posts/:id/note-mentions?search=`,
+which returns up to eight active users who can edit the post, excluding the
+caller. Arrow Up/Down move the active option; Enter or a click inserts
+`@username `; Escape closes. The panel always states that only people who can
+edit the post receive mention emails.
 
 ## Rules and limits
 

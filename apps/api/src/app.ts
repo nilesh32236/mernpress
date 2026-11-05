@@ -70,6 +70,7 @@ import { registerPrivacyPolicyRoutes } from './routes/privacy-policy.js';
 import { registerCustomizerRoutes } from './routes/customizer.js';
 import { registerSpamGuardRoutes } from './routes/spam-guard.js';
 import { registerNoteRoutes } from './routes/notes.js';
+import { registerNoteMentionRoutes } from './routes/note-mentions.js';
 import { registerBackupRoutes } from './routes/backups.js';
 import { registerRedirectRoutes, registerPublicRedirectRoutes } from './routes/redirects.js';
 import { registerAdminHealthRoutes } from './routes/admin-health.js';
@@ -413,6 +414,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerCustomizerRoutes(app, { env, auth, customizer });
   registerSpamGuardRoutes(app, { env, auth, spamGuard });
   registerNoteRoutes(app, { env, auth, notes });
+  registerNoteMentionRoutes(app, { env, auth, notes });
   registerRedirectRoutes(app, { env, auth, redirects });
   registerBackupRoutes(app, { env, auth, backups });
   registerPublicRedirectRoutes(app, { redirects });

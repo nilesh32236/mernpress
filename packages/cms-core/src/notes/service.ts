@@ -5,7 +5,13 @@ import { canEditPost } from '../content/service.js';
 import { roleHasCapability } from '../auth/capabilities.js';
 import { extractMentions } from './mentions.js';
 import type { MailService } from '../mail/service.js';
-import type { CreatePostNoteInput, NoteAuthor, NoteBlockAnchor, PostNote } from './types.js';
+import type {
+  CreatePostNoteInput,
+  NoteAuthor,
+  NoteBlockAnchor,
+  NoteMentionCandidate,
+  PostNote,
+} from './types.js';
 
 /**
  * Editor notes: per-post discussion threads for the people who can edit the
@@ -254,6 +260,51 @@ export function createNoteService({ prisma, mail }: NoteServiceOptions) {
     return toNote(row);
   }
 
+  /**
+   * Users the @mention picker may suggest: active accounts (other than the
+   * caller) that can edit this post under the current role/ownership policy.
+   */
+  async function mentionCandidates(
+    principal: Principal,
+    postId: string,
+    search = '',
+  ): Promise<NoteMentionCandidate[]> {
+    const post = await loadEditablePost(principal, postId);
+    const term = search.trim().toLowerCase().slice(0, 100);
+    const rows = await prisma.user.findMany({
+      where: {
+        status: 'active',
+        id: { not: principal.userId },
+        ...(term.length > 0
+          ? {
+              OR: [
+                { username: { contains: term, mode: 'insensitive' as const } },
+                { displayName: { contains: term, mode: 'insensitive' as const } },
+              ],
+            }
+          : {}),
+      },
+      select: { id: true, username: true, displayName: true, role: true },
+      orderBy: { username: 'asc' },
+      take: 50,
+    });
+    const candidates: NoteMentionCandidate[] = [];
+    for (const user of rows) {
+      try {
+        canEditPost({ userId: user.id, role: user.role }, post.authorId, post.status);
+      } catch {
+        continue;
+      }
+      candidates.push({
+        id: user.id,
+        username: user.username,
+        displayName: user.displayName,
+      });
+      if (candidates.length >= 8) break;
+    }
+    return candidates;
+  }
+
   async function setResolved(
     principal: Principal,
     postId: string,
@@ -351,7 +402,7 @@ export function createNoteService({ prisma, mail }: NoteServiceOptions) {
     }
   }
 
-  return { list, create, setResolved, remove };
+  return { list, create, setResolved, remove, mentionCandidates };
 }
 
 export type NoteService = ReturnType<typeof createNoteService>;

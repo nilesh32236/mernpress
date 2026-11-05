@@ -1041,6 +1041,32 @@ export async function saveScreenOptions(options: ScreenOptionsState): Promise<Sc
   return body.options;
 }
 
+// ---- Editor-note mention candidates ----
+export interface NoteMentionCandidate {
+  id: string;
+  username: string;
+  displayName: string | null;
+}
+
+export async function fetchNoteMentionCandidates(
+  postId: string,
+  search = '',
+): Promise<NoteMentionCandidate[]> {
+  const params = new URLSearchParams();
+  if (search.trim().length > 0) params.set('search', search.trim());
+  const suffix = params.toString() ? `?${params.toString()}` : '';
+  const response = await fetch(
+    `/api/admin/posts/${encodeURIComponent(postId)}/note-mentions${suffix}`,
+    {
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { accept: 'application/json' },
+    },
+  );
+  const body = await readJson<{ items?: NoteMentionCandidate[] }>(response);
+  return Array.isArray(body.items) ? body.items : [];
+}
+
 // ---- Editor notes ----
 export interface PostNoteAuthor {
   id: string;

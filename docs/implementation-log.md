@@ -3933,3 +3933,22 @@ the delivery path is covered by the in-memory transport tests (eligible editor
 notified once, ineligible users/self skipped, `notes_notify` respected). The
 temporary post/admin were deleted; production is back to 1 user, 2 posts and 0
 notes, with `/`, `/admin/`, `/api/health` and `/posts/testcom` at 200.
+
+### 2026-11-05 — @mention autocomplete in the note composer
+
+- Added `GET /api/admin/posts/:id/note-mentions?search=`: up to eight active
+  users who can edit the post (same `canEditPost` policy), excluding the caller,
+  matched by username or display name. Users who cannot edit the post and
+  disabled accounts are never suggested.
+- The note and reply composers now use `MentionTextarea`: typing `@query`
+  debounces 150 ms, shows a listbox of candidates and supports Arrow Up/Down,
+  Enter or click to insert `@username `, and Escape to close. The panel keeps
+  the hint that only post editors receive mention emails.
+- Browser verification (in-memory mail): typing `@men` showed
+  “Mention Dev @mention-dev”; Enter inserted `@mention-dev `; saving the note
+  stored it and produced a mention mail-log entry to `dev-mention@example.com`.
+  The temp post, user and mail log were cleaned up.
+- Tests: API candidate eligibility/search/limit/permission/404, picker keyboard/
+  mouse/empty-state behaviour, and the panel hint.
+- Validation: 822 unit/integration tests (API 496, admin 215, web 38,
+  block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.

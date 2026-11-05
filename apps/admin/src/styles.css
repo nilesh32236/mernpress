@@ -12931,3 +12931,68 @@ a.glance-chip:hover {
   background: #f0f0f1;
   font-size: 11px;
 }
+
+/* Note composer @mention picker. */
+.mention-textarea {
+  position: relative;
+}
+
+.mention-suggestions {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #8c8f94;
+  border-radius: 2px;
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+}
+
+.mention-suggestions ul {
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+}
+
+.mention-suggestions [role='option'] {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 10px;
+  color: #1d2327;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.mention-suggestions [role='option'] strong {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mention-suggestions [role='option'] span {
+  color: #646970;
+  font-size: 11px;
+}
+
+.mention-suggestions [role='option'].is-active,
+.mention-suggestions [role='option']:hover {
+  background: #2271b1;
+  color: #ffffff;
+}
+
+.mention-suggestions [role='option'].is-active span,
+.mention-suggestions [role='option']:hover span {
+  color: #f0f0f1;
+}
+
+.mention-empty {
+  padding: 6px 10px;
+  color: #646970;
+  font-size: 11px;
+}

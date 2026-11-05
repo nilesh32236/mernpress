@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import type { NoteBlockAnchor, PostNote, PostNoteAuthor } from '../api.js';
 import { formatDateTime, formatRelativeTime } from '../format.js';
 import { anchorSummary, resolveBlockAnchor, type BlockAnchor } from './blockAnchors.js';
+import { MentionTextarea } from './MentionTextarea.js';
 import type { PostNotesState } from './usePostNotes.js';
 
 function authorName(author: PostNoteAuthor | null): string {
@@ -175,13 +176,13 @@ export function NotesPanel({
         <label htmlFor="note-new" className="screen-reader-text">
           Add a note
         </label>
-        <textarea
+        <MentionTextarea
           id="note-new"
+          postId={postId}
           rows={3}
           value={draft}
-          maxLength={2000}
           placeholder="Add a note for the editors…"
-          onChange={(event) => setDraft(event.target.value)}
+          onChange={setDraft}
           disabled={state.busy}
         />
         <p className="note-anchor-line">
@@ -315,12 +316,12 @@ export function NotesPanel({
                     <label htmlFor={`note-reply-${thread.id}`} className="screen-reader-text">
                       Write a reply
                     </label>
-                    <textarea
+                    <MentionTextarea
                       id={`note-reply-${thread.id}`}
+                      postId={postId}
                       rows={2}
                       value={replyDraft}
-                      maxLength={2000}
-                      onChange={(event) => setReplyDraft(event.target.value)}
+                      onChange={setReplyDraft}
                       disabled={state.busy}
                     />
                     <div className="note-compose-actions">

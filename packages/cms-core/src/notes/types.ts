@@ -33,6 +33,13 @@ export interface PostNote {
   block: NoteBlockAnchor | null;
 }
 
+/** A user the mention picker may suggest for a post. */
+export interface NoteMentionCandidate {
+  id: string;
+  username: string;
+  displayName: string | null;
+}
+
 export interface CreatePostNoteInput {
   content: string;
   /** Root note id; replies are one level deep. */

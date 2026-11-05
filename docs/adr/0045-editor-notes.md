@@ -54,14 +54,18 @@ never leak to the public site.
    else's note emails the note author. Delivery is best effort and never fails
    the note operation. Messages contain the post title/link, actor and a note
    excerpt — never tokens or credentials.
-8. **@username mentions.** Mentions are parsed server-side with the account
-   username policy (3–32 characters, lowercase letters/digits/dots/underscores/
-   hyphens; email addresses are not mentions), deduplicated and capped at ten
-   per message. A mentioned user is emailed only when the account is active,
-   has an email, is not the note author and is **eligible to edit the post**
-   (`canEditPost`); the post author is skipped because they already receive the
-   note/reply mail. The mention mail (`notifyNoteMention`) is controlled by the
-   same `notes_notify` option and is best effort. The panel states that only
+8. **@username mentions with a picker.** Mentions are parsed server-side with
+   the account username policy (3–32 characters, lowercase letters/digits/
+   dots/underscores/hyphens; email addresses are not mentions), deduplicated
+   and capped at ten per message. A mentioned user is emailed only when the
+   account is active, has an email, is not the note author and is **eligible to
+   edit the post** (`canEditPost`); the post author is skipped because they
+   already receive the note/reply mail. The mention mail (`notifyNoteMention`)
+   is controlled by the same `notes_notify` option and is best effort. The note
+   composer (root and reply) has an autocomplete picker: typing `@query` calls
+   `GET /api/admin/posts/:id/note-mentions`, which returns at most eight active
+   users who can edit the post (excluding the caller), and the author selects
+   with the mouse or Arrow Up/Down + Enter/Escape. The panel states that only
    people who can edit the post receive mention emails.
 
 ## Consequences
