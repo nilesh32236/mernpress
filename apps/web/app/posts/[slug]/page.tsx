@@ -63,15 +63,18 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   const morePosts = recent?.items ?? [];
   const base = await getPermalinkBase();
 
-  // Related posts: same primary category first, otherwise newest posts. The
-  // current post is always excluded so it cannot recommend itself.
+  // Related posts come from the primary category. The current post is always
+  // excluded; when no category matches exist the component falls back to the
+  // newest posts as "More posts" (still excluding the current post).
   const primaryCategory = post.terms.categories[0]?.slug;
   const relatedData = primaryCategory
     ? await listPublicPosts({ category: primaryCategory, page: 1, perPage: 6 }).catch(() => null)
     : null;
-  const relatedPosts = (relatedData?.items?.length ? relatedData.items : morePosts)
-    .filter((entry) => entry.id !== post.id)
-    .slice(0, 3);
+  // Only same-category results are "Related posts"; when there are none the
+  // component falls back to the newest posts and labels them "More posts".
+  const relatedPosts = primaryCategory
+    ? (relatedData?.items ?? []).filter((entry) => entry.id !== post.id).slice(0, 3)
+    : [];
   const canonical = post.canonicalUrl ?? `${siteUrl()}${postPath(post.slug, base)}`;
   return (
     <>
