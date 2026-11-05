@@ -3887,3 +3887,17 @@ and the temporary administrator were deleted; production is back to 1 user and
   (post author on note/reply, note author on deletion, `notes_notify` off).
 - Validation: 812 unit/integration tests (API 490, admin 211, web 38,
   block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.
+
+**Deployment (note deletion + notifications):** release
+`20261105T180222Z-c6dc930` (current). Production verification with a temporary
+administrator on a draft with a root note and one reply: the Notes panel showed
+both Delete actions; confirming “Delete this reply?” removed the reply
+(server returned only the root), then “Delete this note thread and all of its
+replies?” removed the root (server 0 notes, panel “No notes yet”). Two
+`content.note.deleted` audit events were written (reply with its parent id, root
+without a parent). The temporary post, notes and administrator were deleted;
+production is back to 1 user, 2 posts and 0 notes. Mail delivery is not
+configured in production (no SMTP credentials), so notification behaviour was
+verified against the in-memory transport in the API suite: post-author mail on
+notes/replies, note-author mail on deletion, and suppression when
+`notes_notify` is off.
