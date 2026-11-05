@@ -123,6 +123,6 @@ missing screens. They are the next audit targets.
 | --- | --- | --- |
 | Quick Edit | Title, slug, date, author, categories, tags, comments, status, sticky. | Password, Private, Allow Pings. |
 | Bulk Edit | Categories, tags, author, comments, sticky, status. | Pings and Format. |
-| Editor Options menu | Settings, Switch to draft, Move to trash. | Code editor, keyboard shortcuts, welcome guide, copy all content, preferences, plugins. |
+| Editor Options menu | Settings, Code editor, Keyboard shortcuts, Welcome guide, Copy all content, Plugins, Switch to draft, Move to trash. | Preferences (editor preference modal). |
 | Post sidebar extras | Preview token, SEO and revisions are MERNPress additions shown after the WordPress panels. | No equivalent panels; WordPress revisions live in the editor's document overview. |
 

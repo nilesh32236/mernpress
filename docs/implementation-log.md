@@ -3135,3 +3135,19 @@ social title from the post title and the social description; both plugins were
 then deactivated (Hello MERNPress remains the only active plugin). The test post
 and temporary administrator were deleted; `/`, `/admin/` and `/api/health`
 return 200.
+
+
+### 2026-11-05 — Editor Options menu parity
+
+- The block editor's Options menu now matches WordPress's entries: Settings,
+  Code editor, Keyboard shortcuts, Welcome guide, Copy all content, Plugins,
+  Switch to draft and Move to trash.
+- Code editor opens a raw block-markup textarea wired to the same save path, so
+  the server still validates and sanitizes before persisting; invalid markup is
+  rejected. Keyboard shortcuts and Welcome guide are real dialogs describing the
+  editor's actual controls. Copy all content copies the stored block markup.
+  Plugins navigates to the plugin screen.
+- Remaining difference: WordPress's Preferences (editor preference modal) is not
+  modelled.
+- Validation: 669 unit/integration tests (API 420, admin 160, web 24,
+  block-system 65), 23 Playwright E2E tests and six builds pass.

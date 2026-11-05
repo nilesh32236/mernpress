@@ -194,6 +194,7 @@ export function ContentEditor({
   const [revisionsError, setRevisionsError] = useState<string | null>(null);
   const [viewingRevision, setViewingRevision] = useState<AdminRevisionDetail | null>(null);
   const [revisionBusy, setRevisionBusy] = useState(false);
+  const [editorDialog, setEditorDialog] = useState<null | 'code' | 'shortcuts' | 'welcome'>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<string | null>(null);
   const [toolbarSlot, setToolbarSlot] = useState<HTMLElement | null>(null);
@@ -1228,6 +1229,36 @@ export function ContentEditor({
                 <button type="button" onClick={() => setSidebarOpen(true)}>
                   Settings
                 </button>
+                <button type="button" onClick={() => setEditorDialog('code')}>
+                  Code editor
+                </button>
+                <button type="button" onClick={() => setEditorDialog('shortcuts')}>
+                  Keyboard shortcuts
+                </button>
+                <button type="button" onClick={() => setEditorDialog('welcome')}>
+                  Welcome guide
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void navigator.clipboard
+                      ?.writeText(form.content)
+                      .then(() =>
+                        setNotice({
+                          tone: 'success',
+                          text: 'All content copied to the clipboard.',
+                        }),
+                      )
+                      .catch(() =>
+                        setNotice({ tone: 'error', text: 'Could not copy the content.' }),
+                      );
+                  }}
+                >
+                  Copy all content
+                </button>
+                <button type="button" onClick={() => navigate('/plugins')}>
+                  Plugins
+                </button>
                 {post && transitions.includes('unpublish') ? (
                   <button
                     type="button"
@@ -2203,6 +2234,89 @@ export function ContentEditor({
         )}
         <div className="editor-footer">{type === 'post' ? 'Post' : 'Page'}</div>
       </div>
+
+      {editorDialog ? (
+        <div
+          className="editor-dialog-backdrop"
+          role="presentation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setEditorDialog(null);
+          }}
+        >
+          <div
+            className={`editor-dialog is-${editorDialog}`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="editor-dialog-title"
+          >
+            <div className="editor-dialog-head">
+              <h2 id="editor-dialog-title">
+                {editorDialog === 'code'
+                  ? 'Code editor'
+                  : editorDialog === 'shortcuts'
+                    ? 'Keyboard shortcuts'
+                    : 'Welcome guide'}
+              </h2>
+              <button
+                type="button"
+                className="button secondary-button"
+                onClick={() => setEditorDialog(null)}
+              >
+                Close
+              </button>
+            </div>
+            {editorDialog === 'code' ? (
+              <>
+                <p className="field-help">
+                  Edit the raw block markup. The server validates and sanitizes it when you save;
+                  invalid markup is rejected rather than stored.
+                </p>
+                <textarea
+                  className="editor-code-textarea"
+                  aria-label="Raw block markup"
+                  value={form.content}
+                  onChange={(event) => updateForm('content', event.target.value)}
+                  spellCheck={false}
+                  rows={18}
+                />
+              </>
+            ) : editorDialog === 'shortcuts' ? (
+              <table className="editor-shortcuts">
+                <caption className="screen-reader-text">Editor keyboard shortcuts</caption>
+                <tbody>
+                  {[
+                    ['Ctrl/Cmd + S', 'Save the draft'],
+                    ['Ctrl/Cmd + K', 'Open the admin command palette'],
+                    ['Esc', 'Close a dialog, panel or the options menu'],
+                    ['Tab / Shift + Tab', 'Move between editor controls'],
+                  ].map(([keys, action]) => (
+                    <tr key={keys}>
+                      <th scope="row">{keys}</th>
+                      <td>{action}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="editor-welcome">
+                <p>The editor is arranged like WordPress:</p>
+                <ul>
+                  <li>The top bar holds the inserter, undo/redo, document overview and Save.</li>
+                  <li>The canvas is the document; select a block to see its toolbar.</li>
+                  <li>The right sidebar holds the document and block settings.</li>
+                  <li>
+                    Options contains the code editor, keyboard shortcuts, copy all content, plugins
+                    and the status actions.
+                  </li>
+                </ul>
+                <p className="field-help">
+                  Content is stored as WordPress-compatible block markup and rendered by the server.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
 
       {viewingRevision ? (
         <div

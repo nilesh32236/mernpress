@@ -1047,4 +1047,41 @@ describe('editor autosave (P8-02)', () => {
       vi.useRealTimers();
     }
   });
+  it('opens the WordPress editor Options dialogs', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(response(termsPage()))
+      .mockResolvedValueOnce(response(termsPage()));
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA);
+    await screen.findByLabelText('Title');
+
+    // The options panel renders all WordPress-style entries.
+    for (const name of [
+      'Code editor',
+      'Keyboard shortcuts',
+      'Welcome guide',
+      'Copy all content',
+      'Plugins',
+    ]) {
+      expect(screen.getByRole('button', { name })).toBeDefined();
+    }
+
+    fireEvent.click(screen.getByRole('button', { name: 'Code editor' }));
+    const codeDialog = await screen.findByRole('dialog', { name: 'Code editor' });
+    const textarea = within(codeDialog).getByLabelText('Raw block markup');
+    fireEvent.change(textarea, { target: { value: '<!-- wp:paragraph --><p>Raw</p>' } });
+    expect((textarea as HTMLTextAreaElement).value).toBe('<!-- wp:paragraph --><p>Raw</p>');
+    fireEvent.click(within(codeDialog).getByRole('button', { name: 'Close' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Keyboard shortcuts' }));
+    const shortcuts = await screen.findByRole('dialog', { name: 'Keyboard shortcuts' });
+    expect(within(shortcuts).getByText('Ctrl/Cmd + S')).toBeDefined();
+    fireEvent.click(within(shortcuts).getByRole('button', { name: 'Close' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Welcome guide' }));
+    const welcome = await screen.findByRole('dialog', { name: 'Welcome guide' });
+    expect(within(welcome).getByText(/The top bar holds the inserter/)).toBeDefined();
+  });
 });

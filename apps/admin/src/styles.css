@@ -11988,3 +11988,82 @@ a.glance-chip:hover {
   display: inline-flex;
   margin-right: 14px;
 }
+
+/* Editor Options dialogs: code editor, shortcuts and welcome guide. */
+.editor-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.editor-dialog {
+  width: min(720px, 96vw);
+  max-height: 88vh;
+  overflow: auto;
+  padding: 20px 24px 24px;
+  border-radius: 2px;
+  background: #ffffff;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.editor-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.editor-dialog-head h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1d2327;
+}
+
+.editor-code-textarea {
+  width: 100%;
+  min-height: 320px;
+  padding: 10px 12px;
+  border: 1px solid #8c8f94;
+  border-radius: 2px;
+  font-family: Consolas, Monaco, 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.editor-shortcuts {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.editor-shortcuts th,
+.editor-shortcuts td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #dcdcde;
+  text-align: left;
+}
+
+.editor-shortcuts th {
+  width: 42%;
+  font-family: Consolas, Monaco, monospace;
+  font-weight: 600;
+}
+
+.editor-welcome ul {
+  margin: 8px 0 12px;
+  padding-left: 20px;
+}
+
+.editor-welcome li {
+  margin: 6px 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
