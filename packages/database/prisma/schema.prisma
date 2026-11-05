@@ -64,6 +64,8 @@ model User {
   comments               Comment[]
   dataRequests           DataRequest[]
   applicationPasswords   ApplicationPassword[]
+  postNotes              PostNote[]              @relation("PostNoteAuthor")
+  resolvedPostNotes      PostNote[]              @relation("PostNoteResolver")
   passwordResets         PasswordReset[]
   twoFactorRecoveryCodes TwoFactorRecoveryCode[]
   twoFactorChallenges    TwoFactorChallenge[]
@@ -279,6 +281,7 @@ model Post {
   slugHistory   PostSlugHistory[]
   revisions     PostRevision[]
   comments      Comment[]
+  notes         PostNote[]
   featuredMedia MediaItem?        @relation(fields: [featuredMediaId], references: [id], onDelete: SetNull)
 
   @@unique([type, slug])
@@ -468,4 +471,27 @@ model Option {
 
   @@index([group])
   @@map("options")
+}
+
+/// Editor notes: per-post discussion threads with replies and a resolved flag.
+/// Notes are internal (never public) and require permission to edit the post.
+model PostNote {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  postId       String    @map("post_id") @db.Uuid
+  authorId     String?   @map("author_id") @db.Uuid
+  parentId     String?   @map("parent_id") @db.Uuid
+  content      String    @db.Text
+  resolvedAt   DateTime? @map("resolved_at") @db.Timestamptz(6)
+  resolvedById String?   @map("resolved_by_id") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  post       Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author     User?      @relation("PostNoteAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  resolvedBy User?      @relation("PostNoteResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  parent     PostNote?  @relation("PostNoteThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    PostNote[] @relation("PostNoteThread")
+
+  @@index([postId, createdAt])
+  @@map("post_notes")
 }

@@ -92,7 +92,6 @@ now matches WordPress.
 
 | Deviation | Reason |
 | --- | --- |
-| Editor notes | WordPress's Notes/All notes panel has no equivalent; not a content feature. |
 | Single Customizer menu location | Themes are token packages with one header menu; multiple menu locations/widget areas are not implemented (ADR 0041). |
 | Akismet replaced by a local guard | External account, API key and per-comment data transfer were not accepted; the heuristic guard is local (ADR 0042). |
 | Allow Pings | No XML-RPC endpoint or inbound link verification; shown disabled and explained (ADR 0043). |

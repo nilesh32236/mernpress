@@ -3749,3 +3749,28 @@ reloading restored midnight from the session (cache repopulated, radio checked,
 accent `#e14d43`), proving the server is authoritative. The temporary
 administrator was deleted; production is back to 1 user with the default
 scheme, and `/`, `/admin/`, `/api/health` and `/posts/testcom` return 200.
+
+### 2026-11-05 — Editor notes (per-post threads)
+
+- Added `post_notes` (migration `20261105163351_add_post_notes`): root notes and
+  one reply level, author, timestamps and a root `resolved_at/resolved_by`;
+  deleting a post cascades, deleting a user nulls the author.
+- `NoteService` implements list/create/reply/resolve with the existing
+  `canEditPost` policy. `GET/POST /api/admin/posts/:id/notes` and
+  `PATCH …/:noteId` validate strict bodies (1–2,000 characters), return 201 on
+  creation, reject nested replies and resolving replies, and refuse reads or
+  writes from users who cannot edit the post (401 anonymous, 403 non-owner).
+- The editor sidebar gained a **Notes** tab and the header an **All notes**
+  button with an unresolved-count bubble. The panel composes notes, lists
+  threads open-first, shows author display names and relative timestamps,
+  replies, resolves/reopens and explains that notes are internal. New unsaved
+  content shows “save the draft first”.
+- Tests: API create/reply/list/resolve/reopen, reply-to-resolved and nested
+  reply rejection, content and id validation, 404s, anonymous 401 and
+  author-vs-editor permissions; admin panel rendering/add/reply/resolve/reopen/
+  error states and an editor integration test for the header count and panel.
+- Browser verification on the dev post: added a note (author + count 1), replied
+  (1 open / 2 total), resolved (“Resolved by admin”, count cleared), reloaded
+  and confirmed persistence, then reopened (1 open, Reply returned).
+- Validation: 791 unit/integration tests (API 484, admin 198, web 38,
+  block-system 65, contracts 6), 23 Playwright E2E tests and seven builds pass.

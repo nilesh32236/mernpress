@@ -394,3 +394,7 @@ export {
   type SpamGuardSettings,
   type SpamGuardState,
 } from './comments/spam-service.js';
+
+// ---- Editor notes (per-post threads) ----
+export { createNoteService, type NoteService, type NoteServiceOptions } from './notes/service.js';
+export type { CreatePostNoteInput, NoteAuthor, PostNote } from './notes/types.js';

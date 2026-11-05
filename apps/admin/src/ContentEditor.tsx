@@ -59,6 +59,8 @@ import {
   type EditorPreferences,
 } from './editorPreferences.js';
 import type { BlockCanvasHandle } from './editor/BlockCanvas.js';
+import { NotesPanel } from './editor/NotesPanel.js';
+import { usePostNotes } from './editor/usePostNotes.js';
 
 // The WordPress canvas is a large chunk; load it only on new/edit routes.
 const BlockCanvas = lazy(() => import('./editor/BlockCanvas.js'));
@@ -245,7 +247,7 @@ export function ContentEditor({
   const [sidebarOpen, setSidebarOpen] = useState(() =>
     typeof window === 'undefined' ? true : window.innerWidth >= 1080,
   );
-  const [sideTab, setSideTab] = useState<'post' | 'block'>('post');
+  const [sideTab, setSideTab] = useState<'post' | 'block' | 'notes'>('post');
   const [revisions, setRevisions] = useState<AdminRevision[] | null>(null);
   const [revisionsError, setRevisionsError] = useState<string | null>(null);
   const [viewingRevision, setViewingRevision] = useState<AdminRevisionDetail | null>(null);
@@ -267,6 +269,8 @@ export function ContentEditor({
 
   const editable = isNew ? canCreateContent(user) : post ? canEditPost(user, post) : false;
   const canAssign = editable && canAssignTerms(user);
+  const notesPostId = post && !createdPost && editable ? post.id : null;
+  const postNotes = usePostNotes(notesPostId);
 
   const dirty = useMemo(() => {
     if (!editable || createdPost) return false;
@@ -1308,6 +1312,45 @@ export function ContentEditor({
                 )}
               </button>
             ) : null}
+            {notesPostId ? (
+              <button
+                type="button"
+                className={`editor-topbar-icon-button editor-topbar-notes${
+                  sidebarOpen && sideTab === 'notes' ? ' is-active' : ''
+                }`}
+                aria-label="All notes"
+                title="All notes"
+                onClick={() => {
+                  setSidebarOpen(true);
+                  setSideTab('notes');
+                  window.setTimeout(() => {
+                    const panel = document.getElementById('editor-notes-panel');
+                    if (panel && typeof panel.scrollIntoView === 'function') {
+                      panel.scrollIntoView({ block: 'start' });
+                    }
+                  }, 0);
+                }}
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  aria-hidden="true"
+                >
+                  <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  <line x1="8" y1="8" x2="16" y2="8" />
+                  <line x1="8" y1="11" x2="14" y2="11" />
+                </svg>
+                {postNotes.unresolvedCount > 0 ? (
+                  <span className="editor-topbar-count" aria-hidden="true">
+                    {postNotes.unresolvedCount}
+                  </span>
+                ) : null}
+              </button>
+            ) : null}
             <button
               type="button"
               className={`button editor-topbar-gear${sidebarOpen ? ' is-active' : ''}`}
@@ -1563,12 +1606,11 @@ export function ContentEditor({
                   role="tablist"
                   aria-label="Document settings views"
                 >
-                  {(
-                    [
-                      { id: 'post', label: 'Post' },
-                      { id: 'block', label: 'Block' },
-                    ] as const
-                  ).map((tab) => (
+                  {[
+                    { id: 'post' as const, label: 'Post' },
+                    { id: 'block' as const, label: 'Block' },
+                    ...(notesPostId ? [{ id: 'notes' as const, label: 'Notes' }] : []),
+                  ].map((tab) => (
                     <button
                       key={tab.id}
                       type="button"
@@ -2428,6 +2470,10 @@ export function ContentEditor({
                       Open block settings
                     </button>
                   </section>
+                </div>
+
+                <div hidden={sideTab !== 'notes'}>
+                  <NotesPanel postId={notesPostId} state={postNotes} />
                 </div>
               </div>
             </aside>

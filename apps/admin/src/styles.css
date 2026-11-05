@@ -12677,3 +12677,188 @@ a.glance-chip:hover {
 .settings-pings-notice .field-help {
   margin: 6px 0 0 24px;
 }
+
+/* Editor notes (WordPress "All notes"): header count, compose, threads. */
+.editor-topbar-notes {
+  position: relative;
+}
+
+.editor-topbar-notes.is-active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.editor-topbar-count {
+  position: absolute;
+  top: 1px;
+  right: 0;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #d63638;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+}
+
+.editor-notes-panel .notes-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.editor-notes-panel .notes-head h3 {
+  margin: 0;
+}
+
+.notes-count {
+  color: #646970;
+  font-size: 11px;
+}
+
+.note-compose {
+  margin: 10px 0 16px;
+}
+
+.note-compose textarea,
+.note-reply-form textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #8c8f94;
+  border-radius: 2px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.note-compose-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.note-compose-actions .field-help {
+  margin: 0;
+}
+
+.note-compose-actions .button,
+.note-reply-form .button {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.notes-empty {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid #dcdcde;
+  background: #f6f7f7;
+  color: #646970;
+  font-size: 12px;
+}
+
+.notes-list,
+.note-replies {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.note-thread {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid #dcdcde;
+  border-left: 3px solid #dba617;
+  background: #ffffff;
+}
+
+.note-thread.is-resolved {
+  border-left-color: #00a32a;
+  opacity: 0.85;
+}
+
+.note-message {
+  min-width: 0;
+}
+
+.note-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 4px;
+  color: #646970;
+  font-size: 11px;
+}
+
+.note-meta strong {
+  color: #1d2327;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.note-content {
+  margin: 0;
+  color: #1d2327;
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.note-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.note-actions .button-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--wp-blue);
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.note-actions .button-link:disabled {
+  color: #a7aaad;
+  cursor: default;
+}
+
+.note-resolved-badge {
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: #edfaef;
+  color: #1e7b34;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.note-replies {
+  margin: 8px 0 0 14px;
+  padding-left: 10px;
+  border-left: 1px solid #dcdcde;
+}
+
+.note-replies > li {
+  margin: 8px 0 0;
+}
+
+.note-reply-form {
+  margin: 8px 0 0 14px;
+  padding-left: 10px;
+  border-left: 1px solid #dcdcde;
+}

@@ -137,7 +137,11 @@ export interface ContentService {
  * on an object when it holds the `.any` capability, or the `.own` capability and
  * owns the object. Fail closed: unknown roles have no capabilities.
  */
-function canEditPost(principal: Principal, authorId: string | null, status: PostStatus): void {
+export function canEditPost(
+  principal: Principal,
+  authorId: string | null,
+  status: PostStatus,
+): void {
   if (roleHasCapability(principal.role, 'content.edit.any')) {
     return;
   }

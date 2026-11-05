@@ -23,6 +23,7 @@ import {
   createPrivacyPolicyService,
   createCustomizerService,
   createSpamGuardService,
+  createNoteService,
   createImportService,
   createConnectorService,
   createApplicationPasswordService,
@@ -67,6 +68,7 @@ import { postPath } from '@mernpress/contracts';
 import { registerPrivacyPolicyRoutes } from './routes/privacy-policy.js';
 import { registerCustomizerRoutes } from './routes/customizer.js';
 import { registerSpamGuardRoutes } from './routes/spam-guard.js';
+import { registerNoteRoutes } from './routes/notes.js';
 import { registerBackupRoutes } from './routes/backups.js';
 import { registerRedirectRoutes, registerPublicRedirectRoutes } from './routes/redirects.js';
 import { registerAdminHealthRoutes } from './routes/admin-health.js';
@@ -308,6 +310,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   app.decorate('customizer', customizer);
   const spamGuard = createSpamGuardService({ prisma: database });
   app.decorate('spamGuard', spamGuard);
+  const notes = createNoteService({ prisma: database });
+  app.decorate('notes', notes);
   app.decorate('imports', imports);
   app.decorate('privacy', privacy);
 
@@ -399,6 +403,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerPrivacyPolicyRoutes(app, { env, auth, privacyPolicy });
   registerCustomizerRoutes(app, { env, auth, customizer });
   registerSpamGuardRoutes(app, { env, auth, spamGuard });
+  registerNoteRoutes(app, { env, auth, notes });
   registerRedirectRoutes(app, { env, auth, redirects });
   registerBackupRoutes(app, { env, auth, backups });
   registerPublicRedirectRoutes(app, { redirects });

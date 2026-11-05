@@ -189,7 +189,10 @@ describe('settings page', () => {
           spam_guard_moderation_threshold: 3,
         });
       }
-      if (url.includes('/api/admin/comments/mail-log')) return response({ items: [] });
+      if (url.includes('/api/admin/mail/status')) {
+        return response({ configured: false, reason: 'SMTP is not configured.' });
+      }
+      if (url.includes('/api/admin/mail/log')) return response({ items: [] });
       return response({ site_title: 'My Site', site_tagline: '', admin_email: '', site_url: '' });
     });
     vi.stubGlobal('fetch', fetchMock);

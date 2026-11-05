@@ -1192,4 +1192,53 @@ describe('safe client editing', () => {
     expect(checkbox.disabled).toBe(true);
     expect(checkbox.checked).toBe(false);
   });
+
+  it('opens the All notes panel with threads, replies and a count', async () => {
+    const post = makePost({ authorId: 'a1', status: 'DRAFT' });
+    const notes = [
+      {
+        id: 'n1',
+        postId: post.id,
+        parentId: null,
+        content: 'Please tighten the intro.',
+        author: { id: 'u2', username: 'editor', displayName: null },
+        createdAt: '2026-11-05T10:00:00.000Z',
+        resolvedAt: null,
+        resolvedBy: null,
+      },
+      {
+        id: 'n2',
+        postId: post.id,
+        parentId: 'n1',
+        content: 'Done in the next revision.',
+        author: { id: 'a1', username: 'author-a', displayName: null },
+        createdAt: '2026-11-05T10:05:00.000Z',
+        resolvedAt: null,
+        resolvedBy: null,
+      },
+    ];
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes('/notes')) return response({ notes });
+      if (url.includes('/revisions')) return response([]);
+      if (url.includes('/schedule')) return response({ scheduledAt: null });
+      if (url.includes('/api/terms')) return response(termsPage());
+      if (url.includes('/api/admin/posts/')) return response(post);
+      return response(termsPage());
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA, post.id);
+
+    const allNotes = await screen.findByRole('button', { name: 'All notes' });
+    await waitFor(() =>
+      expect(document.querySelector('.editor-topbar-count')?.textContent).toBe('1'),
+    );
+    fireEvent.click(allNotes);
+    expect(await screen.findByText('Please tighten the intro.')).toBeDefined();
+    expect(screen.getByText('Done in the next revision.')).toBeDefined();
+    expect(screen.getByText('1 open / 2 total')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Reply' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Resolve' })).toBeDefined();
+  });
 });

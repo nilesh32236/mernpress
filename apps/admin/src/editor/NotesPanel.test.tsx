@@ -1,0 +1,113 @@
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { PostNote } from '../api.js';
+import { NotesPanel } from './NotesPanel.js';
+import type { PostNotesState } from './usePostNotes.js';
+
+function note(overrides: Partial<PostNote> = {}): PostNote {
+  return {
+    id: 'n1',
+    postId: 'p1',
+    parentId: null,
+    content: 'Please tighten this paragraph.',
+    author: { id: 'u1', username: 'admin', displayName: null },
+    createdAt: '2026-11-05T10:00:00.000Z',
+    resolvedAt: null,
+    resolvedBy: null,
+    ...overrides,
+  };
+}
+
+function state(overrides: Partial<PostNotesState> = {}): PostNotesState {
+  return {
+    notes: [],
+    loading: false,
+    error: null,
+    busy: false,
+    unresolvedCount: 0,
+    add: vi.fn(async () => true),
+    reply: vi.fn(async () => true),
+    setResolved: vi.fn(async () => true),
+    refresh: vi.fn(),
+    ...overrides,
+  };
+}
+
+afterEach(cleanup);
+
+describe('editor notes panel', () => {
+  it('asks the author to save the draft first', () => {
+    render(<NotesPanel postId={null} state={state()} />);
+    expect(screen.getByText(/Save the draft first/)).toBeDefined();
+  });
+
+  it('adds a note and clears the composer', async () => {
+    const notes = state();
+    render(<NotesPanel postId="p1" state={notes} />);
+
+    fireEvent.change(screen.getByLabelText('Add a note'), {
+      target: { value: '  Check the intro.  ' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add note' }));
+
+    await waitFor(() => expect(notes.add).toHaveBeenCalledWith('Check the intro.'));
+    expect((screen.getByLabelText('Add a note') as HTMLTextAreaElement).value).toBe('');
+  });
+
+  it('renders threads, replies and resolution state', () => {
+    const root = note();
+    const reply = note({
+      id: 'n2',
+      parentId: 'n1',
+      content: 'Done in the next revision.',
+      author: { id: 'u2', username: 'editor', displayName: 'Editor Name' },
+      createdAt: '2026-11-05T10:05:00.000Z',
+    });
+    const resolved = note({
+      id: 'n3',
+      content: 'Old thread',
+      resolvedAt: '2026-11-05T11:00:00.000Z',
+      resolvedBy: { id: 'u1', username: 'admin', displayName: null },
+    });
+    const notes = state({
+      notes: [root, reply, resolved],
+      unresolvedCount: 1,
+    });
+    render(<NotesPanel postId="p1" state={notes} />);
+
+    expect(screen.getByText('1 open / 3 total')).toBeDefined();
+    expect(screen.getByText('Please tighten this paragraph.')).toBeDefined();
+    expect(screen.getByText('Done in the next revision.')).toBeDefined();
+    expect(screen.getByText('Editor Name')).toBeDefined();
+    expect(screen.getByText(/Resolved by admin/)).toBeDefined();
+
+    // Resolve the open thread, reopen the resolved one.
+    fireEvent.click(screen.getAllByRole('button', { name: 'Resolve' })[0]!);
+    expect(notes.setResolved).toHaveBeenCalledWith('n1', true);
+    fireEvent.click(screen.getByRole('button', { name: 'Reopen' }));
+    expect(notes.setResolved).toHaveBeenCalledWith('n3', false);
+
+    // Reply to the open thread.
+    fireEvent.click(screen.getByRole('button', { name: 'Reply' }));
+    fireEvent.change(screen.getByLabelText('Write a reply'), {
+      target: { value: 'Will do.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Post reply' }));
+    expect(notes.reply).toHaveBeenCalledWith('n1', 'Will do.');
+  });
+
+  it('hides the reply action on resolved threads', () => {
+    const notes = state({
+      notes: [note({ resolvedAt: '2026-11-05T11:00:00.000Z' })],
+    });
+    render(<NotesPanel postId="p1" state={notes} />);
+    expect(screen.queryByRole('button', { name: 'Reply' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Reopen' })).toBeDefined();
+  });
+
+  it('surfaces a load error with the retry action available', () => {
+    const notes = state({ error: 'Cannot reach the API. Check your connection and try again.' });
+    render(<NotesPanel postId="p1" state={notes} />);
+    expect(screen.getByRole('alert').textContent).toContain('Cannot reach the API');
+  });
+});

@@ -1013,6 +1013,74 @@ export async function updateSpamGuard(settings: SpamGuardSettings): Promise<Spam
   return readJson<SpamGuardState>(response);
 }
 
+// ---- Editor notes ----
+export interface PostNoteAuthor {
+  id: string;
+  username: string;
+  displayName: string | null;
+}
+
+export interface PostNote {
+  id: string;
+  postId: string;
+  parentId: string | null;
+  content: string;
+  author: PostNoteAuthor | null;
+  createdAt: string;
+  resolvedAt: string | null;
+  resolvedBy: PostNoteAuthor | null;
+}
+
+export async function fetchPostNotes(postId: string): Promise<PostNote[]> {
+  const response = await fetch(`/api/admin/posts/${encodeURIComponent(postId)}/notes`, {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  const body = await readJson<{ notes?: PostNote[] }>(response);
+  return Array.isArray(body.notes) ? body.notes : [];
+}
+
+export async function createPostNote(
+  postId: string,
+  input: { content: string; parentId?: string | null },
+): Promise<PostNote> {
+  const response = await fetch(`/api/admin/posts/${encodeURIComponent(postId)}/notes`, {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify(input),
+  });
+  return readJson<PostNote>(response);
+}
+
+export async function setPostNoteResolved(
+  postId: string,
+  noteId: string,
+  resolved: boolean,
+): Promise<PostNote> {
+  const response = await fetch(
+    `/api/admin/posts/${encodeURIComponent(postId)}/notes/${encodeURIComponent(noteId)}`,
+    {
+      method: 'PATCH',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        ...csrfHeader(),
+      },
+      body: JSON.stringify({ resolved }),
+    },
+  );
+  return readJson<PostNote>(response);
+}
+
 // ---- Appearance → Customize ----
 export interface CustomizerColors {
   background?: string;
