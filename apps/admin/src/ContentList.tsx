@@ -433,9 +433,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
           { value: 'delete', label: 'Delete permanently' },
         ]
       : [
-          { value: 'edit', label: 'Edit' },
-          { value: 'publish', label: 'Publish' },
-          { value: 'unpublish', label: 'Move to Draft' },
+          { value: 'edit', label: 'Bulk edit' },
           { value: 'trash', label: 'Move to Trash' },
         ];
 

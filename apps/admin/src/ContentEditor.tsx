@@ -1228,6 +1228,39 @@ export function ContentEditor({
                 <button type="button" onClick={() => setSidebarOpen(true)}>
                   Settings
                 </button>
+                {post && transitions.includes('unpublish') ? (
+                  <button
+                    type="button"
+                    disabled={transitioning !== null || dirty}
+                    onClick={() => {
+                      document
+                        .querySelectorAll<HTMLDetailsElement>('.editor-options-menu')
+                        .forEach((details) => {
+                          details.open = false;
+                        });
+                      void runTransition('unpublish');
+                    }}
+                  >
+                    Switch to draft
+                  </button>
+                ) : null}
+                {post && transitions.includes('trash') ? (
+                  <button
+                    type="button"
+                    className="is-danger"
+                    disabled={transitioning !== null || dirty}
+                    onClick={() => {
+                      document
+                        .querySelectorAll<HTMLDetailsElement>('.editor-options-menu')
+                        .forEach((details) => {
+                          details.open = false;
+                        });
+                      void runTransition('trash');
+                    }}
+                  >
+                    Move to trash
+                  </button>
+                ) : null}
               </div>
             </details>
           </div>
@@ -1578,52 +1611,6 @@ export function ContentEditor({
                           <span className="publish-label">Status</span>
                           <div className="publish-value">
                             <EditorStatus status={post.status} />
-                            {transitions.includes('publish') ||
-                            transitions.includes('unpublish') ? (
-                              <button
-                                type="button"
-                                className="button small-button edit-link"
-                                disabled={transitioning !== null || dirty}
-                                aria-label={post.status === 'DRAFT' ? 'Change status' : 'Unpublish'}
-                                onClick={() =>
-                                  void runTransition(
-                                    post.status === 'DRAFT' ? 'publish' : 'unpublish',
-                                  )
-                                }
-                              >
-                                Edit
-                              </button>
-                            ) : null}
-                          </div>
-                        </div>
-                        <div className="publish-field">
-                          <span className="publish-label">Author</span>
-                          <div className="publish-value">
-                            <span className="editor-link-value">
-                              {post.author?.username ?? user.username}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="publish-field">
-                          <span className="publish-label">Template</span>
-                          <div className="publish-value">
-                            <span className="editor-link-value">
-                              {post.type === 'post' ? 'Single Posts' : 'Default Template'}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="publish-field">
-                          <span className="publish-label">Discussion</span>
-                          <div className="publish-value">
-                            <span className="editor-link-value">Closed</span>
-                          </div>
-                        </div>
-                        <div className="publish-field">
-                          <span className="publish-label">Format</span>
-                          <div className="publish-value">
-                            <span className="editor-link-value">
-                              {post ? 'Standard' : formatLabel(defaultPostFormat)}
-                            </span>
                           </div>
                         </div>
                         {post.status === 'DRAFT' ? (
@@ -1689,7 +1676,7 @@ export function ContentEditor({
                           </div>
                         ) : (
                           <div className="publish-field">
-                            <span className="publish-label">Published</span>
+                            <span className="publish-label">Publish</span>
                             <div className="publish-value">
                               {formatDateTime(post.publishedAt ?? post.updatedAt)}
                             </div>
@@ -1715,6 +1702,36 @@ export function ContentEditor({
                             <FieldError id="content-slug-error" message={fieldErrors['slug']} />
                           </div>
                         </div>
+                        <div className="publish-field">
+                          <span className="publish-label">Author</span>
+                          <div className="publish-value">
+                            <span className="editor-link-value">
+                              {post.author?.username ?? user.username}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="publish-field">
+                          <span className="publish-label">Template</span>
+                          <div className="publish-value">
+                            <span className="editor-link-value">
+                              {post.type === 'post' ? 'Single Posts' : 'Default Template'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="publish-field">
+                          <span className="publish-label">Discussion</span>
+                          <div className="publish-value">
+                            <span className="editor-link-value">Closed</span>
+                          </div>
+                        </div>
+                        <div className="publish-field">
+                          <span className="publish-label">Format</span>
+                          <div className="publish-value">
+                            <span className="editor-link-value">
+                              {post ? 'Standard' : formatLabel(defaultPostFormat)}
+                            </span>
+                          </div>
+                        </div>
                         {post.status !== 'TRASHED' && transitions.includes('trash') ? (
                           <div className="publish-field">
                             <button
@@ -1723,7 +1740,7 @@ export function ContentEditor({
                               disabled={transitioning !== null || dirty}
                               onClick={() => void runTransition('trash')}
                             >
-                              Move to Trash
+                              Move to trash
                             </button>
                           </div>
                         ) : null}
@@ -1805,6 +1822,69 @@ export function ContentEditor({
                           The content is created as a draft. Publish it from the top bar when it is
                           ready.
                         </p>
+                      </>
+                    )}
+                  </section>
+
+                  <section className="editor-panel" aria-label="Taxonomies">
+                    {!canAssign ? (
+                      <>
+                        <h3>Categories and tags</h3>
+                        <p className="field-help">Your role cannot assign taxonomy terms.</p>
+                      </>
+                    ) : termsError ? (
+                      <>
+                        <h3>Categories and tags</h3>
+                        <p className="field-help">
+                          Terms are unavailable. Content can still be saved.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <details className="editor-term-panel">
+                          <summary>Categories</summary>
+                          {categories.length === 0 ? (
+                            <p className="field-help">No categories exist yet.</p>
+                          ) : (
+                            categories.map((term) => (
+                              <label key={term.id} className="checkbox-row">
+                                <input
+                                  type="checkbox"
+                                  checked={categoryIds.includes(term.id)}
+                                  onChange={() =>
+                                    setCategoryIds((current) => toggleId(current, term.id))
+                                  }
+                                />
+                                <span className="term-name">{term.name}</span>
+                                <span aria-hidden="true" className="term-slug">
+                                  {term.slug}
+                                </span>
+                              </label>
+                            ))
+                          )}
+                        </details>
+                        <details className="editor-term-panel">
+                          <summary>Tags</summary>
+                          {tags.length === 0 ? (
+                            <p className="field-help">No tags exist yet.</p>
+                          ) : (
+                            tags.map((term) => (
+                              <label key={term.id} className="checkbox-row">
+                                <input
+                                  type="checkbox"
+                                  checked={tagIds.includes(term.id)}
+                                  onChange={() =>
+                                    setTagIds((current) => toggleId(current, term.id))
+                                  }
+                                />
+                                <span className="term-name">{term.name}</span>
+                                <span aria-hidden="true" className="term-slug">
+                                  {term.slug}
+                                </span>
+                              </label>
+                            ))
+                          )}
+                        </details>
                       </>
                     )}
                   </section>
@@ -2056,69 +2136,6 @@ export function ContentEditor({
                       </section>
                     </div>
                   </details>
-
-                  <section className="editor-panel" aria-label="Taxonomies">
-                    {!canAssign ? (
-                      <>
-                        <h3>Categories and tags</h3>
-                        <p className="field-help">Your role cannot assign taxonomy terms.</p>
-                      </>
-                    ) : termsError ? (
-                      <>
-                        <h3>Categories and tags</h3>
-                        <p className="field-help">
-                          Terms are unavailable. Content can still be saved.
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <details className="editor-term-panel">
-                          <summary>Categories</summary>
-                          {categories.length === 0 ? (
-                            <p className="field-help">No categories exist yet.</p>
-                          ) : (
-                            categories.map((term) => (
-                              <label key={term.id} className="checkbox-row">
-                                <input
-                                  type="checkbox"
-                                  checked={categoryIds.includes(term.id)}
-                                  onChange={() =>
-                                    setCategoryIds((current) => toggleId(current, term.id))
-                                  }
-                                />
-                                <span className="term-name">{term.name}</span>
-                                <span aria-hidden="true" className="term-slug">
-                                  {term.slug}
-                                </span>
-                              </label>
-                            ))
-                          )}
-                        </details>
-                        <details className="editor-term-panel">
-                          <summary>Tags</summary>
-                          {tags.length === 0 ? (
-                            <p className="field-help">No tags exist yet.</p>
-                          ) : (
-                            tags.map((term) => (
-                              <label key={term.id} className="checkbox-row">
-                                <input
-                                  type="checkbox"
-                                  checked={tagIds.includes(term.id)}
-                                  onChange={() =>
-                                    setTagIds((current) => toggleId(current, term.id))
-                                  }
-                                />
-                                <span className="term-name">{term.name}</span>
-                                <span aria-hidden="true" className="term-slug">
-                                  {term.slug}
-                                </span>
-                              </label>
-                            ))
-                          )}
-                        </details>
-                      </>
-                    )}
-                  </section>
 
                   {post && !createdPost ? (
                     <section className="editor-panel" aria-labelledby="revisions-heading">

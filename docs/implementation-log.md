@@ -2933,3 +2933,26 @@ disabled Popular/Latest/Block Themes/Favorites and "Search Themes"; Import lists
 Blogger, Categories and Tags Converter, LiveJournal, Movable Type and TypePad,
 RSS, Tumblr, WordPress in WordPress order with the marketplace boundary note.
 The temporary administrator was deleted afterwards.
+
+### 2026-11-05 — Page audit: Posts/Pages list and editor chrome
+
+- Compared the Posts list and block editor with live WordPress 7.1.4.
+  - Row actions already matched: Edit | Quick Edit | Trash | View.
+  - Bulk actions now match WordPress: "Bulk edit" and "Move to Trash" only (the
+    extra Publish/Move to Draft entries were removed).
+  - Editor sidebar order now matches WordPress: Status, Publish (date), Slug,
+    Author, Template, Discussion, Format, Move to trash, then Categories/Tags;
+    MERNPress-only Preview token/SEO/Revisions follow the WordPress panels.
+  - The date row is labelled "Publish" and the trash button "Move to trash" like
+    WordPress.
+  - The inline status "Edit" button (not in WordPress) was removed. Switch to
+    draft and Move to trash now live in the top-bar Options menu, matching
+    WordPress's action location.
+- The E2E editor flow was updated to use the Options menu for Switch to draft and
+  Move to trash.
+- Known deeper deltas recorded for the next pass: Quick Edit exposes
+  title/slug/status only (WordPress also exposes date, author, categories, tags,
+  discussion and sticky), and the Options menu does not yet include Code editor,
+  Keyboard shortcuts, Welcome guide, Copy all content, Preferences or Plugins.
+- Validation: 646 unit/integration tests (API 411, admin 157, block-system 65,
+  web 13), 23 Playwright E2E tests and six builds pass.

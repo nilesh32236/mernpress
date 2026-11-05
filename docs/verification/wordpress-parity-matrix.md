@@ -30,7 +30,7 @@ owner decision.
 | --- | --- | --- |
 | Login | D/P | WordPress login layout, error copy, Remember Me, Lost Password form, reset-token screen |
 | Dashboard + widgets | D/P | Welcome, Site Health, At a Glance, Activity, Quick Draft, Events and News |
-| Posts list / editor / Quick Edit / revisions / preview | D/P | Gutenberg-compatible editor, status tabs, filters, bulk actions |
+| Posts list / editor / Quick Edit / revisions / preview | D/P | Row actions, Bulk edit/Move to Trash, WordPress sidebar order, Options actions; Quick Edit is status/title/slug only (deeper fields remain) |
 | Categories / Tags | D/P | Add/edit/delete, hierarchy, counts |
 | Media library / grid / list / details | D/P | Upload, derivatives, alt text, grid/list toggle, Edit Image (rotate/flip/crop/scale/undo/redo/restore) |
 | Pages list / editor | D/P | Same editor chrome as posts |
@@ -112,3 +112,15 @@ one; no button pretends to work.
 | WordPress.org theme directory / ZIP upload | Not implemented | Themes are trusted packages in the release; Add Themes shows disabled directory tabs and an explicit notice. |
 | Third-party importers (Blogger, LiveJournal, Movable Type, RSS, Tumblr) | Not implemented | Require external services/plugins; the Import list marks them unavailable. |
 | Plugin marketplace / remote updates | Not available | Updates are discovered from a configured manifest; nothing is downloaded or installed from the internet. |
+
+## Known remaining parity work
+
+These are implemented surfaces with narrower behaviour than WordPress, not
+missing screens. They are the next audit targets.
+
+| Area | Current state | WordPress also has |
+| --- | --- | --- |
+| Posts/Pages Quick Edit | Title, slug and status. | Date, author, password/private, categories, tags, comments and sticky. |
+| Bulk Edit | Status only. | Author, categories, tags, comments and sticky (posts). |
+| Editor Options menu | Settings, Switch to draft, Move to trash. | Code editor, keyboard shortcuts, welcome guide, copy all content, preferences, plugins. |
+| Post sidebar extras | Preview token, SEO and revisions are MERNPress additions shown after the WordPress panels. | No equivalent panels; WordPress revisions live in the editor's document overview. |

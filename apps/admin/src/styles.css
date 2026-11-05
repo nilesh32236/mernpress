@@ -11952,3 +11952,7 @@ a.glance-chip:hover {
   font-size: 13px;
   cursor: pointer;
 }
+
+.editor-options-panel button.is-danger {
+  color: var(--wp-danger);
+}

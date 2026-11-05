@@ -277,7 +277,7 @@ describe('content lists', () => {
       if (url.includes('/api/admin/posts/bulk')) {
         bulkBody = JSON.parse(String(init?.body ?? '{}'));
         return response({
-          action: 'publish',
+          action: 'trash',
           succeeded: ['post-1'],
           failed: [
             {
@@ -299,13 +299,13 @@ describe('content lists', () => {
     fireEvent.click(screen.getByLabelText('Select First post'));
     fireEvent.click(screen.getByLabelText('Select Second post'));
     fireEvent.change(screen.getAllByLabelText('Bulk actions')[0]!, {
-      target: { value: 'publish' },
+      target: { value: 'trash' },
     });
     fireEvent.click(screen.getAllByRole('button', { name: 'Apply' })[0]!);
 
     await waitFor(() => expect(bulkBody).not.toBeNull());
     expect(bulkBody).toEqual({
-      action: 'publish',
+      action: 'trash',
       items: [
         { id: 'post-1', baseVersion: 3 },
         { id: 'post-2', baseVersion: 7 },

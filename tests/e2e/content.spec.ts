@@ -153,12 +153,17 @@ test('editor can create, edit, publish, unpublish, trash and restore content', a
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Changes saved.')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Unpublish' }).click();
+  await page.locator('.editor-options-menu summary').click();
+  await page.getByRole('button', { name: 'Switch to draft' }).click();
   await expect(page.getByText('Content returned to draft.')).toBeVisible();
   await expect(page.locator('.editor-status-value')).toContainText('Draft');
 
+  await page.locator('.editor-options-menu summary').click();
   page.once('dialog', (dialog) => void dialog.accept());
-  await page.getByRole('button', { name: 'Move to Trash' }).click();
+  await page
+    .locator('.editor-options-panel')
+    .getByRole('button', { name: 'Move to trash' })
+    .click();
   await expect(page.getByText('Content moved to trash.')).toBeVisible();
   await expect(page.locator('.editor-status-value')).toContainText('Trashed');
 
