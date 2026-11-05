@@ -3659,3 +3659,14 @@ real UI:
   validation, anonymous/editor denial).
 - Validation: 776 unit/integration tests (API 480, admin 188, web 38,
   block-system 65, contracts 5), 23 Playwright E2E tests and seven builds pass.
+
+**Deployment (local spam guard):** release `20261105T154658Z-66db7e2`
+(current). Production verification with a temporary administrator: Settings →
+Connectors showed the Spam protection card as Active with thresholds 3/6, the
+zeroed stats line and the Akismet external-service explanation. A public
+submission of `CHEAP VIAGRA … two links !!!` on the published post was stored as
+SPAM and a single-spam-phrase comment as PENDING; the API then reported
+`{spam: 1, pending: 1, spamLast7Days: 1}`. Both test comments were deleted and
+the card returned to zero; the temporary administrator was removed. Production
+is back to 1 user, 2 posts and 0 comments, with `/`, `/admin/`, `/api/health`
+and `/posts/testcom` returning 200.
