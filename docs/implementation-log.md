@@ -3398,3 +3398,14 @@ tables verified). Production verification with a temporary administrator:
   lock still on.
 - Validation: 719 unit/integration tests (API 449, admin 174, web 31,
   block-system 65), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (safe client editing):** release `20261105T132411Z-20981d1`
+(current), migration `20261105103105_add_post_structure_lock` applied
+(`posts.structure_locked` verified). Production verification with a temporary
+administrator on a canonical two-block post:
+- Lock on (`structureLocked: true`); a text-only PATCH was accepted (version 4,
+  copy rewritten); appending a paragraph returned `409 STRUCTURE_LOCKED`.
+- The editor showed the “Structure locked…” banner, the Safe client editing
+  panel with the toggle checked, and no Add block / Document overview controls.
+- The test post and temporary administrator were deleted; production has 1 user,
+  0 locked posts and 0 redirects.
