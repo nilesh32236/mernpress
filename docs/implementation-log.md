@@ -4239,3 +4239,18 @@ temporary administrator:
   for Do-Not-Track and admin/API exclusion.
 - Validation: 855 unit/integration tests (API 512, admin 230, web 40,
   block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.
+
+**Deployment (privacy-first analytics):** release `20261105T214853Z-f0e3a6a`
+(current), migration `20261105212237_add_analytics_daily` applied. Production
+verification:
+- Three public page loads (`/`, `/posts/testcom` twice) produced exactly three
+  recorded views (no strict-mode double count in the production build), with
+  `topPaths` `/posts/testcom: 2` and `/: 1`; direct traffic left referrers
+  empty.
+- Dashboard → Analytics showed the nav entry, cards “Views 3 / Pages viewed 2 /
+  Daily average 0”, the daily bar list, the top-pages row and the privacy note
+  (“no cookies, no visitor identifiers and no stored IP addresses”); the 7-day
+  API returned a zero-filled series.
+- Verification rows and the temporary administrator were deleted; production
+  is back to 1 user, 2 posts and 0 analytics rows, with `/`, `/admin/`,
+  `/api/health` and `/posts/testcom` returning 200.
