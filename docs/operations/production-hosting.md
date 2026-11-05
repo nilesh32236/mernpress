@@ -403,3 +403,23 @@ Appearance → Themes is immediate: `/api/public/site` is fetched with
 `cache: 'no-store'`, so the public site renders the new tokens on the next
 request. Adding a theme is an operator copy into the store; there is no
 marketplace.
+
+## Backups
+
+```bash
+sudo mkdir -p /opt/mernpress/backups
+sudo chown mernpress:mernpress /opt/mernpress/backups
+sudo chmod 700 /opt/mernpress/backups
+```
+
+```bash
+BACKUP_STORAGE_DIR=/opt/mernpress/backups
+BACKUP_RETENTION=5
+# optional; defaults to pg_dump on PATH
+PG_DUMP_PATH=/usr/bin/pg_dump
+```
+
+The API unit declares `ReadWritePaths=/opt/mernpress/backups`. Restore is a CLI
+procedure: [backup-restore.md](backup-restore.md). The archives contain password
+hashes and media, so keep the directory `0700`/files `0600` and copy backups to
+encrypted storage off the server.

@@ -110,6 +110,18 @@ export function ToolsPage() {
               </button>
             </p>
           </section>
+          <section className="card" aria-labelledby="tool-backups-heading">
+            <h2 id="tool-backups-heading">Backups</h2>
+            <p>
+              Create a database and media archive, download it, and review the retention policy.
+              Restore is a documented command-line procedure.
+            </p>
+            <p>
+              <button type="button" className="button" onClick={() => navigate('/tools/backups')}>
+                Open Backups
+              </button>
+            </p>
+          </section>
           <section className="card" aria-labelledby="tool-health-heading">
             <h2 id="tool-health-heading">Site Health</h2>
             <p>Server and storage checks for this installation.</p>

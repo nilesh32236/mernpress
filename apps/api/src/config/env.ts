@@ -85,6 +85,10 @@ const rawEnvSchema = z.object({
   PLUGIN_SEED_DIR: optionalEnvString(500),
   /** Writable theme package store; required in production (outside releases). */
   THEME_STORAGE_DIR: optionalEnvString(500),
+  /** Writable backup directory; required in production (outside releases). */
+  BACKUP_STORAGE_DIR: optionalEnvString(500),
+  BACKUP_RETENTION: z.coerce.number().int().min(1).max(50).default(5),
+  PG_DUMP_PATH: optionalEnvString(500),
   /** Read-only directory containing bundled seed themes. */
   THEME_SEED_DIR: optionalEnvString(500),
   MAIL_FROM: z.preprocess(
@@ -144,6 +148,9 @@ export type Env = {
   PLUGIN_SEED_DIR: string;
   THEME_STORAGE_DIR: string;
   THEME_SEED_DIR: string;
+  BACKUP_STORAGE_DIR: string;
+  BACKUP_RETENTION: number;
+  PG_DUMP_PATH: string;
 };
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
@@ -234,6 +241,9 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   if (isProduction && !parsed.data.THEME_STORAGE_DIR) {
     throw new Error('THEME_STORAGE_DIR is required in production');
   }
+  if (isProduction && !parsed.data.BACKUP_STORAGE_DIR) {
+    throw new Error('BACKUP_STORAGE_DIR is required in production');
+  }
 
   const storageDir = path.isAbsolute(parsed.data.MEDIA_STORAGE_DIR)
     ? parsed.data.MEDIA_STORAGE_DIR
@@ -268,5 +278,11 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
       parsed.data.THEME_STORAGE_DIR ?? '../../.data/themes',
     ),
     THEME_SEED_DIR: path.resolve(process.cwd(), parsed.data.THEME_SEED_DIR ?? '../../themes'),
+    BACKUP_STORAGE_DIR: path.resolve(
+      process.cwd(),
+      parsed.data.BACKUP_STORAGE_DIR ?? '../../.data/backups',
+    ),
+    BACKUP_RETENTION: parsed.data.BACKUP_RETENTION,
+    PG_DUMP_PATH: parsed.data.PG_DUMP_PATH ?? 'pg_dump',
   };
 }

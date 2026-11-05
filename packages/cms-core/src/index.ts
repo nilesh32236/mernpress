@@ -307,3 +307,12 @@ export {
   type RedirectService,
   type RedirectServiceOptions,
 } from './redirects/service.js';
+
+// ---- Backup packages (Tools → Backups) ----
+export {
+  createBackupService,
+  type BackupFile,
+  type BackupListResult,
+  type BackupService,
+  type BackupServiceOptions,
+} from './backups/service.js';

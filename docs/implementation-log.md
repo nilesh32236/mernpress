@@ -3298,3 +3298,23 @@ return 200 and a post card contains "min read". The final release corrects the
 fallback label to "More posts" when no same-category matches exist. Temporary
 posts and the temporary administrator were removed; production is back to 1
 user, 0 redirects, 0 mail log rows.
+
+### 2026-11-05 — Backup packages with retention
+
+- Added `BackupService` and Tools → Backups: one `.tar.gz` containing a plain
+  SQL dump (`--clean --if-exists --no-owner --no-privileges`), `media.tar.gz` and
+  `MANIFEST.txt`. Database passwords go to `pg_dump` via `PGPASSWORD`, never argv
+  or the archive; files are `0600`.
+- `BACKUP_STORAGE_DIR` (production `/opt/mernpress/backups`) is required in
+  production; `BACKUP_RETENTION` (default 5, max 50) prunes older archives.
+- Administrator-only list/create/download/delete with strict filename validation,
+  `no-store` downloads, a 409 while a backup is running and cleanup of partial
+  archives/temp dirs on failure.
+- Restore is intentionally CLI-only and documented step by step in
+  `docs/operations/backup-restore.md`; the UI states that it never overwrites live
+  data and that the archive is sensitive.
+- Tests create a real archive against the test database, verify the gzip magic,
+  inspect the tar for `database.sql`/`media.tar.gz`/`MANIFEST.txt`, exercise
+  retention, deletion, traversal rejection and anonymous/editor denial.
+- Validation: 701 unit/integration tests (API 437, admin 168, web 31,
+  block-system 65), 23 Playwright E2E tests and six builds pass.

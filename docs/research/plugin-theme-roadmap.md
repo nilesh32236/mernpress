@@ -108,9 +108,8 @@ instant and safe; no PHP or template execution.
    Redirect/Dismiss actions.
 2. ~~**Transactional mail log**~~ — delivered (ADR 0031): metadata-only log,
    200-row retention, admin API and Settings → Discussion panel.
-3. **Backup/export packages** — database + media archive with retention and a
-   documented restore, built on the existing WXR/media services rather than a
-   new vendor. High demand, but needs careful security and disk handling.
+3. ~~**Backup/export packages**~~ — delivered (ADR 0034): database + media
+   archive, retention, admin UI and a documented CLI restore. High demand, but needs careful security and disk handling.
 4. **Safe client editing mode** — a per-post "locked blocks" flag that disables
    structural edits while allowing text changes. Large editor change; valuable
    for agencies.

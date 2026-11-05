@@ -3,6 +3,7 @@ import { fetchSession, setUnauthorizedHandler, type AuthUser } from './api.js';
 import { ContentEditor } from './ContentEditor.js';
 import { ToolsPage } from './ToolsPage.js';
 import { RedirectsPage } from './RedirectsPage.js';
+import { BackupsPage } from './BackupsPage.js';
 import { UpdatesPage } from './UpdatesPage.js';
 import { CommentsPage } from './CommentsPage.js';
 import { ThemesPage } from './ThemesPage.js';
@@ -222,6 +223,8 @@ function pageTitle(route: Route): string {
       return 'MERNPress admin · Tools';
     case 'redirects':
       return 'MERNPress admin · Redirects';
+    case 'backups':
+      return 'MERNPress admin · Backups';
     case 'updates':
       return 'MERNPress admin · Updates';
     case 'notFound':
@@ -294,6 +297,8 @@ function RouteView({
       return user.role === 'administrator' ? <ToolsPage /> : <Forbidden />;
     case 'redirects':
       return user.role === 'administrator' ? <RedirectsPage /> : <Forbidden />;
+    case 'backups':
+      return user.role === 'administrator' ? <BackupsPage /> : <Forbidden />;
     case 'updates':
       return user.role === 'administrator' ? <UpdatesPage /> : <Forbidden />;
     case 'notFound':

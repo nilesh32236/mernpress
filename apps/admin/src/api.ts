@@ -936,6 +936,47 @@ export interface ApplicationPassword {
 
 export type OptionValues = Record<string, unknown>;
 
+// ---- Tools: backup packages ----
+export interface BackupFile {
+  fileName: string;
+  sizeBytes: number;
+  createdAt: string;
+}
+
+export interface BackupListResult {
+  backups: BackupFile[];
+  retention: number;
+}
+
+export async function fetchBackups(): Promise<BackupListResult> {
+  const response = await fetch('/api/admin/backups', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<BackupListResult>(response);
+}
+
+export async function createBackup(): Promise<BackupListResult> {
+  const response = await fetch('/api/admin/backups', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  return readJson<BackupListResult>(response);
+}
+
+export async function deleteBackup(fileName: string): Promise<BackupListResult> {
+  const response = await fetch(`/api/admin/backups/${encodeURIComponent(fileName)}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  return readJson<BackupListResult>(response);
+}
+
 // ---- Tools: redirects and 404 log ----
 export interface RedirectItem {
   id: string;

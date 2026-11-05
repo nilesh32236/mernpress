@@ -40,6 +40,8 @@ export function makeTestEnv(overrides: Partial<Env> = {}): Env {
     PLUGIN_SEED_DIR: fileURLToPath(new URL('../../../../plugins', import.meta.url)),
     THEME_STORAGE_DIR: mkdtempSync(path.join(tmpdir(), 'mernpress-test-themes-')),
     THEME_SEED_DIR: fileURLToPath(new URL('../../../../themes', import.meta.url)),
+    BACKUP_STORAGE_DIR: mkdtempSync(path.join(tmpdir(), 'mernpress-test-backups-')),
+    BACKUP_RETENTION: 5,
     ...overrides,
   };
 }

@@ -27,6 +27,7 @@ import {
   createPasswordResetService,
   createExportService,
   createRedirectService,
+  createBackupService,
   createMemoryMailTransport,
   createSmtpMailTransport,
   type AuthConfig,
@@ -58,6 +59,7 @@ import { registerPrivacyRoutes } from './routes/privacy.js';
 import { registerConnectorRoutes } from './routes/connectors.js';
 import { registerMailRoutes } from './routes/mail.js';
 import { registerExportRoutes } from './routes/export.js';
+import { registerBackupRoutes } from './routes/backups.js';
 import { registerRedirectRoutes, registerPublicRedirectRoutes } from './routes/redirects.js';
 import { registerAdminHealthRoutes } from './routes/admin-health.js';
 import { startPublishScheduler } from './scheduler.js';
@@ -287,6 +289,16 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   redirectsForSlugs = redirects;
   app.decorate('redirects', redirects);
 
+  const backups = createBackupService({
+    mediaRoot: env.MEDIA_STORAGE_DIR,
+    backupDir: env.BACKUP_STORAGE_DIR,
+    databaseUrl: env.DATABASE_URL,
+    retention: env.BACKUP_RETENTION,
+    pgDumpPath: env.PG_DUMP_PATH,
+    logger: (message, meta) => app.log.warn({ ...meta }, message),
+  });
+  app.decorate('backups', backups);
+
   app.addHook('onRequest', async (request, reply) => {
     if (!MUTATING_METHODS.has(request.method)) {
       return;
@@ -350,6 +362,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerMailRoutes(app, { env, auth, mail });
   registerExportRoutes(app, { env, auth, exports: exportsService });
   registerRedirectRoutes(app, { env, auth, redirects });
+  registerBackupRoutes(app, { env, auth, backups });
   registerPublicRedirectRoutes(app, { redirects });
   registerPublicCommentRoutes(app, { comments, auth });
 

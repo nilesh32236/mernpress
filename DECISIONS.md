@@ -105,6 +105,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-073 | 2026-11-05 | Public posts show an estimated reading time (rendered word count, 200 wpm, 1-minute floor) and a Related posts section. Related posts are the same primary category (up to 3, current excluded), falling back to the newest posts when no category or on fetch failure; the section is labelled "More posts" for the fallback. Both are server-rendered in the shared template, use a reusable `RelatedPosts` component and introduce no schema/API change. | accepted | [ADR 0033](docs/adr/0033-reading-time-related-posts.md) |
 
+| D-074 | 2026-11-05 | Core backup packages: one `mernpress-backup-YYYYMMDDTHHMMSSZ.tar.gz` containing `database.sql` (pg_dump plain, --clean --if-exists, --no-owner --no-privileges), `media.tar.gz` and `MANIFEST.txt`; password passed via PGPASSWORD, files 0600, `BACKUP_STORAGE_DIR` required in production, newest `BACKUP_RETENTION` (default 5) kept. Administrator-only list/create/download/delete, strict filename validation, concurrency 409 and failure cleanup. Restore is deliberately CLI-only and documented in `docs/operations/backup-restore.md`; archives are unencrypted and must be copied to private storage. | accepted | [ADR 0034](docs/adr/0034-backup-packages.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

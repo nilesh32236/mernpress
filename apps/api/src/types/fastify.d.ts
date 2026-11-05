@@ -4,6 +4,7 @@ import type {
   AutosaveService,
   ExportService,
   RedirectService,
+  BackupService,
   BulkService,
   ContentService,
   HookRegistry,
@@ -32,6 +33,7 @@ declare module 'fastify' {
     media: MediaService;
     exports: ExportService;
     redirects: RedirectService;
+    backups: BackupService;
     autosave: AutosaveService;
   }
 }
