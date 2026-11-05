@@ -1063,6 +1063,9 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
     if (SIMPLE_GROUPS.has(activeTab)) {
       return (
         <>
+          {activeTab === 'privacy' ? (
+            <h2 className="settings-section-title">Privacy Settings</h2>
+          ) : null}
           <OptionGroupForm group={activeTab} />
           {activeTab === 'discussion' ? <MailLogPanel /> : null}
         </>
@@ -1244,7 +1247,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
                     ? 'Media Settings'
                     : activeTab === 'permalinks'
                       ? 'Permalink Settings'
-                      : 'Privacy Settings'
+                      : 'Privacy'
         }
       />
       {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}

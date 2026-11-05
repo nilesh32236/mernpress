@@ -12360,3 +12360,12 @@ a.glance-chip:hover {
   font-size: 12px;
   font-weight: 600;
 }
+
+/* Settings → Privacy: WordPress uses "Privacy" as the page title and
+   "Privacy Settings" as the section heading. */
+.settings-section-title {
+  margin: 0 0 12px;
+  font-size: 1.3em;
+  font-weight: 600;
+  color: #1d2327;
+}

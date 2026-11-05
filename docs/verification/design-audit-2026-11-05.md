@@ -57,17 +57,47 @@ Screenshots from this pass (development, git-ignored):
 | Some Screen Options panels | Columns and paging are persisted per screen; panels for WordPress features MERNPress does not have are absent. |
 | Theme/Plugin File Editors | Excluded by owner decision (RCE surface). |
 
-## Not yet re-checked in this pass
+## Follow-up pass — previously unverified screens
 
-These screens are implemented and were exercised functionally in earlier
-slices, but were not part of this 11-screen structural comparison:
+These were re-checked against the live reference on the same day. Where the
+reference screen is a JavaScript application (Fonts, Site Editor, Customizer),
+the comparison is on the screen name, primary navigation and the visible
+controls MERNPress implements.
 
-- Editor canvas chrome at 375 px (covered by the E2E responsive test).
-- Media detail modal and Edit Image.
-- Appearance → Customize, Site Editor, Fonts.
-- Tools → Import, Export, Export/Erase Personal Data, Backups, Redirects.
-- Settings → Writing, Reading, Discussion (mail log), Media, Permalinks, Privacy, Connectors.
-- Updates screen.
+| Screen | WordPress 7.1.4 | MERNPress | Result |
+| --- | --- | --- | --- |
+| Media attachment details | “Attachment details” modal: Edit Image, uploaded date/author, file name/type/size/dimensions, alt/caption/description, File URL + copy, view/download/delete | Same dialog title, same fields and actions; previous/next navigation between items | match (the reference library has no uploads, so the field set was compared against the WordPress attachment-details contract) |
+| Appearance → Customize | “Customizing: …”, Site Identity, Colors, Menus, Homepage Settings, Additional CSS, “Use Site Editor” notice | “Customizing: MERNPress”, Site Identity (title, tagline) and Save & Publish | narrower: colours/menus live in the Site Editor and theme tokens; documented deviation |
+| Appearance → Site Editor | `<h1>Design</h1>` | `<h1>Design</h1>`, Identity / Styles / Pages | match |
+| Appearance → Fonts | “Fonts” (Font Library) | “Fonts”, Library / Upload / Install Fonts, installed font list | match in name and purpose |
+| Tools → Import | “Import” + importer list | “Import” + importer list with Open / Run Importer | match; third-party importers remain unavailable by design |
+| Tools → Export | “Export”, *Choose what to export*: All content, Posts, Pages, Media, per-type author/date/status filters, Download Export File | “Export”, same four scopes, Download Export File | narrower: the four scopes exist, the per-scope filters do not; documented |
+| Tools → Export / Erase Personal Data | Request form, request list, status filters, bulk actions | Request form, request list with complete/download actions | match in structure; WordPress adds Screen Options and bulk filters |
+| Settings → Writing | “Writing Settings”: Post via email, Update Services | Same headings and fields | match |
+| Settings → Reading | “Reading Settings”: front page, posts per page, feed items, full text/excerpt, visibility | Same | match |
+| Settings → Discussion | “Discussion Settings”: article settings, other comment settings, email me, moderation, disallowed keys, avatars | Same sections plus a Mail delivery log panel | match + MERNPress addition |
+| Settings → Media | “Media Settings”: Image sizes, Uploading Files | Same | match |
+| Settings → Permalinks | “Permalink Settings”: structure presets, category base, tag base | “Permalink Settings”: one Post URL base | narrower (the router supports one base); documented |
+| Settings → Privacy | `<h1>Privacy</h1>`, “Privacy Settings”, policy page picker, Create/Use This Page helpers | Fixed this pass to `<h1>Privacy</h1>` + “Privacy Settings” + policy page picker | match in headline; the policy-page creation helpers are not implemented |
+| Settings → Connectors | “Connectors”: Akismet, Anthropic, Google, OpenAI cards | “Connectors”: OpenAI / Google / Anthropic key cards | narrower: AI providers only (no spam service) |
+| Dashboard → Updates | “WordPress Updates”: core, Plugins, Themes, re-install | “MERNPress Updates”: MERNPress, Plugins, Themes, Check again | match adapted to the product name |
 
-They should be added to this table as they are re-verified; no claim of pixel
-parity is made for them here.
+The only code change from this pass was the Privacy page title/heading split
+(`Privacy` as the page title, `Privacy Settings` as the section heading), which
+now matches WordPress.
+
+## Deliberate deviations confirmed in this pass
+
+| Deviation | Reason |
+| --- | --- |
+| Export per-scope filters | The WXR export service supports the four scopes; author/date/status filters are not implemented. |
+| Permalink presets and category/tag bases | The public router supports one configurable base segment; other structures would require route changes. |
+| Customizer scope | Themes are token packages; colours/menus are edited in the Site Editor, not a second Customizer panel set. |
+| Connectors providers | No spam service is bundled; only the three AI providers with server-side key storage exist. |
+| Privacy policy creation helpers | Pages are created in the normal editor; WordPress's guided “Create/Use This Page” flow is not implemented. |
+
+## Still not re-checked
+
+- Editor canvas chrome at 375 px (covered by the E2E responsive test, not re-measured here).
+- Media → Edit Image in this pass (implemented in an earlier slice; its E2E coverage remains).
+- Settings → Privacy policy page creation flow (not implemented).

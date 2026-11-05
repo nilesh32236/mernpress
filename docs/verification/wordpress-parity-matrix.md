@@ -131,5 +131,9 @@ missing screens. The per-screen evidence for what was checked is recorded in
 | Allow Pings | Not modelled. | Pingbacks/trackbacks require XML-RPC or inbound verification; this is a security-sensitive legacy surface, so it is stated as unavailable rather than stored as an inert checkbox. |
 | Post sidebar extras | Preview token, SEO and revisions are MERNPress additions shown after the WordPress panels. | No equivalent panels; WordPress revisions live in the document overview. |
 | Admin colour schemes | A single default scheme. | Eight built-in schemes on the Profile screen. |
+| Export filters | Export supports All content / Posts / Pages / Media. | Per-scope author, date, status and category/term filters. |
+| Permalink structures | One configurable Post URL base. | Plain, day/name, month/name, numeric, post name and custom structures, plus category/tag bases. |
+| Customizer panels | Site Identity only; colours/menus live in the Site Editor. | Site Identity, Colors, Menus, Homepage Settings and Additional CSS. |
+| Connectors | OpenAI, Google and Anthropic keys. | Akismet, Anthropic, Google and OpenAI. |
 | Screen Options per screen | Persisted per screen (columns and paging where applicable). | Some screens expose panels MERNPress does not have. |
 
