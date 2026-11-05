@@ -3151,3 +3151,10 @@ return 200.
   modelled.
 - Validation: 669 unit/integration tests (API 420, admin 160, web 24,
   block-system 65), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (editor Options):** release `20261105T082518Z-0620fc2`
+(current). Production verification with a temporary administrator: the editor
+Options menu contained Settings, Code editor, Keyboard shortcuts, Welcome guide,
+Copy all content, Plugins, Switch to draft and Move to trash; Code editor opened
+the raw-markup dialog. The temporary administrator was deleted; `/`, `/admin/`
+and `/api/health` return 200.
