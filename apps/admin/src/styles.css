@@ -12917,3 +12917,7 @@ a.glance-chip:hover {
   color: #b32d2e;
   text-decoration: line-through;
 }
+
+.note-actions .button-link.is-danger {
+  color: var(--wp-danger);
+}

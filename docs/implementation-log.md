@@ -3868,3 +3868,22 @@ text:"Target paragraph for the anchor."}` and showed the exact badge
 removing it showed “Block no longer found”. The temporary draft (and its notes)
 and the temporary administrator were deleted; production is back to 1 user and
 2 posts, with `/`, `/admin/`, `/api/health` and `/posts/testcom` at 200.
+
+### 2026-11-05 — Note deletion and notifications
+
+- Added `DELETE /api/admin/posts/:id/notes/:noteId` (204). The note author may
+  delete their own note; users with `content.edit.any` may delete any note on a
+  post they can edit. Deleting a root cascades replies. Each deletion writes a
+  `content.note.deleted` audit event with post/note/parent, anchored flag and
+  reply count in the same transaction.
+- `MailService.notifyNote` sends created/reply/deleted messages to the post
+  author or note author (administration address fallback), governed by the new
+  `notes_notify` Discussion option (default true). Delivery is best effort and
+  never fails the note operation; the mail log stores metadata only.
+- The notes panel shows Delete / Delete thread for permitted users with a
+  confirmation prompt; replies get their own Delete action.
+- Tests: deletion permissions (author vs editor), root cascade, audit event,
+  404, panel delete actions/confirmation/permission, and mail notifications
+  (post author on note/reply, note author on deletion, `notes_notify` off).
+- Validation: 812 unit/integration tests (API 490, admin 211, web 38,
+  block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.

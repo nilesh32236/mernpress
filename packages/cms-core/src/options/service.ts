@@ -608,6 +608,14 @@ const SPECS: Record<string, OptionSpec> = {
       return value;
     },
   },
+  notes_notify: {
+    group: 'discussion',
+    defaultValue: true,
+    validate: (value) => {
+      if (typeof value !== 'boolean') throwValidation('notes_notify must be a boolean.');
+      return value;
+    },
+  },
   moderation_notify: {
     group: 'discussion',
     defaultValue: true,

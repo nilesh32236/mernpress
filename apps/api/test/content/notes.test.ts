@@ -201,6 +201,97 @@ describe('editor notes', () => {
     }
   });
 
+  it('deletes notes with author/edit-any permission, cascades replies and audits', async () => {
+    // A post owned by an author: they may delete their own note but not an
+    // editor's reply; the editor may delete anything on the post.
+    await seedUser(app, {
+      username: 'note-owner',
+      password: 'Owner-pass-2026!',
+      role: 'author',
+    });
+    const owner = await loginAs(app, 'note-owner', 'Owner-pass-2026!');
+    const ownerHeaders = {
+      origin: ADMIN_ORIGIN,
+      cookie: owner.cookieHeader,
+      'x-csrf-token': owner.csrfToken,
+      'content-type': 'application/json',
+    };
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/admin/posts',
+      headers: ownerHeaders,
+      payload: {
+        type: 'post',
+        title: 'Owned notes post',
+        content: '<!-- wp:paragraph --><p>Body</p><!-- /wp:paragraph -->',
+      },
+    });
+    expect(created.statusCode).toBe(201);
+    const post = created.json() as AdminPostShape;
+
+    const root = (
+      await addNote(post.id, 'Owner root note', undefined, ownerHeaders)
+    ).json() as PostNote;
+    const reply = (await addNote(post.id, 'Owner reply', root.id, ownerHeaders)).json() as PostNote;
+
+    await seedUser(app, { username: 'note-editor', password: 'Editor-pass-2026!', role: 'editor' });
+    const editor = await loginAs(app, 'note-editor', 'Editor-pass-2026!');
+    const editorHeaders = {
+      origin: ADMIN_ORIGIN,
+      cookie: editor.cookieHeader,
+      'x-csrf-token': editor.csrfToken,
+      'content-type': 'application/json',
+    };
+    const editorReply = (
+      await addNote(post.id, 'Editor reply', root.id, editorHeaders)
+    ).json() as PostNote;
+
+    // The owner cannot delete the editor's reply (no edit-any).
+    const { 'content-type': _ownerContentType, ...ownerDeleteHeaders } = ownerHeaders;
+    const { 'content-type': _editorContentType, ...editorDeleteHeaders } = editorHeaders;
+    const forbidden = await app.inject({
+      method: 'DELETE',
+      url: `/api/admin/posts/${post.id}/notes/${editorReply.id}`,
+      headers: ownerDeleteHeaders,
+    });
+    expect(forbidden.statusCode).toBe(403);
+    expect((forbidden.json() as { error: { code: string } }).error.code).toBe('FORBIDDEN');
+
+    // The editor may delete the owner's reply, and the owner may delete a note
+    // they wrote themselves.
+    const editorDelete = await app.inject({
+      method: 'DELETE',
+      url: `/api/admin/posts/${post.id}/notes/${reply.id}`,
+      headers: editorDeleteHeaders,
+    });
+    expect(editorDelete.statusCode).toBe(204);
+    const ownerDelete = await app.inject({
+      method: 'DELETE',
+      url: `/api/admin/posts/${post.id}/notes/${root.id}`,
+      headers: ownerDeleteHeaders,
+    });
+    expect(ownerDelete.statusCode).toBe(204);
+
+    // Root deletion cascades replies (editorReply) as well.
+    const remaining = await listNotes(post.id, ownerHeaders);
+    expect((remaining.json() as { notes: PostNote[] }).notes).toEqual([]);
+
+    const audit = await app.database.auditEvent.findMany({
+      where: { eventType: 'content.note.deleted' },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(audit).toHaveLength(2);
+    expect(audit[1]?.actorUserId).toBeTruthy();
+    expect(audit[1]?.metadata).toMatchObject({ postId: post.id, replies: 1, anchored: false });
+
+    const missing = await app.inject({
+      method: 'DELETE',
+      url: `/api/admin/posts/${post.id}/notes/00000000-0000-7000-8000-000000000000`,
+      headers: ownerDeleteHeaders,
+    });
+    expect(missing.statusCode).toBe(404);
+  });
+
   it('limits notes to users who can edit the post', async () => {
     const post = await createPost();
     const root = (await addNote(post.id, 'Admin note')).json() as PostNote;

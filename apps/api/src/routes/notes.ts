@@ -71,6 +71,18 @@ export function registerNoteRoutes(app: FastifyInstance, options: NoteRouteOptio
     }
   });
 
+  app.delete('/api/admin/posts/:id/notes/:noteId', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const { id, noteId } = noteParamSchema.parse(request.params);
+      await notes.remove(ctx.principal, id, noteId);
+      return reply.code(204).send();
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
   app.patch('/api/admin/posts/:id/notes/:noteId', async (request, reply) => {
     const ctx = await guard(request, reply);
     if (!ctx) return;

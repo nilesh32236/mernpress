@@ -41,9 +41,19 @@ never leak to the public site.
    names and relative timestamps (full timestamp on hover), Reply, Resolve and
    Reopen. New, unsaved content shows "save the draft first" because notes need
    a post id.
-6. **No notifications and no delete (yet).** Notes are in-product only; they do
-   not send mail and cannot be deleted from the UI, avoiding an audit hole. A
-   future slice can add deletion with an audit trail.
+6. **Deletion with an audit trail.** `DELETE /api/admin/posts/:id/notes/:noteId`
+   lets the note author delete their own note; users with `content.edit.any`
+   may delete any note on a post they can edit. Deleting a root cascades its
+   replies. Every deletion writes a `content.note.deleted` audit event with the
+   post, note, parent, anchored flag and reply count. The panel shows Delete /
+   Delete thread actions only when the signed-in user may use them and asks for
+   confirmation.
+7. **Optional notifications.** When outbound mail is configured and
+   `notes_notify` is enabled (Settings → Discussion, default on), creating or
+   replying to someone else's note emails the post author; deleting someone
+   else's note emails the note author. Delivery is best effort and never fails
+   the note operation. Messages contain the post title/link, actor and a note
+   excerpt — never tokens or credentials.
 
 ## Consequences
 
@@ -59,5 +69,6 @@ never leak to the public site.
   similar text can read as "changed" rather than "missing", and identical
   blocks can make "moved" ambiguous. The badge states the state, and the note
   itself is never lost.
-- Mentions, mail notifications and deletion are not implemented and are
-  documented rather than implied.
+- Mention notifications are not implemented; adding a mention should reuse the
+  note mail path rather than sending a second kind of message.
+- The `notes_notify` toggle is global, not per post.

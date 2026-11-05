@@ -22,6 +22,7 @@
 | `GET /api/admin/posts/:id/notes` | `{ notes: PostNote[] }`, oldest first |
 | `POST /api/admin/posts/:id/notes` | `{ content, parentId?, block? }` → 201 note; `block` is `{name,path,hash,text}` |
 | `PATCH /api/admin/posts/:id/notes/:noteId` | `{ resolved: boolean }` → updated root |
+| `DELETE /api/admin/posts/:id/notes/:noteId` | 204; author or `content.edit.any`; root cascades replies |
 
 All require a session and CSRF, then `canEditPost` (administrators/editors may
 act on any post; authors/contributors only their own). A post the caller cannot
@@ -46,12 +47,28 @@ anchor; the panel resolves it against `listBlockAnchors(form.content)` and shows
 `exact`, `moved`, `changed` or `missing`. Hiding/moving/removing a block never
 deletes the note.
 
+## Deletion
+
+`NoteService.remove` re-checks `canEditPost`, then allows the note author or a
+principal with `content.edit.any`. The delete and a `content.note.deleted` audit
+event (post/note/parent/anchored/reply count) run in one transaction. Deleting a
+root cascades replies at the database level. The panel hides the actions for
+users who cannot use them, but the API is authoritative.
+
+## Notifications
+
+`MailService.notifyNote` sends `created`, `reply` and `deleted` messages to the
+post author or note author, falling back to the administration address when the
+recipient has no email. It is controlled by the `notes_notify` Discussion option
+(default true), logs only metadata, and is always best effort.
+
 ## Rules and limits
 
 - One reply level; replying to a reply is 400.
 - Replying to a resolved thread is 400 until Reopen.
 - Resolve applies to the root only; resolving a reply is 400.
-- No delete endpoint yet; removing a post removes its notes.
+- Deleting a note is permanent and writes an audit event; there is no trash.
+- Mention notifications are not implemented.
 - Notes never appear in public routes, feeds, the sitemap or search.
 - Anchors are resolved by content, not persistent block ids; identical blocks
   can make "moved" ambiguous and a same-type replacement with similar text can

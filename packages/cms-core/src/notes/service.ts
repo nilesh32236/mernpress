@@ -2,6 +2,8 @@ import type { DatabaseClient } from '@mernpress/database';
 import { ContentError } from '../content/errors.js';
 import type { Principal } from '../content/types.js';
 import { canEditPost } from '../content/service.js';
+import { roleHasCapability } from '../auth/capabilities.js';
+import type { MailService } from '../mail/service.js';
 import type { CreatePostNoteInput, NoteAuthor, NoteBlockAnchor, PostNote } from './types.js';
 
 /**
@@ -93,13 +95,22 @@ function toNote(row: NoteRow): PostNote {
 
 export interface NoteServiceOptions {
   prisma: DatabaseClient;
+  /** Optional outbound mail for note/reply/deletion notifications. */
+  mail?: MailService | undefined;
 }
 
-export function createNoteService({ prisma }: NoteServiceOptions) {
+export function createNoteService({ prisma, mail }: NoteServiceOptions) {
   async function loadEditablePost(principal: Principal, postId: string) {
     const post = await prisma.post.findUnique({
       where: { id: postId },
-      select: { id: true, authorId: true, status: true },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        authorId: true,
+        status: true,
+        author: { select: { email: true, username: true, displayName: true } },
+      },
     });
     if (!post) {
       throw new ContentError('NOT_FOUND', 'Not found', 404);
@@ -123,7 +134,7 @@ export function createNoteService({ prisma }: NoteServiceOptions) {
     postId: string,
     input: CreatePostNoteInput,
   ): Promise<PostNote> {
-    await loadEditablePost(principal, postId);
+    const post = await loadEditablePost(principal, postId);
     const content = input.content.trim();
     if (content.length === 0) {
       throw new ContentError('VALIDATION_ERROR', 'Write a note first.', 400);
@@ -178,6 +189,25 @@ export function createNoteService({ prisma }: NoteServiceOptions) {
       },
       include: NOTE_INCLUDE,
     });
+
+    // Notify the post author about someone else's note or reply. A missing
+    // author address falls back to the administration address; mail failures
+    // never lose the note.
+    if (mail?.status().configured && principal.userId !== post.authorId) {
+      try {
+        const actorName = row.author?.displayName?.trim() || row.author?.username || 'An editor';
+        await mail.notifyNote({
+          postTitle: post.title,
+          postSlug: post.slug,
+          actorName,
+          content,
+          kind: parentId ? 'reply' : 'created',
+          recipientEmail: post.author?.email ?? null,
+        });
+      } catch {
+        // Delivery is best effort.
+      }
+    }
     return toNote(row);
   }
 
@@ -208,7 +238,77 @@ export function createNoteService({ prisma }: NoteServiceOptions) {
     return toNote(row);
   }
 
-  return { list, create, setResolved };
+  /**
+   * Delete a note or a whole thread. The note author may delete their own
+   * note; users with `content.edit.any` may delete any note on a post they can
+   * edit. Deleting a root cascades its replies (PostNote.parent onDelete).
+   */
+  async function remove(principal: Principal, postId: string, noteId: string): Promise<void> {
+    const post = await loadEditablePost(principal, postId);
+    const note = await prisma.postNote.findFirst({
+      where: { id: noteId, postId },
+      select: {
+        id: true,
+        parentId: true,
+        authorId: true,
+        content: true,
+        blockName: true,
+        author: { select: { email: true, username: true, displayName: true } },
+      },
+    });
+    if (!note) {
+      throw new ContentError('NOT_FOUND', 'Not found', 404);
+    }
+    if (
+      note.authorId !== principal.userId &&
+      !roleHasCapability(principal.role, 'content.edit.any')
+    ) {
+      throw new ContentError(
+        'FORBIDDEN',
+        'Only the note author or an editor can delete this note.',
+        403,
+      );
+    }
+    const replies =
+      note.parentId === null ? await prisma.postNote.count({ where: { parentId: note.id } }) : 0;
+    await prisma.$transaction(async (tx) => {
+      await tx.postNote.delete({ where: { id: note.id } });
+      await tx.auditEvent.create({
+        data: {
+          eventType: 'content.note.deleted',
+          actorUserId: principal.userId,
+          metadata: {
+            postId,
+            noteId: note.id,
+            parentId: note.parentId,
+            anchored: note.blockName !== null,
+            replies,
+          },
+        },
+      });
+    });
+
+    if (mail?.status().configured && note.authorId !== null && note.authorId !== principal.userId) {
+      try {
+        const actor = await prisma.user.findUnique({
+          where: { id: principal.userId },
+          select: { username: true, displayName: true },
+        });
+        await mail.notifyNote({
+          postTitle: post.title,
+          postSlug: post.slug,
+          actorName: actor?.displayName?.trim() || actor?.username || 'An editor',
+          content: note.content,
+          kind: 'deleted',
+          recipientEmail: note.author?.email ?? null,
+        });
+      } catch {
+        // Delivery is best effort.
+      }
+    }
+  }
+
+  return { list, create, setResolved, remove };
 }
 
 export type NoteService = ReturnType<typeof createNoteService>;

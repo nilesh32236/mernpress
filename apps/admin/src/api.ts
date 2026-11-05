@@ -1100,6 +1100,19 @@ export async function createPostNote(
   return readJson<PostNote>(response);
 }
 
+export async function deletePostNote(postId: string, noteId: string): Promise<void> {
+  const response = await fetch(
+    `/api/admin/posts/${encodeURIComponent(postId)}/notes/${encodeURIComponent(noteId)}`,
+    {
+      method: 'DELETE',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { accept: 'application/json', ...csrfHeader() },
+    },
+  );
+  if (!response.ok) await readJson(response);
+}
+
 export async function setPostNoteResolved(
   postId: string,
   noteId: string,

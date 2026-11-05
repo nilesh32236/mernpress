@@ -49,6 +49,7 @@ import {
   availableTransitions,
   canAssignTerms,
   canCreateContent,
+  canDeleteAnyNote,
   canEditPost,
   canLockStructure,
 } from './roles.js';
@@ -2567,6 +2568,8 @@ export function ContentEditor({
                     state={postNotes}
                     selectedAnchor={selectedBlockAnchor}
                     anchors={blockAnchors}
+                    currentUserId={user.id}
+                    canDeleteAny={canDeleteAnyNote(user)}
                   />
                 </div>
               </div>

@@ -77,6 +77,19 @@ export interface CommentNotificationInput extends CommentMailInput {
   postAuthorEmail: string | null;
 }
 
+/** Editor-note activity notification. */
+export interface NoteMailInput {
+  postTitle: string;
+  postSlug: string;
+  /** Display name or username of the person who acted. */
+  actorName: string;
+  /** Note or reply text. */
+  content: string;
+  kind: 'created' | 'reply' | 'deleted';
+  /** Post author or note author; null falls back to the admin recipient. */
+  recipientEmail: string | null;
+}
+
 export interface NewUserMailInput {
   username: string;
   email: string;
@@ -343,6 +356,39 @@ export function createMailService({
     });
   }
 
+  async function notifyNote(input: NoteMailInput): Promise<MailResult> {
+    const enabled = await option<boolean>('notes_notify', true);
+    if (!enabled) return { sent: false, reason: 'disabled' };
+    const recipient =
+      input.recipientEmail && EMAIL_PATTERN.test(input.recipientEmail)
+        ? input.recipientEmail
+        : await adminRecipient();
+    const action =
+      input.kind === 'deleted'
+        ? 'had a note deleted'
+        : input.kind === 'reply'
+          ? 'replied to a note'
+          : 'added an editor note';
+    return deliver(recipient, async () => {
+      const context = await siteContext();
+      const permalink = postUrl(context.siteUrl, context.permalinkBase, input.postSlug);
+      return {
+        subject: `[${context.siteTitle}] ${singleLine(input.actorName)} ${action} on "${singleLine(input.postTitle)}"`,
+        text: [
+          `${singleLine(input.actorName)} ${action} on "${singleLine(input.postTitle)}".`,
+          '',
+          `Post: ${singleLine(input.postTitle)}`,
+          permalink,
+          '',
+          'Note:',
+          excerpt(input.content),
+          '',
+          `Open the editor: ${adminLink(context.siteUrl, '/posts')}`,
+        ].join('\n'),
+      };
+    });
+  }
+
   async function notifyPasswordReset(input: PasswordResetMailInput): Promise<MailResult> {
     return deliver(input.to, async () => {
       const context = await siteContext();
@@ -424,6 +470,7 @@ export function createMailService({
     status,
     notifyModeration,
     notifyComment,
+    notifyNote,
     notifyNewUser,
     notifyPasswordReset,
     log,

@@ -329,4 +329,64 @@ describe('comment and new-user mail notifications', () => {
     });
     expect(clear.statusCode).toBe(401);
   });
+
+  it('emails about notes and deletions unless notes_notify is disabled', async () => {
+    const post = await publishedPost('Note mail target');
+    const createdUser = await app.inject({
+      method: 'POST',
+      url: '/api/users',
+      headers: headers(),
+      payload: {
+        username: 'note-mailer',
+        password: 'Note-mailer-pass-2026!',
+        role: 'editor',
+        email: 'editor@example.com',
+        sendNotification: false,
+      },
+    });
+    expect(createdUser.statusCode).toBe(201);
+    const editor = await loginAs(app, 'note-mailer', 'Note-mailer-pass-2026!');
+    const editorHeaders = {
+      origin: ADMIN_ORIGIN,
+      cookie: editor.cookieHeader,
+      'x-csrf-token': editor.csrfToken,
+      'content-type': 'application/json',
+    };
+    const addNote = async (payload: Record<string, unknown>) => {
+      const response = await app.inject({
+        method: 'POST',
+        url: `/api/admin/posts/${post.id}/notes`,
+        headers: editorHeaders,
+        payload,
+      });
+      expect(response.statusCode).toBe(201);
+      return response.json() as { id: string };
+    };
+
+    const root = await addNote({ content: 'Please review this paragraph.' });
+    expect(app.mail.outbox).toHaveLength(1);
+    expect(app.mail.outbox[0]!.to).toBe('admin@example.com');
+    expect(app.mail.outbox[0]!.subject).toContain('added an editor note');
+    expect(app.mail.outbox[0]!.text).toContain('Please review this paragraph.');
+
+    await addNote({ content: 'A reply from the editor.', parentId: root.id });
+    expect(app.mail.outbox).toHaveLength(2);
+    expect(app.mail.outbox[1]!.to).toBe('admin@example.com');
+    expect(app.mail.outbox[1]!.subject).toContain('replied to a note');
+
+    const { 'content-type': _contentType, ...deleteHeaders } = headers();
+    const deleted = await app.inject({
+      method: 'DELETE',
+      url: `/api/admin/posts/${post.id}/notes/${root.id}`,
+      headers: deleteHeaders,
+    });
+    expect(deleted.statusCode).toBe(204);
+    expect(app.mail.outbox).toHaveLength(3);
+    expect(app.mail.outbox[2]!.to).toBe('editor@example.com');
+    expect(app.mail.outbox[2]!.subject).toContain('had a note deleted');
+
+    await setDiscussion({ notes_notify: false });
+    await addNote({ content: 'This one should not be mailed.' });
+    expect(app.mail.outbox).toHaveLength(3);
+  });
 });

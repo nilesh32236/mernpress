@@ -132,6 +132,12 @@ const DISCUSSION_FIELDS: Field[] = [
     type: 'checkbox',
   },
   {
+    key: 'notes_notify',
+    label: 'Email me about editor notes, replies and deletions',
+    type: 'checkbox',
+    help: 'Sent to the post author (or the note author on deletion) when outbound mail is configured on the server.',
+  },
+  {
     key: 'comment_max_links',
     label: 'Hold a comment in the queue if it contains this number of links or more',
     type: 'number',

@@ -66,6 +66,8 @@ export function NotesPanel({
   state,
   selectedAnchor = null,
   anchors = [],
+  currentUserId = null,
+  canDeleteAny = false,
 }: {
   postId: string | null;
   state: PostNotesState;
@@ -73,6 +75,10 @@ export function NotesPanel({
   selectedAnchor?: NoteBlockAnchor | null;
   /** Current document anchors, used to resolve stored note anchors. */
   anchors?: BlockAnchor[];
+  /** Signed-in user, used for note-author delete affordances. */
+  currentUserId?: string | null;
+  /** Administrators/editors may delete any note on a post they can edit. */
+  canDeleteAny?: boolean;
 }) {
   const [draft, setDraft] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
@@ -101,6 +107,20 @@ export function NotesPanel({
     state.notes
       .filter((note) => note.parentId === rootId)
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
+  const canDelete = (note: PostNote) =>
+    canDeleteAny || (Boolean(currentUserId) && note.author?.id === currentUserId);
+
+  async function removeNote(note: PostNote): Promise<void> {
+    if (!canDelete(note)) return;
+    const question =
+      note.parentId === null
+        ? 'Delete this note thread and all of its replies?'
+        : 'Delete this reply?';
+    if (typeof window !== 'undefined' && !window.confirm(question)) return;
+    setLocalError(null);
+    await state.remove(note.id);
+  }
 
   async function submitRoot(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -241,6 +261,16 @@ export function NotesPanel({
                       >
                         {resolved ? 'Reopen' : 'Resolve'}
                       </button>
+                      {canDelete(thread) ? (
+                        <button
+                          type="button"
+                          className="button-link is-danger"
+                          onClick={() => void removeNote(thread)}
+                          disabled={state.busy}
+                        >
+                          {replies.length > 0 ? 'Delete thread' : 'Delete'}
+                        </button>
+                      ) : null}
                     </>
                   }
                 />
@@ -251,7 +281,21 @@ export function NotesPanel({
                   <ol className="note-replies">
                     {replies.map((reply) => (
                       <li key={reply.id}>
-                        <Message note={reply} />
+                        <Message
+                          note={reply}
+                          actions={
+                            canDelete(reply) ? (
+                              <button
+                                type="button"
+                                className="button-link is-danger"
+                                onClick={() => void removeNote(reply)}
+                                disabled={state.busy}
+                              >
+                                Delete
+                              </button>
+                            ) : undefined
+                          }
+                        />
                       </li>
                     ))}
                   </ol>

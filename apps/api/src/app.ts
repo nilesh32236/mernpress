@@ -311,7 +311,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   app.decorate('customizer', customizer);
   const spamGuard = createSpamGuardService({ prisma: database });
   app.decorate('spamGuard', spamGuard);
-  const notes = createNoteService({ prisma: database });
+  const notes = createNoteService({ prisma: database, mail });
   app.decorate('notes', notes);
   const screenOptions = createScreenOptionsService({ prisma: database });
   app.decorate('imports', imports);

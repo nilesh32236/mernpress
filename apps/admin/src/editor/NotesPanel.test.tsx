@@ -29,6 +29,7 @@ function state(overrides: Partial<PostNotesState> = {}): PostNotesState {
     add: vi.fn(async () => true),
     reply: vi.fn(async () => true),
     setResolved: vi.fn(async () => true),
+    remove: vi.fn(async () => true),
     refresh: vi.fn(),
     ...overrides,
   };
@@ -200,5 +201,54 @@ describe('editor notes panel', () => {
     expect(screen.getByText('Paragraph · block 3 (moved)')).toBeDefined();
     expect(screen.getByText('Heading · block 2 (block changed)')).toBeDefined();
     expect(screen.getByText('Block no longer found')).toBeDefined();
+  });
+
+  it('deletes an own thread and any reply with edit-any, after confirmation', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const root = note({ author: { id: 'u1', username: 'admin', displayName: null } });
+    const reply = note({
+      id: 'n2',
+      parentId: 'n1',
+      content: 'A reply.',
+      author: { id: 'u2', username: 'editor', displayName: null },
+    });
+    const notes = state({ notes: [root, reply], unresolvedCount: 1 });
+    const { rerender } = render(
+      <NotesPanel postId="p1" state={notes} currentUserId="u1" canDeleteAny={false} />,
+    );
+
+    // The author can delete their own thread, but not the editor's reply.
+    expect(screen.getByRole('button', { name: 'Delete thread' })).toBeDefined();
+    expect(screen.queryAllByRole('button', { name: 'Delete' })).toHaveLength(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete thread' }));
+    expect(confirm).toHaveBeenCalled();
+    expect(notes.remove).toHaveBeenCalledWith('n1');
+
+    rerender(<NotesPanel postId="p1" state={notes} currentUserId="u1" canDeleteAny />);
+    const deletes = screen.getAllByRole('button', { name: 'Delete' });
+    expect(deletes).toHaveLength(1);
+    fireEvent.click(deletes[0]!);
+    expect(notes.remove).toHaveBeenCalledWith('n2');
+    confirm.mockRestore();
+  });
+
+  it('does not offer delete when the user cannot delete the note', () => {
+    const notes = state({
+      notes: [note({ author: { id: 'u2', username: 'editor', displayName: null } })],
+    });
+    render(<NotesPanel postId="p1" state={notes} currentUserId="u1" canDeleteAny={false} />);
+    expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Delete thread' })).toBeNull();
+  });
+
+  it('cancels a delete when confirmation is declined', () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const notes = state({
+      notes: [note({ author: { id: 'u1', username: 'admin', displayName: null } })],
+    });
+    render(<NotesPanel postId="p1" state={notes} currentUserId="u1" canDeleteAny={false} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(notes.remove).not.toHaveBeenCalled();
+    confirm.mockRestore();
   });
 });

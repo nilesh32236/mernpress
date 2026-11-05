@@ -65,6 +65,11 @@ export function canLockStructure(user: AuthUser): boolean {
   return user.role === 'administrator' || user.role === 'editor';
 }
 
+/** Mirrors the note deletion policy: editors/administrators may delete any note. */
+export function canDeleteAnyNote(user: AuthUser): boolean {
+  return user.role === 'administrator' || user.role === 'editor';
+}
+
 export function canPublishPost(user: AuthUser, post: AdminPost): boolean {
   if (user.role === 'administrator' || user.role === 'editor') {
     return true;

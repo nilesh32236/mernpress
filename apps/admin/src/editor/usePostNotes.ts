@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   actionErrorMessage,
   createPostNote,
+  deletePostNote,
   fetchPostNotes,
   setPostNoteResolved,
   type NoteBlockAnchor,
@@ -17,6 +18,7 @@ export interface PostNotesState {
   add: (content: string, block?: NoteBlockAnchor | null) => Promise<boolean>;
   reply: (parentId: string, content: string) => Promise<boolean>;
   setResolved: (noteId: string, resolved: boolean) => Promise<boolean>;
+  remove: (noteId: string) => Promise<boolean>;
   refresh: () => void;
 }
 
@@ -99,6 +101,10 @@ export function usePostNotes(postId: string | null): PostNotesState {
       run(() => setPostNoteResolved(postId as string, noteId, resolved)),
     [postId, run],
   );
+  const remove = useCallback(
+    (noteId: string) => run(() => deletePostNote(postId as string, noteId)),
+    [postId, run],
+  );
 
   return {
     notes,
@@ -110,6 +116,7 @@ export function usePostNotes(postId: string | null): PostNotesState {
     add,
     reply,
     setResolved,
+    remove,
     refresh,
   };
 }
