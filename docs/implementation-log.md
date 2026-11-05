@@ -4014,3 +4014,27 @@ root note and one reply:
 - The temporary post and administrator were deleted; production is back to
   1 user and 2 posts with `/`, `/admin/`, `/api/health` and `/posts/testcom`
   returning 200.
+
+### 2026-11-05 — Per-post notes notification override
+
+- `posts.notes_notify` (`Boolean?`, migration `add_post_notes_notify`): null
+  inherits the Discussion option, true always sends note/reply/deletion/mention
+  mail for that post, false never does.
+- `AdminPost.notesNotify` plus `notesNotify` on the create/update schemas
+  (strict `boolean | null`). The editor publish panel adds a **Notes email**
+  select (Use Discussion setting / Send / Do not send) that takes part in dirty
+  tracking and saves with the post.
+- `NoteService` passes `enabled: post.notesNotify` to the note and mention mail
+  calls; `MailService.notifyNote`/`notifyNoteMention` use it when defined and fall
+  back to the global `notes_notify` option otherwise. The override cannot send
+  mail when no transport is configured.
+- Browser verification (in-memory mail): a draft created with `notesNotify:false`
+  showed the select as “Do not send”, changing to “Send” + Save draft persisted
+  `true` (“Changes saved.”), clearing to “Use Discussion setting” persisted
+  `null`, and a reload showed the stored value.
+- Tests: API persistence/default/invalid value, per-post off suppressing note
+  mail under global on, per-post on sending under global off (including mention
+  mail) and null inheriting the global switch; admin control default, explicit
+  server value and PATCH payload.
+- Validation: 831 unit/integration tests (API 500, admin 220, web 38,
+  block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.

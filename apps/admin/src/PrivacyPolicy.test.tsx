@@ -43,6 +43,7 @@ const existingPage = {
   publishedAt: null,
   commentStatus: 'open' as const,
   sticky: false,
+  notesNotify: null,
   structureLocked: false,
   passwordProtected: false,
   isPrivate: false,

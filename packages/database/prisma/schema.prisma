@@ -276,6 +276,8 @@ model Post {
   format          String      @default("standard") @db.VarChar(20)
   /// WordPress "Make this post sticky": pinned above normal posts on the blog.
   sticky          Boolean     @default(false)
+  /// Per-post editor-note mail override; null inherits the Discussion setting.
+  notesNotify     Boolean?    @map("notes_notify")
   /// Safe client editing: structural block edits are rejected while locked.
   structureLocked Boolean     @default(false) @map("structure_locked")
 

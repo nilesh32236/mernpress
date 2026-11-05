@@ -27,6 +27,7 @@ export const createPostSchema = z
     ogTitle: seoTitle.optional(),
     ogDescription: seoDescription.optional(),
     sticky: z.boolean().optional(),
+    notesNotify: z.boolean().nullable().optional(),
     format: z
       .enum([
         'standard',
@@ -62,6 +63,7 @@ export const updatePostSchema = z
     authorId: uuid.nullable().optional(),
     commentStatus: z.enum(['open', 'closed']).optional(),
     sticky: z.boolean().optional(),
+    notesNotify: z.boolean().nullable().optional(),
     password: z.string().max(100).nullable().optional(),
     isPrivate: z.boolean().optional(),
     structureLocked: z.boolean().optional(),

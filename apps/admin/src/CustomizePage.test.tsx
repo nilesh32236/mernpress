@@ -47,6 +47,7 @@ function page(id: string, title: string): AdminPost {
     publishedAt: '2026-01-01T00:00:00.000Z',
     commentStatus: 'open',
     sticky: false,
+    notesNotify: null,
     structureLocked: false,
     passwordProtected: false,
     isPrivate: false,

@@ -51,6 +51,7 @@ function makePost(overrides: Partial<AdminPost> = {}): AdminPost {
     publishedAt: null,
     commentStatus: 'open',
     sticky: false,
+    notesNotify: null,
     structureLocked: false,
     passwordProtected: false,
     isPrivate: false,
@@ -126,6 +127,7 @@ describe('content editor', () => {
       ogDescription: null,
       format: 'standard',
       sticky: false,
+      notesNotify: null,
     });
     await waitFor(() => expect(window.location.pathname).toBe('/posts/created-1/edit'));
   });
@@ -1301,5 +1303,58 @@ describe('safe client editing', () => {
     fireEvent.click(within(reopened).getByRole('button', { name: 'Close' }));
     expect(screen.getByLabelText('Format')).toBeDefined();
     expect([...editorHiddenPanels()]).not.toContain('format');
+  });
+
+  it('shows and persists the per-post notes email override', async () => {
+    const post = makePost({
+      authorId: 'a1',
+      status: 'DRAFT',
+      version: 5,
+      notesNotify: null,
+    });
+    const bodies: Array<Record<string, unknown>> = [];
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (init?.method === 'PATCH') {
+        bodies.push(JSON.parse(String(init.body)) as Record<string, unknown>);
+        return response({ ...post, notesNotify: false, version: 6 });
+      }
+      if (url.includes('/notes')) return response({ notes: [], trash: [] });
+      if (url.includes('/revisions')) return response([]);
+      if (url.includes('/schedule')) return response({ scheduledAt: null });
+      if (url.includes('/api/terms')) return response(termsPage());
+      if (url.includes('/api/admin/posts/')) return response(post);
+      return response(termsPage());
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA, post.id);
+    const select = (await screen.findByLabelText('Notes email')) as HTMLSelectElement;
+    expect(select.value).toBe('');
+    expect(screen.getByRole('option', { name: 'Use Discussion setting' })).toBeDefined();
+
+    fireEvent.change(select, { target: { value: 'off' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+
+    await waitFor(() => expect(bodies.length).toBeGreaterThan(0));
+    expect(bodies[0]).toMatchObject({ baseVersion: 5, notesNotify: false });
+  });
+
+  it('renders an explicit per-post setting from the server', async () => {
+    const post = makePost({ authorId: 'a1', status: 'DRAFT', notesNotify: true });
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes('/notes')) return response({ notes: [], trash: [] });
+      if (url.includes('/revisions')) return response([]);
+      if (url.includes('/schedule')) return response({ scheduledAt: null });
+      if (url.includes('/api/terms')) return response(termsPage());
+      if (url.includes('/api/admin/posts/')) return response(post);
+      return response(termsPage());
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA, post.id);
+    const select = (await screen.findByLabelText('Notes email')) as HTMLSelectElement;
+    expect(select.value).toBe('on');
   });
 });

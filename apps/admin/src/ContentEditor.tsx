@@ -94,6 +94,7 @@ interface Baseline {
   format: PostFormat;
   structureLocked: boolean;
   sticky: boolean;
+  notesNotify: boolean | null;
 }
 
 const EMPTY_FORM: FormState = {
@@ -238,6 +239,7 @@ export function ContentEditor({
   const [featuredMedia, setFeaturedMedia] = useState<FeaturedImage | null>(null);
   const [format, setFormat] = useState<PostFormat>('standard');
   const [sticky, setSticky] = useState(false);
+  const [notesNotify, setNotesNotify] = useState<'' | 'on' | 'off'>('');
   const [structureLocked, setStructureLocked] = useState(false);
   const [hiddenPanels, setHiddenPanels] = useState<Set<string>>(() => editorHiddenPanels());
   const [permalinkPattern, setPermalinkPattern] = useState('/posts/%postname%/');
@@ -321,7 +323,8 @@ export function ContentEditor({
       (featuredMedia?.id ?? null) !== baseline.featuredMediaId ||
       format !== baseline.format ||
       structureLocked !== baseline.structureLocked ||
-      sticky !== baseline.sticky
+      sticky !== baseline.sticky ||
+      (notesNotify === '' ? null : notesNotify === 'on') !== baseline.notesNotify
     );
   }, [
     baseline,
@@ -336,6 +339,7 @@ export function ContentEditor({
     format,
     structureLocked,
     sticky,
+    notesNotify,
   ]);
 
   useUnsavedChanges(dirty, 'You have unsaved changes. Leave this page without saving?');
@@ -423,6 +427,7 @@ export function ContentEditor({
         setFeaturedMedia(loaded.featuredMedia ?? null);
         setFormat(loaded.format);
         setSticky(loaded.sticky);
+        setNotesNotify(loaded.notesNotify === null ? '' : loaded.notesNotify ? 'on' : 'off');
         setStructureLocked(loaded.structureLocked);
         setBaseline({
           form: nextForm,
@@ -431,6 +436,7 @@ export function ContentEditor({
           format: loaded.format,
           structureLocked: loaded.structureLocked,
           sticky: loaded.sticky,
+          notesNotify: loaded.notesNotify,
         });
         setContentTouched(false);
         setLoading(false);
@@ -833,6 +839,7 @@ export function ContentEditor({
     setFeaturedMedia(nextPost.featuredMedia ?? null);
     setFormat(nextPost.format);
     setSticky(nextPost.sticky);
+    setNotesNotify(nextPost.notesNotify === null ? '' : nextPost.notesNotify ? 'on' : 'off');
     setStructureLocked(nextPost.structureLocked);
     setBaseline({
       form: nextForm,
@@ -841,6 +848,7 @@ export function ContentEditor({
       format: nextPost.format,
       structureLocked: nextPost.structureLocked,
       sticky: nextPost.sticky,
+      notesNotify: nextPost.notesNotify,
     });
     setContentTouched(false);
   }
@@ -928,6 +936,7 @@ export function ContentEditor({
           ...seoPayload(form),
           format,
           ...(type === 'post' ? { sticky } : {}),
+          notesNotify: notesNotify === '' ? null : notesNotify === 'on',
         });
         const termsResult = await saveTerms(created.id, created);
         if (!termsResult.ok) {
@@ -972,6 +981,7 @@ export function ContentEditor({
         format,
         structureLocked,
         ...(type === 'post' ? { sticky } : {}),
+        notesNotify: notesNotify === '' ? null : notesNotify === 'on',
         // Only send when changed; undefined keeps the server-side value.
         ...((featuredMedia?.id ?? null) !== (baseline?.featuredMediaId ?? null)
           ? { featuredMediaId: featuredMedia?.id ?? null }
@@ -986,6 +996,7 @@ export function ContentEditor({
         setFeaturedMedia(updated.featuredMedia ?? null);
         setFormat(updated.format);
         setSticky(updated.sticky);
+        setNotesNotify(updated.notesNotify === null ? '' : updated.notesNotify ? 'on' : 'off');
         setStructureLocked(updated.structureLocked);
         setBaseline({
           form: formFromPost(updated),
@@ -994,6 +1005,7 @@ export function ContentEditor({
           format: updated.format,
           structureLocked: updated.structureLocked,
           sticky: updated.sticky,
+          notesNotify: updated.notesNotify,
         });
         setContentTouched(false);
         setNotice({
@@ -1992,6 +2004,27 @@ export function ContentEditor({
                               </div>
                             </div>
                             <PingsField />
+                            <div className="publish-field">
+                              <span className="publish-label">Notes email</span>
+                              <div className="publish-value">
+                                <select
+                                  aria-label="Notes email"
+                                  value={notesNotify}
+                                  onChange={(event) =>
+                                    setNotesNotify(event.target.value as '' | 'on' | 'off')
+                                  }
+                                  disabled={!editable}
+                                >
+                                  <option value="">Use Discussion setting</option>
+                                  <option value="on">Send</option>
+                                  <option value="off">Do not send</option>
+                                </select>
+                              </div>
+                            </div>
+                            <p className="field-help">
+                              Controls editor-note, reply and mention email for this post. It cannot
+                              be used to send mail when the server has no mail transport.
+                            </p>
                           </>
                         ) : null}
                         {!hiddenPanels.has('format') ? (
@@ -2116,6 +2149,27 @@ export function ContentEditor({
                               </div>
                             </div>
                             <PingsField />
+                            <div className="publish-field">
+                              <span className="publish-label">Notes email</span>
+                              <div className="publish-value">
+                                <select
+                                  aria-label="Notes email"
+                                  value={notesNotify}
+                                  onChange={(event) =>
+                                    setNotesNotify(event.target.value as '' | 'on' | 'off')
+                                  }
+                                  disabled={!editable}
+                                >
+                                  <option value="">Use Discussion setting</option>
+                                  <option value="on">Send</option>
+                                  <option value="off">Do not send</option>
+                                </select>
+                              </div>
+                            </div>
+                            <p className="field-help">
+                              Controls editor-note, reply and mention email for this post. It cannot
+                              be used to send mail when the server has no mail transport.
+                            </p>
                           </>
                         ) : null}
                         {!hiddenPanels.has('format') ? (

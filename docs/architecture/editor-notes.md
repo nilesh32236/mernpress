@@ -66,8 +66,11 @@ transition; the API is authoritative.
 
 `MailService.notifyNote` sends `created`, `reply` and `deleted` messages to the
 post author or note author, falling back to the administration address when the
-recipient has no email. It is controlled by the `notes_notify` Discussion option
-(default true), logs only metadata, and is always best effort.
+recipient has no email. Delivery is controlled by `posts.notes_notify` when set
+(true = always, false = never) and otherwise by the `notes_notify` Discussion
+option (default true). The same resolution applies to mention mail. The service
+passes `enabled` explicitly; the mail layer falls back to the option when it is
+undefined. Only metadata is logged, and delivery is always best effort.
 
 ## Mentions
 
@@ -92,7 +95,7 @@ edit the post receive mention emails.
 - Resolve applies to the root only; resolving a reply is 400.
 - Deleting a note is permanent and writes an audit event; there is no trash.
 - Mentions only notify accounts that can edit the post at send time; there is no
-  per-user mention preference beyond `notes_notify`.
+  per-user mention preference beyond the global/per-post switch.
 - Mentions are plain text (`@username`); there is no autocomplete picker.
 - Notes never appear in public routes, feeds, the sitemap or search.
 - Anchors are resolved by content, not persistent block ids; identical blocks

@@ -135,6 +135,7 @@ export function createNoteService({ prisma, mail }: NoteServiceOptions) {
         slug: true,
         authorId: true,
         status: true,
+        notesNotify: true,
         author: { select: { email: true, username: true, displayName: true } },
       },
     });
@@ -244,6 +245,7 @@ export function createNoteService({ prisma, mail }: NoteServiceOptions) {
         await mail.notifyNote({
           postTitle: post.title,
           postSlug: post.slug,
+          enabled: post.notesNotify ?? undefined,
           actorName,
           content,
           kind: parentId ? 'reply' : 'created',
@@ -283,6 +285,7 @@ export function createNoteService({ prisma, mail }: NoteServiceOptions) {
             await mail.notifyNoteMention({
               postTitle: post.title,
               postSlug: post.slug,
+              enabled: post.notesNotify ?? undefined,
               actorName: row.author?.displayName?.trim() || row.author?.username || 'An editor',
               mentionedName: user.displayName?.trim() || user.username,
               content,
@@ -447,6 +450,7 @@ export function createNoteService({ prisma, mail }: NoteServiceOptions) {
         await mail.notifyNote({
           postTitle: post.title,
           postSlug: post.slug,
+          enabled: post.notesNotify ?? undefined,
           actorName: actor?.displayName?.trim() || actor?.username || 'An editor',
           content: note.content,
           kind: 'deleted',

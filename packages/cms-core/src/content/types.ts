@@ -92,6 +92,8 @@ export interface AdminPost {
   commentStatus: 'open' | 'closed';
   /** WordPress "Make this post sticky". */
   sticky: boolean;
+  /** Per-post editor-note mail override; null inherits the Discussion option. */
+  notesNotify: boolean | null;
   /** Safe client editing: structural block edits are rejected while locked. */
   structureLocked: boolean;
   /** True when a post password is set (the hash itself never leaves the DB). */
@@ -229,6 +231,8 @@ export interface CreatePostInput {
   format?: PostFormat | undefined;
   /** WordPress "Make this post sticky" (posts only). */
   sticky?: boolean | undefined;
+  /** Per-post editor-note mail override; null inherits the Discussion option. */
+  notesNotify?: boolean | null | undefined;
 }
 
 export interface UpdatePostInput {
@@ -248,6 +252,7 @@ export interface UpdatePostInput {
   authorId?: string | null | undefined;
   commentStatus?: 'open' | 'closed' | undefined;
   sticky?: boolean | undefined;
+  notesNotify?: boolean | null | undefined;
   /** Empty string or null removes the password protection. */
   password?: string | null | undefined;
   isPrivate?: boolean | undefined;

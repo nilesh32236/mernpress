@@ -61,6 +61,8 @@ export interface AdminPost {
   publishedAt: string | null;
   commentStatus: 'open' | 'closed';
   sticky: boolean;
+  /** Per-post editor-note mail override; null inherits the Discussion option. */
+  notesNotify: boolean | null;
   /** Safe client editing: structural block edits are rejected while locked. */
   structureLocked: boolean;
   passwordProtected: boolean;
@@ -293,6 +295,7 @@ export interface CreatePostPayload {
   ogTitle?: string | null;
   ogDescription?: string | null;
   format?: PostFormat;
+  notesNotify?: boolean | null;
 }
 
 export interface UpdatePostPayload {
@@ -312,6 +315,7 @@ export interface UpdatePostPayload {
   authorId?: string | null;
   commentStatus?: 'open' | 'closed';
   sticky?: boolean;
+  notesNotify?: boolean | null;
   password?: string | null;
   isPrivate?: boolean;
   format?: PostFormat;

@@ -93,4 +93,6 @@ never leak to the public site.
 - Mention eligibility is checked at send time; a user who loses post access
   will not receive later mentions. There is no per-user mention digest or
   preference yet beyond the global `notes_notify` toggle.
-- The `notes_notify` toggle is global, not per post.
+- Note mail is governed by the global `notes_notify` option with an optional
+  per-post override; there is no per-user subscription beyond that. The override
+  cannot send mail when the server has no transport.

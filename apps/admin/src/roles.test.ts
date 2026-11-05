@@ -39,6 +39,7 @@ const post = (authorId: string, status: AdminPost['status'] = 'DRAFT'): AdminPos
   publishedAt: null,
   commentStatus: 'open',
   sticky: false,
+  notesNotify: null,
   structureLocked: false,
   passwordProtected: false,
   isPrivate: false,

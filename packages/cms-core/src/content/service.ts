@@ -317,6 +317,7 @@ function toAdmin(row: PostWithTerms, options: { includePreviewToken?: boolean } 
     publishedAt: row.publishedAt?.toISOString() ?? null,
     commentStatus: row.commentStatus === 'closed' ? 'closed' : 'open',
     sticky: row.sticky,
+    notesNotify: row.notesNotify,
     structureLocked: row.structureLocked,
     passwordProtected: row.passwordHash !== null,
     isPrivate: row.isPrivate,
@@ -565,6 +566,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
             authorId: principal.userId,
             format,
             sticky: draft.type === 'post' ? (input.sticky ?? false) : false,
+            notesNotify: input.notesNotify ?? null,
           },
           include: WITH_TERMS,
         });
@@ -643,6 +645,8 @@ export function createContentService(options: ContentServiceOptions): ContentSer
         throw new ContentError('VALIDATION_ERROR', 'Invalid comment status', 400);
       }
       const sticky = input.sticky === undefined ? existing.sticky : input.sticky;
+      const notesNotify =
+        input.notesNotify === undefined ? existing.notesNotify : input.notesNotify;
       const isPrivate = input.isPrivate === undefined ? existing.isPrivate : input.isPrivate;
       const format =
         input.format === undefined
@@ -778,6 +782,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
             ...(passwordHashUpdate === undefined ? {} : { passwordHash: passwordHashUpdate }),
             commentStatus,
             sticky,
+            notesNotify,
             structureLocked,
             isPrivate,
             format,

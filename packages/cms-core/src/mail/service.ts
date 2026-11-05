@@ -81,6 +81,8 @@ export interface CommentNotificationInput extends CommentMailInput {
 export interface NoteMailInput {
   postTitle: string;
   postSlug: string;
+  /** Per-post override; undefined inherits the global `notes_notify` option. */
+  enabled?: boolean | undefined;
   /** Display name or username of the person who acted. */
   actorName: string;
   /** Note or reply text. */
@@ -94,6 +96,8 @@ export interface NoteMailInput {
 export interface NoteMentionMailInput {
   postTitle: string;
   postSlug: string;
+  /** Per-post override; undefined inherits the global `notes_notify` option. */
+  enabled?: boolean | undefined;
   actorName: string;
   mentionedName: string;
   content: string;
@@ -367,7 +371,8 @@ export function createMailService({
   }
 
   async function notifyNote(input: NoteMailInput): Promise<MailResult> {
-    const enabled = await option<boolean>('notes_notify', true);
+    const enabled =
+      input.enabled === undefined ? await option<boolean>('notes_notify', true) : input.enabled;
     if (!enabled) return { sent: false, reason: 'disabled' };
     const recipient =
       input.recipientEmail && EMAIL_PATTERN.test(input.recipientEmail)
@@ -400,7 +405,8 @@ export function createMailService({
   }
 
   async function notifyNoteMention(input: NoteMentionMailInput): Promise<MailResult> {
-    const enabled = await option<boolean>('notes_notify', true);
+    const enabled =
+      input.enabled === undefined ? await option<boolean>('notes_notify', true) : input.enabled;
     if (!enabled) return { sent: false, reason: 'disabled' };
     const recipient =
       input.recipientEmail && EMAIL_PATTERN.test(input.recipientEmail)
