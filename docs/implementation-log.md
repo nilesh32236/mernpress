@@ -3698,3 +3698,20 @@ and `/posts/testcom` returning 200.
   records the residual risk.
 - Tests: Media toolbar assertion for Rotate 180°, editor/Quick Edit/Bulk Edit
   Pings assertions and the Settings → Discussion notice.
+
+**Deployment (design-audit completion):** release `20261105T160609Z-4212be2`
+(current). Production verification with a temporary administrator:
+- Settings → Discussion showed the disabled Pings checkbox and its security
+  note; the post editor showed “Pings — Not available” with the same reason;
+  Quick Edit showed a disabled “Allow Pings” and note; Bulk Edit showed a
+  disabled “Pings — Not available” select.
+- Media → Edit Image on a freshly uploaded 300×400 PNG exposed Rotate left,
+  Rotate right, **Rotate 180°**, free/horizontal/vertical flips, Undo/Redo, Crop
+  and Scale; Rotate 180° turned the dimensions from 300×400 to 400×300 with Undo
+  enabled. The test upload was deleted and the library is empty again.
+- The editor at 375 px measured a 46 px admin bar and 64 px top bar with no
+  horizontal overflow; a new post showed Save draft (32 px) and Preview in the
+  header alongside Publish, matching WordPress's mobile controls.
+- The temporary administrator was deleted; production is back to 1 user,
+  2 posts, 0 comments and its normal media library, with `/`, `/admin/`,
+  `/api/health` and `/posts/testcom` returning 200.
