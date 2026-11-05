@@ -3510,3 +3510,14 @@ returned 400. The temporary administrator was deleted; production is back to
   anonymous/editor denial; admin tests cover Create and Use This Page.
 - Validation: 737 unit/integration tests (API 460, admin 178, web 34,
   block-system 65), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (privacy policy helpers):** release `20261105T142548Z-23f9acd`
+(current). Production verification with a temporary administrator (the privacy
+option started empty): Settings → Privacy showed **Create a new Privacy Policy
+page**; clicking it created a **draft** “Privacy Policy” page with the suggested
+template (“Who we are” present), selected it, and rendered Edit page
+(`/admin/pages/<id>/edit`) and View page (`/privacy-policy`) links. Selecting the
+existing “Test” page and clicking **Use This Page** updated the option and showed
+the confirmation notice. The option was then cleared, the draft deleted and the
+temporary administrator removed; production is back to 1 user and its normal
+content, with `/`, `/admin/` and `/api/health` at 200.
