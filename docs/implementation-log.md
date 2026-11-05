@@ -2883,3 +2883,19 @@ deleted and production is back to one user and zero media rows.
   directory is gone and that a fresh service over the same store stays empty.
 - Validation: 646 unit/integration tests (API 411, admin 157, block-system 65,
   web 13), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (plugin package store):** release `20261105T063338Z-c34aa03`
+(current). Production now uses `/opt/mernpress/plugins` (env
+`PLUGIN_STORAGE_DIR`, seed `/opt/mernpress/current/plugins`, unit
+`ReadWritePaths` added; backups of both files kept). After deploy the store
+seeded `hello-mernpress` from the release on first Plugins request. Verification
+with a temporary administrator:
+- The plugin list showed `All (1) | Active (1)`, proving the manifest-backed
+  store and toolbar data still load.
+- Deactivate → row actions `Activate | Delete | View details`; Delete removed the
+  directory (`/opt/mernpress/plugins/hello-mernpress` gone, `.initialized`
+  remained) and the list showed "No plugins installed."
+- Restarting `mernpress-api` did **not** re-seed the deleted package.
+- The package was copied back from the release and re-activated, restoring the
+  original production state (`All (1) | Active (1)`); the temporary
+  administrator was deleted.
