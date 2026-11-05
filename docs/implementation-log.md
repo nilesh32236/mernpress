@@ -3071,3 +3071,13 @@ the WebP-only fallback, and newly uploaded images emit the AVIF source set.
   again.
 - Validation: 665 unit/integration tests (API 419, admin 159, web 22,
   block-system 65), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (plugin runtime + Auto Excerpt):** release
+`20261105T075442Z-92c4ee0` (current). The release ships
+`plugins/auto-excerpt/` and the package was copied into the production store
+`/opt/mernpress/plugins` (owner `mernpress`). Verification with a temporary
+administrator: Plugins listed Auto Excerpt (inactive) next to the active Hello
+MERNPress; activating Auto Excerpt and creating a body-only post returned a
+generated 124-character excerpt; the plugin was then deactivated, leaving Hello
+MERNPress as the only active plugin. The temporary post and administrator were
+deleted; `/`, `/admin/` and `/api/health` return 200.
