@@ -19,6 +19,7 @@ import {
   type MediaDerivatives,
   type MediaDto,
   type MediaFile,
+  type MediaFolderDto,
   type MediaListQuery,
   type MediaService,
   type RegenerateMediaInput,
@@ -89,6 +90,7 @@ interface MediaRow {
   storagePath: string;
   derivatives: unknown;
   uploadedById: string | null;
+  folderId: string | null;
   editedAt: Date | null;
   originalPath: string | null;
   createdAt: Date;
@@ -145,6 +147,7 @@ function toMediaDto(row: MediaRow): MediaDto {
     url: toPublicUrl(row.id, row.fileName),
     derivatives,
     uploadedById: row.uploadedById,
+    folderId: row.folderId,
     editedAt: row.editedAt?.toISOString() ?? null,
     hasOriginal: row.originalPath !== null,
     createdAt: row.createdAt.toISOString(),
@@ -504,6 +507,11 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
         { altText: { contains: search, mode: 'insensitive' } },
       ];
     }
+    if (query.folder === 'none') {
+      where.folderId = null;
+    } else if (query.folder) {
+      where.folderId = query.folder;
+    }
     if (query.month && /^\d{4}-\d{2}$/.test(query.month)) {
       const [year, month] = query.month.split('-').map(Number);
       where.createdAt = {
@@ -534,6 +542,93 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
         totalPages: Math.ceil(total / query.perPage),
       },
     };
+  }
+
+  function toFolderDto(row: {
+    id: string;
+    name: string;
+    createdAt: Date;
+    updatedAt: Date;
+    _count: { items: number };
+  }): MediaFolderDto {
+    return {
+      id: row.id,
+      name: row.name,
+      itemCount: row._count.items,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    };
+  }
+
+  function normalizeFolderName(name: string): string {
+    const trimmed = name.trim();
+    if (trimmed.length === 0 || trimmed.length > 100) {
+      throw new ContentError('VALIDATION_ERROR', 'A folder name must be 1-100 characters.', 400);
+    }
+    return trimmed;
+  }
+
+  async function assertFolderNameFree(name: string, exceptId?: string): Promise<void> {
+    const existing = await prisma.mediaFolder.findFirst({
+      where: {
+        name: { equals: name, mode: 'insensitive' },
+        ...(exceptId ? { id: { not: exceptId } } : {}),
+      },
+      select: { id: true },
+    });
+    if (existing) {
+      throw new ContentError('FOLDER_EXISTS', 'A folder with that name already exists.', 409);
+    }
+  }
+
+  async function listFolders(principal: Principal): Promise<MediaFolderDto[]> {
+    requireCapability(principal, 'content.read.any');
+    const rows = await prisma.mediaFolder.findMany({
+      orderBy: { name: 'asc' },
+      include: { _count: { select: { items: true } } },
+    });
+    return rows.map(toFolderDto);
+  }
+
+  async function createFolder(principal: Principal, name: string): Promise<MediaFolderDto> {
+    requireCapability(principal, 'content.create');
+    const normalized = normalizeFolderName(name);
+    await assertFolderNameFree(normalized);
+    const row = await prisma.mediaFolder.create({
+      data: { name: normalized },
+      include: { _count: { select: { items: true } } },
+    });
+    return toFolderDto(row);
+  }
+
+  async function renameFolder(
+    principal: Principal,
+    id: string,
+    name: string,
+  ): Promise<MediaFolderDto> {
+    requireCapability(principal, 'content.create');
+    const existing = await prisma.mediaFolder.findUnique({ where: { id }, select: { id: true } });
+    if (!existing) {
+      throw notFound();
+    }
+    const normalized = normalizeFolderName(name);
+    await assertFolderNameFree(normalized, id);
+    const row = await prisma.mediaFolder.update({
+      where: { id },
+      data: { name: normalized },
+      include: { _count: { select: { items: true } } },
+    });
+    return toFolderDto(row);
+  }
+
+  async function deleteFolder(principal: Principal, id: string): Promise<void> {
+    requireCapability(principal, 'content.create');
+    const existing = await prisma.mediaFolder.findUnique({ where: { id }, select: { id: true } });
+    if (!existing) {
+      throw notFound();
+    }
+    // MediaItem.folderId is ON DELETE SET NULL: items become Uncategorized.
+    await prisma.mediaFolder.delete({ where: { id } });
   }
 
   /**
@@ -628,9 +723,24 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
     validateText('caption', caption, CAPTION_MAX);
     validateText('description', description, DESCRIPTION_MAX);
 
+    if (input.folderId !== undefined && input.folderId !== null) {
+      const folder = await prisma.mediaFolder.findUnique({
+        where: { id: input.folderId },
+        select: { id: true },
+      });
+      if (!folder) {
+        throw new ContentError('VALIDATION_ERROR', 'That folder no longer exists.', 400);
+      }
+    }
+
     const row = await prisma.mediaItem.update({
       where: { id },
-      data: { altText, caption, description },
+      data: {
+        altText,
+        caption,
+        description,
+        ...(input.folderId === undefined ? {} : { folderId: input.folderId }),
+      },
     });
     return toMediaDto(row);
   }
@@ -889,5 +999,9 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
     remove,
     resolvePublicFile,
     regenerateDerivatives,
+    listFolders,
+    createFolder,
+    renameFolder,
+    deleteFolder,
   };
 }

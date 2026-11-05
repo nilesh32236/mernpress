@@ -73,7 +73,7 @@ project does not claim to know the whole market.
 | --- | --- | --- | --- |
 | P0 | Keep the implemented parity surface green | Tests/E2E/builds are the guardrail | Ongoing |
 | P1 | **Bulk regenerate image sizes/derivatives** | Core explicitly does not do it; existing media can be stale after settings changes or imports; we already own the pipeline | **Implemented now** |
-| P1 | Media library virtual folders/collections | Largest unimplemented media demand (390k+ installs across three plugins) | Next candidate; needs an ADR (storage model, permissions, drag/drop) |
+| P1 | Media library virtual folders/collections | Largest unimplemented media demand (390k+ installs across three plugins) | **Implemented now** (ADR 0048): flat virtual folders, one per item, filter/create/rename/delete + drawer assignment |
 | P2 | Cookie consent manager | 1M+ installs; privacy tooling already exists | Proposed |
 | P2 | Multilingual content model | 900k+ installs; Gutenberg phase 4 | Proposed; needs an ADR before code |
 | P2 | Privacy-first analytics | 5M+ analytics installs; self-hosted counters avoid third-party embeds | Proposed |
@@ -83,6 +83,12 @@ project does not claim to know the whole market.
 | — | Firewall/malware scanning | Operator boundary (threat model) | Not built |
 
 ## 5. What this slice implements
+
+**Virtual media folders** (ADR 0048): a `media_folders` table plus
+`media_items.folder_id` (SetNull), a Folder bar in the Media Library with
+filter counts, create/rename/delete, and assignment from the attachment drawer.
+Files stay flat on disk, so URLs do not change; nesting and drag-and-drop are
+documented limits.
 
 **Bulk media regeneration** (`POST /api/admin/media/regenerate`, Media Library
 button "Regenerate image sizes"):

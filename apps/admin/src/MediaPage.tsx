@@ -7,12 +7,17 @@ import {
 } from './screenOptions.js';
 import {
   actionErrorMessage,
+  createMediaFolder,
   deleteMedia,
+  deleteMediaFolder,
   listMedia,
+  listMediaFolders,
   regenerateMediaDerivatives,
+  renameMediaFolder,
   updateMedia,
   uploadMedia,
   type AuthUser,
+  type MediaFolder,
   type MediaItem,
   type Paged,
 } from './api.js';
@@ -118,6 +123,7 @@ interface UploadJob {
 
 interface MediaDrawerProps {
   item: MediaItem;
+  folders: MediaFolder[];
   onClose: () => void;
   onSaved: (item: MediaItem) => void;
   onDeleted: (item: MediaItem) => void;
@@ -130,12 +136,21 @@ interface MediaDrawerProps {
  * It is an overlay (not a routed page) so the grid keeps its scroll position,
  * matching the editor sidebar's editing-in-place feel.
  */
-function MediaDrawer({ item, onClose, onSaved, onDeleted, onPrev, onNext }: MediaDrawerProps) {
+function MediaDrawer({
+  item,
+  folders,
+  onClose,
+  onSaved,
+  onDeleted,
+  onPrev,
+  onNext,
+}: MediaDrawerProps) {
   const titleId = useId();
   const drawerRef = useRef<HTMLElement>(null);
   const [altText, setAltText] = useState(item.altText);
   const [caption, setCaption] = useState(item.caption);
   const [description, setDescription] = useState(item.description);
+  const [folderId, setFolderId] = useState(item.folderId ?? '');
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -163,7 +178,12 @@ function MediaDrawer({ item, onClose, onSaved, onDeleted, onPrev, onNext }: Medi
     setSaving(true);
     setNotice(null);
     try {
-      const updated = await updateMedia(item.id, { altText, caption, description });
+      const updated = await updateMedia(item.id, {
+        altText,
+        caption,
+        description,
+        folderId: folderId === '' ? null : folderId,
+      });
       onSaved(updated);
       setNotice({ tone: 'success', text: 'Media details saved.' });
     } catch (caught) {
@@ -363,6 +383,26 @@ function MediaDrawer({ item, onClose, onSaved, onDeleted, onPrev, onNext }: Medi
                 />
               </div>
               <div className="field">
+                <label htmlFor="media-folder">Folder</label>
+                <select
+                  id="media-folder"
+                  value={folderId}
+                  onChange={(event) => setFolderId(event.target.value)}
+                  disabled={saving || deleting}
+                >
+                  <option value="">Uncategorized</option>
+                  {folders.map((folder) => (
+                    <option key={folder.id} value={folder.id}>
+                      {folder.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="field-help">
+                  Folders are virtual: files stay in the uploads directory and a media item belongs
+                  to one folder.
+                </p>
+              </div>
+              <div className="field">
                 <label htmlFor="media-file-url">File URL:</label>
                 <input id="media-file-url" type="text" value={item.url} readOnly />
                 <button
@@ -442,6 +482,12 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
   const [order, setOrder] = useState<'newest' | 'oldest'>('newest');
   const [perPage, setPerPage] = useState(() => screenPerPage('media', DEFAULT_PER_PAGE));
   const [hiddenColumns, setHiddenColumns] = useState(() => screenHiddenColumns('media'));
+  const [folders, setFolders] = useState<MediaFolder[]>([]);
+  const [folderFilter, setFolderFilter] = useState('');
+  const [folderName, setFolderName] = useState('');
+  const [folderBusy, setFolderBusy] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
 
   useEffect(() => {
     const sync = () => setHiddenColumns(screenHiddenColumns('media'));
@@ -454,6 +500,84 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
     window.addEventListener(INFINITE_SCROLL_EVENT, sync);
     return () => window.removeEventListener(INFINITE_SCROLL_EVENT, sync);
   }, []);
+
+  async function refreshFolders(): Promise<void> {
+    try {
+      setFolders(await listMediaFolders());
+    } catch {
+      // The library still works without the folder list.
+    }
+  }
+
+  useEffect(() => {
+    void refreshFolders();
+  }, []);
+
+  async function addFolder(event: FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+    if (folderBusy) return;
+    const name = folderName.trim();
+    if (name.length === 0) return;
+    setFolderBusy(true);
+    setNotice(null);
+    try {
+      const created = await createMediaFolder(name);
+      setFolderName('');
+      await refreshFolders();
+      setFolderFilter(created.id);
+      setNotice({ tone: 'success', text: `Folder “${created.name}” created.` });
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setFolderBusy(false);
+    }
+  }
+
+  async function saveFolderRename(event: FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+    if (!selectedFolder || folderBusy) return;
+    const name = renameValue.trim();
+    if (name.length === 0) return;
+    setFolderBusy(true);
+    setNotice(null);
+    try {
+      await renameMediaFolder(selectedFolder.id, name);
+      setRenaming(false);
+      await refreshFolders();
+      setNotice({ tone: 'success', text: 'Folder renamed.' });
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setFolderBusy(false);
+    }
+  }
+
+  async function removeFolder(): Promise<void> {
+    if (!selectedFolder || folderBusy) return;
+    if (
+      typeof window !== 'undefined' &&
+      !window.confirm(
+        `Delete the folder “${selectedFolder.name}”? Its media items move to Uncategorized.`,
+      )
+    ) {
+      return;
+    }
+    setFolderBusy(true);
+    setNotice(null);
+    try {
+      await deleteMediaFolder(selectedFolder.id);
+      setFolderFilter('');
+      await refreshFolders();
+      setNotice({
+        tone: 'success',
+        text: 'Folder deleted; its media items are now Uncategorized.',
+      });
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setFolderBusy(false);
+    }
+  }
 
   /** Rebuild WebP/AVIF derivatives for the whole library, in bounded batches. */
   async function regenerateImageSizes(): Promise<void> {
@@ -489,6 +613,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
     }
   }
 
+  const selectedFolder = folders.find((folder) => folder.id === folderFilter) ?? null;
   const showAuthor = !hiddenColumns.has('author');
   const showParent = !hiddenColumns.has('parent');
   const showDate = !hiddenColumns.has('date');
@@ -553,6 +678,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
       type: 'image',
       ...(search ? { search } : {}),
       ...(monthFilter ? { month: monthFilter } : {}),
+      ...(folderFilter ? { folder: folderFilter } : {}),
       order,
     })
       .then((result) => {
@@ -582,7 +708,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
     return () => {
       active = false;
     };
-  }, [page, search, monthFilter, order, perPage, reloadKey]);
+  }, [page, search, monthFilter, folderFilter, order, perPage, reloadKey]);
 
   // WordPress Media Library grid view scrolls into the next page.
   useEffect(() => {
@@ -756,6 +882,96 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
             {regenProgress}
           </span>
         ) : null}
+
+        <div className="media-folder-bar">
+          <label className="media-folder-filter">
+            <select
+              aria-label="Filter by folder"
+              value={folderFilter}
+              onChange={(event) => {
+                setFolderFilter(event.target.value);
+                setRenaming(false);
+                setPage(1);
+              }}
+            >
+              <option value="">All folders</option>
+              <option value="none">Uncategorized</option>
+              {folders.map((folder) => (
+                <option key={folder.id} value={folder.id}>
+                  {folder.name} ({folder.itemCount})
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {selectedFolder ? (
+            renaming ? (
+              <form
+                className="media-folder-inline"
+                onSubmit={(event) => void saveFolderRename(event)}
+              >
+                <input
+                  aria-label="Folder name"
+                  value={renameValue}
+                  maxLength={100}
+                  onChange={(event) => setRenameValue(event.target.value)}
+                  disabled={folderBusy}
+                />
+                <button type="submit" className="button secondary-button" disabled={folderBusy}>
+                  Save
+                </button>
+                <button
+                  type="button"
+                  className="button-link"
+                  onClick={() => setRenaming(false)}
+                  disabled={folderBusy}
+                >
+                  Cancel
+                </button>
+              </form>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="button-link"
+                  onClick={() => {
+                    setRenaming(true);
+                    setRenameValue(selectedFolder.name);
+                  }}
+                  disabled={folderBusy}
+                >
+                  Rename folder
+                </button>
+                <button
+                  type="button"
+                  className="button-link is-danger"
+                  onClick={() => void removeFolder()}
+                  disabled={folderBusy}
+                >
+                  Delete folder
+                </button>
+              </>
+            )
+          ) : null}
+
+          <form className="media-folder-inline" onSubmit={(event) => void addFolder(event)}>
+            <input
+              aria-label="New folder name"
+              placeholder="New folder"
+              value={folderName}
+              maxLength={100}
+              onChange={(event) => setFolderName(event.target.value)}
+              disabled={folderBusy}
+            />
+            <button
+              type="submit"
+              className="button secondary-button"
+              disabled={folderBusy || folderName.trim().length === 0}
+            >
+              Create folder
+            </button>
+          </form>
+        </div>
         <input
           ref={fileInputRef}
           id="media-upload-input"
@@ -1337,6 +1553,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
         <MediaDrawer
           key={selected.id}
           item={selected}
+          folders={folders}
           onClose={() => setSelected(null)}
           onSaved={handleSaved}
           onDeleted={handleDeleted}

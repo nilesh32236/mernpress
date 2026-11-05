@@ -4,8 +4,12 @@ import {
   ApiError,
   deleteMedia,
   editMediaImage,
+  createMediaFolder,
+  deleteMediaFolder,
   listMedia,
+  listMediaFolders,
   regenerateMediaDerivatives,
+  renameMediaFolder,
   restoreMediaOriginal,
   updateMedia,
   uploadMedia,
@@ -20,6 +24,10 @@ vi.mock('./api.js', async (importOriginal) => {
   return {
     ...actual,
     listMedia: vi.fn(),
+    listMediaFolders: vi.fn(),
+    createMediaFolder: vi.fn(),
+    renameMediaFolder: vi.fn(),
+    deleteMediaFolder: vi.fn(),
     regenerateMediaDerivatives: vi.fn(),
     getMedia: vi.fn(),
     uploadMedia: vi.fn(),
@@ -51,6 +59,7 @@ function makeMedia(overrides: Partial<MediaItem> = {}): MediaItem {
       '1200': '/api/media/m1/a1b2c3d4-1200.webp',
     },
     uploadedById: 'u1',
+    folderId: null,
     editedAt: null,
     hasOriginal: false,
     createdAt: '2026-10-28T10:00:00.000Z',
@@ -99,6 +108,7 @@ beforeEach(() => {
     remaining: 0,
     nextAfter: null,
   });
+  vi.mocked(listMediaFolders).mockResolvedValue([]);
   // jsdom has no 2D canvas; the editor still renders its controls.
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
 });
@@ -224,6 +234,7 @@ describe('media library page', () => {
         altText: 'Sunset over the bay',
         caption: 'Golden hour',
         description: 'Taken from the pier',
+        folderId: null,
       }),
     );
     expect(await screen.findByText('Media details saved.')).toBeDefined();
@@ -339,5 +350,88 @@ describe('media library page', () => {
       limit: 20,
     });
     expect(await screen.findByText('Regenerated 3 image(s); 1 failed.')).toBeDefined();
+  });
+  it('creates a folder and filters the library by folder', async () => {
+    const travel = {
+      id: 'f1',
+      name: 'Travel',
+      itemCount: 2,
+      createdAt: '2026-11-05T10:00:00.000Z',
+      updatedAt: '2026-11-05T10:00:00.000Z',
+    };
+    vi.mocked(listMediaFolders).mockResolvedValueOnce([]).mockResolvedValue([travel]);
+    vi.mocked(createMediaFolder).mockResolvedValue(travel);
+
+    render(<MediaPage user={admin} />);
+    await screen.findByRole('button', { name: 'View sunset.png' });
+    await waitFor(() => expect(vi.mocked(listMediaFolders)).toHaveBeenCalled());
+
+    fireEvent.change(screen.getByLabelText('New folder name'), {
+      target: { value: 'Travel' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create folder' }));
+
+    await waitFor(() => expect(vi.mocked(createMediaFolder)).toHaveBeenCalledWith('Travel'));
+    expect(await screen.findByText('Folder “Travel” created.')).toBeDefined();
+    const filter = (await screen.findByLabelText('Filter by folder')) as HTMLSelectElement;
+    await waitFor(() => expect(filter.value).toBe('f1'));
+    expect(screen.getByRole('option', { name: 'Travel (2)' })).toBeDefined();
+    await waitFor(() =>
+      expect(vi.mocked(listMedia)).toHaveBeenLastCalledWith(
+        expect.objectContaining({ folder: 'f1' }),
+      ),
+    );
+
+    fireEvent.change(filter, { target: { value: 'none' } });
+    await waitFor(() =>
+      expect(vi.mocked(listMedia)).toHaveBeenLastCalledWith(
+        expect.objectContaining({ folder: 'none' }),
+      ),
+    );
+  });
+
+  it('assigns a media item to a folder and renames/deletes folders', async () => {
+    const travel = {
+      id: 'f1',
+      name: 'Travel',
+      itemCount: 1,
+      createdAt: '2026-11-05T10:00:00.000Z',
+      updatedAt: '2026-11-05T10:00:00.000Z',
+    };
+    vi.mocked(listMediaFolders).mockResolvedValue([travel]);
+    vi.mocked(updateMedia).mockImplementation(async (id, patch) => makeMedia({ id, ...patch }));
+    vi.mocked(renameMediaFolder).mockResolvedValue({ ...travel, name: 'Trips' });
+    vi.mocked(deleteMediaFolder).mockResolvedValue(undefined);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    render(<MediaPage user={admin} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'View sunset.png' }));
+    await screen.findByRole('heading', { name: 'Attachment details' });
+
+    fireEvent.change(screen.getByLabelText('Folder'), { target: { value: 'f1' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() =>
+      expect(vi.mocked(updateMedia)).toHaveBeenCalledWith(
+        'm1',
+        expect.objectContaining({ folderId: 'f1' }),
+      ),
+    );
+
+    // Rename and delete through the folder bar.
+    const filter = screen.getByLabelText('Filter by folder') as HTMLSelectElement;
+    fireEvent.change(filter, { target: { value: 'f1' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Rename folder' }));
+    fireEvent.change(screen.getByLabelText('Folder name'), {
+      target: { value: 'Trips' },
+    });
+    const renameForm = screen.getByLabelText('Folder name').closest('form')!;
+    fireEvent.click(within(renameForm).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(vi.mocked(renameMediaFolder)).toHaveBeenCalledWith('f1', 'Trips'));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete folder' }));
+    await waitFor(() => expect(vi.mocked(deleteMediaFolder)).toHaveBeenCalledWith('f1'));
+    expect(
+      await screen.findByText('Folder deleted; its media items are now Uncategorized.'),
+    ).toBeDefined();
   });
 });

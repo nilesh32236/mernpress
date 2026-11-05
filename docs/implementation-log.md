@@ -4179,3 +4179,25 @@ with a temporary administrator:
   canonical files were missing were counted as failures while the valid image
   was rebuilt (`Regenerated 1 image(s); 3 failed.`), proving one bad row cannot
   wedge the batch.
+
+### 2026-11-05 — Media library virtual folders
+
+- Added `media_folders` and nullable `media_items.folder_id` with
+  `ON DELETE SET NULL` (migration `add_media_folders`). Folders are metadata
+  only: files stay flat under the media root and every URL is unchanged.
+- Service + routes: `GET/POST /api/admin/media/folders`,
+  `PATCH/DELETE /api/admin/media/folders/:id`, `folderId` on
+  `PATCH /api/admin/media/:id`, and `?folder=<uuid|none>` on the media list.
+  Names are trimmed, 1–100 characters, case-insensitively unique
+  (`409 FOLDER_EXISTS`); reads require `content.read.any`, mutations
+  `content.create`; deleting a folder moves its items to Uncategorized.
+- Media Library gains a Folder bar (All/Uncategorized/named folders with counts,
+  create, inline rename, delete with confirmation) and the attachment drawer
+  gains a Folder select. Selecting a folder filters the library and resets
+  pagination; a new folder is selected immediately.
+- Tests: API create/list/rename/delete, duplicate and name validation, media
+  assignment + folder/none filters + counts, delete-unassigns, missing folder
+  (400), anonymous/subscriber denial; admin create + filter calls, drawer
+  assignment, rename/delete flows and notices.
+- Validation: 846 unit/integration tests (API 509, admin 226, web 38,
+  block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.

@@ -23,6 +23,27 @@ the API exposes them as URLs. The public renderer serves a `<picture>` element
 with AVIF/WebP sources and the canonical file as fallback. Missing derivative
 files fall back to the canonical image at request time.
 
+## Virtual folders
+
+Folders are metadata only (`media_folders` + `media_items.folder_id`); files stay
+flat on disk and URLs never change. A media item belongs to zero or one folder;
+deleting a folder moves its items to Uncategorized (`ON DELETE SET NULL`).
+
+| Route | Behaviour |
+| --- | --- |
+| `GET /api/admin/media/folders` | `{ items: MediaFolderDto[] }` ordered by name, with `itemCount` |
+| `POST /api/admin/media/folders` | `{ name }` → 201 folder; names are trimmed, 1–100 chars, case-insensitively unique (`409 FOLDER_EXISTS`) |
+| `PATCH /api/admin/media/folders/:id` | `{ name }` → renamed folder |
+| `DELETE /api/admin/media/folders/:id` | 204; assigned items become Uncategorized |
+| `PATCH /api/admin/media/:id` | accepts `folderId: uuid \| null` |
+| `GET /api/admin/media?folder=` | `uuid` for one folder, `none` for Uncategorized, omitted for all |
+
+Reads require `content.read.any`; folder mutations require `content.create`
+(the upload capability). The UI keeps the filter, create/rename/delete controls
+and the drawer's Folder select in sync with the list.
+
+Limits: flat (no nesting), one folder per item, no bulk move, no drag-and-drop.
+
 ## Bulk regeneration
 
 `MediaService.regenerateDerivatives(principal, { after?, limit? })`:

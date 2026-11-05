@@ -59,6 +59,8 @@ export interface MediaDto {
    */
   derivatives: MediaDerivatives;
   uploadedById: string | null;
+  /** Virtual folder id; null means Uncategorized. */
+  folderId: string | null;
   /** ISO instant of the last saved image edit, or null when pristine. */
   editedAt: string | null;
   /** True when a pre-edit backup exists and "Restore original" is available. */
@@ -77,6 +79,18 @@ export interface MediaListQuery {
   order?: 'newest' | 'oldest' | undefined;
   /** ISO month `YYYY-MM` filter on the creation date ("All dates"). */
   month?: string | undefined;
+  /** Folder id, or `none` for Uncategorized; omitted = all folders. */
+  folder?: string | undefined;
+}
+
+/** Virtual media folder (files stay flat on disk). */
+export interface MediaFolderDto {
+  id: string;
+  name: string;
+  /** Number of media items assigned to the folder. */
+  itemCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface UploadMediaInput {
@@ -98,6 +112,8 @@ export interface UpdateMediaInput {
   altText?: string | undefined;
   caption?: string | undefined;
   description?: string | undefined;
+  /** Move to a folder, or null to remove from the current folder. */
+  folderId?: string | null | undefined;
 }
 
 /** Cursor-based bulk derivative regeneration (Media Library action). */
@@ -134,6 +150,11 @@ export interface MediaService {
   restoreOriginal(principal: Principal, id: string): Promise<MediaDto>;
   /** Deletes the row (authoritative) and its files best-effort. */
   remove(principal: Principal, id: string): Promise<void>;
+  listFolders(principal: Principal): Promise<MediaFolderDto[]>;
+  createFolder(principal: Principal, name: string): Promise<MediaFolderDto>;
+  renameFolder(principal: Principal, id: string, name: string): Promise<MediaFolderDto>;
+  /** Deletes the folder; assigned items become Uncategorized. */
+  deleteFolder(principal: Principal, id: string): Promise<void>;
   /** Rebuild derivatives for every image, in bounded batches. */
   regenerateDerivatives(
     principal: Principal,

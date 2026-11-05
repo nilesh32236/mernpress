@@ -32,6 +32,7 @@ interface MediaShape {
   url: string;
   derivatives: Record<string, string>;
   uploadedById: string | null;
+  folderId: string | null;
   editedAt: string | null;
   hasOriginal: boolean;
   createdAt: string;
@@ -1205,6 +1206,144 @@ describe('admin media library', () => {
 
       const invalid = await regenerate(adminHeaders(), { limit: 500 });
       expect(invalid.statusCode).toBe(400);
+    });
+  });
+  describe('virtual media folders', () => {
+    async function folders(headers: Record<string, string> = adminHeaders()) {
+      return app.inject({
+        method: 'GET',
+        url: '/api/admin/media/folders',
+        headers,
+      });
+    }
+
+    async function createFolder(name: string, headers: Record<string, string> = adminHeaders()) {
+      return app.inject({
+        method: 'POST',
+        url: '/api/admin/media/folders',
+        headers: { ...headers, 'content-type': 'application/json' },
+        payload: { name },
+      });
+    }
+
+    it('creates, lists, renames and deletes folders with case-insensitive names', async () => {
+      const created = await createFolder('  Travel  ');
+      expect(created.statusCode).toBe(201);
+      const folder = created.json() as { id: string; name: string; itemCount: number };
+      expect(folder).toMatchObject({ name: 'Travel', itemCount: 0 });
+
+      const duplicate = await createFolder('travel');
+      expect(duplicate.statusCode).toBe(409);
+      expect((duplicate.json() as ErrorEnvelope).error.code).toBe('FOLDER_EXISTS');
+      expect((await createFolder('   ')).statusCode).toBe(400);
+      expect((await createFolder('x'.repeat(101))).statusCode).toBe(400);
+
+      const renamed = await app.inject({
+        method: 'PATCH',
+        url: `/api/admin/media/folders/${folder.id}`,
+        headers: adminHeaders(),
+        payload: { name: 'Trips' },
+      });
+      expect(renamed.statusCode).toBe(200);
+      expect((renamed.json() as { name: string }).name).toBe('Trips');
+
+      const listed = await folders();
+      expect(listed.statusCode).toBe(200);
+      expect(
+        (listed.json() as { items: Array<{ name: string }> }).items.map((f) => f.name),
+      ).toEqual(['Trips']);
+
+      const deleted = await app.inject({
+        method: 'DELETE',
+        url: `/api/admin/media/folders/${folder.id}`,
+        headers: adminHeaders(),
+      });
+      expect(deleted.statusCode).toBe(204);
+      expect((await folders()).json()).toEqual({ items: [] });
+    });
+
+    it('assigns media and filters by folder, and deleting a folder uncategorizes items', async () => {
+      const folder = (await createFolder('Travel')).json() as { id: string };
+      const assigned = await createMedia({
+        filename: 'folder-a.png',
+        contentType: 'image/png',
+        data: png,
+      });
+      const loose = await createMedia({
+        filename: 'folder-b.png',
+        contentType: 'image/png',
+        data: png,
+      });
+
+      const moved = await app.inject({
+        method: 'PATCH',
+        url: `/api/admin/media/${assigned.id}`,
+        headers: adminHeaders(),
+        payload: { folderId: folder.id },
+      });
+      expect(moved.statusCode).toBe(200);
+      expect((moved.json() as MediaShape).folderId).toBe(folder.id);
+
+      const inFolder = await app.inject({
+        method: 'GET',
+        url: `/api/admin/media?folder=${folder.id}`,
+        headers: { cookie: adminCookie },
+      });
+      expect((inFolder.json() as MediaListShape).items.map((item) => item.id)).toEqual([
+        assigned.id,
+      ]);
+
+      const uncategorized = await app.inject({
+        method: 'GET',
+        url: '/api/admin/media?folder=none',
+        headers: { cookie: adminCookie },
+      });
+      const looseIds = (uncategorized.json() as MediaListShape).items.map((item) => item.id);
+      expect(looseIds).toContain(loose.id);
+      expect(looseIds).not.toContain(assigned.id);
+
+      const counted = await folders();
+      expect((counted.json() as { items: Array<{ itemCount: number }> }).items[0]?.itemCount).toBe(
+        1,
+      );
+
+      const badFolder = await app.inject({
+        method: 'PATCH',
+        url: `/api/admin/media/${loose.id}`,
+        headers: adminHeaders(),
+        payload: { folderId: '00000000-0000-7000-8000-000000000000' },
+      });
+      expect(badFolder.statusCode).toBe(400);
+
+      const removed = await app.inject({
+        method: 'DELETE',
+        url: `/api/admin/media/folders/${folder.id}`,
+        headers: adminHeaders(),
+      });
+      expect(removed.statusCode).toBe(204);
+      const afterDelete = await app.inject({
+        method: 'GET',
+        url: `/api/admin/media/${assigned.id}`,
+        headers: { cookie: adminCookie },
+      });
+      expect((afterDelete.json() as MediaShape).folderId).toBeNull();
+    });
+
+    it('restricts folder mutations to upload-capable users', async () => {
+      const anonymous = await app.inject({ method: 'GET', url: '/api/admin/media/folders' });
+      expect(anonymous.statusCode).toBe(401);
+      const anonymousCreate = await app.inject({
+        method: 'POST',
+        url: '/api/admin/media/folders',
+        headers: { origin: ADMIN_ORIGIN, 'content-type': 'application/json' },
+        payload: { name: 'Nope' },
+      });
+      expect(anonymousCreate.statusCode).toBe(401);
+
+      const subscriber = await createSession('folder-subscriber', 'subscriber');
+      expect((await folders(sessionHeaders(subscriber.session))).statusCode).toBe(403);
+      const forbidden = await createFolder('Nope', sessionHeaders(subscriber.session));
+      expect(forbidden.statusCode).toBe(403);
     });
   });
 });

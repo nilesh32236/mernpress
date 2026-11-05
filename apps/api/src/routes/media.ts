@@ -43,6 +43,7 @@ const listMediaQuerySchema = z
       .string()
       .regex(/^\d{4}-\d{2}$/, 'month must be YYYY-MM')
       .optional(),
+    folder: z.union([uuid, z.literal('none')]).optional(),
   })
   .strict();
 
@@ -52,8 +53,13 @@ const updateMediaSchema = z
     altText: z.string().max(500).optional(),
     caption: z.string().max(2000).optional(),
     description: z.string().max(10_000).optional(),
+    folderId: uuid.nullable().optional(),
   })
   .strict();
+
+const folderNameSchema = z.string().trim().min(1).max(100);
+const folderIdParamSchema = z.object({ id: uuid }).strict();
+const folderBodySchema = z.object({ name: folderNameSchema }).strict();
 
 const regenerateSchema = z
   .object({
@@ -225,6 +231,52 @@ export function registerMediaRoutes(app: FastifyInstance, options: MediaRouteOpt
       }
     },
   );
+
+  app.get('/api/admin/media/folders', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      return { items: await media.listFolders(ctx.principal) };
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
+  app.post('/api/admin/media/folders', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const body = folderBodySchema.parse(request.body);
+      const folder = await media.createFolder(ctx.principal, body.name);
+      return reply.code(201).send(folder);
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
+  app.patch('/api/admin/media/folders/:id', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const { id } = folderIdParamSchema.parse(request.params);
+      const body = folderBodySchema.parse(request.body);
+      return await media.renameFolder(ctx.principal, id, body.name);
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
+  app.delete('/api/admin/media/folders/:id', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const { id } = folderIdParamSchema.parse(request.params);
+      await media.deleteFolder(ctx.principal, id);
+      return reply.code(204).send();
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
 
   app.post('/api/admin/media/regenerate', async (request, reply) => {
     const ctx = await guard(request, reply);

@@ -13031,3 +13031,46 @@ a.glance-chip:hover {
   color: #646970;
   font-size: 12px;
 }
+
+/* Media Library: virtual folder filter and management bar. */
+.media-folder-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border: 1px solid #dcdcde;
+  background: #ffffff;
+  font-size: 13px;
+}
+
+.media-folder-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.media-folder-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.media-folder-inline input {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid #8c8f94;
+  border-radius: 2px;
+  font-size: 13px;
+}
+
+.media-folder-inline .button {
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.button-link.is-danger {
+  color: var(--wp-danger, #b32d2e);
+}

@@ -26,7 +26,8 @@ export type ContentErrorCode =
   | 'UPDATE_CHECK_FAILED'
   | 'STRUCTURE_LOCKED'
   | 'PLUGIN_ACTIVATION_FAILED'
-  | 'BACKUP_FAILED';
+  | 'BACKUP_FAILED'
+  | 'FOLDER_EXISTS';
 
 /**
  * Typed domain error for content/taxonomy. Routes map `statusCode` + `code` to

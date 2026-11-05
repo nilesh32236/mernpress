@@ -1878,6 +1878,8 @@ export interface MediaItem {
   url: string;
   derivatives: MediaDerivatives;
   uploadedById: string | null;
+  /** Virtual folder id; null means Uncategorized. */
+  folderId: string | null;
   editedAt: string | null;
   hasOriginal: boolean;
   createdAt: string;
@@ -1891,12 +1893,22 @@ export interface MediaListParams {
   type?: 'image';
   order?: 'newest' | 'oldest';
   month?: string;
+  folder?: string;
+}
+
+export interface MediaFolder {
+  id: string;
+  name: string;
+  itemCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface UpdateMediaPayload {
   altText?: string;
   caption?: string;
   description?: string;
+  folderId?: string | null;
 }
 
 export interface UploadMediaOptions {
@@ -1918,6 +1930,7 @@ export async function listMedia(params: MediaListParams = {}): Promise<Paged<Med
       type: params.type,
       order: params.order,
       month: params.month,
+      folder: params.folder,
     })}`,
     {
       method: 'GET',
@@ -1928,6 +1941,56 @@ export async function listMedia(params: MediaListParams = {}): Promise<Paged<Med
   );
 
   return readJson<Paged<MediaItem>>(response);
+}
+
+export async function listMediaFolders(): Promise<MediaFolder[]> {
+  const response = await fetch('/api/admin/media/folders', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  const body = await readJson<{ items: MediaFolder[] }>(response);
+  return body.items;
+}
+
+export async function createMediaFolder(name: string): Promise<MediaFolder> {
+  const response = await fetch('/api/admin/media/folders', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ name }),
+  });
+  return readJson<MediaFolder>(response);
+}
+
+export async function renameMediaFolder(id: string, name: string): Promise<MediaFolder> {
+  const response = await fetch(`/api/admin/media/folders/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ name }),
+  });
+  return readJson<MediaFolder>(response);
+}
+
+export async function deleteMediaFolder(id: string): Promise<void> {
+  const response = await fetch(`/api/admin/media/folders/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  if (!response.ok) await readJson(response);
 }
 
 export interface MediaRegenerateResult {

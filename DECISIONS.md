@@ -136,6 +136,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-095 | 2026-11-05 | Bulk media derivative regeneration: `MediaService.regenerateDerivatives` walks image rows by id cursor in batches (default 20, max 50), rebuilds WebP + AVIF derivatives from the canonical file, updates the `derivatives` JSON and reports processed/failed/remaining/nextAfter. `POST /api/admin/media/regenerate` requires `content.create`; the Media Library button loops the batches with progress and a failure count. Missing files fail per item without aborting. No schema change; canonical files are never modified. Closes the gap identified in `docs/research/wordpress-feature-gaps.md` (core does not convert existing media). | accepted | [ADR 0047](docs/adr/0047-bulk-media-regeneration.md) |
 
+| D-096 | 2026-11-05 | Virtual media folders: `media_folders` (name, timestamps) + nullable `media_items.folder_id` with `ON DELETE SET NULL`; files never move and URLs stay stable. Flat folders, one per item, case-insensitive unique names (trimmed 1–100; `409 FOLDER_EXISTS`). `GET/POST /api/admin/media/folders`, `PATCH/DELETE /api/admin/media/folders/:id`, `folderId` on media PATCH, and `?folder=<uuid|none>` on the media list. Reads need `content.read.any`, mutations `content.create`. Media Library gains a Folder bar (filter with counts, create, rename, delete) and a drawer Folder select. No nesting, bulk move or drag-and-drop. | accepted | [ADR 0048](docs/adr/0048-media-virtual-folders.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.
