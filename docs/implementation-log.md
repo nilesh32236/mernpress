@@ -3995,3 +3995,22 @@ contributor (`verify-outsider`):
   restore/purge actions, confirmation, permission gating and empty state.
 - Validation: 825 unit/integration tests (API 496, admin 218, web 38,
   block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.
+
+**Deployment (note trash):** release `20261105T184823Z-034496a` (current),
+migration `20261105183426_add_post_note_trash` applied (`post_notes` gained
+`deleted_at`, `deleted_by_id` and the `(post_id, deleted_at)` index).
+Production verification with a temporary administrator on a draft holding a
+root note and one reply:
+- The thread offered Reply / Resolve / Trash thread / Trash. Trash thread moved
+  both notes out of the active list; the panel showed **Trash (2)** and the API
+  returned `{notes: 0, trash: 2}` with `deletedBy: verify-temp-admin`.
+- The trash view listed both notes with “Trashed … by Verify Temp Admin” and
+  Restore / Delete permanently actions. Restore returned the API to
+  `{notes: 2, trash: 0}`.
+- Trashing again and Delete permanently on the root removed both rows (cascade);
+  the API returned `{notes: 0, trash: 0}` and the panel showed “The trash is
+  empty.” Audit rows: `content.note.trashed` ×2, `content.note.restored` ×1 and
+  `content.note.deleted {permanent: true, replies: 1}`.
+- The temporary post and administrator were deleted; production is back to
+  1 user and 2 posts with `/`, `/admin/`, `/api/health` and `/posts/testcom`
+  returning 200.
