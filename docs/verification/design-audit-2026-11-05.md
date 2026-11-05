@@ -50,7 +50,7 @@ Screenshots from this pass (development, git-ignored):
 
 | Deviation | Reason |
 | --- | --- |
-| Allow Pings | Pingbacks/trackbacks need XML-RPC or inbound verification; security-sensitive legacy surface. Stated as unavailable, not stored as an inert checkbox. |
+| Allow Pings | Pingbacks/trackbacks need XML-RPC or inbound verification; the runtime stays disabled and the option registry no longer stores a ping state. The control appears disabled and explained in the editor Discussion panel, Quick Edit, Bulk Edit and Settings → Discussion (ADR 0043). |
 | Plugin auto-update tabs | MERNPress has one global plugin auto-update preference; per-plugin tabs would imply a per-plugin toggle that does not exist. |
 | Comment “Mine” tab | Single-role moderation model; the tab would always equal “All”. |
 | Eight admin colour schemes | One default scheme; no unreviewed schemes ship. |
