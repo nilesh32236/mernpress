@@ -3451,3 +3451,11 @@ to 1 user and its normal content, with `/`, `/admin/` and `/api/health` at 200.
   remaining-work table now links to the audit and lists only real deviations.
 - Screens not yet re-checked in this pass are listed explicitly rather than
   claimed complete.
+
+**Deployment (design-audit follow-up):** release `20261105T134809Z-c59032f`
+(current). Production verification with a temporary administrator:
+Settings → Privacy now renders `<h1>Privacy</h1>` with the “Privacy Settings”
+section heading and the policy-page selector (matching WordPress 7.1), and
+Tools → Export opens with `<h1>Export</h1>`, the four scopes (All content,
+Posts, Pages, Media) and Download Export File. The temporary administrator was
+deleted; `/`, `/admin/` and `/api/health` return 200.
