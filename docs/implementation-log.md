@@ -3104,3 +3104,15 @@ deleted; `/`, `/admin/` and `/api/health` return 200.
   700 px column; switching back restored `data-theme="mernpress"`.
 - Validation: 667 unit/integration tests (API 419, admin 159, web 24,
   block-system 65), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (theme packages + Journal):** release
+`20261105T080921Z-7f470c5` (current). Added
+`THEME_STORAGE_DIR=/opt/mernpress/themes`, `THEME_SEED_DIR=/opt/mernpress/current/themes`
+and `ReadWritePaths=/opt/mernpress/themes` (env/unit backups kept); the store
+seeded both packages on first request. Verification with a temporary
+administrator: Appearance → Themes listed 2 themes; activating MERNPress Journal
+showed the notice and the live site immediately rendered
+`data-theme="journal"`, background `rgb(247,242,232)` and Georgia headings; the
+only remaining Activate switched back to MERNPress (classic). The temporary
+administrator was deleted; production is back to 1 user, active theme
+`mernpress`, active plugin `hello-mernpress`.
