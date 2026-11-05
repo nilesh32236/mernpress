@@ -40,6 +40,10 @@ export interface PublicPost {
   ogTitle: string | null;
   ogDescription: string | null;
   publishedAt: string | null;
+  /** Per-post comment status (WordPress Discussion). */
+  commentStatus: 'open' | 'closed';
+  /** WordPress "Make this post sticky". */
+  sticky: boolean;
   updatedAt: string;
   author: { id: string; username: string } | null;
   terms: { categories: PublicTerm[]; tags: PublicTerm[] };

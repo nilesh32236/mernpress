@@ -2,6 +2,9 @@ import { getPermalinkBase, listPublishedPosts } from '@/lib/api';
 import type { PublicPost } from '@/lib/api';
 import PostList from '@/components/PostList';
 import Pagination from '@/components/Pagination';
+import JsonLd from '@/components/JsonLd';
+import { breadcrumbSchema, collectionSchema } from '@/lib/seo';
+import { siteUrl } from '@/lib/api';
 
 const FRIENDLY_ERROR =
   'We couldn\u2019t load content right now. Content is temporarily unavailable. Please try again later.';
@@ -27,8 +30,23 @@ export default async function PostsPage({
 
   const base = await getPermalinkBase();
 
+  const home = `${siteUrl()}/posts`;
   return (
     <main id="main-content" className="site-main">
+      <JsonLd
+        data={collectionSchema(siteUrl(), {
+          url: home,
+          name: 'Blog',
+          posts: items,
+          permalinkBase: base,
+        })}
+      />
+      <JsonLd
+        data={breadcrumbSchema(siteUrl(), [
+          { name: 'Home', url: siteUrl() },
+          { name: 'Blog', url: home },
+        ])}
+      />
       <div className="site-content">
         <h1 className="blog-title">Blog</h1>
 

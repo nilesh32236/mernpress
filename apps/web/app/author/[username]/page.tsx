@@ -2,6 +2,9 @@ import { getPermalinkBase, listPublicPosts } from '@/lib/api';
 import type { PublicPost } from '@/lib/api';
 import PostList from '@/components/PostList';
 import Pagination from '@/components/Pagination';
+import JsonLd from '@/components/JsonLd';
+import { breadcrumbSchema, profileSchema } from '@/lib/seo';
+import { siteUrl } from '@/lib/api';
 
 export default async function AuthorArchive({
   params,
@@ -27,8 +30,16 @@ export default async function AuthorArchive({
 
   const base = await getPermalinkBase();
 
+  const profileUrl = `${siteUrl()}/author/${username}`;
   return (
     <main id="main-content" className="site-main">
+      <JsonLd data={profileSchema(siteUrl(), username)} />
+      <JsonLd
+        data={breadcrumbSchema(siteUrl(), [
+          { name: 'Home', url: siteUrl() },
+          { name: `Author: ${username}`, url: profileUrl },
+        ])}
+      />
       <div className="site-content">
         <h1 className="blog-title">Author: {username}</h1>
         {error ? (

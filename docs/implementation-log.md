@@ -3022,3 +3022,28 @@ temporary administrator was deleted.
 `/admin/` and `/api/health` return 200 and the production build contains the
 `image/avif` serving path. Public posts without an AVIF-capable image still emit
 the WebP-only fallback, and newly uploaded images emit the AVIF source set.
+
+### 2026-11-05 — SEO research and first-party technical SEO
+
+- Added `docs/research/seo-2026.md`: CMS SEO baseline, structured-data types,
+  AI search/`llms.txt` evidence (Google's 2026 guidance, The SEO Framework's
+  position, plugin reviews), 2026 Core Web Vitals thresholds, and the WordPress
+  gaps that become opportunities. Sources are cited.
+- Public site now emits JSON-LD: a layout-level `Organization` + `WebSite`
+  graph referenced by `@id`, `BlogPosting` for posts (headline, dates, author,
+  publisher, section, keywords, ImageObject) and `WebPage` for pages,
+  `BreadcrumbList` on posts/pages/blog/category/tag/author, `CollectionPage` +
+  `ItemList` on the blog and taxonomy archives, and `ProfilePage` + `Person` on
+  author archives. `<` is escaped to keep stored content from closing the tag.
+- Added Twitter `summary_large_image` metadata to posts/pages and the layout;
+  the sitemap now includes `image:image` entries for featured media.
+- New `/llms.txt` route lists canonical published posts/pages, the RSS feed and
+  the sitemap, states that it is not a permissions file, and publishes only a
+  "not public" note when Settings → Reading disables the blog.
+- Deliberately not built: FAQ rich results (retired May 2026), SearchAction
+  sitelinks (retired 2024), `agents.json` (no standard) and SEO scores.
+- Verified in the browser/curl: a post emits three JSON-LD blocks (site graph,
+  BlogPosting with ImageObject, BreadcrumbList), `sitemap.xml` carries the
+  image entry, and `/llms.txt` lists the post, page, feed and sitemap.
+- Validation: 664 unit/integration tests (API 418, admin 159, web 22,
+  block-system 65), 23 Playwright E2E tests and six builds pass.

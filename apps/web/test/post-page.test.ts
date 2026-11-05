@@ -51,6 +51,20 @@ describe('post page', () => {
     expect(html).toContain('<p>Body <strong>bold</strong></p>');
     expect(html).toContain('Cat');
     expect(html).toContain('Tag');
+    // Structured data is emitted with the post, referencing the site graph.
+    expect(html).toContain('application/ld+json');
+    expect(html).toContain('BlogPosting');
+    expect(html).toContain('BreadcrumbList');
+  });
+
+  it('emits Twitter card metadata alongside Open Graph', async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(jsonResponse(samplePost));
+    const meta = await generateMetadata({ params: Promise.resolve({ slug: 'hello-world' }) });
+    expect(meta.twitter).toMatchObject({
+      card: 'summary_large_image',
+      title: 'OG Title',
+      description: 'OG Desc',
+    });
   });
 
   it('uses the WordPress single-post template without the legacy TOC', async () => {

@@ -5,6 +5,9 @@ import { Manrope } from 'next/font/google';
 import { getSiteSettings, listPublicPosts } from '@/lib/api';
 import './globals.css';
 import PublicAdminBar from '@/components/PublicAdminBar';
+import JsonLd from '@/components/JsonLd';
+import { siteGraph } from '@/lib/seo';
+import { siteUrl } from '@/lib/api';
 
 // HTML must never be cached: a stale document can reference static assets
 // from a previous release, which then 404 and render the site unstyled.
@@ -30,6 +33,9 @@ export async function generateMetadata(): Promise<Metadata> {
     description: settings?.tagline || 'MERNPress public site.',
     alternates: {
       types: { 'application/rss+xml': '/feed' },
+    },
+    twitter: {
+      card: 'summary_large_image',
     },
     robots:
       settings?.blogPublic === false
@@ -57,6 +63,12 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="en" className={manrope.variable}>
       <body>
+        <JsonLd
+          data={siteGraph(siteUrl(), {
+            title: siteTitle,
+            tagline: settings?.tagline ?? null,
+          })}
+        />
         <PublicAdminBar siteTitle={siteTitle} />
         <a href="#main-content" className="skip-link">
           Skip to content

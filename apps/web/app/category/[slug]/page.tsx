@@ -3,6 +3,9 @@ import { getPermalinkBase, getPublicTerm, listPublicPosts } from '@/lib/api';
 import type { PublicPost, PublicTermInfo } from '@/lib/api';
 import PostList from '@/components/PostList';
 import Pagination from '@/components/Pagination';
+import JsonLd from '@/components/JsonLd';
+import { breadcrumbSchema, collectionSchema } from '@/lib/seo';
+import { siteUrl } from '@/lib/api';
 
 export default async function CategoryArchive({
   params,
@@ -50,8 +53,24 @@ export default async function CategoryArchive({
 
   const base = await getPermalinkBase();
 
+  const archiveUrl = `${siteUrl()}/category/${slug}`;
   return (
     <main id="main-content" className="site-main">
+      <JsonLd
+        data={collectionSchema(siteUrl(), {
+          url: archiveUrl,
+          name: `Category: ${term.name}`,
+          description: term.description,
+          posts: items,
+          permalinkBase: base,
+        })}
+      />
+      <JsonLd
+        data={breadcrumbSchema(siteUrl(), [
+          { name: 'Home', url: siteUrl() },
+          { name: `Category: ${term.name}`, url: archiveUrl },
+        ])}
+      />
       <div className="site-content">
         <h1 className="blog-title">Category: {term.name}</h1>
         {term.description ? <p className="archive-description">{term.description}</p> : null}

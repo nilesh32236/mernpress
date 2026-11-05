@@ -9,6 +9,8 @@ import {
 } from '@/lib/api';
 import type { PublicPost } from '@/lib/api';
 import PostView from '@/components/PostView';
+import JsonLd from '@/components/JsonLd';
+import { articleSchema, breadcrumbSchema } from '@/lib/seo';
 import type { Metadata } from 'next';
 
 function stripTags(value: string): string {
@@ -59,8 +61,20 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   const recent = await listPublishedPosts(1, 10).catch(() => null);
   const morePosts = recent?.items ?? [];
   const base = await getPermalinkBase();
-
-  return <PostView post={post} morePosts={morePosts} base={base} />;
+  const canonical = post.canonicalUrl ?? `${siteUrl()}${postPath(post.slug, base)}`;
+  return (
+    <>
+      <JsonLd data={articleSchema(siteUrl(), post, base)} />
+      <JsonLd
+        data={breadcrumbSchema(siteUrl(), [
+          { name: 'Home', url: siteUrl() },
+          { name: 'Blog', url: `${siteUrl()}/posts` },
+          { name: post.title, url: canonical },
+        ])}
+      />
+      <PostView post={post} morePosts={morePosts} base={base} />
+    </>
+  );
 }
 
 export async function generateMetadata({
@@ -81,6 +95,12 @@ export async function generateMetadata({
     alternates: {
       canonical:
         post.canonicalUrl ?? `${siteUrl()}${postPath(post.slug, await getPermalinkBase())}`,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.ogTitle ?? title,
+      description: post.ogDescription ?? (description || undefined),
+      ...(post.featuredImage ? { images: [mediaUrl(post.featuredImage.url)] } : {}),
     },
     openGraph: {
       title: post.ogTitle ?? title,

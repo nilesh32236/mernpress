@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation';
 import { getPublishedBySlug, mediaUrl, siteUrl } from '@/lib/api';
 import PostView from '@/components/PostView';
+import JsonLd from '@/components/JsonLd';
+import { articleSchema, breadcrumbSchema } from '@/lib/seo';
 import type { Metadata } from 'next';
 import type { PublicPost } from '@/lib/api';
 
@@ -45,7 +47,19 @@ export default async function PageBySlug({ params }: { params: Promise<{ slug: s
     );
   }
   if (!post) notFound();
-  return <PostView post={post} />;
+  const canonical = post.canonicalUrl ?? `${siteUrl()}/${post.slug}`;
+  return (
+    <>
+      <JsonLd data={articleSchema(siteUrl(), post, 'posts')} />
+      <JsonLd
+        data={breadcrumbSchema(siteUrl(), [
+          { name: 'Home', url: siteUrl() },
+          { name: post.title, url: canonical },
+        ])}
+      />
+      <PostView post={post} />
+    </>
+  );
 }
 
 export async function generateMetadata({
@@ -65,6 +79,12 @@ export async function generateMetadata({
     robots: post.robots ?? undefined,
     alternates: {
       canonical: post.canonicalUrl ?? `${siteUrl()}/${post.slug}`,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.ogTitle ?? title,
+      description: post.ogDescription ?? (description || undefined),
+      ...(post.featuredImage ? { images: [mediaUrl(post.featuredImage.url)] } : {}),
     },
     openGraph: {
       title: post.ogTitle ?? title,

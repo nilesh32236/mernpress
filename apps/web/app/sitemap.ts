@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { getSiteSettings, listPublished, siteUrl } from '@/lib/api';
+import { getSiteSettings, listPublished, mediaUrl, siteUrl } from '@/lib/api';
 
 export const revalidate = 3600;
 
@@ -25,6 +25,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           url,
           lastModified: new Date(post.updatedAt),
           changeFrequency: 'weekly',
+          // Image sitemap entries help image search discover featured media.
+          ...(post.featuredImage ? { images: [mediaUrl(post.featuredImage.url)] } : {}),
         });
       }
     } catch {
