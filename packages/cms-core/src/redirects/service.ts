@@ -42,6 +42,7 @@ export interface RedirectInput {
 
 export interface RedirectServiceOptions {
   prisma: DatabaseClient;
+  logger?: (message: string, meta?: Record<string, unknown>) => void;
   now?: () => Date;
 }
 
@@ -128,7 +129,7 @@ function toNotFoundDto(row: {
   };
 }
 
-export function createRedirectService({ prisma }: RedirectServiceOptions) {
+export function createRedirectService({ prisma, logger }: RedirectServiceOptions) {
   async function list(principal: Principal): Promise<RedirectListResult> {
     requireCapability(principal, 'manage_options');
     const [redirects, notFound] = await Promise.all([
@@ -276,7 +277,47 @@ export function createRedirectService({ prisma }: RedirectServiceOptions) {
       .catch(() => undefined);
   }
 
-  return { list, create, update, remove, dismissNotFound, publicMap, resolve, logNotFound };
+  /**
+   * Internal redirect created when a published slug changes. It is not
+   * principal-based: the content service has already authorized the edit.
+   * Existing redirects for the old path are retargeted, and failures are logged
+   * rather than breaking the content save.
+   */
+  async function createAutomatic(from: string, to: string): Promise<void> {
+    try {
+      const fromPath = normalizePath(from);
+      const toPath = normalizeDestination(to);
+      if (fromPath === toPath) return;
+      await assertNoLoop(fromPath, toPath);
+      const existing = await prisma.redirect.findUnique({ where: { fromPath } });
+      if (existing) {
+        await prisma.redirect.update({
+          where: { id: existing.id },
+          data: { toPath, statusCode: 301 },
+        });
+        return;
+      }
+      await prisma.redirect.create({ data: { fromPath, toPath, statusCode: 301 } });
+    } catch (error) {
+      logger?.('automatic redirect skipped', {
+        from,
+        to,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  return {
+    list,
+    create,
+    update,
+    remove,
+    dismissNotFound,
+    publicMap,
+    resolve,
+    logNotFound,
+    createAutomatic,
+  };
 }
 
 export type RedirectService = ReturnType<typeof createRedirectService>;

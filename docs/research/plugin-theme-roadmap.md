@@ -119,8 +119,8 @@ instant and safe; no PHP or template execution.
    exists.
 6. **Two-factor authentication** — TOTP for administrators, recovery codes. Core
    security gap users call out; needs its own ADR.
-7. **Redirect-aware slug rename** — automatically create a 301 when a published
-   slug changes (fits with the redirect manager).
+7. ~~**Redirect-aware slug rename**~~ — delivered (ADR 0032): published slug
+   changes create/retarget a 301 automatically.
 8. **Admin performance budget** — keep the admin bundle and dashboard queries
    under documented thresholds; add a CI check.
 

@@ -30,6 +30,7 @@ import {
   createMemoryMailTransport,
   createSmtpMailTransport,
   type AuthConfig,
+  type RedirectService,
   type MailTransport,
 } from '@mernpress/cms-core';
 import { checkDatabase, createDatabaseClient } from '@mernpress/database';
@@ -136,11 +137,21 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   });
   app.decorate('contentHooks', contentHooks);
 
+  // Set after the redirect service is created; the callback runs per request.
+  let redirectsForSlugs: RedirectService | null = null;
   const content = createContentService({
     prisma: database,
     hooks: contentHooks,
     logger: {
       warn: (message, meta) => app.log.warn({ ...meta }, message),
+    },
+    onSlugChanged: async ({ type, oldSlug, newSlug }) => {
+      if (!redirectsForSlugs) return;
+      const settings = await optionService.getPublicSettings();
+      const base = settings.permalinkBase || 'posts';
+      const oldPath = type === 'post' ? `/${base}/${oldSlug}` : `/${oldSlug}`;
+      const newPath = type === 'post' ? `/${base}/${newSlug}` : `/${newSlug}`;
+      await redirectsForSlugs.createAutomatic(oldPath, newPath);
     },
   });
   app.decorate('content', content);
@@ -269,7 +280,11 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const exportsService = createExportService({ prisma: database });
   app.decorate('exports', exportsService);
 
-  const redirects = createRedirectService({ prisma: database });
+  const redirects = createRedirectService({
+    prisma: database,
+    logger: (message, meta) => app.log.warn({ ...meta }, message),
+  });
+  redirectsForSlugs = redirects;
   app.decorate('redirects', redirects);
 
   app.addHook('onRequest', async (request, reply) => {

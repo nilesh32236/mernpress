@@ -63,6 +63,12 @@ export interface ContentServiceOptions {
   now?: () => Date;
   /** Receives render warnings for otherwise-invisible block fallbacks (ADR 0007). */
   logger?: { warn: (message: string, meta?: Record<string, unknown>) => void };
+  /** Called after a published post/page slug changes (redirect creation). */
+  onSlugChanged?: (change: {
+    type: ContentType;
+    oldSlug: string;
+    newSlug: string;
+  }) => Promise<void>;
 }
 
 export interface ContentService {
@@ -555,6 +561,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     id: string,
     input: UpdatePostInput,
   ): Promise<AdminPost> {
+    let previousSlugForRedirect: string | null = null;
     const row = await prisma.$transaction(async (tx) => {
       const existing = await loadWithTerms(tx, id);
       if (!existing) {
@@ -722,6 +729,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
         throw new ContentError('VERSION_CONFLICT', 'Version conflict', 409);
       }
 
+      previousSlugForRedirect = existing.slug;
       // Record slug history for a published slug change (redirect resolution is Phase 7).
       if (slugChanged && existing.status === 'PUBLISHED') {
         await tx.postSlugHistory.create({
@@ -744,6 +752,24 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     });
 
     await hooks.doAction('content.post.updated', actionPayload(row, null));
+    if (
+      options.onSlugChanged &&
+      previousSlugForRedirect !== null &&
+      previousSlugForRedirect !== row.slug &&
+      row.status === 'PUBLISHED'
+    ) {
+      try {
+        await options.onSlugChanged({
+          type: row.type as ContentType,
+          oldSlug: previousSlugForRedirect,
+          newSlug: row.slug,
+        });
+      } catch (error) {
+        options.logger?.warn('automatic redirect failed', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
     return toAdmin(row);
   }
 

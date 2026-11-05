@@ -197,4 +197,67 @@ describe('redirects and 404 log', () => {
     });
     expect(forbidden.statusCode).toBe(403);
   });
+  it('creates a 301 automatically when a published slug changes', async () => {
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/admin/posts',
+      headers,
+      payload: { type: 'post', title: 'Original slug post' },
+    });
+    expect(created.statusCode).toBe(201);
+    const post = created.json() as { id: string; version: number };
+    const published = await app.inject({
+      method: 'POST',
+      url: `/api/admin/posts/${post.id}/publish`,
+      headers,
+      payload: { baseVersion: post.version },
+    });
+    const publishedPost = published.json() as { version: number };
+
+    const renamed = await app.inject({
+      method: 'PATCH',
+      url: `/api/admin/posts/${post.id}`,
+      headers,
+      payload: { baseVersion: publishedPost.version, slug: 'renamed-slug-post' },
+    });
+    expect(renamed.statusCode).toBe(200);
+
+    const list = await app.inject({
+      method: 'GET',
+      url: '/api/admin/redirects',
+      headers: { cookie },
+    });
+    const redirects = (list.json() as RedirectListShape).redirects;
+    expect(redirects).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          fromPath: '/posts/original-slug-post',
+          toPath: '/posts/renamed-slug-post',
+          statusCode: 301,
+        }),
+      ]),
+    );
+  });
+
+  it('does not create a redirect for a draft slug change', async () => {
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/admin/posts',
+      headers,
+      payload: { type: 'post', title: 'Draft slug post' },
+    });
+    const post = created.json() as { id: string; version: number };
+    await app.inject({
+      method: 'PATCH',
+      url: `/api/admin/posts/${post.id}`,
+      headers,
+      payload: { baseVersion: post.version, slug: 'draft-renamed' },
+    });
+    const list = await app.inject({
+      method: 'GET',
+      url: '/api/admin/redirects',
+      headers: { cookie },
+    });
+    expect((list.json() as RedirectListShape).redirects).toEqual([]);
+  });
 });

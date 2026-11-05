@@ -3249,3 +3249,17 @@ endpoint returned 200 with an empty list (anonymous access is 401). No
 notification is attempted while SMTP is absent, so no rows are fabricated. The
 temporary administrator was deleted; production has 1 user, 0 mail log rows and
 0 redirects.
+
+### 2026-11-05 — Automatic redirects on published slug change
+
+- The content service now calls an internal `onSlugChanged` hook after a
+  version-checked update when the row is published and the slug changed; drafts
+  create nothing. The API callback builds the old/new public paths from the
+  permalink setting and calls `RedirectService.createAutomatic`.
+- Automatic redirects are 301s, retarget an existing entry for the old path,
+  refuse loops, are logged on failure and remain editable/deletable in
+  Tools → Redirects.
+- Tests cover a published rename creating `/posts/old → /posts/new` and a draft
+  rename creating nothing.
+- Validation: 691 unit/integration tests (API 434, admin 166, web 26,
+  block-system 65), 23 Playwright E2E tests and six builds pass.
