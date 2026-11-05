@@ -298,3 +298,39 @@ test('keyboard navigation, skip link and narrow viewport work', async ({ page })
   await page.keyboard.press('Enter');
   await expect(page.getByText('No matching content')).toBeVisible();
 });
+
+test('list controls and row actions match the WordPress chrome contract', async ({ page }) => {
+  await login(page, editorUsername);
+  await page.goto(`${ADMIN_URL}posts`);
+  await expect(page.getByRole('heading', { level: 1, name: 'Posts' })).toBeVisible();
+
+  const row = page.locator('tbody tr').first();
+  await expect(row).toBeVisible();
+  const actions = row.locator('.row-actions');
+  const edit = actions.getByRole('link', { name: 'Edit' }).first();
+
+  // Off-screen rather than visibility:hidden, so Tab can reach it.
+  expect(await actions.evaluate((el) => getComputedStyle(el).left)).not.toBe('0px');
+  await edit.focus();
+  await expect.poll(async () => actions.evaluate((el) => getComputedStyle(el).left)).toBe('0px');
+
+  const metrics = await page.evaluate(() => {
+    const input = document.querySelector('input[type=search]');
+    const select = document.querySelector('.tablenav select, .bulk-select');
+    return {
+      inputBorder: input ? getComputedStyle(input).borderColor : null,
+      inputRadius: input ? getComputedStyle(input).borderRadius : null,
+      inputLineHeight: input ? getComputedStyle(input).lineHeight : null,
+      selectLineHeight: select ? getComputedStyle(select).lineHeight : null,
+      selectAppearance: select ? getComputedStyle(select).appearance : null,
+      scrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
+    };
+  });
+  expect(metrics.inputBorder).toBe('rgb(148, 148, 148)');
+  expect(metrics.inputRadius).toBe('2px');
+  expect(metrics.inputLineHeight).toBe('normal');
+  expect(metrics.selectLineHeight).toBe('30px');
+  expect(metrics.selectAppearance).toBe('none');
+  expect(metrics.scrollWidth).toBe(metrics.innerWidth);
+});

@@ -54,9 +54,11 @@ Screenshots from this pass (development, git-ignored):
 | Allow Pings | Pingbacks/trackbacks need XML-RPC or inbound verification; the runtime stays disabled and the option registry no longer stores a ping state. The control appears disabled and explained in the editor Discussion panel, Quick Edit, Bulk Edit and Settings → Discussion (ADR 0043). |
 | Plugin auto-update tabs | MERNPress has one global plugin auto-update preference; per-plugin tabs would imply a per-plugin toggle that does not exist. |
 | Comment “Mine” tab | Single-role moderation model; the tab would always equal “All”. |
-| Eight admin colour schemes | One default scheme; no unreviewed schemes ship. |
-| Some Screen Options panels | Columns and paging are persisted per screen; panels for WordPress features MERNPress does not have are absent. |
 | Theme/Plugin File Editors | Excluded by owner decision (RCE surface). |
+
+The admin colour schemes (nine), per-user Screen Options, editor notes, and
+Customizer panels are implemented and are no longer deviations (ADR 0044,
+0046, 0045, 0041).
 
 ## Follow-up pass — previously unverified screens
 
@@ -103,3 +105,27 @@ All screens listed in this document have now been re-checked against the live
 WordPress 7.1.4 reference at least once. The only remaining items are the
 deliberate deviations above and the owner-blocked external services (SMTP,
 Akismet, file editors, third-party importers) recorded in the parity matrix.
+
+
+## Control and chrome metrics pass (2026-11-05, second measurement)
+
+A second measured pass compared computed styles, not just the DOM structure, on
+Posts and Settings → General at 1440×1000. Every item below was a real
+difference that is now fixed; the `content.spec.ts` E2E test asserts the control
+contract so it cannot silently regress.
+
+| Metric | WordPress 7.1.4 | MERNPress before | MERNPress after |
+| --- | --- | --- | --- |
+| Text-input border | `1px solid #949494` | `#8c8f94` | `#949494` |
+| Input/select radius | 2 px | 3 px | 2 px |
+| Settings input box | 40 px high, padding 0 12, line-height normal | 40 px, line-height 28 | 40 px, line-height normal |
+| Single-select chevron | inline SVG, `appearance:none`, right padding 24 | native arrow | same inline SVG, `appearance:none`, right padding 24 |
+| List-table select | height 32, line-height 30 | height 32, line-height 28 | line-height 30 |
+| Standard button | height 32, padding 0 10, line-height 30, radius 2 | height 34, padding 3 12, line-height 26, radius 3 | height 32, padding 0 10, line-height 30, radius 2 |
+| First sidebar item | y = 44 (bar 32 + 12 padding) | y = 48 (extra 4 px nav padding) | y = 44 |
+| Row actions | off-screen (`left: -129987px`), focusable, reveal on hover/focus | `visibility:hidden` (not keyboard reachable) | off-screen and focusable; `left: 0` on hover/focus; no horizontal overflow |
+| Search field line-height | normal | 28 px | normal |
+
+Screenshots from this pass (development, git-ignored):
+`.playwright-mcp/audit-wp-posts.png`, `.playwright-mcp/audit-mn-posts-final.png`,
+`.playwright-mcp/audit-mn-posts-refined.png`, `.playwright-mcp/dev-analytics2.png`.

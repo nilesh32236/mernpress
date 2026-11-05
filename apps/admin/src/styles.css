@@ -37,7 +37,7 @@
   --wp-alt-row: #f6f7f7;
   --wp-hover-row: #f0f6fc;
   --wp-border: #c3c4c7;
-  --wp-input-border: #8c8f94;
+  --wp-input-border: #949494;
 
   /* Text */
   --wp-text: #3c434a;
@@ -65,7 +65,7 @@
   --wp-text-muted: #6e767d;
   --wp-link: #2271b1;
   --wp-primary: #007cba;
-  --wp-border-dark: #8c8f94;
+  --wp-border-dark: #949494;
   --surface: #f0f0f0;
   --surface-raised: #ffffff;
   --surface-muted: #f6f7f7;
@@ -73,7 +73,7 @@
   --ink: #2c3338;
   --ink-muted: #646970;
   --border: #c3c4c7;
-  --border-strong: #8c8f94;
+  --border-strong: #949494;
   --accent: #2271b1;
   --accent-hover: #135e96;
   --accent-active: #135e96;
@@ -161,7 +161,7 @@ summary:focus-visible,
   padding: 0.5rem 0.85rem;
   background: var(--wp-blue);
   color: #ffffff;
-  border-radius: 3px;
+  border-radius: 2px;
   transform: translateY(-300%);
   transition: transform 120ms ease-in;
   font-weight: 600;
@@ -305,7 +305,7 @@ h2 {
   justify-content: center;
   width: 1.25rem;
   height: 1.25rem;
-  border-radius: 3px;
+  border-radius: 2px;
   background: #ffffff;
   color: #1d2327;
   font-weight: 700;
@@ -368,7 +368,7 @@ h2 {
   width: 28px;
   height: 28px;
   border: 0;
-  border-radius: 3px;
+  border-radius: 2px;
   background: transparent;
   color: #c3c4c7;
   cursor: pointer;
@@ -384,7 +384,7 @@ h2 {
   align-items: center;
   gap: 8px;
   padding: 4px 8px;
-  border-radius: 3px;
+  border-radius: 2px;
   color: #ffffff;
   font-size: 13px;
   font-weight: 600;
@@ -423,7 +423,7 @@ h2 {
   height: 32px;
   padding: 0 8px;
   border: 0;
-  border-radius: 3px;
+  border-radius: 2px;
   background: transparent;
   color: var(--wp-bar-text);
   font: inherit;
@@ -471,7 +471,7 @@ h2 {
   height: 28px;
   padding: 0 8px;
   border: 0;
-  border-radius: 3px;
+  border-radius: 2px;
   background: transparent;
   color: var(--wp-bar-text);
   font: inherit;
@@ -555,7 +555,7 @@ h2 {
   width: 100%;
   padding: 6px 10px;
   border: 0;
-  border-radius: 3px;
+  border-radius: 2px;
   background: transparent;
   color: var(--wp-bar-text);
   font: inherit;
@@ -639,7 +639,7 @@ h2 {
 
 .sidebar-nav {
   flex: 1;
-  padding: 4px 0;
+  padding: 0 0 4px;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -874,7 +874,7 @@ a.nav-sublink.is-active:hover {
   min-height: 30px;
   padding: 2px 6px;
   border: 1px solid transparent;
-  border-radius: 3px;
+  border-radius: 2px;
   background: transparent;
   color: inherit;
   cursor: pointer;
@@ -1025,14 +1025,14 @@ a.nav-sublink.is-active:hover {
   justify-content: center;
   gap: 6px;
   min-height: 30px;
-  padding: 3px 12px;
+  padding: 0 10px;
   border: 1px solid transparent;
-  border-radius: 3px;
+  border-radius: 2px;
   cursor: pointer;
   font: inherit;
   font-size: 13px;
   font-weight: 500;
-  line-height: 2;
+  line-height: 30px;
   text-decoration: none;
   white-space: nowrap;
 }
@@ -1166,7 +1166,7 @@ a.delete-link,
   width: 28px;
   height: 28px;
   border: 0;
-  border-radius: 3px;
+  border-radius: 2px;
   background: transparent;
   color: var(--wp-muted);
   cursor: pointer;
@@ -1244,7 +1244,7 @@ a.delete-link,
   min-height: 24px;
   padding: 2px;
   border: 1px solid transparent;
-  border-radius: 3px;
+  border-radius: 2px;
   background: transparent;
   color: var(--wp-muted);
   cursor: pointer;
@@ -1318,7 +1318,7 @@ a.delete-link,
 }
 
 /* ==========================================================================
-   Forms — WP 13px controls, #8c8f94 borders, blue focus ring.
+   Forms — WP 13px controls, #949494 borders, blue focus ring.
    ========================================================================== */
 
 .field {
@@ -1369,12 +1369,12 @@ a.delete-link,
   padding: 3px 8px;
   min-height: 30px;
   border: 1px solid var(--wp-input-border);
-  border-radius: 3px;
+  border-radius: 2px;
   background: #ffffff;
   color: var(--wp-text);
   font: inherit;
   font-size: 14px;
-  line-height: 2;
+  line-height: normal;
 }
 
 .field textarea {
@@ -1718,14 +1718,18 @@ a.row-title:hover {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.15rem 0.45rem;
+  position: relative;
+  left: -9999em;
   margin-top: 2px;
   font-size: 12px;
-  visibility: hidden;
 }
 
+/* Off-screen rather than visibility:hidden, so keyboard users can Tab into
+   the actions (WordPress does the same); hover/focus brings them back. */
 .content-table tbody tr:hover .row-actions,
-.content-table tbody tr:focus-within .row-actions {
-  visibility: visible;
+.content-table tbody tr:focus-within .row-actions,
+.row-actions:focus-within {
+  left: 0;
 }
 
 .row-actions span[aria-hidden='true'],
@@ -1854,7 +1858,7 @@ a.row-title:hover {
 }
 
 .you-badge {
-  border-radius: 3px;
+  border-radius: 2px;
   background: var(--wp-hover-row);
   padding: 2px 6px;
   font-size: 11px;
@@ -2699,7 +2703,8 @@ a.glance-chip:hover {
   }
 
   .row-actions {
-    visibility: visible;
+    position: relative;
+    left: 0;
   }
 }
 
@@ -3100,7 +3105,7 @@ a.glance-chip:hover {
 .editor-topbar .secondary-button,
 .editor-topbar .editor-sidebar-toggle {
   background: transparent;
-  border-color: #8c8f94;
+  border-color: #949494;
   color: #ffffff;
 }
 
@@ -3282,7 +3287,7 @@ a.glance-chip:hover {
   height: 30px;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 3px;
+  border-radius: 2px;
   background: transparent;
   color: var(--wp-muted);
   font-size: 18px;
@@ -3889,7 +3894,7 @@ a.glance-chip:hover {
   height: 22px;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 3px;
+  border-radius: 2px;
   background: transparent;
   color: var(--wp-muted);
   cursor: pointer;
@@ -3962,7 +3967,7 @@ a.glance-chip:hover {
   height: 30px;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 3px;
+  border-radius: 2px;
   background: transparent;
   color: var(--wp-muted);
   cursor: pointer;
@@ -4351,7 +4356,7 @@ a.glance-chip:hover {
   padding: 3px 8px;
   min-height: 30px;
   border: 1px solid var(--wp-input-border);
-  border-radius: 3px;
+  border-radius: 2px;
   background: #ffffff;
   color: var(--wp-text);
   font: inherit;
@@ -4368,7 +4373,7 @@ a.glance-chip:hover {
   display: flex;
   align-items: stretch;
   border: 1px solid var(--wp-input-border);
-  border-radius: 3px;
+  border-radius: 2px;
   background: #ffffff;
   overflow: hidden;
 }
@@ -4410,7 +4415,7 @@ a.glance-chip:hover {
   height: 28px;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 3px;
+  border-radius: 2px;
   background: transparent;
   color: var(--wp-blue);
   cursor: pointer;
@@ -4451,7 +4456,7 @@ a.glance-chip:hover {
   width: 100%;
   padding: 4px 8px;
   border: 1px solid var(--wp-input-border);
-  border-radius: 3px;
+  border-radius: 2px;
   background: #ffffff;
   font: inherit;
   font-size: 13px;
@@ -4499,7 +4504,7 @@ a.glance-chip:hover {
   display: inline-flex;
   align-items: center;
   padding: 2px 8px;
-  border-radius: 3px;
+  border-radius: 2px;
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
@@ -4534,7 +4539,7 @@ a.glance-chip:hover {
   gap: 6px;
   padding: 5px 12px;
   border: 1px solid var(--wp-button);
-  border-radius: 3px;
+  border-radius: 2px;
   background: #ffffff;
   color: var(--wp-button);
   font-size: 12px;
@@ -4562,7 +4567,7 @@ a.glance-chip:hover {
 .media-view-toggle {
   display: inline-flex;
   border: 1px solid #c3c4c7;
-  border-radius: 3px;
+  border-radius: 2px;
   overflow: hidden;
 }
 
@@ -4614,7 +4619,7 @@ a.glance-chip:hover {
   width: 62px;
   height: 62px;
   object-fit: cover;
-  border-radius: 3px;
+  border-radius: 2px;
   border: 1px solid #e0e0e0;
 }
 
@@ -4685,7 +4690,7 @@ a.glance-chip:hover {
   font-size: 24px;
   line-height: 1.33333333;
   padding: 3px 10px;
-  border: 1px solid #8c8f94;
+  border: 1px solid #949494;
   border-radius: 4px;
   background: #ffffff;
   color: #2c3338;
@@ -4853,7 +4858,7 @@ a.glance-chip:hover {
   width: 200px;
   min-height: 30px;
   padding: 0 8px;
-  border: 1px solid #8c8f94;
+  border: 1px solid #949494;
   border-radius: 4px;
   background: #ffffff;
   font-size: 14px;
@@ -4975,7 +4980,7 @@ a.glance-chip:hover {
   min-height: 32px;
   margin: 0 10px 0 0;
   padding: 0 24px 0 8px;
-  border: 1px solid #8c8f94;
+  border: 1px solid #949494;
   border-radius: 2px;
   background: #ffffff;
   color: #2c3338;
@@ -5020,7 +5025,7 @@ a.glance-chip:hover {
   height: 32px;
   min-height: 32px;
   padding: 0 8px;
-  border: 1px solid #8c8f94;
+  border: 1px solid #949494;
   border-radius: 2px;
   background: #ffffff;
   font-size: 14px;
@@ -6843,7 +6848,7 @@ a.glance-chip:hover {
   height: 32px;
   min-height: 32px;
   padding: 0 8px;
-  border: 1px solid #8c8f94;
+  border: 1px solid #949494;
   border-radius: 2px;
   background: #ffffff;
   color: #2c3338;
@@ -6890,7 +6895,7 @@ a.glance-chip:hover {
   min-height: 32px;
   min-width: 0;
   padding: 0 24px 0 8px;
-  border: 1px solid #8c8f94;
+  border: 1px solid #949494;
   border-radius: 2px;
   font-size: 14px;
   line-height: 2;
@@ -7147,7 +7152,7 @@ a.glance-chip:hover {
   height: 32px;
   min-height: 32px;
   padding: 0 8px;
-  border: 1px solid #8c8f94;
+  border: 1px solid #949494;
   border-radius: 2px;
   font-size: 14px;
 }
@@ -7203,7 +7208,7 @@ a.glance-chip:hover {
 .wp-list-screen .terms-add-form .field textarea {
   width: 100%;
   min-height: 40px;
-  border: 1px solid #8c8f94;
+  border: 1px solid #949494;
   border-radius: 4px;
   font-size: 14px;
   padding: 0 12px;
@@ -8162,7 +8167,7 @@ a.glance-chip:hover {
   width: 100%;
   min-height: 40px;
   padding: 8px 12px;
-  border: 1px solid #8c8f94;
+  border: 1px solid #949494;
   border-radius: 4px;
   font-size: 14px;
 }
@@ -8724,7 +8729,7 @@ a.glance-chip:hover {
   width: 40px;
   height: 30px;
   padding: 0 4px;
-  border: 1px solid #8c8f94;
+  border: 1px solid #949494;
   border-radius: 2px;
   text-align: center;
   font-size: 13px;
@@ -9890,7 +9895,7 @@ a.glance-chip:hover {
   width: 280px;
   height: 32px;
   padding: 0 8px;
-  border: 1px solid #8c8f94;
+  border: 1px solid #949494;
   border-radius: 2px;
   background: #ffffff;
   font-size: 14px;
@@ -10015,7 +10020,7 @@ a.glance-chip:hover {
 }
 
 .theme-add-new:hover {
-  border-color: #8c8f94;
+  border-color: #949494;
   background: #f0f0f1;
 }
 
@@ -11640,7 +11645,7 @@ a.glance-chip:hover {
   align-items: center;
   gap: 4px;
   padding: 8px 20px;
-  border-bottom: 1px solid #8c8f94;
+  border-bottom: 1px solid #949494;
   background: #1d2327;
 }
 
@@ -11658,7 +11663,7 @@ a.glance-chip:hover {
 }
 
 .media-editor-tool:hover:not(:disabled) {
-  border-color: #8c8f94;
+  border-color: #949494;
   background: #2c3338;
 }
 
@@ -11689,7 +11694,7 @@ a.glance-chip:hover {
 .media-editor-aspect {
   height: 30px;
   margin-left: 4px;
-  border: 1px solid #8c8f94;
+  border: 1px solid #949494;
   border-radius: 2px;
   background: #ffffff;
   font-size: 13px;
@@ -11710,7 +11715,7 @@ a.glance-chip:hover {
 
 .media-editor-text-tool:hover,
 .media-editor-text-tool[aria-pressed='true'] {
-  border-color: #8c8f94;
+  border-color: #949494;
   background: #2c3338;
 }
 
@@ -11936,7 +11941,7 @@ a.glance-chip:hover {
   width: 280px;
   height: 32px;
   padding: 0 8px;
-  border: 1px solid #8c8f94;
+  border: 1px solid #949494;
   border-radius: 2px;
   font-size: 14px;
 }
@@ -12056,7 +12061,7 @@ a.glance-chip:hover {
   width: 100%;
   min-height: 320px;
   padding: 10px 12px;
-  border: 1px solid #8c8f94;
+  border: 1px solid #949494;
   border-radius: 2px;
   font-family: Consolas, Monaco, 'Courier New', monospace;
   font-size: 13px;
@@ -12727,7 +12732,7 @@ a.glance-chip:hover {
 .note-reply-form textarea {
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid #8c8f94;
+  border: 1px solid #949494;
   border-radius: 2px;
   font: inherit;
   font-size: 13px;
@@ -12945,7 +12950,7 @@ a.glance-chip:hover {
   z-index: 20;
   max-height: 220px;
   overflow-y: auto;
-  border: 1px solid #8c8f94;
+  border: 1px solid #949494;
   border-radius: 2px;
   background: #ffffff;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
@@ -13060,7 +13065,7 @@ a.glance-chip:hover {
 .media-folder-inline input {
   height: 28px;
   padding: 0 8px;
-  border: 1px solid #8c8f94;
+  border: 1px solid #949494;
   border-radius: 2px;
   font-size: 13px;
 }
@@ -13209,4 +13214,29 @@ a.glance-chip:hover {
   .analytics-grid {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* WordPress 7.1 form-control parity: single selects use the same inline SVG
+   chevron as wp-admin, and search fields use normal line-height (32px box). */
+select:not([multiple]):not([size]) {
+  appearance: none;
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M5%206l5%205%205-5%202%201-7%207-7-7%202-1z%22%20fill%3D%22%231e1e1e%22%2F%3E%3C%2Fsvg%3E');
+  background-repeat: no-repeat;
+  background-position: calc(100% - 8px) 55%;
+  background-size: 16px 16px;
+  padding-right: 24px;
+  line-height: normal;
+}
+
+.list-top .search-form input[type='search'],
+.search-box input[type='search'],
+.list-filters input[type='search'] {
+  line-height: normal;
+}
+
+/* WordPress list-table controls: select line-height matches the 32px control. */
+.wp-list-screen .tablenav .bulk-select,
+.wp-list-screen .tablenav select,
+.bulk-actions select {
+  line-height: 30px;
 }

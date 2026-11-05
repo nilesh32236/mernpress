@@ -140,6 +140,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-097 | 2026-11-05 | Privacy-first local analytics: `analytics_daily` stores one incrementing row per (UTC day, path, referrer host); no cookies, visitor ids, user agents or IPs. Public `POST /api/public/views` normalises the path, keeps only the referrer hostname, ignores API/admin/static paths and obvious bots, and never surfaces errors. `ViewTracker` posts on pathname changes with keepalive and honours Do-Not-Track. `GET /api/admin/analytics?days=` (1–365) requires `content.read.any` and returns totals, a zero-filled daily series, top 10 paths and top 10 referrers; Dashboard → Analytics renders cards, bars and tables with a 7/30-day switch. No unique visitors, sessions, campaigns, real-time data or retention sweep yet. | accepted | [ADR 0049](docs/adr/0049-privacy-first-analytics.md) |
 
+| D-098 | 2026-11-05 | Admin chrome control pass from a second measured comparison with WordPress 7.1.4: form borders `#949494`, 2 px control radius, normal input line-height, WordPress-style SVG chevron with `appearance:none` and 24 px right padding, 32 px standard buttons (0 10 padding, 30 px line-height), list-select line-height 30, sidebar nav top padding removed so the first item sits at y=44, and row actions moved off-screen (`left:-9999em`) instead of `visibility:hidden` so they stay keyboard focusable and reveal on hover/focus. The E2E content spec asserts these metrics. No behavioural change. | accepted | [Design audit](docs/verification/design-audit-2026-11-05.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

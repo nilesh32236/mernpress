@@ -4254,3 +4254,25 @@ verification:
 - Verification rows and the temporary administrator were deleted; production
   is back to 1 user, 2 posts and 0 analytics rows, with `/`, `/admin/`,
   `/api/health` and `/posts/testcom` returning 200.
+
+### 2026-11-05 — Measured admin chrome pass (design parity)
+
+- Re-measured computed styles against WordPress 7.1.4 on Posts and
+  Settings → General and fixed every difference found: form borders now
+  `#949494`, controls use a 2 px radius and normal line-height, single selects
+  render WordPress's inline SVG chevron with `appearance:none` and 24 px right
+  padding, standard buttons are 32 px high (0 10 padding, 30 px line-height),
+  list-table selects use line-height 30, and the sidebar nav's extra 4 px top
+  padding is gone so the first item starts at y=44.
+- Fixed an accessibility/parity defect: row actions used `visibility:hidden`,
+  which removed them from the keyboard tab order. They are now off-screen
+  (`position:relative; left:-9999em`), focusable, and reveal at `left:0` on
+  hover/focus with no horizontal overflow (WordPress's own mechanism).
+- The design audit now records the measured before/after table and removes
+  stale deviation rows (colour schemes, Screen Options and notes are
+  implemented). The parity matrix drops the resolved Screen Options row.
+- Added an E2E assertion in `tests/e2e/content.spec.ts` for the control
+  contract (input border/radius/line-height, select line-height/appearance and
+  keyboard-reachable row actions).
+- Validation: 855 unit/integration tests (API 512, admin 230, web 40,
+  block-system 65, contracts 8), 24 Playwright E2E tests and seven builds pass.
