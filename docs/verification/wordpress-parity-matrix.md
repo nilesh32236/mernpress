@@ -39,10 +39,10 @@ owner decision.
 | Appearance → Editor | D/P | Design sidebar, template list, live canvas |
 | Appearance → Fonts | D/P | Library, weights, samples, unavailable upload/install |
 | Plugins → Installed | D/P | Filters, bulk, active edge, auto-update column, View details, Delete (inactive only, removes the package directory) |
-| Plugins → Add Plugin | D/P | Honest no-marketplace boundary |
+| Plugins → Add Plugin | D/P | WordPress description + filter bar/search; directory tabs disabled and explained; installed packages listed |
 | Users / Add User / Profile | D/P | Roles, display name select, colour schemes, syntax highlighting, language, application passwords, password, Send password reset (row + bulk); Send User Notification enabled when mail is configured and includes a reset link |
 | Tools → Available Tools / Export / Site Health | D/P | Cards, WordPress WXR export with All/Posts/Pages/Media scopes, health checks |
-| Tools → Import | D/P | Real WordPress WXR import |
+| Tools → Import | D/P | WordPress importer order, real WXR import, unavailable importers stated, closing marketplace note |
 | Tools → Export/Erase Personal Data | D/P | Request queue, JSON export, anonymising erasure |
 | Tools → Theme/Plugin File Editor | X | In-browser server-code editing excluded (RCE surface) |
 | Settings → General/Reading/Writing | D/P | Site identity, formats, feed options, mail fields |
@@ -98,3 +98,17 @@ owner decision.
 3. Per-screen pixel comparison is complete for the WordPress chrome and layout,
    in development and production; content differences (fewer posts/pages in
    production) are expected and documented above.
+
+## Owner-blocked and unavailable (explicit)
+
+These are deliberate boundaries, not unfinished controls. The screens state each
+one; no button pretends to work.
+
+| Item | State | Reason |
+| --- | --- | --- |
+| Production e-mail delivery | Disabled (`configured: false`) | No SMTP credentials supplied; set `SMTP_HOST`/`MAIL_FROM` + credentials and restart the API. |
+| Tools → Theme File Editor / Plugin File Editor | Not implemented | Owner decision 2026-11-04: in-browser server-code editing is an RCE surface. |
+| WordPress.org plugin directory / ZIP upload | Not implemented | Plugins are trusted local packages in a persistent store; no marketplace or installer. Add Plugins shows disabled directory tabs and an explicit notice. |
+| WordPress.org theme directory / ZIP upload | Not implemented | Themes are trusted packages in the release; Add Themes shows disabled directory tabs and an explicit notice. |
+| Third-party importers (Blogger, LiveJournal, Movable Type, RSS, Tumblr) | Not implemented | Require external services/plugins; the Import list marks them unavailable. |
+| Plugin marketplace / remote updates | Not available | Updates are discovered from a configured manifest; nothing is downloaded or installed from the internet. |

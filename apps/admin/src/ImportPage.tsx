@@ -11,20 +11,14 @@ interface ImporterRow {
 
 const IMPORTERS: ImporterRow[] = [
   {
-    name: 'Categories and Tags Converter',
-    description: 'Convert existing categories to tags or tags to categories, selectively.',
-    action: 'converter',
-  },
-  {
-    name: 'WordPress',
-    description:
-      'Import posts, pages, categories and tags from a WordPress export (WXR) file. Attachments, comments and users are not imported.',
-    action: 'wordpress',
-  },
-  {
     name: 'Blogger',
     description: 'Import posts, comments and users from a Blogger blog.',
     action: 'unavailable',
+  },
+  {
+    name: 'Categories and Tags Converter',
+    description: 'Convert existing categories to tags or tags to categories, selectively.',
+    action: 'converter',
   },
   {
     name: 'LiveJournal',
@@ -45,6 +39,12 @@ const IMPORTERS: ImporterRow[] = [
     name: 'Tumblr',
     description: 'Import posts and media from Tumblr using their API.',
     action: 'unavailable',
+  },
+  {
+    name: 'WordPress',
+    description:
+      'Import posts, pages, categories and tags from a WordPress export (WXR) file. Attachments, comments and users are not imported.',
+    action: 'wordpress',
   },
 ];
 
@@ -144,6 +144,11 @@ export function ImportPage() {
             ))}
           </tbody>
         </table>
+
+        <p className="import-footer">
+          If the importer you need is not listed, additional importers require a plugin package.
+          This build does not include a plugin marketplace.
+        </p>
 
         {open ? (
           <div className="import-form-panel">

@@ -59,7 +59,6 @@ export function PluginInstallPage({ user }: { user: AuthUser }) {
     <>
       <PageHeader
         title="Add Plugins"
-        count={plugins?.length}
         actions={
           <button type="button" className="button page-title-action" disabled>
             Upload Plugin
@@ -68,25 +67,43 @@ export function PluginInstallPage({ user }: { user: AuthUser }) {
       />
       {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
       <div className="plugins-install-screen">
-        <div className="notice notice-info" role="status">
-          <p>
-            Plugins are trusted packages in this repository. Browsing WordPress.org, uploading a ZIP
-            file and installing plugins at runtime are not enabled, so no plugin directory is shown.
-          </p>
-        </div>
-        <div className="list-top">
+        <p className="plugin-install-description">
+          Plugins extend and expand the functionality of MERNPress. This build installs plugins from
+          trusted local packages; browsing the WordPress Plugin Directory, uploading a
+          <code>.zip</code> and installing plugins at runtime are not enabled.
+        </p>
+        <div className="wp-filter">
+          <ul className="filter-links" aria-label="Plugin directory">
+            {['Featured', 'Popular', 'Recommended', 'Favorites'].map((label) => (
+              <li key={label}>
+                <span
+                  className="filter-link is-disabled"
+                  aria-disabled="true"
+                  title="The WordPress Plugin Directory is not enabled in this build"
+                >
+                  {label}
+                </span>
+              </li>
+            ))}
+          </ul>
           <form className="search-form" role="search" onSubmit={(event) => event.preventDefault()}>
             <label htmlFor="plugin-install-search" className="screen-reader-text">
-              Search plugins
+              Search Plugins
             </label>
             <input
               id="plugin-install-search"
               type="search"
-              placeholder="Search plugins"
+              placeholder="Search Plugins"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
           </form>
+        </div>
+        <div className="notice notice-info" role="status">
+          <p>
+            The WordPress.org plugin directory is unavailable in this build. Only packages installed
+            on this server are listed below.
+          </p>
         </div>
         <h2 className="plugin-install-heading">Installed</h2>
         {plugins === null ? (

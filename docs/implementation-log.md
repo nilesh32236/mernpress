@@ -2899,3 +2899,27 @@ with a temporary administrator:
 - The package was copied back from the release and re-activated, restoring the
   original production state (`All (1) | Active (1)`); the temporary
   administrator was deleted.
+
+### 2026-11-05 — Page audit: Add Plugins, Add Themes, Import boundaries
+
+- Compared the three screens with live WordPress 7.1.4 and fixed the deltas:
+  - Add Plugins/Add Themes no longer show an installed-count bubble beside the
+    page title (WordPress keeps counts in the filter bar, not the title).
+  - Add Plugins now has WordPress's description paragraph and a `.wp-filter` bar
+    with the Featured/Popular/Recommended/Favorites labels (explicitly disabled)
+    plus a "Search Plugins" input; the honest directory-unavailable notice sits
+    below it.
+  - Add Themes uses the WordPress filter bar: installed-theme count, the
+    Popular/Latest/Block Themes/Favorites labels (disabled) and "Search Themes".
+  - "Details & Preview" on a theme card is a plain link again (it had inherited a
+    button box).
+  - Import now lists importers in WordPress's order (Blogger, Categories and Tags
+    Converter, LiveJournal, Movable Type and TypePad, RSS, Tumblr, WordPress)
+    and ends with the "If the importer you need is not listed…" paragraph,
+    adapted to the no-marketplace boundary.
+- The unavailable boundaries are explicitly documented in the parity matrix:
+  WordPress.org plugin/theme directories, ZIP upload, third-party importers, the
+  Theme/Plugin File Editors (owner decision) and production SMTP (owner
+  credentials). The screens state these instead of faking controls.
+- Validation: 646 unit/integration tests (API 411, admin 157, block-system 65,
+  web 13), 23 Playwright E2E tests and six builds pass.

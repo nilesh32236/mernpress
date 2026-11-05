@@ -67,7 +67,6 @@ export function ThemeInstallPage({ user }: { user: AuthUser }) {
     <>
       <PageHeader
         title="Add Themes"
-        count={themes?.length}
         actions={
           <button type="button" className="button page-title-action" disabled>
             Upload Theme
@@ -76,22 +75,44 @@ export function ThemeInstallPage({ user }: { user: AuthUser }) {
       />
       {notice ? <Notice notice={notice} onDismiss={() => setNotice(null)} /> : null}
       <div className="theme-install-screen">
+        <div className="wp-filter">
+          {themes ? (
+            <span className="theme-count" aria-label={`${themes.length} installed theme(s)`}>
+              {themes.length}
+            </span>
+          ) : null}
+          <ul className="filter-links" aria-label="Theme directory">
+            {['Popular', 'Latest', 'Block Themes', 'Favorites'].map((label) => (
+              <li key={label}>
+                <span
+                  className="filter-link is-disabled"
+                  aria-disabled="true"
+                  title="The WordPress Theme Directory is not enabled in this build"
+                >
+                  {label}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <form className="search-form" role="search" onSubmit={(event) => event.preventDefault()}>
+            <label htmlFor="theme-install-search" className="screen-reader-text">
+              Search Themes
+            </label>
+            <input
+              id="theme-install-search"
+              type="search"
+              placeholder="Search Themes"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </form>
+        </div>
         <div className="notice notice-info" role="status">
           <p>
             This build installs themes from the repository on disk. Browsing WordPress.org,
             uploading a ZIP file and installing new themes are not enabled, so no remote theme list
             is shown.
           </p>
-        </div>
-        <div className="themes-header">
-          <label className="themes-search">
-            <span className="themes-search-label">Search themes</span>
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </label>
         </div>
         <h2 className="theme-install-heading">Installed</h2>
         {themes === null ? (
