@@ -19,10 +19,12 @@
 
 | Route | Behaviour |
 | --- | --- |
-| `GET /api/admin/posts/:id/notes` | `{ notes: PostNote[] }`, oldest first |
+| `GET /api/admin/posts/:id/notes` | `{ notes, trash }`, oldest first; `?status=trash` returns only the trash |
 | `POST /api/admin/posts/:id/notes` | `{ content, parentId?, block? }` → 201 note; `block` is `{name,path,hash,text}` |
 | `PATCH /api/admin/posts/:id/notes/:noteId` | `{ resolved: boolean }` → updated root |
-| `DELETE /api/admin/posts/:id/notes/:noteId` | 204; author or `content.edit.any`; root cascades replies |
+| `DELETE /api/admin/posts/:id/notes/:noteId` | 204; moves to Trash (root cascades replies) |
+| `POST /api/admin/posts/:id/notes/:noteId/restore` | 200 restored note; a root restores its trashed replies |
+| `DELETE /api/admin/posts/:id/notes/:noteId/permanent` | 204; only when already trashed |
 
 All require a session and CSRF, then `canEditPost` (administrators/editors may
 act on any post; authors/contributors only their own). A post the caller cannot
@@ -47,13 +49,18 @@ anchor; the panel resolves it against `listBlockAnchors(form.content)` and shows
 `exact`, `moved`, `changed` or `missing`. Hiding/moving/removing a block never
 deletes the note.
 
-## Deletion
+## Trash, restore and purge
 
-`NoteService.remove` re-checks `canEditPost`, then allows the note author or a
-principal with `content.edit.any`. The delete and a `content.note.deleted` audit
-event (post/note/parent/anchored/reply count) run in one transaction. Deleting a
-root cascades replies at the database level. The panel hides the actions for
-users who cannot use them, but the API is authoritative.
+`NoteService.trash` re-checks `canEditPost`, then allows the note author or a
+principal with `content.edit.any`. It stamps `deleted_at`/`deleted_by_id` on the
+note and (for a root) its active replies, and writes a `content.note.trashed`
+audit event in the same transaction. `restore` clears those fields on the note
+and its trashed replies and writes `content.note.restored`. `purge` deletes the
+row permanently (replies cascade) and writes `content.note.deleted` with
+`permanent: true`; it refuses notes that are not in the trash. Trashed notes are
+excluded from the active list, cannot be resolved and cannot receive replies.
+The panel hides actions for users who cannot use them and confirms every
+transition; the API is authoritative.
 
 ## Notifications
 

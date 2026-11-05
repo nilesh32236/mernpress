@@ -15,6 +15,8 @@ function note(overrides: Partial<PostNote> = {}): PostNote {
     resolvedAt: null,
     resolvedBy: null,
     block: null,
+    deletedAt: null,
+    deletedBy: null,
     ...overrides,
   };
 }
@@ -22,6 +24,7 @@ function note(overrides: Partial<PostNote> = {}): PostNote {
 function state(overrides: Partial<PostNotesState> = {}): PostNotesState {
   return {
     notes: [],
+    trash: [],
     loading: false,
     error: null,
     busy: false,
@@ -29,7 +32,9 @@ function state(overrides: Partial<PostNotesState> = {}): PostNotesState {
     add: vi.fn(async () => true),
     reply: vi.fn(async () => true),
     setResolved: vi.fn(async () => true),
-    remove: vi.fn(async () => true),
+    moveToTrash: vi.fn(async () => true),
+    restoreNote: vi.fn(async () => true),
+    deleteForever: vi.fn(async () => true),
     refresh: vi.fn(),
     ...overrides,
   };
@@ -219,17 +224,17 @@ describe('editor notes panel', () => {
     );
 
     // The author can delete their own thread, but not the editor's reply.
-    expect(screen.getByRole('button', { name: 'Delete thread' })).toBeDefined();
-    expect(screen.queryAllByRole('button', { name: 'Delete' })).toHaveLength(0);
-    fireEvent.click(screen.getByRole('button', { name: 'Delete thread' }));
+    expect(screen.getByRole('button', { name: 'Trash thread' })).toBeDefined();
+    expect(screen.queryAllByRole('button', { name: 'Trash' })).toHaveLength(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Trash thread' }));
     expect(confirm).toHaveBeenCalled();
-    expect(notes.remove).toHaveBeenCalledWith('n1');
+    expect(notes.moveToTrash).toHaveBeenCalledWith('n1');
 
     rerender(<NotesPanel postId="p1" state={notes} currentUserId="u1" canDeleteAny />);
-    const deletes = screen.getAllByRole('button', { name: 'Delete' });
+    const deletes = screen.getAllByRole('button', { name: 'Trash' });
     expect(deletes).toHaveLength(1);
     fireEvent.click(deletes[0]!);
-    expect(notes.remove).toHaveBeenCalledWith('n2');
+    expect(notes.moveToTrash).toHaveBeenCalledWith('n2');
     confirm.mockRestore();
   });
 
@@ -238,8 +243,8 @@ describe('editor notes panel', () => {
       notes: [note({ author: { id: 'u2', username: 'editor', displayName: null } })],
     });
     render(<NotesPanel postId="p1" state={notes} currentUserId="u1" canDeleteAny={false} />);
-    expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Delete thread' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Trash' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Trash thread' })).toBeNull();
   });
 
   it('cancels a delete when confirmation is declined', () => {
@@ -248,8 +253,54 @@ describe('editor notes panel', () => {
       notes: [note({ author: { id: 'u1', username: 'admin', displayName: null } })],
     });
     render(<NotesPanel postId="p1" state={notes} currentUserId="u1" canDeleteAny={false} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
-    expect(notes.remove).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Trash' }));
+    expect(notes.moveToTrash).not.toHaveBeenCalled();
     confirm.mockRestore();
+  });
+
+  it('lists trashed notes with restore and permanent delete', async () => {
+    const trashed = note({
+      id: 'n9',
+      content: 'Removed note',
+      deletedAt: '2026-11-05T12:00:00.000Z',
+      deletedBy: { id: 'u2', username: 'editor', displayName: 'Editor Name' },
+    });
+    const notes = state({ trash: [trashed] });
+    render(<NotesPanel postId="p1" state={notes} currentUserId="u1" canDeleteAny />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Trash (1)' }));
+    expect(screen.getByText(/Trashed notes stay here/)).toBeDefined();
+    expect(screen.getByText('Removed note')).toBeDefined();
+    expect(screen.getByText(/Trashed .* by Editor Name/)).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
+    expect(notes.restoreNote).toHaveBeenCalledWith('n9');
+
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete permanently' }));
+    expect(confirm).toHaveBeenCalled();
+    expect(notes.deleteForever).toHaveBeenCalledWith('n9');
+    confirm.mockRestore();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to notes' }));
+    expect(screen.queryByText('Removed note')).toBeNull();
+  });
+
+  it('hides the trash toggle when the trash is empty', () => {
+    render(<NotesPanel postId="p1" state={state()} currentUserId="u1" canDeleteAny />);
+    expect(screen.queryByRole('button', { name: /Trash \(/ })).toBeNull();
+  });
+
+  it('does not offer trash actions to a user who cannot delete the note', () => {
+    const trashed = note({
+      id: 'n9',
+      author: { id: 'u2', username: 'editor', displayName: null },
+      deletedAt: '2026-11-05T12:00:00.000Z',
+    });
+    const notes = state({ trash: [trashed] });
+    render(<NotesPanel postId="p1" state={notes} currentUserId="u1" canDeleteAny={false} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Trash (1)' }));
+    expect(screen.queryByRole('button', { name: 'Restore' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Delete permanently' })).toBeNull();
   });
 });

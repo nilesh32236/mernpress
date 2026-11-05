@@ -3968,3 +3968,30 @@ contributor (`verify-outsider`):
 - The temporary post, editor, contributor and administrator were deleted;
   production is back to 1 user, 2 posts, 0 notes and 0 comments, with `/`,
   `/admin/`, `/api/health` and `/posts/testcom` returning 200.
+
+### 2026-11-05 — Editor-note trash (soft delete, restore, purge)
+
+- `post_notes` gains `deleted_at` and `deleted_by_id` (migration
+  `add_post_note_trash`); trashing a root also trashes its active replies.
+- `DELETE /api/admin/posts/:id/notes/:noteId` now moves a note to Trash;
+  `POST …/:noteId/restore` restores it (and its trashed replies);
+  `DELETE …/:noteId/permanent` removes it only when already trashed. `GET
+  …/notes` returns `{ notes, trash }` (and `?status=trash` returns the trash
+  only). Trashed notes cannot be resolved or replied to.
+- Permissions stay author-or-`content.edit.any`. Audit events:
+  `content.note.trashed`, `content.note.restored` and `content.note.deleted`
+  (`permanent: true`) with post/note/parent/anchored/reply counts.
+- The Notes panel adds a **Trash (n)** toggle, a trash list with author and
+  “Trashed … by …” metadata, and Restore / Delete permanently actions with
+  confirmation; the toggle disappears when the trash is empty.
+- Browser verification: a thread (root + reply) showed Trash thread/Trash;
+  trashing produced `Trash (2)` with both items, `deletedBy: admin`, and an
+  empty active list; Restore brought both back and emptied the trash; trashing
+  again and Delete permanently on the root removed both (cascade) with
+  `content.note.deleted {permanent:true, replies:1}`. The temporary post/notes
+  were deleted.
+- Tests: API trash/restore/purge permissions, cascade, list/trash separation,
+  resolve/reply guards, audit payloads and 404; admin trash toggle, metadata,
+  restore/purge actions, confirmation, permission gating and empty state.
+- Validation: 825 unit/integration tests (API 496, admin 218, web 38,
+  block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.

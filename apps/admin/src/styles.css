@@ -12996,3 +12996,31 @@ a.glance-chip:hover {
   color: #646970;
   font-size: 11px;
 }
+
+/* Editor notes: trash view. */
+.notes-trash-toggle {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--wp-blue);
+  font: inherit;
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.notes-trash-toggle.is-active {
+  color: #646970;
+}
+
+.note-thread.is-trashed {
+  border-left-color: #d63638;
+  background: #fcf0f1;
+}
+
+.note-trash-meta {
+  margin: 6px 0 0;
+  color: #646970;
+  font-size: 11px;
+}

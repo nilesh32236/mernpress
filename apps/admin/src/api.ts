@@ -1096,16 +1096,27 @@ export interface PostNote {
   resolvedBy: PostNoteAuthor | null;
   /** Null for an unanchored note or a reply. */
   block: NoteBlockAnchor | null;
+  /** Set while the note is in Trash; cleared on restore. */
+  deletedAt: string | null;
+  deletedBy: PostNoteAuthor | null;
 }
 
-export async function fetchPostNotes(postId: string): Promise<PostNote[]> {
+export interface PostNoteLists {
+  notes: PostNote[];
+  trash: PostNote[];
+}
+
+export async function fetchPostNotes(postId: string): Promise<PostNoteLists> {
   const response = await fetch(`/api/admin/posts/${encodeURIComponent(postId)}/notes`, {
     credentials: 'include',
     cache: 'no-store',
     headers: { accept: 'application/json' },
   });
-  const body = await readJson<{ notes?: PostNote[] }>(response);
-  return Array.isArray(body.notes) ? body.notes : [];
+  const body = await readJson<{ notes?: PostNote[]; trash?: PostNote[] }>(response);
+  return {
+    notes: Array.isArray(body.notes) ? body.notes : [],
+    trash: Array.isArray(body.trash) ? body.trash : [],
+  };
 }
 
 export async function createPostNote(
@@ -1126,6 +1137,38 @@ export async function createPostNote(
   return readJson<PostNote>(response);
 }
 
+export async function restorePostNote(postId: string, noteId: string): Promise<PostNote> {
+  const response = await fetch(
+    `/api/admin/posts/${encodeURIComponent(postId)}/notes/${encodeURIComponent(noteId)}/restore`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        ...csrfHeader(),
+      },
+      body: '{}',
+    },
+  );
+  return readJson<PostNote>(response);
+}
+
+export async function purgePostNote(postId: string, noteId: string): Promise<void> {
+  const response = await fetch(
+    `/api/admin/posts/${encodeURIComponent(postId)}/notes/${encodeURIComponent(noteId)}/permanent`,
+    {
+      method: 'DELETE',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { accept: 'application/json', ...csrfHeader() },
+    },
+  );
+  if (!response.ok) await readJson(response);
+}
+
+/** Move a note to Trash (soft delete); the note survives until purged. */
 export async function deletePostNote(postId: string, noteId: string): Promise<void> {
   const response = await fetch(
     `/api/admin/posts/${encodeURIComponent(postId)}/notes/${encodeURIComponent(noteId)}`,

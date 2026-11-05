@@ -68,6 +68,7 @@ model User {
   applicationPasswords   ApplicationPassword[]
   postNotes              PostNote[]              @relation("PostNoteAuthor")
   resolvedPostNotes      PostNote[]              @relation("PostNoteResolver")
+  trashedPostNotes       PostNote[]              @relation("PostNoteTrasher")
   passwordResets         PasswordReset[]
   twoFactorRecoveryCodes TwoFactorRecoveryCode[]
   twoFactorChallenges    TwoFactorChallenge[]
@@ -489,6 +490,9 @@ model PostNote {
   blockHash    String?   @map("block_hash") @db.VarChar(32)
   /// Short plain-text fingerprint used to distinguish "changed" from "removed".
   blockText    String?   @map("block_text") @db.VarChar(200)
+  /// Soft delete: set when the note is moved to Trash; cleared on restore.
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedById  String?   @map("deleted_by_id") @db.Uuid
   resolvedAt   DateTime? @map("resolved_at") @db.Timestamptz(6)
   resolvedById String?   @map("resolved_by_id") @db.Uuid
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -497,9 +501,11 @@ model PostNote {
   post       Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
   author     User?      @relation("PostNoteAuthor", fields: [authorId], references: [id], onDelete: SetNull)
   resolvedBy User?      @relation("PostNoteResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  deletedBy  User?      @relation("PostNoteTrasher", fields: [deletedById], references: [id], onDelete: SetNull)
   parent     PostNote?  @relation("PostNoteThread", fields: [parentId], references: [id], onDelete: Cascade)
   replies    PostNote[] @relation("PostNoteThread")
 
   @@index([postId, createdAt])
+  @@index([postId, deletedAt])
   @@map("post_notes")
 }

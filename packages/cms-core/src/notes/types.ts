@@ -31,6 +31,9 @@ export interface PostNote {
   resolvedBy: NoteAuthor | null;
   /** Null for an unanchored note or a reply. */
   block: NoteBlockAnchor | null;
+  /** Set while the note is in Trash; cleared on restore. */
+  deletedAt: string | null;
+  deletedBy: NoteAuthor | null;
 }
 
 /** A user the mention picker may suggest for a post. */

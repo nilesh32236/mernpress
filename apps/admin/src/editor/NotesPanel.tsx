@@ -86,6 +86,7 @@ export function NotesPanel({
   const [replyDraft, setReplyDraft] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
   const [attach, setAttach] = useState(Boolean(selectedAnchor));
+  const [showTrash, setShowTrash] = useState(false);
 
   useEffect(() => {
     setAttach(Boolean(selectedAnchor));
@@ -112,15 +113,33 @@ export function NotesPanel({
   const canDelete = (note: PostNote) =>
     canDeleteAny || (Boolean(currentUserId) && note.author?.id === currentUserId);
 
-  async function removeNote(note: PostNote): Promise<void> {
+  async function trashNote(note: PostNote): Promise<void> {
     if (!canDelete(note)) return;
     const question =
       note.parentId === null
-        ? 'Delete this note thread and all of its replies?'
-        : 'Delete this reply?';
+        ? 'Move this note thread and all of its replies to the trash?'
+        : 'Move this reply to the trash?';
     if (typeof window !== 'undefined' && !window.confirm(question)) return;
     setLocalError(null);
-    await state.remove(note.id);
+    await state.moveToTrash(note.id);
+  }
+
+  async function restoreNote(note: PostNote): Promise<void> {
+    if (!canDelete(note)) return;
+    setLocalError(null);
+    await state.restoreNote(note.id);
+  }
+
+  async function purgeNote(note: PostNote): Promise<void> {
+    if (!canDelete(note)) return;
+    if (
+      typeof window !== 'undefined' &&
+      !window.confirm('Delete this note permanently? This cannot be undone.')
+    ) {
+      return;
+    }
+    setLocalError(null);
+    await state.deleteForever(note.id);
   }
 
   async function submitRoot(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -155,6 +174,15 @@ export function NotesPanel({
         <span className="notes-count">
           {state.unresolvedCount} open / {state.notes.length} total
         </span>
+        {state.trash.length > 0 || showTrash ? (
+          <button
+            type="button"
+            className={`button-link notes-trash-toggle${showTrash ? ' is-active' : ''}`}
+            onClick={() => setShowTrash((value) => !value)}
+          >
+            {showTrash ? 'Back to notes' : `Trash (${state.trash.length})`}
+          </button>
+        ) : null}
       </div>
       <p className="field-help">
         Internal notes for everyone who can edit this post. Notes never appear on the public site
@@ -221,7 +249,54 @@ export function NotesPanel({
         mention emails. Mentions never appear on the public site.
       </p>
 
-      {state.loading ? (
+      {showTrash ? (
+        <div className="notes-trash">
+          <p className="field-help">
+            Trashed notes stay here until you restore them or delete them permanently.
+          </p>
+          {state.trash.length === 0 ? (
+            <p className="notes-empty">The trash is empty.</p>
+          ) : (
+            <ul className="notes-list">
+              {state.trash.map((note) => (
+                <li key={note.id} className="note-thread is-trashed" data-note-id={note.id}>
+                  <Message
+                    note={note}
+                    actions={
+                      canDelete(note) ? (
+                        <>
+                          <button
+                            type="button"
+                            className="button-link"
+                            onClick={() => void restoreNote(note)}
+                            disabled={state.busy}
+                          >
+                            Restore
+                          </button>
+                          <button
+                            type="button"
+                            className="button-link is-danger"
+                            onClick={() => void purgeNote(note)}
+                            disabled={state.busy}
+                          >
+                            Delete permanently
+                          </button>
+                        </>
+                      ) : undefined
+                    }
+                  />
+                  {note.deletedAt ? (
+                    <p className="note-trash-meta">
+                      Trashed {formatRelativeTime(note.deletedAt)}
+                      {note.deletedBy ? ` by ${authorName(note.deletedBy)}` : ''}
+                    </p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : state.loading ? (
         <p className="field-help">Loading notes…</p>
       ) : threads.length === 0 ? (
         <p className="notes-empty">No notes yet.</p>
@@ -271,10 +346,10 @@ export function NotesPanel({
                         <button
                           type="button"
                           className="button-link is-danger"
-                          onClick={() => void removeNote(thread)}
+                          onClick={() => void trashNote(thread)}
                           disabled={state.busy}
                         >
-                          {replies.length > 0 ? 'Delete thread' : 'Delete'}
+                          {replies.length > 0 ? 'Trash thread' : 'Trash'}
                         </button>
                       ) : null}
                     </>
@@ -294,10 +369,10 @@ export function NotesPanel({
                               <button
                                 type="button"
                                 className="button-link is-danger"
-                                onClick={() => void removeNote(reply)}
+                                onClick={() => void trashNote(reply)}
                                 disabled={state.busy}
                               >
-                                Delete
+                                Trash
                               </button>
                             ) : undefined
                           }

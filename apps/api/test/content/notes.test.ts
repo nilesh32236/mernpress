@@ -201,9 +201,9 @@ describe('editor notes', () => {
     }
   });
 
-  it('deletes notes with author/edit-any permission, cascades replies and audits', async () => {
-    // A post owned by an author: they may delete their own note but not an
-    // editor's reply; the editor may delete anything on the post.
+  it('trashes, restores and purges notes with permissions, cascades and audits', async () => {
+    // A post owned by an author: they may trash their own note but not an
+    // editor's reply; the editor may act on anything on the post.
     await seedUser(app, {
       username: 'note-owner',
       password: 'Owner-pass-2026!',
@@ -246,43 +246,124 @@ describe('editor notes', () => {
       await addNote(post.id, 'Editor reply', root.id, editorHeaders)
     ).json() as PostNote;
 
-    // The owner cannot delete the editor's reply (no edit-any).
     const { 'content-type': _ownerContentType, ...ownerDeleteHeaders } = ownerHeaders;
     const { 'content-type': _editorContentType, ...editorDeleteHeaders } = editorHeaders;
+
+    // The owner cannot trash the editor's reply (no edit-any).
     const forbidden = await app.inject({
       method: 'DELETE',
       url: `/api/admin/posts/${post.id}/notes/${editorReply.id}`,
       headers: ownerDeleteHeaders,
     });
     expect(forbidden.statusCode).toBe(403);
-    expect((forbidden.json() as { error: { code: string } }).error.code).toBe('FORBIDDEN');
 
-    // The editor may delete the owner's reply, and the owner may delete a note
-    // they wrote themselves.
-    const editorDelete = await app.inject({
+    // The editor may trash the owner's reply; it lands in Trash, not oblivion.
+    const editorTrash = await app.inject({
       method: 'DELETE',
       url: `/api/admin/posts/${post.id}/notes/${reply.id}`,
       headers: editorDeleteHeaders,
     });
-    expect(editorDelete.statusCode).toBe(204);
-    const ownerDelete = await app.inject({
+    expect(editorTrash.statusCode).toBe(204);
+    const afterReplyTrash = await listNotes(post.id, ownerHeaders);
+    const lists = afterReplyTrash.json() as { notes: PostNote[]; trash: PostNote[] };
+    expect(lists.notes.map((note) => note.content)).toEqual(['Owner root note', 'Editor reply']);
+    expect(lists.trash.map((note) => note.content)).toEqual(['Owner reply']);
+    expect(lists.trash[0]?.deletedAt).toEqual(expect.any(String));
+    expect(lists.trash[0]?.deletedBy).toMatchObject({ username: 'note-editor' });
+
+    // Trashing the root cascades its remaining replies.
+    const ownerTrash = await app.inject({
       method: 'DELETE',
       url: `/api/admin/posts/${post.id}/notes/${root.id}`,
       headers: ownerDeleteHeaders,
     });
-    expect(ownerDelete.statusCode).toBe(204);
+    expect(ownerTrash.statusCode).toBe(204);
+    const allTrashed = (await listNotes(post.id, ownerHeaders)).json() as {
+      notes: PostNote[];
+      trash: PostNote[];
+    };
+    expect(allTrashed.notes).toEqual([]);
+    expect(allTrashed.trash).toHaveLength(3);
 
-    // Root deletion cascades replies (editorReply) as well.
-    const remaining = await listNotes(post.id, ownerHeaders);
-    expect((remaining.json() as { notes: PostNote[] }).notes).toEqual([]);
+    const trashOnly = await app.inject({
+      method: 'GET',
+      url: `/api/admin/posts/${post.id}/notes?status=trash`,
+      headers: { cookie: owner.cookieHeader },
+    });
+    expect(trashOnly.statusCode).toBe(200);
+    expect((trashOnly.json() as { trash: PostNote[] }).trash).toHaveLength(3);
+
+    // Restoring the thread restores its trashed replies.
+    const restored = await app.inject({
+      method: 'POST',
+      url: `/api/admin/posts/${post.id}/notes/${root.id}/restore`,
+      headers: ownerHeaders,
+      payload: {},
+    });
+    expect(restored.statusCode, restored.body).toBe(200);
+    expect((restored.json() as PostNote).deletedAt).toBeNull();
+    const afterRestore = (await listNotes(post.id, ownerHeaders)).json() as {
+      notes: PostNote[];
+      trash: PostNote[];
+    };
+    expect(afterRestore.notes).toHaveLength(3);
+    expect(afterRestore.trash).toEqual([]);
+
+    // Permanent deletion requires Trash first.
+    const purgeActive = await app.inject({
+      method: 'DELETE',
+      url: `/api/admin/posts/${post.id}/notes/${root.id}/permanent`,
+      headers: ownerDeleteHeaders,
+    });
+    expect(purgeActive.statusCode).toBe(400);
+
+    // Trash one reply again and purge it permanently.
+    await app.inject({
+      method: 'DELETE',
+      url: `/api/admin/posts/${post.id}/notes/${reply.id}`,
+      headers: ownerDeleteHeaders,
+    });
+    const purged = await app.inject({
+      method: 'DELETE',
+      url: `/api/admin/posts/${post.id}/notes/${reply.id}/permanent`,
+      headers: ownerDeleteHeaders,
+    });
+    expect(purged.statusCode).toBe(204);
+    const afterPurge = (await listNotes(post.id, ownerHeaders)).json() as {
+      notes: PostNote[];
+      trash: PostNote[];
+    };
+    expect(afterPurge.notes).toHaveLength(2);
+    expect(afterPurge.trash).toEqual([]);
+
+    // Trashed notes cannot be resolved or replied to until restored.
+    await app.inject({
+      method: 'DELETE',
+      url: `/api/admin/posts/${post.id}/notes/${editorReply.id}`,
+      headers: editorDeleteHeaders,
+    });
+    const resolveTrashed = await app.inject({
+      method: 'PATCH',
+      url: `/api/admin/posts/${post.id}/notes/${editorReply.id}`,
+      headers,
+      payload: { resolved: true },
+    });
+    expect(resolveTrashed.statusCode).toBe(400);
+    const replyToTrashed = await addNote(post.id, 'Too late', editorReply.id, ownerHeaders);
+    expect(replyToTrashed.statusCode).toBe(400);
 
     const audit = await app.database.auditEvent.findMany({
-      where: { eventType: 'content.note.deleted' },
+      where: {
+        eventType: {
+          in: ['content.note.trashed', 'content.note.restored', 'content.note.deleted'],
+        },
+      },
       orderBy: { createdAt: 'asc' },
     });
-    expect(audit).toHaveLength(2);
-    expect(audit[1]?.actorUserId).toBeTruthy();
-    expect(audit[1]?.metadata).toMatchObject({ postId: post.id, replies: 1, anchored: false });
+    expect(audit.filter((event) => event.eventType === 'content.note.trashed')).toHaveLength(4);
+    expect(audit.filter((event) => event.eventType === 'content.note.restored')).toHaveLength(1);
+    const purgedEvent = audit.find((event) => event.eventType === 'content.note.deleted');
+    expect(purgedEvent?.metadata).toMatchObject({ postId: post.id, permanent: true, replies: 0 });
 
     const missing = await app.inject({
       method: 'DELETE',

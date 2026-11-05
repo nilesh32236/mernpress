@@ -4,6 +4,8 @@ import {
   createPostNote,
   deletePostNote,
   fetchPostNotes,
+  purgePostNote,
+  restorePostNote,
   setPostNoteResolved,
   type NoteBlockAnchor,
   type PostNote,
@@ -11,6 +13,7 @@ import {
 
 export interface PostNotesState {
   notes: PostNote[];
+  trash: PostNote[];
   loading: boolean;
   error: string | null;
   busy: boolean;
@@ -18,7 +21,9 @@ export interface PostNotesState {
   add: (content: string, block?: NoteBlockAnchor | null) => Promise<boolean>;
   reply: (parentId: string, content: string) => Promise<boolean>;
   setResolved: (noteId: string, resolved: boolean) => Promise<boolean>;
-  remove: (noteId: string) => Promise<boolean>;
+  moveToTrash: (noteId: string) => Promise<boolean>;
+  restoreNote: (noteId: string) => Promise<boolean>;
+  deleteForever: (noteId: string) => Promise<boolean>;
   refresh: () => void;
 }
 
@@ -30,6 +35,7 @@ export interface PostNotesState {
  */
 export function usePostNotes(postId: string | null): PostNotesState {
   const [notes, setNotes] = useState<PostNote[]>([]);
+  const [trash, setTrash] = useState<PostNote[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -38,6 +44,7 @@ export function usePostNotes(postId: string | null): PostNotesState {
   useEffect(() => {
     if (!postId) {
       setNotes([]);
+      setTrash([]);
       setLoading(false);
       setError(null);
       return;
@@ -46,8 +53,10 @@ export function usePostNotes(postId: string | null): PostNotesState {
     setLoading(true);
     setError(null);
     fetchPostNotes(postId)
-      .then((items) => {
-        if (active) setNotes(items);
+      .then((lists) => {
+        if (!active) return;
+        setNotes(lists.notes);
+        setTrash(lists.trash);
       })
       .catch((caught) => {
         if (active) setError(actionErrorMessage(caught));
@@ -101,13 +110,22 @@ export function usePostNotes(postId: string | null): PostNotesState {
       run(() => setPostNoteResolved(postId as string, noteId, resolved)),
     [postId, run],
   );
-  const remove = useCallback(
+  const moveToTrash = useCallback(
     (noteId: string) => run(() => deletePostNote(postId as string, noteId)),
+    [postId, run],
+  );
+  const restoreNote = useCallback(
+    (noteId: string) => run(() => restorePostNote(postId as string, noteId)),
+    [postId, run],
+  );
+  const deleteForever = useCallback(
+    (noteId: string) => run(() => purgePostNote(postId as string, noteId)),
     [postId, run],
   );
 
   return {
     notes,
+    trash,
     loading,
     error,
     busy,
@@ -116,7 +134,9 @@ export function usePostNotes(postId: string | null): PostNotesState {
     add,
     reply,
     setResolved,
-    remove,
+    moveToTrash,
+    restoreNote,
+    deleteForever,
     refresh,
   };
 }

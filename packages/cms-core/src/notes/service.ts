@@ -27,6 +27,7 @@ const AUTHOR_SELECT = {
 const NOTE_INCLUDE = {
   author: AUTHOR_SELECT,
   resolvedBy: AUTHOR_SELECT,
+  deletedBy: AUTHOR_SELECT,
 } as const;
 
 type NoteRow = {
@@ -40,8 +41,10 @@ type NoteRow = {
   blockText: string | null;
   createdAt: Date;
   resolvedAt: Date | null;
+  deletedAt: Date | null;
   author: { id: string; username: string; displayName: string | null } | null;
   resolvedBy: { id: string; username: string; displayName: string | null } | null;
+  deletedBy: { id: string; username: string; displayName: string | null } | null;
 };
 
 function toAuthor(
@@ -97,7 +100,23 @@ function toNote(row: NoteRow): PostNote {
     createdAt: row.createdAt.toISOString(),
     resolvedAt: row.resolvedAt?.toISOString() ?? null,
     resolvedBy: toAuthor(row.resolvedBy),
+    deletedAt: row.deletedAt?.toISOString() ?? null,
+    deletedBy: toAuthor(row.deletedBy),
   };
+}
+
+function requireNoteAuthorOrEditor(
+  principal: Principal,
+  authorId: string | null,
+  action: 'trash' | 'restore' | 'delete permanently',
+): void {
+  if (authorId !== principal.userId && !roleHasCapability(principal.role, 'content.edit.any')) {
+    throw new ContentError(
+      'FORBIDDEN',
+      `Only the note author or an editor can ${action} this note.`,
+      403,
+    );
+  }
 }
 
 export interface NoteServiceOptions {
@@ -126,14 +145,33 @@ export function createNoteService({ prisma, mail }: NoteServiceOptions) {
     return post;
   }
 
-  async function list(principal: Principal, postId: string): Promise<PostNote[]> {
+  async function list(
+    principal: Principal,
+    postId: string,
+    options: { trashed?: boolean } = {},
+  ): Promise<PostNote[]> {
     await loadEditablePost(principal, postId);
     const rows = await prisma.postNote.findMany({
-      where: { postId },
+      where: {
+        postId,
+        ...(options.trashed ? { deletedAt: { not: null } } : { deletedAt: null }),
+      },
       include: NOTE_INCLUDE,
       orderBy: { createdAt: 'asc' },
     });
     return rows.map(toNote);
+  }
+
+  /** Active and trashed notes in one round trip (the editor needs both counts). */
+  async function lists(
+    principal: Principal,
+    postId: string,
+  ): Promise<{ notes: PostNote[]; trash: PostNote[] }> {
+    const [notes, trash] = await Promise.all([
+      list(principal, postId),
+      list(principal, postId, { trashed: true }),
+    ]);
+    return { notes, trash };
   }
 
   async function create(
@@ -166,9 +204,9 @@ export function createNoteService({ prisma, mail }: NoteServiceOptions) {
     if (input.parentId) {
       const parent = await prisma.postNote.findFirst({
         where: { id: input.parentId, postId },
-        select: { id: true, parentId: true, resolvedAt: true },
+        select: { id: true, parentId: true, resolvedAt: true, deletedAt: true },
       });
-      if (!parent) {
+      if (!parent || parent.deletedAt !== null) {
         throw new ContentError('VALIDATION_ERROR', 'That note no longer exists.', 400);
       }
       if (parent.parentId !== null) {
@@ -314,10 +352,13 @@ export function createNoteService({ prisma, mail }: NoteServiceOptions) {
     await loadEditablePost(principal, postId);
     const note = await prisma.postNote.findFirst({
       where: { id: noteId, postId },
-      select: { id: true, parentId: true },
+      select: { id: true, parentId: true, deletedAt: true },
     });
     if (!note) {
       throw new ContentError('NOT_FOUND', 'Not found', 404);
+    }
+    if (note.deletedAt !== null) {
+      throw new ContentError('VALIDATION_ERROR', 'Restore this note before resolving it.', 400);
     }
     if (note.parentId !== null) {
       throw new ContentError('VALIDATION_ERROR', 'Only a note thread can be resolved.', 400);
@@ -337,7 +378,12 @@ export function createNoteService({ prisma, mail }: NoteServiceOptions) {
    * note; users with `content.edit.any` may delete any note on a post they can
    * edit. Deleting a root cascades its replies (PostNote.parent onDelete).
    */
-  async function remove(principal: Principal, postId: string, noteId: string): Promise<void> {
+  /**
+   * Soft-delete a note (move to Trash). The note author may trash their own
+   * note; users with `content.edit.any` may trash any note on a post they can
+   * edit. Trashing a root also trashes its replies so the thread moves as one.
+   */
+  async function trash(principal: Principal, postId: string, noteId: string): Promise<void> {
     const post = await loadEditablePost(principal, postId);
     const note = await prisma.postNote.findFirst({
       where: { id: noteId, postId },
@@ -347,29 +393,39 @@ export function createNoteService({ prisma, mail }: NoteServiceOptions) {
         authorId: true,
         content: true,
         blockName: true,
+        deletedAt: true,
         author: { select: { email: true, username: true, displayName: true } },
       },
     });
     if (!note) {
       throw new ContentError('NOT_FOUND', 'Not found', 404);
     }
-    if (
-      note.authorId !== principal.userId &&
-      !roleHasCapability(principal.role, 'content.edit.any')
-    ) {
-      throw new ContentError(
-        'FORBIDDEN',
-        'Only the note author or an editor can delete this note.',
-        403,
-      );
+    requireNoteAuthorOrEditor(principal, note.authorId, 'trash');
+    if (note.deletedAt !== null) {
+      // Already in Trash: idempotent, nothing to duplicate or notify.
+      return;
     }
     const replies =
-      note.parentId === null ? await prisma.postNote.count({ where: { parentId: note.id } }) : 0;
+      note.parentId === null
+        ? await prisma.postNote.count({
+            where: { parentId: note.id, deletedAt: null },
+          })
+        : 0;
+    const now = new Date();
     await prisma.$transaction(async (tx) => {
-      await tx.postNote.delete({ where: { id: note.id } });
+      await tx.postNote.update({
+        where: { id: note.id },
+        data: { deletedAt: now, deletedById: principal.userId },
+      });
+      if (note.parentId === null && replies > 0) {
+        await tx.postNote.updateMany({
+          where: { parentId: note.id, deletedAt: null },
+          data: { deletedAt: now, deletedById: principal.userId },
+        });
+      }
       await tx.auditEvent.create({
         data: {
-          eventType: 'content.note.deleted',
+          eventType: 'content.note.trashed',
           actorUserId: principal.userId,
           metadata: {
             postId,
@@ -402,7 +458,99 @@ export function createNoteService({ prisma, mail }: NoteServiceOptions) {
     }
   }
 
-  return { list, create, setResolved, remove, mentionCandidates };
+  /** Restore a trashed note; restoring a thread restores its trashed replies. */
+  async function restore(principal: Principal, postId: string, noteId: string): Promise<PostNote> {
+    await loadEditablePost(principal, postId);
+    const note = await prisma.postNote.findFirst({
+      where: { id: noteId, postId },
+      select: { id: true, parentId: true, authorId: true, deletedAt: true },
+    });
+    if (!note) {
+      throw new ContentError('NOT_FOUND', 'Not found', 404);
+    }
+    requireNoteAuthorOrEditor(principal, note.authorId, 'restore');
+    if (note.deletedAt === null) {
+      throw new ContentError('VALIDATION_ERROR', 'This note is not in the trash.', 400);
+    }
+    const replies =
+      note.parentId === null
+        ? await prisma.postNote.count({
+            where: { parentId: note.id, deletedAt: { not: null } },
+          })
+        : 0;
+    const row = await prisma.$transaction(async (tx) => {
+      if (note.parentId === null && replies > 0) {
+        await tx.postNote.updateMany({
+          where: { parentId: note.id, deletedAt: { not: null } },
+          data: { deletedAt: null, deletedById: null },
+        });
+      }
+      const restored = await tx.postNote.update({
+        where: { id: note.id },
+        data: { deletedAt: null, deletedById: null },
+        include: NOTE_INCLUDE,
+      });
+      await tx.auditEvent.create({
+        data: {
+          eventType: 'content.note.restored',
+          actorUserId: principal.userId,
+          metadata: { postId, noteId: note.id, parentId: note.parentId, replies },
+        },
+      });
+      return restored;
+    });
+    return toNote(row);
+  }
+
+  /**
+   * Permanently delete a trashed note. Only notes already in Trash can be
+   * purged, so an accidental click in the thread list can never destroy a note.
+   */
+  async function purge(principal: Principal, postId: string, noteId: string): Promise<void> {
+    await loadEditablePost(principal, postId);
+    const note = await prisma.postNote.findFirst({
+      where: { id: noteId, postId },
+      select: {
+        id: true,
+        parentId: true,
+        authorId: true,
+        blockName: true,
+        deletedAt: true,
+      },
+    });
+    if (!note) {
+      throw new ContentError('NOT_FOUND', 'Not found', 404);
+    }
+    requireNoteAuthorOrEditor(principal, note.authorId, 'delete permanently');
+    if (note.deletedAt === null) {
+      throw new ContentError(
+        'VALIDATION_ERROR',
+        'Move this note to the trash before deleting it permanently.',
+        400,
+      );
+    }
+    const replies =
+      note.parentId === null ? await prisma.postNote.count({ where: { parentId: note.id } }) : 0;
+    await prisma.$transaction(async (tx) => {
+      await tx.postNote.delete({ where: { id: note.id } });
+      await tx.auditEvent.create({
+        data: {
+          eventType: 'content.note.deleted',
+          actorUserId: principal.userId,
+          metadata: {
+            postId,
+            noteId: note.id,
+            parentId: note.parentId,
+            anchored: note.blockName !== null,
+            replies,
+            permanent: true,
+          },
+        },
+      });
+    });
+  }
+
+  return { list, lists, create, setResolved, trash, restore, purge, mentionCandidates };
 }
 
 export type NoteService = ReturnType<typeof createNoteService>;

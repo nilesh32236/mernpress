@@ -41,13 +41,20 @@ never leak to the public site.
    names and relative timestamps (full timestamp on hover), Reply, Resolve and
    Reopen. New, unsaved content shows "save the draft first" because notes need
    a post id.
-6. **Deletion with an audit trail.** `DELETE /api/admin/posts/:id/notes/:noteId`
-   lets the note author delete their own note; users with `content.edit.any`
-   may delete any note on a post they can edit. Deleting a root cascades its
-   replies. Every deletion writes a `content.note.deleted` audit event with the
-   post, note, parent, anchored flag and reply count. The panel shows Delete /
-   Delete thread actions only when the signed-in user may use them and asks for
-   confirmation.
+6. **Two-stage deletion with an audit trail.** `DELETE
+   /api/admin/posts/:id/notes/:noteId` moves a note to Trash (`deleted_at`,
+   `deleted_by_id`); trashing a root also trashes its replies. `GET
+   …/notes` returns `{ notes, trash }` and the panel has a Trash (n) toggle with
+   Restore and Delete permanently per item. `POST …/:noteId/restore` clears the
+   trash state (restoring a thread restores its trashed replies) and `DELETE
+   …/:noteId/permanent` removes the row only when it is already trashed, so a
+   stray click in the thread list cannot destroy a note. The note author may act
+   on their own note; users with `content.edit.any` may act on any note on a post
+   they can edit. Trashed notes cannot be resolved or replied to. Each
+   transition writes an audit event (`content.note.trashed`,
+   `content.note.restored`, `content.note.deleted` with `permanent: true`) with
+   the post, note, parent, anchored flag and reply count. Actions are only shown
+   to users who may use them and always ask for confirmation.
 7. **Optional notifications.** When outbound mail is configured and
    `notes_notify` is enabled (Settings → Discussion, default on), creating or
    replying to someone else's note emails the post author; deleting someone
@@ -70,10 +77,11 @@ never leak to the public site.
 
 ## Consequences
 
-- Three additive migrations in total: `20261105163351_add_post_notes`,
-  `20261105172228_add_note_block_anchor` (name/path/hash) and
-  `add_note_block_text` (the text fingerprint). Deleting a post cascades its
-  notes; deleting a user nulls the author.
+- Four additive migrations in total: `20261105163351_add_post_notes`,
+  `20261105172228_add_note_block_anchor` (name/path/hash),
+  `add_note_block_text` (the text fingerprint) and `add_post_note_trash`
+  (`deleted_at`/`deleted_by_id`). Deleting a post cascades its notes; deleting a
+  user nulls the author. Trashed notes still count as rows until purged.
 - Notes are not revisions, do not bump the post version, and do not affect the
   public site, sitemap or feeds.
 - One extra request per editor load; a failed fetch shows an inline error and
