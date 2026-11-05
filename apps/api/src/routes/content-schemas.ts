@@ -26,6 +26,20 @@ export const createPostSchema = z
     robots: robots.optional(),
     ogTitle: seoTitle.optional(),
     ogDescription: seoDescription.optional(),
+    format: z
+      .enum([
+        'standard',
+        'aside',
+        'gallery',
+        'link',
+        'image',
+        'quote',
+        'status',
+        'video',
+        'audio',
+        'chat',
+      ])
+      .optional(),
   })
   .strict();
 
@@ -47,6 +61,22 @@ export const updatePostSchema = z
     authorId: uuid.nullable().optional(),
     commentStatus: z.enum(['open', 'closed']).optional(),
     sticky: z.boolean().optional(),
+    password: z.string().max(100).nullable().optional(),
+    isPrivate: z.boolean().optional(),
+    format: z
+      .enum([
+        'standard',
+        'aside',
+        'gallery',
+        'link',
+        'image',
+        'quote',
+        'status',
+        'video',
+        'audio',
+        'chat',
+      ])
+      .optional(),
   })
   .strict();
 

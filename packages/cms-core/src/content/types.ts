@@ -54,6 +54,22 @@ export interface FeaturedImage {
   derivatives: Record<string, string>;
 }
 
+/** WordPress post formats. Content is unchanged; themes may style the format. */
+export const POST_FORMATS = [
+  'standard',
+  'aside',
+  'gallery',
+  'link',
+  'image',
+  'quote',
+  'status',
+  'video',
+  'audio',
+  'chat',
+] as const;
+
+export type PostFormat = (typeof POST_FORMATS)[number];
+
 export interface AdminPost {
   id: string;
   type: ContentType;
@@ -76,6 +92,12 @@ export interface AdminPost {
   commentStatus: 'open' | 'closed';
   /** WordPress "Make this post sticky". */
   sticky: boolean;
+  /** True when a post password is set (the hash itself never leaves the DB). */
+  passwordProtected: boolean;
+  /** WordPress "Private": excluded from every public surface. */
+  isPrivate: boolean;
+  /** WordPress post format. */
+  format: PostFormat;
   trashedAt: string | null;
   previousStatus: PostStatus | null;
   version: number;
@@ -162,6 +184,10 @@ export interface PublicPost {
   commentStatus: 'open' | 'closed';
   /** WordPress "Make this post sticky". */
   sticky: boolean;
+  /** True when the body requires a password (content is withheld). */
+  passwordProtected: boolean;
+  /** WordPress post format. */
+  format: PostFormat;
   updatedAt: string;
   author: { id: string; username: string } | null;
   terms: { categories: AdminTermSummary[]; tags: AdminTermSummary[] };
@@ -186,6 +212,7 @@ export interface CreatePostInput {
   robots?: string | null | undefined;
   ogTitle?: string | null | undefined;
   ogDescription?: string | null | undefined;
+  format?: PostFormat | undefined;
 }
 
 export interface UpdatePostInput {
@@ -205,6 +232,10 @@ export interface UpdatePostInput {
   authorId?: string | null | undefined;
   commentStatus?: 'open' | 'closed' | undefined;
   sticky?: boolean | undefined;
+  /** Empty string or null removes the password protection. */
+  password?: string | null | undefined;
+  isPrivate?: boolean | undefined;
+  format?: PostFormat | undefined;
 }
 
 export type AdminPostSort = 'updatedAt' | 'createdAt' | 'publishedAt' | 'title';

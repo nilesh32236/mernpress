@@ -37,6 +37,8 @@ const post: PublicPost = {
   publishedAt: '2026-01-01T00:00:00.000Z',
   commentStatus: 'open',
   sticky: false,
+  passwordProtected: false,
+  format: 'standard',
   updatedAt: '2026-01-02T00:00:00.000Z',
   terms: {
     categories: [{ id: 'c1', name: 'News', slug: 'news' }],

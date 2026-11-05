@@ -3,6 +3,7 @@ import { postPath, type PublicPost } from '@/lib/api';
 import ResponsiveImage from './ResponsiveImage';
 import MorePosts from './MorePosts';
 import Comments from './Comments';
+import PasswordForm from './PasswordForm';
 
 export default function PostView({
   post,
@@ -60,7 +61,14 @@ export default function PostView({
             )}
           </div>
         ) : null}
-        <div className="entry-content" dangerouslySetInnerHTML={{ __html: post.renderedContent }} />
+        {post.passwordProtected ? (
+          <PasswordForm slug={post.slug} />
+        ) : (
+          <div
+            className={`entry-content format-${post.format}`}
+            dangerouslySetInnerHTML={{ __html: post.renderedContent }}
+          />
+        )}
         {!isPage && tags.length > 0 ? (
           <div className="entry-tags">
             {tags.map((term, index) => (

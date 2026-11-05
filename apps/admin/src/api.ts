@@ -1,5 +1,17 @@
 export type UserRole = 'administrator' | 'editor' | 'author' | 'contributor' | 'subscriber';
 export type ContentType = 'post' | 'page';
+export type PostFormat =
+  | 'standard'
+  | 'aside'
+  | 'gallery'
+  | 'link'
+  | 'image'
+  | 'quote'
+  | 'status'
+  | 'video'
+  | 'audio'
+  | 'chat';
+
 export type PostStatus = 'DRAFT' | 'PUBLISHED' | 'TRASHED';
 export type TransitionAction = 'publish' | 'unpublish' | 'trash' | 'restore';
 export type TaxonomyType = 'category' | 'tag';
@@ -46,6 +58,9 @@ export interface AdminPost {
   publishedAt: string | null;
   commentStatus: 'open' | 'closed';
   sticky: boolean;
+  passwordProtected: boolean;
+  isPrivate: boolean;
+  format: PostFormat;
   trashedAt: string | null;
   previousStatus: PostStatus | null;
   version: number;
@@ -272,6 +287,7 @@ export interface CreatePostPayload {
   robots?: string | null;
   ogTitle?: string | null;
   ogDescription?: string | null;
+  format?: PostFormat;
 }
 
 export interface UpdatePostPayload {
@@ -291,6 +307,9 @@ export interface UpdatePostPayload {
   authorId?: string | null;
   commentStatus?: 'open' | 'closed';
   sticky?: boolean;
+  password?: string | null;
+  isPrivate?: boolean;
+  format?: PostFormat;
 }
 
 interface ErrorBody {

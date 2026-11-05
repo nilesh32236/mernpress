@@ -29,6 +29,7 @@ import {
   type ContentType,
   type FeaturedImage,
   type MediaItem,
+  type PostFormat,
   type TransitionAction,
   listMedia,
 } from './api.js';
@@ -45,6 +46,11 @@ import { formatDateTime, formatRelativeTime } from './format.js';
 import { useUnsavedChanges } from './navigation-guard.js';
 import { availableTransitions, canAssignTerms, canCreateContent, canEditPost } from './roles.js';
 import { editContentPath, listPath, navigate } from './router.js';
+import {
+  readEditorPreferences,
+  writeEditorPreferences,
+  type EditorPreferences,
+} from './editorPreferences.js';
 import type { BlockCanvasHandle } from './editor/BlockCanvas.js';
 
 // The WordPress canvas is a large chunk; load it only on new/edit routes.
@@ -68,6 +74,7 @@ interface Baseline {
   categoryIds: string[];
   tagIds: string[];
   featuredMediaId: string | null;
+  format: PostFormat;
 }
 
 const EMPTY_FORM: FormState = {
@@ -82,6 +89,19 @@ const EMPTY_FORM: FormState = {
   ogTitle: '',
   ogDescription: '',
 };
+const POST_FORMAT_OPTIONS: Array<{ value: PostFormat; label: string }> = [
+  { value: 'standard', label: 'Standard' },
+  { value: 'aside', label: 'Aside' },
+  { value: 'gallery', label: 'Gallery' },
+  { value: 'link', label: 'Link' },
+  { value: 'image', label: 'Image' },
+  { value: 'quote', label: 'Quote' },
+  { value: 'status', label: 'Status' },
+  { value: 'video', label: 'Video' },
+  { value: 'audio', label: 'Audio' },
+  { value: 'chat', label: 'Chat' },
+];
+
 const ACTION_SUCCESS: Record<TransitionAction, string> = {
   publish: 'Content published.',
   unpublish: 'Content returned to draft.',
@@ -172,6 +192,7 @@ export function ContentEditor({
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [featuredMedia, setFeaturedMedia] = useState<FeaturedImage | null>(null);
+  const [format, setFormat] = useState<PostFormat>('standard');
   const [featuredPickerOpen, setFeaturedPickerOpen] = useState(false);
   const [featuredPickerItems, setFeaturedPickerItems] = useState<MediaItem[] | null>(null);
   const [featuredPickerSearch, setFeaturedPickerSearch] = useState('');
@@ -194,7 +215,10 @@ export function ContentEditor({
   const [revisionsError, setRevisionsError] = useState<string | null>(null);
   const [viewingRevision, setViewingRevision] = useState<AdminRevisionDetail | null>(null);
   const [revisionBusy, setRevisionBusy] = useState(false);
-  const [editorDialog, setEditorDialog] = useState<null | 'code' | 'shortcuts' | 'welcome'>(null);
+  const [editorDialog, setEditorDialog] = useState<
+    null | 'code' | 'shortcuts' | 'welcome' | 'preferences'
+  >(null);
+  const [preferences, setPreferences] = useState<EditorPreferences>(() => readEditorPreferences());
   const [previewBusy, setPreviewBusy] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<string | null>(null);
   const [toolbarSlot, setToolbarSlot] = useState<HTMLElement | null>(null);
@@ -242,7 +266,8 @@ export function ContentEditor({
       form.ogDescription !== baseline.form.ogDescription ||
       !sameIds(categoryIds, baseline.categoryIds) ||
       !sameIds(tagIds, baseline.tagIds) ||
-      (featuredMedia?.id ?? null) !== baseline.featuredMediaId
+      (featuredMedia?.id ?? null) !== baseline.featuredMediaId ||
+      format !== baseline.format
     );
   }, [
     baseline,
@@ -254,6 +279,7 @@ export function ContentEditor({
     form,
     isNew,
     tagIds,
+    format,
   ]);
 
   useUnsavedChanges(dirty, 'You have unsaved changes. Leave this page without saving?');
@@ -304,6 +330,12 @@ export function ContentEditor({
   }, []);
 
   useEffect(() => {
+    const current = readEditorPreferences();
+    if (current.showWelcomeGuide) setEditorDialog('welcome');
+    // Only on editor mount, not whenever preferences change.
+  }, []);
+
+  useEffect(() => {
     if (isNew) {
       setLoading(false);
       setBaseline(null);
@@ -325,10 +357,12 @@ export function ContentEditor({
         setCategoryIds(nextTerms.categoryIds);
         setTagIds(nextTerms.tagIds);
         setFeaturedMedia(loaded.featuredMedia ?? null);
+        setFormat(loaded.format);
         setBaseline({
           form: nextForm,
           ...nextTerms,
           featuredMediaId: loaded.featuredMedia?.id ?? null,
+          format: loaded.format,
         });
         setContentTouched(false);
         setLoading(false);
@@ -660,7 +694,11 @@ export function ContentEditor({
         url = rotated.previewUrl ?? rotated.previewPath;
       }
       if (url) {
-        window.open(url, '_blank', 'noopener');
+        if (preferences.previewTarget === 'same-tab') {
+          window.location.assign(url);
+        } else {
+          window.open(url, '_blank', 'noopener');
+        }
       }
     } catch (caught) {
       setNotice({ tone: 'error', text: actionErrorMessage(caught) });
@@ -703,10 +741,12 @@ export function ContentEditor({
     setCategoryIds(nextTerms.categoryIds);
     setTagIds(nextTerms.tagIds);
     setFeaturedMedia(nextPost.featuredMedia ?? null);
+    setFormat(nextPost.format);
     setBaseline({
       form: nextForm,
       ...nextTerms,
       featuredMediaId: nextPost.featuredMedia?.id ?? null,
+      format: nextPost.format,
     });
     setContentTouched(false);
   }
@@ -786,6 +826,7 @@ export function ContentEditor({
           excerpt: form.excerpt.trim() ? form.excerpt : null,
           content,
           ...seoPayload(form),
+          format,
         });
         const termsResult = await saveTerms(created.id, created);
         if (!termsResult.ok) {
@@ -827,6 +868,7 @@ export function ContentEditor({
         excerpt: form.excerpt.trim() ? form.excerpt : null,
         content,
         ...seoPayload(form),
+        format,
         // Only send when changed; undefined keeps the server-side value.
         ...((featuredMedia?.id ?? null) !== (baseline?.featuredMediaId ?? null)
           ? { featuredMediaId: featuredMedia?.id ?? null }
@@ -839,10 +881,12 @@ export function ContentEditor({
         setPost(updated);
         setForm(formFromPost(updated));
         setFeaturedMedia(updated.featuredMedia ?? null);
+        setFormat(updated.format);
         setBaseline({
           form: formFromPost(updated),
           ...serverTerms,
           featuredMediaId: updated.featuredMedia?.id ?? null,
+          format: updated.format,
         });
         setContentTouched(false);
         setNotice({
@@ -1037,18 +1081,9 @@ export function ContentEditor({
     .split(/\s+/)
     .filter(Boolean).length;
   const readingMinutes = Math.max(1, Math.ceil(wordCount / 200));
-  const defaultPostFormat = (() => {
-    try {
-      return window.localStorage.getItem('mernpress.defaultPostFormat') ?? 'standard';
-    } catch {
-      return 'standard';
-    }
-  })();
-  const formatLabel = (value: string): string => value.charAt(0).toUpperCase() + value.slice(1);
-
   return (
     <>
-      <div className="editor-screen">
+      <div className={`editor-screen editor-density-${preferences.density}`}>
         <header className="editor-topbar">
           <div className="editor-topbar-left">
             <a
@@ -1237,6 +1272,9 @@ export function ContentEditor({
                 </button>
                 <button type="button" onClick={() => setEditorDialog('welcome')}>
                   Welcome guide
+                </button>
+                <button type="button" onClick={() => setEditorDialog('preferences')}>
+                  Preferences
                 </button>
                 <button
                   type="button"
@@ -1621,10 +1659,12 @@ export function ContentEditor({
                     >
                       {form.excerpt.trim() ? 'Edit excerpt' : 'Add an excerpt…'}
                     </button>
-                    <p className="editor-word-count">
-                      {wordCount} {wordCount === 1 ? 'word' : 'words'}, {readingMinutes} minute read
-                      time.
-                    </p>
+                    {preferences.showWordCount ? (
+                      <p className="editor-word-count">
+                        {wordCount} {wordCount === 1 ? 'word' : 'words'}, {readingMinutes} minute
+                        read time.
+                      </p>
+                    ) : null}
                     <p className="editor-last-edited">
                       {post
                         ? `Last edited ${formatRelativeTime(post.updatedAt)}.`
@@ -1760,9 +1800,18 @@ export function ContentEditor({
                         <div className="publish-field">
                           <span className="publish-label">Format</span>
                           <div className="publish-value">
-                            <span className="editor-link-value">
-                              {post ? 'Standard' : formatLabel(defaultPostFormat)}
-                            </span>
+                            <select
+                              aria-label="Format"
+                              value={format}
+                              onChange={(event) => setFormat(event.target.value as PostFormat)}
+                              disabled={!editable}
+                            >
+                              {POST_FORMAT_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
                           </div>
                         </div>
                         {post.status !== 'TRASHED' && transitions.includes('trash') ? (
@@ -1846,9 +1895,18 @@ export function ContentEditor({
                         <div className="publish-field">
                           <span className="publish-label">Format</span>
                           <div className="publish-value">
-                            <span className="editor-link-value">
-                              {post ? 'Standard' : formatLabel(defaultPostFormat)}
-                            </span>
+                            <select
+                              aria-label="Format"
+                              value={format}
+                              onChange={(event) => setFormat(event.target.value as PostFormat)}
+                              disabled={!editable}
+                            >
+                              {POST_FORMAT_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
                           </div>
                         </div>
                         <p className="field-help">
@@ -2255,7 +2313,9 @@ export function ContentEditor({
                   ? 'Code editor'
                   : editorDialog === 'shortcuts'
                     ? 'Keyboard shortcuts'
-                    : 'Welcome guide'}
+                    : editorDialog === 'preferences'
+                      ? 'Preferences'
+                      : 'Welcome guide'}
               </h2>
               <button
                 type="button"
@@ -2297,6 +2357,67 @@ export function ContentEditor({
                   ))}
                 </tbody>
               </table>
+            ) : editorDialog === 'preferences' ? (
+              <div className="editor-preferences">
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={preferences.showWelcomeGuide}
+                    onChange={(event) => {
+                      const next = { ...preferences, showWelcomeGuide: event.target.checked };
+                      setPreferences(next);
+                      writeEditorPreferences(next);
+                    }}
+                  />
+                  <span>Show the Welcome guide when the editor loads</span>
+                </label>
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={preferences.showWordCount}
+                    onChange={(event) => {
+                      const next = { ...preferences, showWordCount: event.target.checked };
+                      setPreferences(next);
+                      writeEditorPreferences(next);
+                    }}
+                  />
+                  <span>Show the word count and reading time</span>
+                </label>
+                <label className="editor-preference-field">
+                  <span>Density</span>
+                  <select
+                    value={preferences.density}
+                    onChange={(event) => {
+                      const next = {
+                        ...preferences,
+                        density: event.target.value === 'compact' ? 'compact' : 'comfortable',
+                      } as EditorPreferences;
+                      setPreferences(next);
+                      writeEditorPreferences(next);
+                    }}
+                  >
+                    <option value="comfortable">Comfortable</option>
+                    <option value="compact">Compact</option>
+                  </select>
+                </label>
+                <label className="editor-preference-field">
+                  <span>Preview opens in</span>
+                  <select
+                    value={preferences.previewTarget}
+                    onChange={(event) => {
+                      const next = {
+                        ...preferences,
+                        previewTarget: event.target.value === 'same-tab' ? 'same-tab' : 'new-tab',
+                      } as EditorPreferences;
+                      setPreferences(next);
+                      writeEditorPreferences(next);
+                    }}
+                  >
+                    <option value="new-tab">A new tab</option>
+                    <option value="same-tab">The same tab</option>
+                  </select>
+                </label>
+              </div>
             ) : (
               <div className="editor-welcome">
                 <p>The editor is arranged like WordPress:</p>

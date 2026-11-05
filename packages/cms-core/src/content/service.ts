@@ -10,6 +10,7 @@ import {
   requireCapability,
   roleHasCapability,
 } from '../auth/capabilities.js';
+import { hashPassword, verifyPassword } from '../auth/password.js';
 import { ContentError } from './errors.js';
 import {
   captureRevision,
@@ -31,6 +32,7 @@ import {
   truncateSlug,
   validateExplicitSlug,
 } from './slug.js';
+import { POST_FORMATS } from './types.js';
 import type {
   AdminListQuery,
   AdminPost,
@@ -41,6 +43,7 @@ import type {
   CreatePostInput,
   Paged,
   PostActionPayload,
+  PostFormat,
   PostFilterDraft,
   PreviewLinkResult,
   Principal,
@@ -95,6 +98,10 @@ export interface ContentService {
   getPreviewPost(token: string): Promise<PublicPost>;
   listPublic(query: PublicListQuery): Promise<Paged<PublicPost>>;
   getPublicBySlug(type: ContentType, slug: string): Promise<PublicPost>;
+  unlockPublicPost(
+    slug: string,
+    password: string,
+  ): Promise<{ renderedContent: string; toc: PublicPost['toc'] }>;
   getPublicTerm(taxonomy: 'category' | 'tag', slug: string): Promise<PublicTerm | null>;
 }
 
@@ -278,6 +285,11 @@ function toAdmin(row: PostWithTerms, options: { includePreviewToken?: boolean } 
     publishedAt: row.publishedAt?.toISOString() ?? null,
     commentStatus: row.commentStatus === 'closed' ? 'closed' : 'open',
     sticky: row.sticky,
+    passwordProtected: row.passwordHash !== null,
+    isPrivate: row.isPrivate,
+    format: (POST_FORMATS as readonly string[]).includes(row.format)
+      ? (row.format as PostFormat)
+      : 'standard',
     trashedAt: row.trashedAt?.toISOString() ?? null,
     previousStatus: row.previousStatus,
     version: row.version,
@@ -325,7 +337,12 @@ function renderForPublic(row: PostWithTerms): {
 }
 
 function toPublic(row: PostWithTerms, logger?: ContentServiceOptions['logger']): PublicPost {
-  const rendered = renderForPublic(row);
+  // A password-protected post never ships its body to an unauthenticated list
+  // or detail request; `unlockPublicPost` returns it after verification.
+  const rendered =
+    row.passwordHash !== null
+      ? { html: '', toc: [] as PublicPost['toc'], warnings: [] as string[] }
+      : renderForPublic(row);
   if (rendered.warnings.length > 0) {
     logger?.warn('content render fell back for one or more blocks', {
       postId: row.id,
@@ -352,6 +369,10 @@ function toPublic(row: PostWithTerms, logger?: ContentServiceOptions['logger']):
     publishedAt: row.publishedAt?.toISOString() ?? null,
     commentStatus: row.commentStatus === 'closed' ? 'closed' : 'open',
     sticky: row.sticky,
+    passwordProtected: row.passwordHash !== null,
+    format: (POST_FORMATS as readonly string[]).includes(row.format)
+      ? (row.format as PostFormat)
+      : 'standard',
     updatedAt: row.updatedAt.toISOString(),
     author: row.author ? { id: row.author.id, username: row.author.username } : null,
     terms: splitTerms(row),
@@ -449,6 +470,10 @@ export function createContentService(options: ContentServiceOptions): ContentSer
 
     const baseSlug =
       input.slug === undefined ? deriveSlugFromTitle(input.title) : normalizeSlug(input.slug);
+    const format = input.format ?? 'standard';
+    if (!(POST_FORMATS as readonly string[]).includes(format)) {
+      throw new ContentError('VALIDATION_ERROR', 'Invalid post format', 400);
+    }
 
     const draft = await applyFilter('content.post.create', {
       type: input.type,
@@ -495,6 +520,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
             ogTitle: draft.ogTitle,
             ogDescription: draft.ogDescription,
             authorId: principal.userId,
+            format,
           },
           include: WITH_TERMS,
         });
@@ -572,6 +598,24 @@ export function createContentService(options: ContentServiceOptions): ContentSer
         throw new ContentError('VALIDATION_ERROR', 'Invalid comment status', 400);
       }
       const sticky = input.sticky === undefined ? existing.sticky : input.sticky;
+      const isPrivate = input.isPrivate === undefined ? existing.isPrivate : input.isPrivate;
+      const format =
+        input.format === undefined
+          ? (POST_FORMATS as readonly string[]).includes(existing.format)
+            ? (existing.format as PostFormat)
+            : 'standard'
+          : input.format;
+      if (!(POST_FORMATS as readonly string[]).includes(format)) {
+        throw new ContentError('VALIDATION_ERROR', 'Invalid post format', 400);
+      }
+      let passwordHashUpdate: string | null | undefined;
+      if (input.password !== undefined) {
+        const password = input.password === null ? '' : input.password.trim();
+        if (password.length > 100) {
+          throw new ContentError('VALIDATION_ERROR', 'The password is too long', 400);
+        }
+        passwordHashUpdate = password.length === 0 ? null : await hashPassword(password);
+      }
 
       const requestedSlug = input.slug === undefined ? existing.slug : normalizeSlug(input.slug);
 
@@ -661,8 +705,11 @@ export function createContentService(options: ContentServiceOptions): ContentSer
               : { featuredMediaId: featuredMediaIdUpdate }),
             ...(publishedAtUpdate === undefined ? {} : { publishedAt: publishedAtUpdate }),
             ...(authorIdUpdate === undefined ? {} : { authorId: authorIdUpdate }),
+            ...(passwordHashUpdate === undefined ? {} : { passwordHash: passwordHashUpdate }),
             commentStatus,
             sticky,
+            isPrivate,
+            format,
           },
         });
       } catch (error) {
@@ -1171,10 +1218,36 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     return toPublic(row, options.logger);
   }
 
+  /** Verify a post password and return the body only on success. */
+  async function unlockPublicPost(
+    slug: string,
+    password: string,
+  ): Promise<{ renderedContent: string; toc: PublicPost['toc'] }> {
+    const current = now();
+    const row = await prisma.post.findFirst({
+      where: {
+        slug,
+        status: 'PUBLISHED',
+        isPrivate: false,
+        publishedAt: { lte: current },
+      },
+      include: WITH_TERMS,
+    });
+    if (!row || row.passwordHash === null) {
+      throw new ContentError('NOT_FOUND', 'Not found', 404);
+    }
+    if (!(await verifyPassword(row.passwordHash, password))) {
+      throw new ContentError('FORBIDDEN', 'Incorrect password', 403);
+    }
+    const rendered = renderForPublic(row);
+    return { renderedContent: rendered.html, toc: rendered.toc };
+  }
+
   async function listPublic(query: PublicListQuery): Promise<Paged<PublicPost>> {
     const current = now();
     const where: Prisma.PostWhereInput = {
       status: 'PUBLISHED',
+      isPrivate: false,
       publishedAt: { lte: current },
     };
     if (query.type) {
@@ -1244,7 +1317,13 @@ export function createContentService(options: ContentServiceOptions): ContentSer
   async function getPublicBySlug(type: ContentType, slug: string): Promise<PublicPost> {
     const current = now();
     const row = await prisma.post.findFirst({
-      where: { type, slug, status: 'PUBLISHED', publishedAt: { lte: current } },
+      where: {
+        type,
+        slug,
+        status: 'PUBLISHED',
+        isPrivate: false,
+        publishedAt: { lte: current },
+      },
       include: WITH_TERMS,
     });
     if (!row) {
@@ -1271,6 +1350,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     getPreviewPost,
     listPublic,
     getPublicBySlug,
+    unlockPublicPost,
     getPublicTerm,
   };
 }

@@ -1128,3 +1128,41 @@ html.has-public-admin-bar {
 [data-layout='journal'] .comment-body {
   border-radius: var(--site-radius);
 }
+
+/* Password-protected posts (WordPress post-password form). */
+.post-password-form {
+  margin: 32px 0;
+  padding: 24px;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius);
+  background: var(--site-surface);
+}
+
+.post-password-form p {
+  margin: 0 0 12px;
+}
+
+.post-password-form label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 18px;
+}
+
+.post-password-form input {
+  width: min(320px, 100%);
+  min-height: 40px;
+  margin-right: 8px;
+  padding: 0 10px;
+  border: 1px solid var(--site-border);
+  border-radius: 2px;
+  font: inherit;
+  font-size: 18px;
+}
+
+.post-password-form .button {
+  min-height: 40px;
+}
+
+.post-password-error {
+  color: #b32d2e;
+}

@@ -39,6 +39,9 @@ function makePost(overrides: Partial<AdminPost> = {}): AdminPost {
     publishedAt: null,
     commentStatus: 'open',
     sticky: false,
+    passwordProtected: false,
+    isPrivate: false,
+    format: 'standard',
     trashedAt: null,
     previousStatus: null,
     version: 1,
@@ -443,6 +446,10 @@ describe('content lists', () => {
     fireEvent.click(within(region).getByLabelText('Demo'));
     fireEvent.click(within(region).getByLabelText('Allow Comments'));
     fireEvent.click(within(region).getByLabelText('Make this post sticky'));
+    fireEvent.change(within(region).getByLabelText('Password'), {
+      target: { value: 'quick-secret' },
+    });
+    fireEvent.click(within(region).getByLabelText('Private'));
     fireEvent.change(within(region).getByLabelText('Status'), {
       target: { value: 'PUBLISHED' },
     });
@@ -455,6 +462,8 @@ describe('content lists', () => {
       authorId: 'a2',
       commentStatus: 'closed',
       sticky: true,
+      password: 'quick-secret',
+      isPrivate: true,
     });
     expect((patch?.body as { publishedAt?: string }).publishedAt).toContain('2026-11-05');
     const terms = requests.find((request) => request.url.includes('/terms'));
@@ -528,6 +537,7 @@ describe('content lists', () => {
       target: { value: 'closed' },
     });
     fireEvent.change(within(region).getByLabelText('Sticky'), { target: { value: 'sticky' } });
+    fireEvent.change(within(region).getByLabelText('Format'), { target: { value: 'quote' } });
     fireEvent.click(within(region).getByRole('button', { name: 'Update' }));
 
     await waitFor(() => expect(requests.filter((r) => r.method === 'PATCH')).toHaveLength(2));
@@ -537,6 +547,7 @@ describe('content lists', () => {
       authorId: 'a2',
       commentStatus: 'closed',
       sticky: true,
+      format: 'quote',
     });
     const termCalls = requests.filter((request) => request.url.includes('/terms'));
     expect(termCalls).toHaveLength(2);

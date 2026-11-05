@@ -12067,3 +12067,40 @@ a.glance-chip:hover {
   font-size: 13px;
   line-height: 1.6;
 }
+
+/* Editor Preferences (Options → Preferences) and density. */
+.editor-preference-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 12px 0 0;
+  font-size: 13px;
+}
+
+.editor-preference-field select {
+  min-width: 180px;
+}
+
+.editor-preferences .checkbox-row {
+  margin: 8px 0;
+  font-size: 13px;
+}
+
+.editor-density-compact .editor-panel {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+}
+
+.editor-density-compact .publish-field {
+  padding: 3px 0;
+}
+
+.editor-density-compact .editor-topbar {
+  min-height: 56px;
+}
+
+.editor-density-compact .editor-sidebar,
+.editor-density-compact .editor-sidebar-body {
+  font-size: 12px;
+}

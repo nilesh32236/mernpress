@@ -182,6 +182,13 @@ model Post {
   featuredMediaId String?     @map("featured_media_id") @db.Uuid
   /// Per-post comment status (WordPress Discussion): open or closed.
   commentStatus   String      @default("open") @map("comment_status") @db.VarChar(20)
+  /// Argon2id hash of the post password; null means the post is public.
+  passwordHash    String?     @map("password_hash") @db.VarChar(255)
+  /// WordPress "Private": excluded from every public surface.
+  isPrivate       Boolean     @default(false) @map("is_private")
+  /// WordPress post format (standard, aside, gallery, link, image, quote,
+  /// status, video, audio, chat). Themes may style it; content is unchanged.
+  format          String      @default("standard") @db.VarChar(20)
   /// WordPress "Make this post sticky": pinned above normal posts on the blog.
   sticky          Boolean     @default(false)
 

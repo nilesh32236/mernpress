@@ -49,6 +49,9 @@ function makePost(overrides: Partial<AdminPost> = {}): AdminPost {
     publishedAt: null,
     commentStatus: 'open',
     sticky: false,
+    passwordProtected: false,
+    isPrivate: false,
+    format: 'standard',
     trashedAt: null,
     previousStatus: null,
     version: 1,
@@ -118,6 +121,7 @@ describe('content editor', () => {
       robots: null,
       ogTitle: null,
       ogDescription: null,
+      format: 'standard',
     });
     await waitFor(() => expect(window.location.pathname).toBe('/posts/created-1/edit'));
   });
@@ -1083,5 +1087,29 @@ describe('editor autosave (P8-02)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Welcome guide' }));
     const welcome = await screen.findByRole('dialog', { name: 'Welcome guide' });
     expect(within(welcome).getByText(/The top bar holds the inserter/)).toBeDefined();
+  });
+  it('applies editor preferences immediately', async () => {
+    window.localStorage.removeItem('mernpress.editorPreferences');
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(response(termsPage()))
+      .mockResolvedValueOnce(response(termsPage()));
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA);
+    await screen.findByLabelText('Title');
+    expect(document.querySelector('.editor-word-count')).not.toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Preferences' });
+    fireEvent.change(within(dialog).getByLabelText('Density'), { target: { value: 'compact' } });
+    fireEvent.click(within(dialog).getByLabelText('Show the word count and reading time'));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+
+    expect(document.querySelector('.editor-screen')?.className).toContain('editor-density-compact');
+    expect(document.querySelector('.editor-word-count')).toBeNull();
+    expect(window.localStorage.getItem('mernpress.editorPreferences')).toContain('compact');
+
+    window.localStorage.removeItem('mernpress.editorPreferences');
   });
 });

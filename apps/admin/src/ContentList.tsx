@@ -17,6 +17,7 @@ import {
   type BulkAction,
   type ContentType,
   type Paged,
+  type PostFormat,
   type PostStatus,
   type TransitionAction,
 } from './api.js';
@@ -104,6 +105,19 @@ const ACTION_SUCCESS: Record<TransitionAction, string> = {
   restore: 'Content restored.',
 };
 
+const POST_FORMAT_OPTIONS: Array<{ value: PostFormat; label: string }> = [
+  { value: 'standard', label: 'Standard' },
+  { value: 'aside', label: 'Aside' },
+  { value: 'gallery', label: 'Gallery' },
+  { value: 'link', label: 'Link' },
+  { value: 'image', label: 'Image' },
+  { value: 'quote', label: 'Quote' },
+  { value: 'status', label: 'Status' },
+  { value: 'video', label: 'Video' },
+  { value: 'audio', label: 'Audio' },
+  { value: 'chat', label: 'Chat' },
+];
+
 export function ContentList({ user, type }: { user: AuthUser; type: ContentType }) {
   const location = useLocation();
   const [status, setStatus] = useState<PostStatus | ''>('');
@@ -124,6 +138,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
   const [bulkEditSticky, setBulkEditSticky] = useState<'' | 'sticky' | 'not-sticky'>('');
   const [bulkEditCategoryIds, setBulkEditCategoryIds] = useState<string[]>([]);
   const [bulkEditTagIds, setBulkEditTagIds] = useState<string[]>([]);
+  const [bulkEditFormat, setBulkEditFormat] = useState<'' | PostFormat>('');
   const [bulkBusy, setBulkBusy] = useState(false);
   const [previewBusyId, setPreviewBusyId] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
@@ -172,6 +187,9 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
   const [quickSticky, setQuickSticky] = useState(false);
   const [quickCategoryIds, setQuickCategoryIds] = useState<string[]>([]);
   const [quickTagIds, setQuickTagIds] = useState<string[]>([]);
+  const [quickPassword, setQuickPassword] = useState('');
+  const [quickRemovePassword, setQuickRemovePassword] = useState(false);
+  const [quickPrivate, setQuickPrivate] = useState(false);
   const [quickBusy, setQuickBusy] = useState(false);
   const [quickError, setQuickError] = useState<string | null>(null);
   const [perPage, setPerPage] = useState(() =>
@@ -440,6 +458,9 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
     setQuickSticky(post.sticky);
     setQuickCategoryIds(post.terms.categories.map((term) => term.id));
     setQuickTagIds(post.terms.tags.map((term) => term.id));
+    setQuickPassword('');
+    setQuickRemovePassword(false);
+    setQuickPrivate(post.isPrivate);
     setQuickError(null);
   }
 
@@ -470,6 +491,12 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
         patch.commentStatus = quickCommentStatus;
       }
       if (type === 'post' && quickSticky !== post.sticky) patch.sticky = quickSticky;
+      if (quickPassword.trim().length > 0) {
+        patch.password = quickPassword.trim();
+      } else if (quickRemovePassword && post.passwordProtected) {
+        patch.password = null;
+      }
+      if (quickPrivate !== post.isPrivate) patch.isPrivate = quickPrivate;
       if (Object.keys(patch).length > 1) {
         updated = await updatePost(post.id, patch);
       }
@@ -659,6 +686,9 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
           const sticky = bulkEditSticky === 'sticky';
           if (sticky !== current.sticky) patch.sticky = sticky;
         }
+        if (bulkEditFormat && bulkEditFormat !== current.format) {
+          patch.format = bulkEditFormat;
+        }
         if (Object.keys(patch).length > 1) {
           current = await updatePost(current.id, patch);
         }
@@ -701,6 +731,7 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
     setBulkEditOpen(false);
     setBulkEditCategoryIds([]);
     setBulkEditTagIds([]);
+    setBulkEditFormat('');
     setBulkAction('');
     setBulkBusy(false);
     setReloadKey((value) => value + 1);
@@ -1117,6 +1148,21 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                 </label>
               ) : null}
               <label className="bulk-edit-field">
+                <span>Format</span>
+                <select
+                  value={bulkEditFormat}
+                  onChange={(event) => setBulkEditFormat(event.target.value as '' | PostFormat)}
+                  disabled={bulkBusy}
+                >
+                  <option value="">— No Change —</option>
+                  {POST_FORMAT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="bulk-edit-field">
                 <span>Status</span>
                 <select
                   value={bulkEditStatus}
@@ -1461,6 +1507,44 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                                       </span>
                                     </label>
                                   ) : null}
+                                  <label>
+                                    <span className="title">Password</span>
+                                    <span className="input-text-wrap">
+                                      <input
+                                        type="text"
+                                        value={quickPassword}
+                                        placeholder={
+                                          post.passwordProtected
+                                            ? 'Leave blank to keep the current password'
+                                            : 'No password'
+                                        }
+                                        onChange={(event) => setQuickPassword(event.target.value)}
+                                        disabled={quickBusy}
+                                      />
+                                    </span>
+                                  </label>
+                                  {post.passwordProtected ? (
+                                    <label className="checkbox-row">
+                                      <input
+                                        type="checkbox"
+                                        checked={quickRemovePassword}
+                                        onChange={(event) =>
+                                          setQuickRemovePassword(event.target.checked)
+                                        }
+                                        disabled={quickBusy}
+                                      />
+                                      <span>Remove password</span>
+                                    </label>
+                                  ) : null}
+                                  <label className="checkbox-row">
+                                    <input
+                                      type="checkbox"
+                                      checked={quickPrivate}
+                                      onChange={(event) => setQuickPrivate(event.target.checked)}
+                                      disabled={quickBusy}
+                                    />
+                                    <span>Private</span>
+                                  </label>
                                   {type === 'post' ? (
                                     <fieldset className="inline-edit-taxonomy">
                                       <legend>Categories</legend>

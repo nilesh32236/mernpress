@@ -6,6 +6,7 @@ import {
 } from '@mernpress/cms-core';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
+import { createMemoryRateLimit } from '../security/memory-rate-limit.js';
 import {
   publicListQuerySchema,
   publicSlugQuerySchema,
@@ -13,6 +14,7 @@ import {
 } from './content-schemas.js';
 
 const previewTokenParamSchema = z.object({ token: z.string().min(1).max(200) }).strict();
+const unlockBodySchema = z.object({ password: z.string().min(1).max(200) }).strict();
 const termParamSchema = z
   .object({ taxonomy: z.enum(['category', 'tag']), slug: z.string().min(1).max(200) })
   .strict();
@@ -37,6 +39,9 @@ export function registerPublicContentRoutes(
   options: PublicRouteOptions,
 ): void {
   const { content, options: optionService, themes } = options;
+  // WordPress has no built-in throttle for post passwords; Argon2 verification
+  // is expensive, so MERNPress bounds attempts per client and post.
+  const unlockLimiter = createMemoryRateLimit({ max: 10, windowMs: 10 * 60 * 1000 });
 
   async function handle(
     request: FastifyRequest,
@@ -69,6 +74,30 @@ export function registerPublicContentRoutes(
       return { ...settings, theme };
     }),
   );
+
+  app.post('/api/public/posts/:slug/unlock', async (request, reply) => {
+    const parsedParams = slugParamSchema.safeParse(request.params);
+    const parsedBody = unlockBodySchema.safeParse(request.body);
+    if (!parsedParams.success || !parsedBody.success) {
+      return handle(request, reply, async () => {
+        throw new ContentError('VALIDATION_ERROR', 'Invalid request', 400);
+      });
+    }
+    const decision = unlockLimiter(`${request.ip}:${parsedParams.data.slug}`);
+    if (!decision.allowed) {
+      return reply.code(429).send({
+        error: {
+          code: 'RATE_LIMITED',
+          message: 'Too many attempts. Try again later.',
+          requestId: request.id,
+          retryAfterSeconds: decision.retryAfterSeconds,
+        },
+      });
+    }
+    return handle(request, reply, () =>
+      content.unlockPublicPost(parsedParams.data.slug, parsedBody.data.password),
+    );
+  });
 
   app.get('/api/public/posts', async (request, reply) =>
     handle(request, reply, async () => {

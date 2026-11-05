@@ -95,6 +95,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-068 | 2026-11-05 | Themes become packages on disk (`themes/<id>/theme.json`) in a writable store (`THEME_STORAGE_DIR`, seeded once from the release `themes/` directory). A manifest carries identity, tags, features, fonts, a closed layout variant (`classic`/`journal`) and validated design tokens; the public layout injects tokens as CSS custom properties and `data-theme`/`data-layout`. `MERNPress` (classic) and `MERNPress Journal` (editorial) ship; activation is instant because site settings are fetched with `cache: 'no-store'`. Themes cannot execute code or add templates; update checks read the store. | accepted | [ADR 0028](docs/adr/0028-theme-packages.md) |
 
+| D-069 | 2026-11-05 | WordPress post privacy/password/format parity: `posts.is_private` excludes a post from every public surface; `posts.password_hash` (Argon2id) withholds `renderedContent` until `POST /api/public/posts/:slug/unlock` verifies the password (403 on failure, 10 attempts/10 min in-memory throttle, no cookie); `posts.format` stores the ten WordPress formats and renders a `format-<name>` class. The admin DTO exposes `passwordProtected`/`isPrivate`/`format`, never the hash. Quick Edit gains Password (with Remove password) and Private; Bulk Edit gains Format; the editor Format row is a real select. Allow Pings is deliberately not modelled (XML-RPC/inbound verification, legacy security surface). | accepted | [ADR 0029](docs/adr/0029-post-privacy-format.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

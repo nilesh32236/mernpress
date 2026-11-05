@@ -44,6 +44,20 @@ export interface PublicPost {
   commentStatus: 'open' | 'closed';
   /** WordPress "Make this post sticky". */
   sticky: boolean;
+  /** True when the body requires a password (content withheld by the API). */
+  passwordProtected: boolean;
+  /** WordPress post format. */
+  format:
+    | 'standard'
+    | 'aside'
+    | 'gallery'
+    | 'link'
+    | 'image'
+    | 'quote'
+    | 'status'
+    | 'video'
+    | 'audio'
+    | 'chat';
   updatedAt: string;
   author: { id: string; username: string } | null;
   terms: { categories: PublicTerm[]; tags: PublicTerm[] };
@@ -185,7 +199,9 @@ export async function getPublishedBySlug(
   slug: string,
 ): Promise<PublicPost | null> {
   const path = `/api/public/posts/${encodeURIComponent(slug)}?type=${type}`;
-  const res = await apiFetch(path);
+  // Privacy/password/status changes must take effect immediately; a cached
+  // detail response could keep serving a post that is now private.
+  const res = await fetch(`${apiUrl()}${path}`, { cache: 'no-store' });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Failed to load ${type} "${slug}": ${res.status}`);
   return (await res.json()) as PublicPost;

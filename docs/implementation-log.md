@@ -3158,3 +3158,25 @@ Options menu contained Settings, Code editor, Keyboard shortcuts, Welcome guide,
 Copy all content, Plugins, Switch to draft and Move to trash; Code editor opened
 the raw-markup dialog. The temporary administrator was deleted; `/`, `/admin/`
 and `/api/health` return 200.
+
+### 2026-11-05 — Post privacy, passwords, formats and editor preferences
+
+- Added `posts.is_private`, `posts.password_hash` (Argon2id) and `posts.format`
+  with migration `20261105082816_add_post_password_private_format`.
+- Private posts are excluded from public lists, detail, unlock, sitemap and feed.
+  Password-protected posts return `passwordProtected: true` and an empty body;
+  `POST /api/public/posts/:slug/unlock` verifies the password (403 on failure)
+  and returns the rendered HTML; attempts are throttled at 10/10 minutes in a
+  bounded in-memory limiter. The admin DTO never exposes the hash.
+- The ten WordPress post formats are validated in the service/API, stored on the
+  row, selectable in the editor and Bulk Edit, and rendered as a
+  `format-<name>` class. Quick Edit now has Password (with Remove password) and
+  Private; Bulk Edit has Format. Allow Pings remains deliberately unmodelled
+  (XML-RPC/inbound verification, legacy security surface).
+- Editor Options → Preferences is now real: density (comfortable/compact),
+  preview target (new tab/same tab), welcome guide on load and word count
+  visibility, persisted locally and applied immediately.
+- Public password form added to the post template; the API withholds the body
+  until verification.
+- Validation: 676 unit/integration tests (API 424, admin 161, web 26,
+  block-system 65), 23 Playwright E2E tests and six builds pass.
