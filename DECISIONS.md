@@ -103,6 +103,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-072 | 2026-11-05 | A published post/page slug change automatically creates a 301 from the old public path to the new one. Paths respect `permalink_base` (posts `/<base>/<slug>`, pages `/<slug>`); drafts create nothing. The internal `createAutomatic` call normalizes paths, refuses loops, retargets an existing redirect for the old path, and logs failures without failing the save. Automatic redirects are editable/deletable in Tools → Redirects. | accepted | [ADR 0032](docs/adr/0032-automatic-slug-redirects.md) |
 
+| D-073 | 2026-11-05 | Public posts show an estimated reading time (rendered word count, 200 wpm, 1-minute floor) and a Related posts section. Related posts are the same primary category (up to 3, current excluded), falling back to the newest posts when no category or on fetch failure; the section is labelled "More posts" for the fallback. Both are server-rendered in the shared template, use a reusable `RelatedPosts` component and introduce no schema/API change. | accepted | [ADR 0033](docs/adr/0033-reading-time-related-posts.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

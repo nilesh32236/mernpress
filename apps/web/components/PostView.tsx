@@ -1,17 +1,21 @@
 import Link from 'next/link';
 import { postPath, type PublicPost } from '@/lib/api';
 import ResponsiveImage from './ResponsiveImage';
-import MorePosts from './MorePosts';
+import RelatedPosts from './RelatedPosts';
+import { readingTime } from '@/lib/reading-time';
 import Comments from './Comments';
 import PasswordForm from './PasswordForm';
 
 export default function PostView({
   post,
   morePosts = [],
+  relatedPosts = [],
   base = 'posts',
 }: {
   post: PublicPost;
   morePosts?: PublicPost[];
+  /** Same-category posts; falls back to `morePosts` when empty. */
+  relatedPosts?: PublicPost[];
   base?: string;
 }) {
   const isPage = post.type === 'page';
@@ -24,6 +28,12 @@ export default function PostView({
   const currentIndex = morePosts.findIndex((entry) => entry.id === post.id);
   const newer = currentIndex > 0 ? morePosts[currentIndex - 1] : undefined;
   const older = currentIndex >= 0 ? morePosts[currentIndex + 1] : undefined;
+
+  const read = readingTime(post.renderedContent);
+  const related =
+    relatedPosts.length > 0
+      ? relatedPosts
+      : morePosts.filter((entry) => entry.id !== post.id).slice(0, 3);
 
   const featured = post.featuredImage ? (
     <figure className="entry-featured">
@@ -46,6 +56,8 @@ export default function PostView({
           <div className="entry-meta">
             <span>Written by </span>
             {author ? <Link href={`/author/${encodeURIComponent(author)}`}>{author}</Link> : null}
+            <span aria-hidden="true"> · </span>
+            <span>{read.minutes} min read</span>
             <span> in </span>
             {categories.length > 0 ? (
               categories.map((term, index) => (
@@ -103,7 +115,11 @@ export default function PostView({
           </div>
 
           <Comments postId={post.id} postTitle={post.title} />
-          <MorePosts posts={morePosts} base={base} />
+          <RelatedPosts
+            posts={related}
+            base={base}
+            heading={relatedPosts.length > 0 ? 'Related posts' : 'More posts'}
+          />
         </>
       ) : null}
     </main>

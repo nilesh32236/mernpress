@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { postPath, type PublicPost } from '@/lib/api';
 import ResponsiveImage from './ResponsiveImage';
+import { readingTime } from '@/lib/reading-time';
 
 function formatDate(iso: string | null): string | null {
   if (!iso) return null;
@@ -36,6 +37,7 @@ export default function PostList({
       {posts.map((post) => {
         const date = formatDate(post.publishedAt);
         const excerpt = excerptText(post);
+        const read = readingTime(post.renderedContent);
         return (
           <li key={post.id} className="post-item">
             {post.featuredImage ? (
@@ -57,6 +59,8 @@ export default function PostList({
                 <Link href={postPath(post.slug, base)}>
                   <time dateTime={post.publishedAt ?? undefined}>{date}</time>
                 </Link>
+                <span aria-hidden="true"> · </span>
+                <span>{read.minutes} min read</span>
               </p>
             ) : null}
           </li>

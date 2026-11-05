@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import {
   getPermalinkBase,
   getPublishedBySlug,
+  listPublicPosts,
   listPublishedPosts,
   mediaUrl,
   postPath,
@@ -61,6 +62,16 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   const recent = await listPublishedPosts(1, 10).catch(() => null);
   const morePosts = recent?.items ?? [];
   const base = await getPermalinkBase();
+
+  // Related posts: same primary category first, otherwise newest posts. The
+  // current post is always excluded so it cannot recommend itself.
+  const primaryCategory = post.terms.categories[0]?.slug;
+  const relatedData = primaryCategory
+    ? await listPublicPosts({ category: primaryCategory, page: 1, perPage: 6 }).catch(() => null)
+    : null;
+  const relatedPosts = (relatedData?.items?.length ? relatedData.items : morePosts)
+    .filter((entry) => entry.id !== post.id)
+    .slice(0, 3);
   const canonical = post.canonicalUrl ?? `${siteUrl()}${postPath(post.slug, base)}`;
   return (
     <>
@@ -72,7 +83,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           { name: post.title, url: canonical },
         ])}
       />
-      <PostView post={post} morePosts={morePosts} base={base} />
+      <PostView post={post} morePosts={morePosts} relatedPosts={relatedPosts} base={base} />
     </>
   );
 }

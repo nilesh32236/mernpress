@@ -1166,3 +1166,46 @@ html.has-public-admin-bar {
 .post-password-error {
   color: #b32d2e;
 }
+
+/* Single post: related posts (same category, fallback newest). */
+.related-posts {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--site-border);
+}
+
+.related-posts h2 {
+  margin: 0 0 18px;
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.related-posts-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.related-post-title {
+  font-family: var(--site-heading-font);
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.related-post-meta {
+  margin: 8px 0 0;
+  color: var(--site-muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+@media (max-width: 760px) {
+  .related-posts-list {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+}

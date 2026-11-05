@@ -41,6 +41,7 @@ owner decision.
 | Plugins → Installed | D/P | Filters, bulk, active edge, auto-update column, View details, Delete (inactive only, removes the package directory); plugins can ship a real runtime module (Auto Excerpt) |
 | Plugins → Add Plugin | D/P | WordPress description + filter bar/search; directory tabs disabled and explained; installed packages listed |
 | Users / Add User / Profile | D/P | Roles, display name select, colour schemes, syntax highlighting, language, application passwords, password, Send password reset (row + bulk); Send User Notification enabled when mail is configured and includes a reset link |
+| Public post template | D/P | Reading time, related posts by category with newest fallback, prev/next, comments; WordPress themes need code/plugins for this |
 | SEO / metadata | D/P | Per-post SEO fields, JSON-LD (BlogPosting/WebPage/Breadcrumb/Collection/Profile), Twitter cards, image sitemap, /llms.txt; WordPress needs plugins for all of this |
 | Tools → Redirects | D/P | Admin-managed 301/302 redirects applied by public middleware, loop rejection, aggregated 404 log with Redirect/Dismiss; WordPress needs a plugin |
 | Tools → Available Tools / Export / Site Health | D/P | Cards, WordPress WXR export with All/Posts/Pages/Media scopes, health checks |

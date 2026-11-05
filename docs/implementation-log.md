@@ -3273,3 +3273,18 @@ after the middleware cache window the old URL returned
 `HTTP/2 301 location: /posts/prod-slug-redirect-renamed`. The test post and
 redirect were deleted and the temporary administrator removed; production has
 1 user, 0 redirects and 0 mail log rows.
+
+### 2026-11-05 — Reading time and related posts
+
+- Added `apps/web/lib/reading-time.ts` (rendered word count, 200 wpm, 1-minute
+  floor) and used it in the single-post meta, related cards and the archive/list
+  query loop.
+- Added `RelatedPosts`: same primary category first (up to 3, current excluded),
+  falling back to the newest posts (without the current post). The section is
+  labelled "Related posts" or "More posts" accordingly and shows date + read
+  time per card. An API failure degrades to the fallback.
+- No schema or endpoint change; both themes share the template and tokens.
+- Tests cover the word-count edge cases (tags, entities, 200/201/400/401 words)
+  and the related/fallback rendering with the current post excluded.
+- Validation: 696 unit/integration tests (API 434, admin 166, web 31,
+  block-system 65), 23 Playwright E2E tests and six builds pass.

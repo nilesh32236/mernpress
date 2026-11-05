@@ -114,9 +114,8 @@ instant and safe; no PHP or template execution.
 4. **Safe client editing mode** — a per-post "locked blocks" flag that disables
    structural edits while allowing text changes. Large editor change; valuable
    for agencies.
-5. **Reading time / related posts / author box theme features** — small,
-   high-demand blog features; can be tokens or a plugin once a template hook
-   exists.
+5. ~~**Reading time / related posts**~~ — delivered (ADR 0033); author box
+   remains a future theme feature.
 6. **Two-factor authentication** — TOTP for administrators, recovery codes. Core
    security gap users call out; needs its own ADR.
 7. ~~**Redirect-aware slug rename**~~ — delivered (ADR 0032): published slug
