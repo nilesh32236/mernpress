@@ -2762,3 +2762,26 @@ verified in production. `/`, `/admin/` and `/api/health` return 200.
 - Real lost-password e-mails still require `SMTP_HOST`/`MAIL_FROM` credentials
   supplied by the owner; the Add User welcome e-mail will then include the reset
   link automatically.
+
+### 2026-11-05 — Tools → Export as WordPress WXR
+
+- Replaced the bespoke JSON export with a WXR 1.2 generator
+  (`packages/cms-core/src/export/service.ts`). It writes the WordPress channel,
+  authors, posts/pages (block content, excerpts, statuses, dates, slugs),
+  categories/tags, comments and media attachment items with
+  `wp:attachment_url`, plus the featured-image `_thumbnail_id` meta.
+- New administrator-only `GET /api/admin/export?content=all|posts|pages|media`
+  returning `application/rss+xml` as a `.xml` attachment; trashed posts are
+  excluded and each scope matches WordPress's choice.
+- Tools → Export now matches WordPress: the explanatory copy, a "Choose what to
+  export" fieldset with All content/Posts/Pages/Media and the "Download Export
+  File" button. The old JSON path and its client-side pagination are gone.
+- Tests parse the export with the existing WXR importer (titles, types,
+  statuses, dates and terms) and cover scope selection plus anonymous/editor
+  rejection.
+- Verified in the browser: the Export screen showed the four scopes with All
+  content selected and downloaded `mernpress-export-2026-11-05.xml`; the file
+  parses as well-formed XML with `wp:wxr_version 1.2`, 4 items (post, page, two
+  attachments), 4 category elements and 3 comments.
+- Validation: 635 unit/integration tests (API 403, admin 154, block-system 65,
+  web 13), 23 Playwright E2E tests and six builds pass.

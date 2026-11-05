@@ -2,6 +2,7 @@ import type {
   ApplicationPasswordService,
   AuthService,
   AutosaveService,
+  ExportService,
   BulkService,
   ContentService,
   HookRegistry,
@@ -28,6 +29,7 @@ declare module 'fastify' {
     schedule: ScheduleService;
     bulk: BulkService;
     media: MediaService;
+    exports: ExportService;
     autosave: AutosaveService;
   }
 }

@@ -278,3 +278,6 @@ export {
   type SentMail,
   type SmtpTransportOptions,
 } from './mail/service.js';
+
+// ---- WordPress WXR export (Tools → Export) ----
+export { createExportService, type ExportScope, type ExportService } from './export/service.js';

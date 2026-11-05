@@ -2,30 +2,19 @@ import { useEffect, useState } from 'react';
 import {
   actionErrorMessage,
   convertTerms,
-  fetchPosts,
+  downloadExport,
   fetchSiteHealth,
-  type AdminPost,
+  type ExportScope,
   type SiteHealth,
   type TaxonomyType,
 } from './api.js';
 import { Notice, PageHeader, type NoticeMessage } from './components.js';
 import { navigate, useLocation } from './router.js';
 
-interface ExportItem {
-  id: string;
-  type: string;
-  title: string;
-  slug: string;
-  status: string;
-  excerpt: string | null;
-  content: string;
-  publishedAt: string | null;
-  updatedAt: string;
-}
-
 export function ToolsPage() {
   const location = useLocation();
   const [exporting, setExporting] = useState(false);
+  const [exportScope, setExportScope] = useState<ExportScope>('all');
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
   const [health, setHealth] = useState<SiteHealth | null>(null);
   const [converting, setConverting] = useState(false);
@@ -58,41 +47,8 @@ export function ToolsPage() {
     setExporting(true);
     setNotice(null);
     try {
-      const items: ExportItem[] = [];
-      let page = 1;
-      let totalPages = 1;
-      do {
-        const result = await fetchPosts({ page, perPage: 100 });
-        items.push(
-          ...result.items.map((post: AdminPost) => ({
-            id: post.id,
-            type: post.type,
-            title: post.title,
-            slug: post.slug,
-            status: post.status,
-            excerpt: post.excerpt,
-            content: post.content,
-            publishedAt: post.publishedAt,
-            updatedAt: post.updatedAt,
-          })),
-        );
-        totalPages = result.pagination.totalPages;
-        page += 1;
-      } while (page <= totalPages && page <= 50);
-
-      const blob = new Blob(
-        [JSON.stringify({ exportedAt: new Date().toISOString(), items }, null, 2)],
-        { type: 'application/json' },
-      );
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `mernpress-export-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-      setNotice({ tone: 'success', text: `Exported ${items.length} item(s).` });
+      await downloadExport(exportScope);
+      setNotice({ tone: 'success', text: 'Export file downloaded.' });
     } catch (caught) {
       setNotice({ tone: 'error', text: actionErrorMessage(caught) });
     } finally {
@@ -132,8 +88,8 @@ export function ToolsPage() {
           <section className="card" aria-labelledby="tool-export-heading">
             <h2 id="tool-export-heading">Export</h2>
             <p>
-              Export your posts and pages as a JSON file. The export includes canonical block markup
-              so it can be archived or imported elsewhere.
+              Download your content as a WordPress eXtended RSS (WXR) XML file. It can be imported
+              into WordPress or back into MERNPress.
             </p>
             <p>
               <button
@@ -200,17 +156,56 @@ export function ToolsPage() {
         aria-labelledby="export-heading"
         hidden={section !== 'export'}
       >
-        <h2 id="export-heading">Export</h2>
-        <p className="lede">
-          Export your posts and pages as a JSON file. The export includes canonical block markup so
-          it can be archived or imported elsewhere.
+        <p>
+          When you click the button below MERNPress will create an XML file for you to save to your
+          computer.
         </p>
+        <p>
+          This format, which is called WordPress eXtended RSS or WXR, will contain your posts,
+          pages, comments, categories and tags. Media attachments are included when you export all
+          content or media.
+        </p>
+        <p>
+          Once you&rsquo;ve saved the download file, you can use the Import function in another
+          MERNPress or WordPress installation to import the content from this site.
+        </p>
+        <h2 id="export-heading">Choose what to export</h2>
         <fieldset className="tools-choice">
-          <legend>Choose what to export</legend>
+          <legend>Content to export</legend>
           <label className="checkbox-row">
-            <input type="radio" name="export-content" value="all" defaultChecked />
+            <input
+              type="radio"
+              name="export-content"
+              value="all"
+              checked={exportScope === 'all'}
+              onChange={() => setExportScope('all')}
+            />
             <span>All content</span>
           </label>
+          {exportScope === 'all' ? (
+            <p className="field-help">
+              This will contain all of your posts, pages, comments, custom fields, terms, navigation
+              menus, and custom posts.
+            </p>
+          ) : null}
+          {(
+            [
+              ['posts', 'Posts'],
+              ['pages', 'Pages'],
+              ['media', 'Media'],
+            ] as const
+          ).map(([value, label]) => (
+            <label className="checkbox-row" key={value}>
+              <input
+                type="radio"
+                name="export-content"
+                value={value}
+                checked={exportScope === value}
+                onChange={() => setExportScope(value)}
+              />
+              <span>{label}</span>
+            </label>
+          ))}
         </fieldset>
         <p>
           <button

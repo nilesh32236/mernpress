@@ -911,6 +911,30 @@ export interface ApplicationPassword {
 
 export type OptionValues = Record<string, unknown>;
 
+// ---- Tools: WordPress WXR export ----
+export type ExportScope = 'all' | 'posts' | 'pages' | 'media';
+
+export async function downloadExport(scope: ExportScope): Promise<void> {
+  const response = await fetch(`/api/admin/export?content=${scope}`, {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/rss+xml' },
+  });
+  if (!response.ok) {
+    await readJson(response);
+    return;
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `mernpress-export-${new Date().toISOString().slice(0, 10)}.xml`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 // ---- Outbound mail status (Add User notification) ----
 export interface MailStatus {
   configured: boolean;

@@ -25,6 +25,7 @@ import {
   createApplicationPasswordService,
   createMailService,
   createPasswordResetService,
+  createExportService,
   createMemoryMailTransport,
   createSmtpMailTransport,
   type AuthConfig,
@@ -54,6 +55,7 @@ import { registerImportRoutes } from './routes/import.js';
 import { registerPrivacyRoutes } from './routes/privacy.js';
 import { registerConnectorRoutes } from './routes/connectors.js';
 import { registerMailRoutes } from './routes/mail.js';
+import { registerExportRoutes } from './routes/export.js';
 import { registerAdminHealthRoutes } from './routes/admin-health.js';
 import { startPublishScheduler } from './scheduler.js';
 import { resolveRequestId } from './http/request-id.js';
@@ -236,6 +238,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const connectors = createConnectorService({ prisma: database, pepper: env.AUTH_HASH_PEPPER });
   app.decorate('connectors', connectors);
 
+  const exportsService = createExportService({ prisma: database });
+  app.decorate('exports', exportsService);
+
   app.addHook('onRequest', async (request, reply) => {
     if (!MUTATING_METHODS.has(request.method)) {
       return;
@@ -296,6 +301,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerPrivacyRoutes(app, { env, auth, privacy });
   registerConnectorRoutes(app, { env, auth, connectors });
   registerMailRoutes(app, { env, auth, mail });
+  registerExportRoutes(app, { env, auth, exports: exportsService });
   registerPublicCommentRoutes(app, { comments, auth });
 
   if (env.SCHEDULER_ENABLED) {
