@@ -171,4 +171,40 @@ describe('settings page', () => {
 
     await screen.findByText('Bad email');
   });
+
+  it('explains that pingbacks and trackbacks are unavailable', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes('group=discussion')) {
+        return response({
+          default_comment_status: 'open',
+          comment_registration: false,
+          comment_moderation: false,
+          comment_previously_approved: true,
+          comment_max_links: 2,
+          moderation_keys: '',
+          disallowed_keys: '',
+          spam_guard_enabled: true,
+          spam_guard_spam_threshold: 6,
+          spam_guard_moderation_threshold: 3,
+        });
+      }
+      if (url.includes('/api/admin/comments/mail-log')) return response({ items: [] });
+      return response({ site_title: 'My Site', site_tagline: '', admin_email: '', site_url: '' });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<SettingsPage user={admin} />);
+    await screen.findByDisplayValue('My Site');
+
+    window.history.replaceState(null, '', '/settings#discussion');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+
+    const checkbox = (await screen.findByLabelText(
+      /Allow link notifications from other blogs/,
+    )) as HTMLInputElement;
+    expect(checkbox.disabled).toBe(true);
+    expect(checkbox.checked).toBe(false);
+    expect(screen.getByText(/does not expose for security/)).toBeDefined();
+  });
 });

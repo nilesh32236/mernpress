@@ -119,6 +119,8 @@ one; no button pretends to work.
 | WordPress.org theme directory / ZIP upload | Not implemented | Themes are trusted packages in the release; Add Themes shows disabled directory tabs and an explicit notice. |
 | Third-party importers (Blogger, LiveJournal, Movable Type, RSS, Tumblr) | Not implemented | Require external services/plugins; the Import list marks them unavailable. |
 | Plugin marketplace / remote updates | Not available | Updates are discovered from a configured manifest; nothing is downloaded or installed from the internet. |
+| Allow Pings (pingbacks / trackbacks) | Disabled and explained in the editor Discussion panel, Quick Edit, Bulk Edit and Settings → Discussion | No inbound XML-RPC endpoint and no untrusted link verification. The `default_ping_status` option was removed; WXR keeps `wp:ping_status` for import compatibility only ([ADR 0043](../adr/0043-pings-disabled.md)). |
+| Akismet | Not implemented; the bundled local spam guard runs instead | Akismet needs an external account, API key and per-comment data transfer. The Connectors screen states this ([ADR 0042](../adr/0042-local-spam-guard.md)). |
 
 ## Known remaining parity work
 
@@ -128,11 +130,7 @@ missing screens. The per-screen evidence for what was checked is recorded in
 
 | Area | Current state | WordPress also has |
 | --- | --- | --- |
-| Allow Pings | Not modelled. | Pingbacks/trackbacks require XML-RPC or inbound verification; this is a security-sensitive legacy surface, so it is stated as unavailable rather than stored as an inert checkbox. |
 | Post sidebar extras | Preview token, SEO and revisions are MERNPress additions shown after the WordPress panels. | No equivalent panels; WordPress revisions live in the document overview. |
 | Admin colour schemes | A single default scheme. | Eight built-in schemes on the Profile screen. |
-| Export filters | One filter set applies to the posts/pages in scope; category is posts-only. | Separate Posts and Pages fieldsets with independent filters; a Pending status. |
-| Customizer panels | Site Identity only; colours/menus live in the Site Editor. | Site Identity, Colors, Menus, Homepage Settings and Additional CSS. |
-| Connectors | OpenAI, Google and Anthropic keys. | Akismet, Anthropic, Google and OpenAI. |
 | Screen Options per screen | Persisted per screen (columns and paging where applicable). | Some screens expose panels MERNPress does not have. |
-
+| Editor notes | Not implemented. | The block editor's Notes/All notes panel. |

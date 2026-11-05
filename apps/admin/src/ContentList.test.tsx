@@ -446,6 +446,11 @@ describe('content lists', () => {
     fireEvent.click(within(region).getByLabelText('News'));
     fireEvent.click(within(region).getByLabelText('Demo'));
     fireEvent.click(within(region).getByLabelText('Allow Comments'));
+    const pings = within(region).getByLabelText('Allow Pings') as HTMLInputElement;
+    expect(pings.disabled).toBe(true);
+    expect(
+      within(region).getByText(/Pingbacks and trackbacks are disabled for security/),
+    ).toBeDefined();
     fireEvent.click(within(region).getByLabelText('Make this post sticky'));
     fireEvent.change(within(region).getByLabelText('Password'), {
       target: { value: 'quick-secret' },
@@ -537,6 +542,9 @@ describe('content lists', () => {
     fireEvent.change(within(region).getByLabelText('Comments'), {
       target: { value: 'closed' },
     });
+    const pings = within(region).getByLabelText('Pings') as HTMLSelectElement;
+    expect(pings.disabled).toBe(true);
+    expect(pings.value).toBe('');
     fireEvent.change(within(region).getByLabelText('Sticky'), { target: { value: 'sticky' } });
     fireEvent.change(within(region).getByLabelText('Format'), { target: { value: 'quote' } });
     fireEvent.click(within(region).getByRole('button', { name: 'Update' }));

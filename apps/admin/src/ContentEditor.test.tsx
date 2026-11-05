@@ -1170,4 +1170,26 @@ describe('safe client editing', () => {
     expect(toggle.disabled).toBe(true);
     expect(screen.getByText(/Only administrators and editors can change this lock/)).toBeDefined();
   });
+
+  it('explains that pingbacks and trackbacks are unavailable', async () => {
+    const post = makePost({ authorId: 'a1', status: 'DRAFT' });
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes('/revisions')) return response([]);
+      if (url.includes('/schedule')) return response({ scheduledAt: null });
+      if (url.includes('/api/terms')) return response(termsPage());
+      if (url.includes('/api/admin/posts/')) return response(post);
+      return response(termsPage());
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA, post.id);
+
+    expect(
+      await screen.findByText(/Pingbacks and trackbacks are disabled for security/),
+    ).toBeDefined();
+    const checkbox = screen.getByLabelText('Not available') as HTMLInputElement;
+    expect(checkbox.disabled).toBe(true);
+    expect(checkbox.checked).toBe(false);
+  });
 });

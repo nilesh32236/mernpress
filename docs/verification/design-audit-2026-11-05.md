@@ -66,7 +66,8 @@ controls MERNPress implements.
 
 | Screen | WordPress 7.1.4 | MERNPress | Result |
 | --- | --- | --- | --- |
-| Media attachment details | “Attachment details” modal: Edit Image, uploaded date/author, file name/type/size/dimensions, alt/caption/description, File URL + copy, view/download/delete | Same dialog title, same fields and actions; previous/next navigation between items | match (the reference library has no uploads, so the field set was compared against the WordPress attachment-details contract) |
+| Media attachment details | “Attachment details” modal: Edit Image, uploaded date/author, file name/type/size/dimensions, alt/caption/description, File URL + copy, view/download/delete | Same dialog title, same fields and actions; previous/next navigation between items | match (re-checked with the reference Hero image; the editor itself is covered in the row below) |
+| Media → Edit Image | Inline editor under the fields: Crop, Scale, Image Rotation (90° left/right, 180°, flip vertical/horizontal), Undo, Redo, Cancel Editing, Save Edits; Scale box (width/height) and Crop box (aspect ratio, selection, start position, Apply/Clear) | Modal editor: rotate left/right/180, flip vertical/horizontal, undo/redo, crop with aspect ratios and Apply/Clear, scale mode with width/height and Apply Scale, Save/Cancel, Restore original image | match; **Rotate 180° added in this pass** to complete the rotation set. The overlay replaces WordPress's inline panel because the MERNPress drawer is narrower; every operation is present |
 | Appearance → Customize | “Customizing: …”, Site Identity, Colors, Menus, Homepage Settings, Additional CSS, “Use Site Editor” notice | “Customizing: MERNPress” with Site Identity, Colors (five theme tokens), Menus, Homepage Settings (static front page + posts page) and Additional CSS, live preview and per-panel saves | match in panel set (single menu location; no postMessage preview; see ADR 0041) |
 | Appearance → Site Editor | `<h1>Design</h1>` | `<h1>Design</h1>`, Identity / Styles / Pages | match |
 | Appearance → Fonts | “Fonts” (Font Library) | “Fonts”, Library / Upload / Install Fonts, installed font list | match in name and purpose |
@@ -81,6 +82,7 @@ controls MERNPress implements.
 | Settings → Privacy | `<h1>Privacy</h1>`, “Privacy Settings”, policy page picker, Create/Use This Page helpers | `<h1>Privacy</h1>`, “Privacy Settings”, policy page picker, **Create a new Privacy Policy page**, Edit/View links and **Use This Page** | match (follow-up slice; see ADR 0039) |
 | Settings → Connectors | “Connectors”: Akismet, Anthropic, Google, OpenAI cards | “Connectors”: Spam protection card (bundled heuristic guard with thresholds, stats) + OpenAI / Google / Anthropic key cards; Akismet row marked unavailable with its external-service reason | match in purpose (local guard instead of Akismet; ADR 0042) |
 | Dashboard → Updates | “WordPress Updates”: core, Plugins, Themes, re-install | “MERNPress Updates”: MERNPress, Plugins, Themes, Check again | match adapted to the product name |
+| Editor at 375 px | Admin bar 46 px, editor header 64 px, sidebar 0 px, canvas 375 px; Add block, Document overview, Save draft, Preview, Settings, Publish, Options | Admin bar 46 px, editor header 64 px, sidebar 0 px, canvas 375 px; Add block, Document overview, Save draft, Preview, Settings, Publish, overflow menu | match after **Save draft and Preview were restored to the mobile header** (they were hidden below 782 px); no horizontal overflow at 320/375/768/1024 px |
 
 The only code change from this pass was the Privacy page title/heading split
 (`Privacy` as the page title, `Privacy Settings` as the section heading), which
@@ -90,12 +92,14 @@ now matches WordPress.
 
 | Deviation | Reason |
 | --- | --- |
+| Editor notes | WordPress's Notes/All notes panel has no equivalent; not a content feature. |
+| Single Customizer menu location | Themes are token packages with one header menu; multiple menu locations/widget areas are not implemented (ADR 0041). |
+| Akismet replaced by a local guard | External account, API key and per-comment data transfer were not accepted; the heuristic guard is local (ADR 0042). |
+| Allow Pings | No XML-RPC endpoint or inbound link verification; shown disabled and explained (ADR 0043). |
 
-| Customizer scope | Themes are token packages; colours/menus are edited in the Site Editor, not a second Customizer panel set. |
-| Connectors providers | No spam service is bundled; only the three AI providers with server-side key storage exist. |
+## Verification status
 
-## Still not re-checked
-
-- Editor canvas chrome at 375 px (covered by the E2E responsive test, not re-measured here).
-- Media → Edit Image in this pass (implemented in an earlier slice; its E2E coverage remains).
-- Settings → Privacy policy page creation flow (not implemented).
+All screens listed in this document have now been re-checked against the live
+WordPress 7.1.4 reference at least once. The only remaining items are the
+deliberate deviations above and the owner-blocked external services (SMTP,
+Akismet, file editors, third-party importers) recorded in the parity matrix.

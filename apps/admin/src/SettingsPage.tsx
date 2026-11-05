@@ -1071,6 +1071,25 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
           {activeTab === 'privacy' ? (
             <h2 className="settings-section-title">Privacy Settings</h2>
           ) : null}
+          {activeTab === 'discussion' ? (
+            <div className="settings-pings-notice">
+              <span className="settings-pings-label">Pings</span>
+              <label
+                className="checkbox-row is-disabled"
+                title="Pingbacks and trackbacks require an inbound XML-RPC endpoint or link verification, which this build does not expose."
+              >
+                <input type="checkbox" checked={false} readOnly disabled />
+                <span>
+                  Allow link notifications from other blogs (pingbacks and trackbacks) on new posts
+                </span>
+              </label>
+              <p className="field-help">
+                Not available in this build: pingbacks and trackbacks need an inbound XML-RPC
+                endpoint or link verification, which this build does not expose for security.
+                Comments are unaffected.
+              </p>
+            </div>
+          ) : null}
           <OptionGroupForm group={activeTab} />
           {activeTab === 'discussion' ? <MailLogPanel /> : null}
         </>

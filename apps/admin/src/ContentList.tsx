@@ -1131,6 +1131,15 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                   <option value="closed">Do not allow</option>
                 </select>
               </label>
+              <label
+                className="bulk-edit-field is-disabled"
+                title="Pingbacks and trackbacks require an inbound XML-RPC endpoint, which this build does not expose."
+              >
+                <span>Pings</span>
+                <select value="" disabled>
+                  <option value="">Not available</option>
+                </select>
+              </label>
               {type === 'post' ? (
                 <label className="bulk-edit-field">
                   <span>Sticky</span>
@@ -1633,6 +1642,17 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                                     />
                                     <span>Allow Comments</span>
                                   </label>
+                                  <label
+                                    className="checkbox-row is-disabled"
+                                    title="Pingbacks and trackbacks require an inbound XML-RPC endpoint, which this build does not expose."
+                                  >
+                                    <input type="checkbox" checked={false} readOnly disabled />
+                                    <span>Allow Pings</span>
+                                  </label>
+                                  <p className="inline-edit-pings-note">
+                                    Pingbacks and trackbacks are disabled for security; comments are
+                                    unaffected.
+                                  </p>
                                   {type === 'post' ? (
                                     <label className="checkbox-row">
                                       <input

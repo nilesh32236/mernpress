@@ -3670,3 +3670,31 @@ SPAM and a single-spam-phrase comment as PENDING; the API then reported
 the card returned to zero; the temporary administrator was removed. Production
 is back to 1 user, 2 posts and 0 comments, with `/`, `/admin/`, `/api/health`
 and `/posts/testcom` returning 200.
+
+### 2026-11-05 — Remaining design audit and Pings limitation
+
+- Re-checked **Media → Edit Image** against the live WordPress 7.1.4 reference
+  using the reference “Hero image”. WordPress exposes Crop, Scale, Image
+  Rotation (90° left/right, 180°, flip vertical/horizontal), Undo, Redo, Cancel
+  Editing and Save Edits, with Scale and Crop boxes. MERNPress has the same
+  operations in a modal editor (its drawer is narrower than WordPress's inline
+  panel); **Rotate 180° was missing and was added**, with the toolbar test
+  updated. Scale mode (width/height/Apply Scale/Cancel) and crop mode
+  (aspect/Apply/Clear) were verified.
+- Re-measured the **editor at 375 px**. WordPress: 46 px admin bar, 64 px editor
+  header, hidden sidebar, 375 px canvas, with Save draft, Preview and Publish in
+  the header. MERNPress matched the geometry and had no horizontal overflow, but
+  its ≤782 px CSS hid Save draft and Preview, so mobile users could not save a
+  draft or open a preview without publishing. Both controls are now visible at
+  mobile widths: Save draft collapses to a 32 px icon with an `aria-label`,
+  Preview stays a 32 px icon, the view-post link stays desktop-only and Redo is
+  hidden below 420 px. Saving a draft from the 375 px header created a DRAFT and
+  navigated to its editor; no overflow at 320/375/768/1024 px.
+- Resolved **Allow Pings** as an explicit owner-facing security limitation
+  (ADR 0043): no XML-RPC endpoint or inbound link verification, the dead
+  `default_ping_status` option removed, and a disabled explained control in the
+  editor Discussion panel, Quick Edit, Bulk Edit and Settings → Discussion.
+  WXR keeps `wp:ping_status` for import compatibility only; the threat model
+  records the residual risk.
+- Tests: Media toolbar assertion for Rotate 180°, editor/Quick Edit/Bulk Edit
+  Pings assertions and the Settings → Discussion notice.

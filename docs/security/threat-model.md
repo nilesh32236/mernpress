@@ -266,6 +266,7 @@ Boundaries:
 - No multi-tenant isolation; one site per deployment.
 - No automated backup/restore UI; operator runbook required.
 - No real-time intrusion detection; logs/audit are post-hoc.
+- No pingback/trackback endpoint. Inbound XML-RPC and untrusted link verification are deliberately not implemented (ADR 0043); the WXR `wp:ping_status` field is import metadata only and no runtime behaviour depends on it.
 
 ## 9. Security gates by phase
 

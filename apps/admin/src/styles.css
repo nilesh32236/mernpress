@@ -2899,6 +2899,10 @@ a.glance-chip:hover {
   margin-right: 4px;
 }
 
+.editor-topbar-save-icon {
+  display: none;
+}
+
 .editor-topbar-text-button {
   padding: 6px 8px;
   border: 1px solid var(--wp-button);
@@ -9581,10 +9585,32 @@ a.glance-chip:hover {
     margin-left: auto;
   }
 
+  /* WordPress keeps Preview and Save draft reachable in the mobile header;
+     the view-post link stays desktop-only and Save draft collapses to the
+     same 32px icon button as the other tools. */
   .editor-topbar-actions .editor-topbar-view,
-  .editor-topbar-actions .editor-topbar-view-link,
   .editor-topbar-actions .editor-topbar-text-button {
+    display: inline-flex;
+  }
+
+  .editor-topbar-actions .editor-topbar-view-link {
     display: none;
+  }
+
+  .editor-topbar-actions .editor-topbar-text-button {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .editor-topbar-save-label {
+    display: none;
+  }
+
+  .editor-topbar-save-icon {
+    display: block;
   }
 
   .editor-sidebar {
@@ -12602,4 +12628,52 @@ a.glance-chip:hover {
 .spam-guard-akismet strong {
   color: #1d2327;
   font-size: 13px;
+}
+
+/* Very narrow editor headers: WordPress keeps undo but not redo. */
+@media (max-width: 420px) {
+  .editor-topbar-actions button[aria-label='Redo'] {
+    display: none;
+  }
+}
+
+/* Pings limitation: disabled controls stay visible and explained, matching the
+   WordPress locations (editor Discussion panel, Quick/Bulk Edit, Discussion
+   settings) without pretending the feature exists. */
+.checkbox-row.is-disabled,
+.bulk-edit-field.is-disabled {
+  opacity: 0.7;
+}
+
+.checkbox-row.is-disabled input,
+.bulk-edit-field.is-disabled select {
+  cursor: not-allowed;
+}
+
+.inline-edit-pings-note {
+  margin: 2px 0 8px 24px;
+  color: #646970;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.settings-pings-notice {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border: 1px solid #dcdcde;
+  border-left: 4px solid #dba617;
+  background: #fcf9e8;
+  max-width: 760px;
+}
+
+.settings-pings-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #1d2327;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.settings-pings-notice .field-help {
+  margin: 6px 0 0 24px;
 }

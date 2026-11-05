@@ -303,6 +303,7 @@ describe('media library page', () => {
     expect(within(editor).getByRole('heading', { name: 'Edit Image' })).toBeDefined();
     expect(within(editor).getByRole('button', { name: 'Rotate left' })).toBeDefined();
     expect(within(editor).getByRole('button', { name: 'Rotate right' })).toBeDefined();
+    expect(within(editor).getByRole('button', { name: 'Rotate 180°' })).toBeDefined();
     expect(within(editor).getByRole('button', { name: 'Flip vertical' })).toBeDefined();
     expect(within(editor).getByRole('button', { name: 'Flip horizontal' })).toBeDefined();
     expect(within(editor).getByRole('button', { name: 'Undo' })).toBeDefined();

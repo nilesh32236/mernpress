@@ -413,16 +413,6 @@ const SPECS: Record<string, OptionSpec> = {
       return value;
     },
   },
-  default_ping_status: {
-    group: 'discussion',
-    defaultValue: 'open',
-    validate: (value) => {
-      if (value !== 'open' && value !== 'closed') {
-        throwValidation("default_ping_status must be 'open' or 'closed'.");
-      }
-      return value;
-    },
-  },
   comments_per_page: {
     group: 'discussion',
     defaultValue: 50,

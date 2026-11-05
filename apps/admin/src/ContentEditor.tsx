@@ -182,6 +182,31 @@ function EditorStatus({ status }: { status: 'DRAFT' | 'PUBLISHED' | 'TRASHED' })
   );
 }
 
+/**
+ * Pingbacks and trackbacks need an inbound XML-RPC endpoint or link
+ * verification. This build exposes neither, so the control stays visible but
+ * disabled and explained, exactly where WordPress shows its checkbox.
+ */
+function PingsField() {
+  return (
+    <div className="publish-field">
+      <span className="publish-label">Pings</span>
+      <div className="publish-value">
+        <label
+          className="checkbox-row is-disabled"
+          title="Pingbacks and trackbacks require an inbound XML-RPC endpoint, which this build does not expose."
+        >
+          <input type="checkbox" checked={false} readOnly disabled />
+          <span className="editor-link-value">Not available</span>
+        </label>
+        <p className="field-help">
+          Pingbacks and trackbacks are disabled for security; comments are unaffected.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function ContentEditor({
   user,
   type,
@@ -1196,9 +1221,26 @@ export function ContentEditor({
                     disabled={saving || Boolean(conflict)}
                     aria-busy={saving}
                     aria-keyshortcuts="Control+S Meta+S"
+                    aria-label={secondarySave ?? 'Save draft'}
                     title="Save draft (Ctrl/Cmd+S)"
                   >
-                    {saving ? 'Saving…' : secondarySave}
+                    <svg
+                      className="editor-topbar-save-icon"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      aria-hidden="true"
+                    >
+                      <path d="M5 3h11l3 3v15H5z" />
+                      <path d="M8 3v6h8V3" />
+                      <path d="M8 21v-6h8v6" />
+                    </svg>
+                    <span className="editor-topbar-save-label">
+                      {saving ? 'Saving…' : secondarySave}
+                    </span>
                   </button>
                 ) : null}
               </>
@@ -1867,6 +1909,7 @@ export function ContentEditor({
                             </span>
                           </div>
                         </div>
+                        <PingsField />
                         <div className="publish-field">
                           <span className="publish-label">Format</span>
                           <div className="publish-value">
@@ -1962,6 +2005,7 @@ export function ContentEditor({
                             <span className="editor-link-value">Open</span>
                           </div>
                         </div>
+                        <PingsField />
                         <div className="publish-field">
                           <span className="publish-label">Format</span>
                           <div className="publish-value">

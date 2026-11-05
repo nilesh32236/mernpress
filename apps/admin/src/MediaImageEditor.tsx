@@ -9,7 +9,7 @@ interface Rect {
 }
 
 type Operation =
-  | { type: 'rotate'; degrees: 90 | -90 }
+  | { type: 'rotate'; degrees: 90 | -90 | 180 }
   | { type: 'flip'; axis: 'horizontal' | 'vertical' }
   | { type: 'crop'; rect: Rect }
   | { type: 'scale'; width: number; height: number };
@@ -468,6 +468,15 @@ export function MediaImageEditor({
             title="Rotate right"
           >
             <span className="dashicons dashicons-image-rotate-right" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="media-editor-tool"
+            onClick={() => push({ type: 'rotate', degrees: 180 })}
+            aria-label="Rotate 180°"
+            title="Rotate 180°"
+          >
+            <span className="dashicons dashicons-image-rotate" aria-hidden="true" />
           </button>
           <button
             type="button"
