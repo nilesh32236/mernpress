@@ -74,7 +74,7 @@ import { registerNoteMentionRoutes } from './routes/note-mentions.js';
 import { registerBackupRoutes } from './routes/backups.js';
 import { registerRedirectRoutes, registerPublicRedirectRoutes } from './routes/redirects.js';
 import { registerAdminHealthRoutes } from './routes/admin-health.js';
-import { startPublishScheduler } from './scheduler.js';
+import { startSchedulers } from './scheduler.js';
 import { resolveRequestId } from './http/request-id.js';
 import { mkdirSync } from 'node:fs';
 
@@ -421,7 +421,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerPublicCommentRoutes(app, { comments, auth });
 
   if (env.SCHEDULER_ENABLED) {
-    startPublishScheduler(app, { schedule });
+    startSchedulers(app, { schedule, notes, prisma: database });
   }
 
   app.get('/api/health', async () => ({

@@ -554,7 +554,101 @@ export function createNoteService({ prisma, mail }: NoteServiceOptions) {
     });
   }
 
-  return { list, lists, create, setResolved, trash, restore, purge, mentionCandidates };
+  /**
+   * Automatic retention sweep: permanently remove notes that have been in the
+   * trash longer than the configured window. Roots are purged first (replies
+   * cascade), then standalone replies whose parent is still active. `0` (or a
+   * negative value) disables the sweep. Each purged note gets an audit event
+   * marked `automatic: true`.
+   */
+  async function purgeExpiredTrash(input: {
+    retentionDays: number;
+    now?: Date;
+  }): Promise<{ purged: number }> {
+    const days = Math.trunc(input.retentionDays);
+    if (!Number.isFinite(days) || days <= 0) {
+      return { purged: 0 };
+    }
+    const cutoff = new Date((input.now ?? new Date()).getTime() - days * 24 * 60 * 60 * 1000);
+    let purged = 0;
+
+    const roots = await prisma.postNote.findMany({
+      where: { parentId: null, deletedAt: { not: null, lt: cutoff } },
+      select: { id: true, postId: true, blockName: true },
+    });
+    for (const root of roots) {
+      const replies = await prisma.postNote.count({ where: { parentId: root.id } });
+      try {
+        await prisma.$transaction(async (tx) => {
+          await tx.postNote.delete({ where: { id: root.id } });
+          await tx.auditEvent.create({
+            data: {
+              eventType: 'content.note.deleted',
+              metadata: {
+                postId: root.postId,
+                noteId: root.id,
+                parentId: null,
+                anchored: root.blockName !== null,
+                replies,
+                permanent: true,
+                automatic: true,
+              },
+            },
+          });
+        });
+        purged += 1;
+      } catch {
+        // A concurrent purge already removed it; the sweep is idempotent.
+      }
+    }
+
+    const orphans = await prisma.postNote.findMany({
+      where: {
+        parentId: { not: null },
+        deletedAt: { not: null, lt: cutoff },
+        parent: { deletedAt: null },
+      },
+      select: { id: true, postId: true, parentId: true, blockName: true },
+    });
+    for (const reply of orphans) {
+      try {
+        await prisma.$transaction(async (tx) => {
+          await tx.postNote.delete({ where: { id: reply.id } });
+          await tx.auditEvent.create({
+            data: {
+              eventType: 'content.note.deleted',
+              metadata: {
+                postId: reply.postId,
+                noteId: reply.id,
+                parentId: reply.parentId,
+                anchored: reply.blockName !== null,
+                replies: 0,
+                permanent: true,
+                automatic: true,
+              },
+            },
+          });
+        });
+        purged += 1;
+      } catch {
+        // Already gone.
+      }
+    }
+
+    return { purged };
+  }
+
+  return {
+    list,
+    lists,
+    create,
+    setResolved,
+    trash,
+    restore,
+    purge,
+    purgeExpiredTrash,
+    mentionCandidates,
+  };
 }
 
 export type NoteService = ReturnType<typeof createNoteService>;

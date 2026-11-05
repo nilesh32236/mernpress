@@ -138,6 +138,16 @@ const DISCUSSION_FIELDS: Field[] = [
     help: 'Sent to the post author (or the note author on deletion) when outbound mail is configured on the server.',
   },
   {
+    key: 'notes_trash_retention_days',
+    section: 'Editor notes',
+    label: 'Permanently delete trashed notes after this many days',
+    type: 'number',
+    min: 0,
+    max: 365,
+    width: 70,
+    help: 'The sweep runs every six hours and writes an audit event per note. 0 keeps trashed notes until an operator runs the purge command.',
+  },
+  {
     key: 'comment_max_links',
     label: 'Hold a comment in the queue if it contains this number of links or more',
     type: 'number',

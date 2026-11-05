@@ -75,6 +75,16 @@ never leak to the public site.
    with the mouse or Arrow Up/Down + Enter/Escape. The panel states that only
    people who can edit the post receive mention emails.
 
+9. **Retention sweep.** `notes_trash_retention_days` (Settings → Discussion,
+   0–365, default 30; 0 disables) governs how long trash is kept. The API
+   scheduler runs `NoteService.purgeExpiredTrash` every six hours when
+   `SCHEDULER_ENABLED` is on (with a boot catch-up), purging expired roots (their
+   replies cascade) and then standalone replies whose parent is still active.
+   Each removal writes a `content.note.deleted` audit event marked
+   `permanent: true, automatic: true`. Operators without the scheduler can run
+   `pnpm --filter @mernpress/api notes:purge-trash` (optionally `-- --days N`);
+   both paths are idempotent and `0` is a no-op.
+
 ## Consequences
 
 - Four additive migrations in total: `20261105163351_add_post_notes`,

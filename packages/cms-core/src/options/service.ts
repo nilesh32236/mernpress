@@ -616,6 +616,16 @@ const SPECS: Record<string, OptionSpec> = {
       return value;
     },
   },
+  notes_trash_retention_days: {
+    group: 'discussion',
+    defaultValue: 30,
+    validate: (value) => {
+      if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > 365) {
+        throwValidation('notes_trash_retention_days must be 0-365.');
+      }
+      return value;
+    },
+  },
   moderation_notify: {
     group: 'discussion',
     defaultValue: true,

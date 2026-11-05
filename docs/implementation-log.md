@@ -4053,3 +4053,28 @@ administrator on a draft created with `notesNotify: false`:
   and `/posts/testcom` at 200. Production mail is unconfigured, so delivery
   behaviour is covered by the in-memory transport suite (per-post off under
   global on, per-post on under global off, null inherits, mentions included).
+
+### 2026-11-05 — Editor-note trash retention sweep
+
+- New Discussion option `notes_trash_retention_days` (0–365, default 30; 0
+  disables) with a Settings → Discussion numeric field and help text.
+- `NoteService.purgeExpiredTrash({ retentionDays, now? })` permanently deletes
+  roots trashed longer than the window (replies cascade) and then standalone
+  replies whose parent is active, writing `content.note.deleted` with
+  `permanent: true, automatic: true`. It is idempotent and a no-op at 0.
+- The API scheduler now runs two sweeps: scheduled posts every minute (as
+  before) and note trash every six hours with an eight-second boot catch-up,
+  reading the option each run and falling back to 30 when unset/corrupt.
+  `startPublishScheduler` became `startSchedulers` and is wired with `notes`.
+- Operator CLI `pnpm --filter @mernpress/api notes:purge-trash` (with
+  `-- --days N` and `--help`) for deployments with the scheduler off; it loads
+  the API environment, prints the purged count and disconnects.
+- Verified in development: two notes (root + reply) trashed and backdated 40
+  days; the CLI purged one root with its reply ("Purged 1 note(s) trashed longer
+  than 30 day(s)"), leaving 0 rows, with an audit event
+  `{automatic: true, replies: 1}`; `--days 0` printed the disabled message.
+- Tests: expired thread purge with cascade and automatic audit, fresh trash
+  retained, standalone expired reply purge, `0` no-op, option range validation,
+  and the Settings → Discussion field/value.
+- Validation: 834 unit/integration tests (API 503, admin 220, web 38,
+  block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.

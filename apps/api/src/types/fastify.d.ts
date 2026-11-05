@@ -12,6 +12,7 @@ import type {
   PasswordResetService,
   TwoFactorService,
   MediaService,
+  NoteService,
   ScheduleService,
   TaxonomyService,
   UserAdminService,
@@ -33,6 +34,7 @@ declare module 'fastify' {
     schedule: ScheduleService;
     bulk: BulkService;
     media: MediaService;
+    notes: NoteService;
     exports: ExportService;
     redirects: RedirectService;
     backups: BackupService;

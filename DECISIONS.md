@@ -130,6 +130,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-092 | 2026-11-05 | Per-post editor-note mail override: `posts.notes_notify` (`Boolean?`, null = inherit). `AdminPost.notesNotify` and the create/update schemas accept `boolean | null`; the editor publish panel offers “Use Discussion setting / Send / Do not send”, participates in dirty tracking and saves with the post. Note, reply, deletion and mention mail pass `enabled: post.notesNotify` to `MailService`, which falls back to the global `notes_notify` Discussion option when undefined. The override cannot send mail when the server has no transport. Migration `add_post_notes_notify`. | accepted | [ADR 0045](docs/adr/0045-editor-notes.md) |
 
+| D-093 | 2026-11-05 | Note-trash retention: `notes_trash_retention_days` (Discussion, 0–365, default 30; 0 disables). `NoteService.purgeExpiredTrash` purges trashed roots (replies cascade) and standalone replies whose parent is active older than the window, writing `content.note.deleted` with `permanent: true, automatic: true`. The API scheduler runs it every six hours (boot catch-up) when `SCHEDULER_ENABLED=true`; the CLI `pnpm --filter @mernpress/api notes:purge-trash [-- --days N]` covers scheduler-less deployments. Both are idempotent; Settings → Discussion exposes the field. | accepted | [ADR 0045](docs/adr/0045-editor-notes.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

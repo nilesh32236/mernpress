@@ -11,7 +11,8 @@
     "auth:bootstrap": "NODE_OPTIONS=--conditions=development tsx src/cli/bootstrap-admin.ts",
     "dev:create-test-account": "NODE_OPTIONS=--conditions=development tsx src/cli/create-test-account.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "notes:purge-trash": "NODE_OPTIONS=--conditions=development tsx src/cli/purge-notes-trash.ts"
   },
   "dependencies": {
     "@fastify/cookie": "11.1.3",

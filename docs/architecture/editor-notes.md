@@ -88,6 +88,21 @@ caller. Arrow Up/Down move the active option; Enter or a click inserts
 `@username `; Escape closes. The panel always states that only people who can
 edit the post receive mention emails.
 
+## Retention sweep
+
+`notes_trash_retention_days` (Discussion option, 0–365, default 30; 0 disables)
+bounds how long Trash is kept. `NoteService.purgeExpiredTrash({ retentionDays,
+now? })` removes expired roots (replies cascade) and then standalone expired
+replies whose parent is active, writing `content.note.deleted` with
+`permanent: true, automatic: true`.
+
+- The API scheduler (`apps/api/src/scheduler.ts`) runs the sweep every six hours
+  and eight seconds after boot when `SCHEDULER_ENABLED=true`; a corrupt option
+  read falls back to 30.
+- The operator command is `pnpm --filter @mernpress/api notes:purge-trash`
+  (`-- --days 7` overrides the option; `--days 0` is a no-op). It loads the same
+  environment as the API, prints the purged count and disconnects.
+
 ## Rules and limits
 
 - One reply level; replying to a reply is 400.

@@ -187,6 +187,8 @@ describe('settings page', () => {
           spam_guard_enabled: true,
           spam_guard_spam_threshold: 6,
           spam_guard_moderation_threshold: 3,
+          notes_notify: true,
+          notes_trash_retention_days: 30,
         });
       }
       if (url.includes('/api/admin/mail/status')) {
@@ -209,5 +211,11 @@ describe('settings page', () => {
     expect(checkbox.disabled).toBe(true);
     expect(checkbox.checked).toBe(false);
     expect(screen.getByText(/does not expose for security/)).toBeDefined();
+
+    const retention = (await screen.findByLabelText(
+      'Permanently delete trashed notes after this many days',
+    )) as HTMLInputElement;
+    expect(retention.value).toBe('30');
+    expect(screen.getByText(/The sweep runs every six hours/)).toBeDefined();
   });
 });
