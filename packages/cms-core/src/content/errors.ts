@@ -23,7 +23,8 @@ export type ContentErrorCode =
   | 'SCHEDULE_TOO_SOON'
   | 'SCHEDULE_TOO_FAR'
   | 'SCHEDULE_INVALID_STATUS'
-  | 'UPDATE_CHECK_FAILED';
+  | 'UPDATE_CHECK_FAILED'
+  | 'PLUGIN_ACTIVATION_FAILED';
 
 /**
  * Typed domain error for content/taxonomy. Routes map `statusCode` + `code` to

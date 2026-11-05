@@ -4,7 +4,9 @@ import type { DatabaseClient } from '@mernpress/database';
 import { requireCapability } from '../auth/capabilities.js';
 import { ContentError } from '../content/errors.js';
 import type { Principal } from '../content/types.js';
+import type { HookRegistry } from '../hooks/types.js';
 import { loadPluginManifests, lyricFor, seedPluginStore, type PluginManifest } from './registry.js';
+import { activatePluginModule, type LoadedPlugin } from './runtime.js';
 
 export interface PluginState extends PluginManifest {
   active: boolean;
@@ -24,6 +26,8 @@ export interface PluginServiceOptions {
   seedDir: string;
   /** Injected registry used by focused tests; skips the on-disk store. */
   plugins?: readonly PluginManifest[];
+  /** Hook registry used by trusted plugin modules; omitted in focused tests. */
+  hooks?: HookRegistry | undefined;
   now?: () => Date;
   logger?: (message: string, meta?: Record<string, unknown>) => void;
 }
@@ -54,9 +58,33 @@ export function createPluginService({
   pluginDir,
   seedDir,
   plugins: injected,
+  hooks,
   now = () => new Date(),
   logger,
 }: PluginServiceOptions) {
+  /** Modules currently activated in this process, keyed by plugin id. */
+  const loaded = new Map<string, LoadedPlugin>();
+
+  async function loadModule(manifest: PluginManifest): Promise<void> {
+    if (injected || !hooks) return;
+    const instance = await activatePluginModule(
+      {
+        prisma,
+        hooks,
+        ...(logger ? { logger } : {}),
+      },
+      manifest,
+      path.join(pluginDir, manifest.id),
+    );
+    loaded.set(manifest.id, instance);
+  }
+
+  async function unloadModule(id: string): Promise<void> {
+    const instance = loaded.get(id);
+    if (!instance) return;
+    loaded.delete(id);
+    await instance.dispose();
+  }
   /** The installed packages, read from the authoritative store on each call. */
   async function installedManifests(): Promise<readonly PluginManifest[]> {
     if (injected) return injected;
@@ -106,6 +134,24 @@ export function createPluginService({
     if (!manifests.some((plugin) => plugin.id === id)) {
       throw new ContentError('NOT_FOUND', 'Plugin not found', 404);
     }
+    const manifest = manifests.find((plugin) => plugin.id === id)!;
+    // Load first: a package that fails to activate must not be recorded active.
+    try {
+      await loadModule(manifest);
+    } catch (error) {
+      await unloadModule(id);
+      logger?.('plugin activation failed', {
+        plugin: id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw new ContentError(
+        'PLUGIN_ACTIVATION_FAILED',
+        `The plugin could not be activated: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        422,
+      );
+    }
     const active = await activeIds(manifests);
     if (!active.includes(id)) active.push(id);
     await writeOption(prisma, ACTIVE_PLUGINS_KEY, active);
@@ -118,6 +164,7 @@ export function createPluginService({
     if (!manifests.some((plugin) => plugin.id === id)) {
       throw new ContentError('NOT_FOUND', 'Plugin not found', 404);
     }
+    await unloadModule(id);
     const active = (await activeIds(manifests)).filter((entry) => entry !== id);
     await writeOption(prisma, ACTIVE_PLUGINS_KEY, active);
     return state();
@@ -133,6 +180,7 @@ export function createPluginService({
     if (active.includes(id)) {
       throw new ContentError('VALIDATION_ERROR', 'Deactivate the plugin before deleting it.', 409);
     }
+    await unloadModule(id);
     if (!injected) {
       // Real package removal: the directory (manifest and any assets) is gone.
       await fs.rm(path.join(pluginDir, id), { recursive: true, force: true });
@@ -169,7 +217,59 @@ export function createPluginService({
     return { message: null };
   }
 
-  return { list, activate, deactivate, remove, setAutoUpdates, toolbar, installed };
+  /**
+   * Activate the modules recorded as active. Called once at API startup.
+   * A module that fails is dropped from the active list (and logged) so a bad
+   * package cannot take the whole API down.
+   */
+  async function startActive(): Promise<void> {
+    if (!hooks) return;
+    const manifests = await installedManifests();
+    const active = await activeIds(manifests);
+    const remaining: string[] = [];
+    for (const id of active) {
+      const manifest = manifests.find((plugin) => plugin.id === id);
+      if (!manifest) continue;
+      try {
+        await loadModule(manifest);
+        remaining.push(id);
+      } catch (error) {
+        logger?.('plugin startup activation failed', {
+          plugin: id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+    if (remaining.length !== active.length) {
+      await writeOption(prisma, ACTIVE_PLUGINS_KEY, remaining);
+    }
+  }
+
+  /** Unload every module (API shutdown / tests). */
+  async function stopAll(): Promise<void> {
+    for (const id of [...loaded.keys()]) {
+      try {
+        await unloadModule(id);
+      } catch (error) {
+        logger?.('plugin shutdown failed', {
+          plugin: id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+  }
+
+  return {
+    list,
+    activate,
+    deactivate,
+    remove,
+    setAutoUpdates,
+    toolbar,
+    installed,
+    startActive,
+    stopAll,
+  };
 }
 
 export type PluginService = ReturnType<typeof createPluginService>;

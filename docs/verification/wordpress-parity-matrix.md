@@ -38,7 +38,7 @@ owner decision.
 | Appearance → Themes | D/P | Grid, details dialog, search, Customize |
 | Appearance → Editor | D/P | Design sidebar, template list, live canvas |
 | Appearance → Fonts | D/P | Library, weights, samples, unavailable upload/install |
-| Plugins → Installed | D/P | Filters, bulk, active edge, auto-update column, View details, Delete (inactive only, removes the package directory) |
+| Plugins → Installed | D/P | Filters, bulk, active edge, auto-update column, View details, Delete (inactive only, removes the package directory); plugins can ship a real runtime module (Auto Excerpt) |
 | Plugins → Add Plugin | D/P | WordPress description + filter bar/search; directory tabs disabled and explained; installed packages listed |
 | Users / Add User / Profile | D/P | Roles, display name select, colour schemes, syntax highlighting, language, application passwords, password, Send password reset (row + bulk); Send User Notification enabled when mail is configured and includes a reset link |
 | SEO / metadata | D/P | Per-post SEO fields, JSON-LD (BlogPosting/WebPage/Breadcrumb/Collection/Profile), Twitter cards, image sitemap, /llms.txt; WordPress needs plugins for all of this |

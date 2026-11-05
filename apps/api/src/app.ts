@@ -221,9 +221,20 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     prisma: database,
     pluginDir: env.PLUGIN_STORAGE_DIR,
     seedDir: env.PLUGIN_SEED_DIR,
+    hooks: contentHooks,
     logger: (message, meta) => app.log.warn({ ...meta }, message),
   });
   app.decorate('plugins', plugins);
+  // Activate the modules recorded as active before routes start serving. A
+  // database outage at boot must not stop liveness/readiness from starting.
+  try {
+    await plugins.startActive();
+  } catch (error) {
+    app.log.warn(
+      { error: error instanceof Error ? error.message : String(error) },
+      'plugin startup skipped',
+    );
+  }
 
   const updates = createUpdateService({
     prisma: database,
@@ -286,6 +297,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   });
 
   app.addHook('onClose', async () => {
+    await plugins.stopAll();
     await database.$disconnect();
   });
 

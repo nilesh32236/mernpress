@@ -3047,3 +3047,27 @@ the WebP-only fallback, and newly uploaded images emit the AVIF source set.
   image entry, and `/llms.txt` lists the post, page, feed and sitemap.
 - Validation: 664 unit/integration tests (API 418, admin 159, web 22,
   block-system 65), 23 Playwright E2E tests and six builds pass.
+
+### 2026-11-05 — Trusted local plugin runtime + Auto Excerpt plugin
+
+- Packages may now ship `plugin.mjs` exporting `activate(api)`/`deactivate(api)`.
+  The runtime API exposes typed hooks, plugin-scoped options, identity and a
+  prefixed logger — no filesystem/HTTP/Prisma handles. Plugins remain trusted,
+  unsandboxed server code (ADR 0027).
+- Activation loads the module before marking the plugin active and returns
+  `422 PLUGIN_ACTIVATION_FAILED` on error; deactivation and delete dispose every
+  recorded hook; `startActive()` restores active modules at boot and drops
+  failures without stopping the API; `onClose` unloads everything.
+- New **Auto Excerpt** plugin (`plugins/auto-excerpt/`): filters
+  `content.post.create`/`content.post.update`, derives a 160-character excerpt
+  from the block body when the author left it empty, and never overwrites an
+  authored excerpt. Developer documentation is in
+  `docs/architecture/plugin-runtime.md`.
+- Verified in the browser with the real store: Plugins listed Auto Excerpt
+  (inactive) alongside Hello MERNPress; activating it made a body-only post come
+  back with a generated excerpt; deactivating it made the next post return
+  `excerpt: null`; after restarting the API the log showed
+  `[plugin:auto-excerpt] auto excerpts enabled` and a new post was excerpted
+  again.
+- Validation: 665 unit/integration tests (API 419, admin 159, web 22,
+  block-system 65), 23 Playwright E2E tests and six builds pass.

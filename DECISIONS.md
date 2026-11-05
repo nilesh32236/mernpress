@@ -91,6 +91,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-066 | 2026-11-05 | The public site ships first-party technical SEO: one `@graph` with Organization + WebSite, BlogPosting/WebPage per content item, BreadcrumbList on all archives and content pages, CollectionPage/ItemList on blog/category/tag, ProfilePage/Person on author archives, Twitter cards, image sitemap entries, and an experimental `/llms.txt` listing canonical public URLs (never a permissions file; disabled for private blogs). FAQ rich results (retired May 2026) and SearchAction (sitelinks box retired 2024) are deliberately not implemented. Research and citations live in `docs/research/seo-2026.md`. | accepted | [SEO research](docs/research/seo-2026.md) |
 
+| D-067 | 2026-11-05 | Plugins become real trusted local modules: a package may ship `plugin.mjs` exporting `activate(api)`/`deactivate(api)` with a narrow API (typed hooks, plugin-scoped options, logger, identity). Activation loads the module before recording it active (422 `PLUGIN_ACTIVATION_FAILED` on error); deactivation/deletion dispose every registered hook; startup restores active modules and drops failures without taking the API down; shutdown stops all. Plugins remain trusted, unsandboxed server code with no marketplace/upload. The first plugin is Auto Excerpt, which fills an empty excerpt from the post body and never overwrites authored excerpts. Developer guide: `docs/architecture/plugin-runtime.md`. | accepted | [ADR 0027](docs/adr/0027-trusted-plugin-runtime.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

@@ -1,0 +1,8 @@
+{
+  "id": "auto-excerpt",
+  "name": "Auto Excerpt",
+  "version": "1.0.0",
+  "author": "MERNPress",
+  "description": "Generates a readable excerpt from the post body when the author leaves the excerpt field empty, so archives, feeds and search results always have a summary.",
+  "details": "Filters content.post.create and content.post.update. It never overwrites an excerpt you wrote yourself."
+}

@@ -45,9 +45,14 @@ describe('plugins api', () => {
       plugins: Array<{ id: string; active: boolean; name: string }>;
       counts: { all: number; active: number; inactive: number };
     };
-    expect(body.plugins).toHaveLength(1);
-    expect(body.plugins[0]).toMatchObject({ id: 'hello-mernpress', active: false });
-    expect(body.counts).toEqual({ all: 1, active: 0, inactive: 1 });
+    expect(body.plugins).toHaveLength(2);
+    expect(body.plugins.find((plugin) => plugin.id === 'hello-mernpress')).toMatchObject({
+      active: false,
+    });
+    expect(body.plugins.find((plugin) => plugin.id === 'auto-excerpt')).toMatchObject({
+      active: false,
+    });
+    expect(body.counts).toEqual({ all: 2, active: 0, inactive: 2 });
   });
 
   it('activates and deactivates a plugin and exposes its toolbar message', async () => {
@@ -183,8 +188,8 @@ describe('plugins api', () => {
       plugins: unknown[];
       counts: { all: number; active: number; inactive: number };
     };
-    expect(body.plugins).toHaveLength(0);
-    expect(body.counts).toEqual({ all: 0, active: 0, inactive: 0 });
+    expect(body.plugins.map((plugin) => (plugin as { id: string }).id)).toEqual(['auto-excerpt']);
+    expect(body.counts).toEqual({ all: 1, active: 0, inactive: 1 });
 
     const toolbar = await app.inject({
       method: 'GET',
@@ -207,22 +212,74 @@ describe('plugins api', () => {
     try {
       const service = createPluginService({ prisma: app.database, pluginDir, seedDir });
       const initial = await service.list(principal);
-      expect(initial.plugins.map((plugin) => plugin.id)).toEqual(['hello-mernpress']);
+      expect(initial.plugins.map((plugin) => plugin.id)).toEqual([
+        'auto-excerpt',
+        'hello-mernpress',
+      ]);
       expect(existsSync(path.join(pluginDir, 'hello-mernpress', 'plugin.json'))).toBe(true);
 
       await service.activate(principal, 'hello-mernpress');
       await service.deactivate(principal, 'hello-mernpress');
       const removed = await service.remove(principal, 'hello-mernpress');
-      expect(removed.plugins).toEqual([]);
+      expect(removed.plugins.map((plugin) => plugin.id)).toEqual(['auto-excerpt']);
       expect(existsSync(path.join(pluginDir, 'hello-mernpress'))).toBe(false);
 
       // A new service process (or a restart) must not re-seed a deleted package.
       const restarted = createPluginService({ prisma: app.database, pluginDir, seedDir });
       const after = await restarted.list(principal);
-      expect(after.plugins).toEqual([]);
+      expect(after.plugins.map((plugin) => plugin.id)).toEqual(['auto-excerpt']);
       const toolbar = await restarted.toolbar(principal);
       expect(toolbar).toEqual({ message: null });
     } finally {
+      rmSync(pluginDir, { recursive: true, force: true });
+    }
+  });
+  it('loads a trusted plugin module and disposes its filters on deactivation', async () => {
+    const pluginDir = mkdtempSync(path.join(tmpdir(), 'mernpress-plugin-runtime-'));
+    const seedDir = fileURLToPath(new URL('../../../plugins', import.meta.url));
+    const principal = { userId: '00000000-0000-7000-8000-000000000000', role: 'administrator' };
+    const draft = {
+      type: 'post' as const,
+      title: 'Hello',
+      slug: 'hello',
+      excerpt: null,
+      content: '<!-- wp:paragraph --><p>' + 'word '.repeat(60) + '</p><!-- /wp:paragraph -->',
+      seoTitle: null,
+      seoDescription: null,
+      canonicalUrl: null,
+      robots: null,
+      ogTitle: null,
+      ogDescription: null,
+    };
+    try {
+      const service = createPluginService({
+        prisma: app.database,
+        pluginDir,
+        seedDir,
+        hooks: app.contentHooks,
+      });
+      expect((await service.list(principal)).plugins.map((plugin) => plugin.id)).toContain(
+        'auto-excerpt',
+      );
+
+      await service.activate(principal, 'auto-excerpt');
+      const filtered = await app.contentHooks.applyFilters('content.post.create', draft);
+      expect(filtered.excerpt).toMatch(/^word word/);
+      expect(filtered.excerpt?.endsWith('…')).toBe(true);
+      expect(filtered.excerpt?.length).toBeLessThanOrEqual(161);
+
+      // An author-written excerpt is never overwritten.
+      const authored = await app.contentHooks.applyFilters('content.post.create', {
+        ...draft,
+        excerpt: 'My own summary',
+      });
+      expect(authored.excerpt).toBe('My own summary');
+
+      await service.deactivate(principal, 'auto-excerpt');
+      const after = await app.contentHooks.applyFilters('content.post.create', draft);
+      expect(after.excerpt).toBeNull();
+    } finally {
+      await app.contentHooks.dispose();
       rmSync(pluginDir, { recursive: true, force: true });
     }
   });
