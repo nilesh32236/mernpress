@@ -3437,3 +3437,17 @@ display name, bio and website: the public post rendered the author box with
 archive link; the public API returned `displayName`/`bio`/`website` and no email
 leak. The test post and temporary administrator were deleted; production is back
 to 1 user and its normal content, with `/`, `/admin/` and `/api/health` at 200.
+
+### 2026-11-05 — Design-parity audit record
+
+- Added `docs/verification/design-audit-2026-11-05.md`: a structural comparison
+  of 11 admin screens against the live WordPress 7.1.4 reference at 1440×1000.
+  Sidebar (160 px) and admin-bar (32 px) geometry, page headings, status-tab
+  sets and primary actions match; deviations (Allow Pings, plugin auto-update
+  tabs, comment “Mine”, colour schemes, missing Screen Options panels, file
+  editors) are recorded with reasons.
+- Repaired the parity matrix: the Quick Edit/Bulk Edit/Preferences rows were
+  stale, a malformed “Safe client editing” row was in the wrong table, and the
+  remaining-work table now links to the audit and lists only real deviations.
+- Screens not yet re-checked in this pass are listed explicitly rather than
+  claimed complete.

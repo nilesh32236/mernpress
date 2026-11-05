@@ -30,7 +30,8 @@ owner decision.
 | --- | --- | --- |
 | Login | D/P | WordPress login layout, error copy, Remember Me, Lost Password form, reset-token screen |
 | Dashboard + widgets | D/P | Welcome, Site Health, At a Glance, Activity, Quick Draft, Events and News |
-| Posts list / editor / Quick Edit / revisions / preview | D/P | Row actions, Bulk edit/Move to Trash, WordPress sidebar order, Options actions; Quick Edit has date/author/terms/comments/sticky; Bulk Edit has terms/author/comments/sticky/status |
+| Posts list / editor / Quick Edit / revisions / preview | D/P | Row actions, Bulk edit/Move to Trash, WordPress sidebar order and Options menu; Quick Edit has date/author/terms/password/private/comments/sticky; Bulk Edit has terms/author/comments/sticky/format/status |
+| Safe client editing | D/P | Per-post block-structure lock enforced by the API (409 on structural edits) while text edits remain allowed; editor banner, panel and canvas guard. WordPress has no core equivalent |
 | Categories / Tags | D/P | Add/edit/delete, hierarchy, counts |
 | Media library / grid / list / details | D/P | Upload, derivatives, alt text, grid/list toggle, Edit Image (rotate/flip/crop/scale/undo/redo/restore) |
 | Pages list / editor | D/P | Same editor chrome as posts |
@@ -122,12 +123,13 @@ one; no button pretends to work.
 ## Known remaining parity work
 
 These are implemented surfaces with narrower behaviour than WordPress, not
-missing screens. They are the next audit targets.
+missing screens. The per-screen evidence for what was checked is recorded in
+[design-audit-2026-11-05.md](design-audit-2026-11-05.md).
 
 | Area | Current state | WordPress also has |
 | --- | --- | --- |
-| Quick Edit | Title, slug, date, author, categories, tags, comments, status, sticky. | Password, Private, Allow Pings. |
-| Bulk Edit | Categories, tags, author, comments, sticky, status. | Pings and Format. |
-| Safe client editing | D/P | Per-post block-structure lock enforced by the API (409 on structural edits), text edits allowed, editor banner/panel and canvas guard; WordPress has no core equivalent |\n| Editor Options menu | Settings, Code editor, Keyboard shortcuts, Welcome guide, Copy all content, Plugins, Switch to draft, Move to trash. | Preferences (editor preference modal). |
-| Post sidebar extras | Preview token, SEO and revisions are MERNPress additions shown after the WordPress panels. | No equivalent panels; WordPress revisions live in the editor's document overview. |
+| Allow Pings | Not modelled. | Pingbacks/trackbacks require XML-RPC or inbound verification; this is a security-sensitive legacy surface, so it is stated as unavailable rather than stored as an inert checkbox. |
+| Post sidebar extras | Preview token, SEO and revisions are MERNPress additions shown after the WordPress panels. | No equivalent panels; WordPress revisions live in the document overview. |
+| Admin colour schemes | A single default scheme. | Eight built-in schemes on the Profile screen. |
+| Screen Options per screen | Persisted per screen (columns and paging where applicable). | Some screens expose panels MERNPress does not have. |
 
