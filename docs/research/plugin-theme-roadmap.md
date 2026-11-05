@@ -103,9 +103,9 @@ instant and safe; no PHP or template execution.
 
 ## 5. Candidate next slices (ranked)
 
-1. **Redirect & 404 manager** — table of paths, 404 log, one-click redirect,
-   canonical-host enforcement. High user demand and a natural first-party
-   feature; needs a migration and an admin screen.
+1. ~~**Redirect & 404 manager**~~ — delivered (ADR 0030): normalized
+   redirect table, loop rejection, aggregated 404 log, public middleware and
+   Redirect/Dismiss actions.
 2. **Transactional mail log** — store the last N sends with status, recipient
    and error; show deliverability status. Complements the SMTP transport and
    answers the most common support question without exposing message bodies.

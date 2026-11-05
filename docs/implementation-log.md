@@ -3212,3 +3212,15 @@ password-protected and zero private posts.
   Public hit/404 writes are validated and limited to 120/min per client.
 - Validation: 683 unit/integration tests (API 429, admin 163, web 26,
   block-system 65), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (redirects and 404s):** release `20261105T091408Z-4b62b44`
+(current), migration `20261105085025_add_redirects_not_found` applied
+(`redirects`, `not_found_entries` verified). Production verification with a
+temporary administrator:
+- Tools → Redirects accepted `/prod-legacy-test → /posts/testcom` (301); the
+  live URL returned `HTTP/2 301` with `location: /posts/testcom`.
+- A unique missing path returned 404 and appeared in the 404 log with the
+  correct path and hit count (the shared not-found component logs after
+  middleware forwards `x-mn-path`).
+- The test redirect and 404 entry were deleted and the temporary administrator
+  removed; production has 1 user, 0 redirects and 0 404 rows.
