@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdminPost, AdminTerm, AuthUser, Paged } from './api.js';
 import { ContentEditor } from './ContentEditor.js';
+import { editorHiddenPanels, hydrateScreenOptions } from './screenOptions.js';
 import { NavigationGuardProvider } from './navigation-guard.js';
 
 // The Gutenberg canvas is a 6 MB lazy chunk; unit tests replace it with a
@@ -124,6 +125,7 @@ describe('content editor', () => {
       ogTitle: null,
       ogDescription: null,
       format: 'standard',
+      sticky: false,
     });
     await waitFor(() => expect(window.location.pathname).toBe('/posts/created-1/edit'));
   });
@@ -1240,5 +1242,64 @@ describe('safe client editing', () => {
     expect(screen.getByText('1 open / 2 total')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Reply' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Resolve' })).toBeDefined();
+  });
+
+  it('persists the sticky flag from the publish panel', async () => {
+    const post = makePost({ authorId: 'a1', status: 'DRAFT', sticky: false, version: 3 });
+    const bodies: Array<Record<string, unknown>> = [];
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input, init) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+      if (method === 'PATCH') {
+        bodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+        return response({ ...post, sticky: true, version: 4 });
+      }
+      if (url.includes('/notes')) return response({ notes: [] });
+      if (url.includes('/revisions')) return response([]);
+      if (url.includes('/schedule')) return response({ scheduledAt: null });
+      if (url.includes('/api/terms')) return response(termsPage());
+      if (url.includes('/api/admin/posts/')) return response(post);
+      return response(termsPage());
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA, post.id);
+    const sticky = (await screen.findByLabelText(
+      'Stick to the top of the blog',
+    )) as HTMLInputElement;
+    expect(sticky.checked).toBe(false);
+    fireEvent.click(sticky);
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+
+    await waitFor(() => expect(bodies.length).toBeGreaterThan(0));
+    expect(bodies[0]).toMatchObject({ baseVersion: 3, sticky: true });
+  });
+
+  it('hides and restores document panels from Preferences', async () => {
+    window.localStorage.removeItem('mernpress.screenOptions');
+    hydrateScreenOptions({});
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(response(termsPage()))
+      .mockResolvedValueOnce(response(termsPage()));
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA);
+    await screen.findByLabelText('Title');
+    expect(screen.getByLabelText('Format')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Preferences' });
+    fireEvent.click(within(dialog).getByLabelText('Format'));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+    expect(screen.queryByLabelText('Format')).toBeNull();
+    expect([...editorHiddenPanels()]).toContain('format');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
+    const reopened = await screen.findByRole('dialog', { name: 'Preferences' });
+    fireEvent.click(within(reopened).getByLabelText('Format'));
+    fireEvent.click(within(reopened).getByRole('button', { name: 'Close' }));
+    expect(screen.getByLabelText('Format')).toBeDefined();
+    expect([...editorHiddenPanels()]).not.toContain('format');
   });
 });

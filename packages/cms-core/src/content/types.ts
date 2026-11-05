@@ -227,6 +227,8 @@ export interface CreatePostInput {
   ogTitle?: string | null | undefined;
   ogDescription?: string | null | undefined;
   format?: PostFormat | undefined;
+  /** WordPress "Make this post sticky" (posts only). */
+  sticky?: boolean | undefined;
 }
 
 export interface UpdatePostInput {

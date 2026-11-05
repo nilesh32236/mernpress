@@ -164,16 +164,19 @@ describe('admin application shell', () => {
 
 describe('session expiry', () => {
   it('returns to the login form when a content request returns 401', async () => {
-    const fetchMock = vi.fn<typeof fetch>();
-    fetchMock.mockResolvedValueOnce(
-      response({ user: { id: 'u1', username: 'admin', role: 'administrator', status: 'active' } }),
-    );
-    fetchMock.mockResolvedValueOnce(
-      response({ error: { code: 'UNAUTHENTICATED', message: 'Not authenticated' } }, 401),
-    );
-    for (let i = 0; i < 4; i += 1) {
-      fetchMock.mockResolvedValueOnce(countPage(0));
-    }
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input) => {
+      const url = String(input);
+      if (url === '/api/auth/session') {
+        return response({
+          user: { id: 'u1', username: 'admin', role: 'administrator', status: 'active' },
+        });
+      }
+      if (url === '/api/profile/screen-options') return response({ options: {} });
+      if (url.startsWith('/api/admin/posts')) {
+        return response({ error: { code: 'UNAUTHENTICATED', message: 'Not authenticated' } }, 401);
+      }
+      return countPage(0);
+    });
     vi.stubGlobal('fetch', fetchMock);
 
     render(<App />);

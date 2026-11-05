@@ -7,3 +7,4 @@
  */
 export * from './permalink.js';
 export * from './admin-colors.js';
+export * from './screen-options.js';

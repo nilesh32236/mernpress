@@ -111,3 +111,38 @@ describe('admin colour schemes', () => {
     expect(isAdminColorScheme(null)).toBe(false);
   });
 });
+
+describe('screen options', () => {
+  it('normalizes unknown screens, columns and panels away', async () => {
+    const { normalizeScreenOptions, DEFAULT_SCREEN_OPTIONS } =
+      await import('../src/screen-options.js');
+    expect(normalizeScreenOptions(null)).toEqual(DEFAULT_SCREEN_OPTIONS);
+
+    const state = normalizeScreenOptions({
+      perPage: { posts: 25, pages: 0, nope: 50 },
+      hiddenColumns: {
+        posts: ['author', 'author', 'bad id!', 7],
+        unknown: ['date'],
+      },
+      viewMode: { posts: 'compact', pages: 'huge' },
+      dashboardHidden: ['events', 'events', 'evil'],
+      dashboardColumns: 4,
+      editorHiddenPanels: ['format', 'format', 'nope'],
+    });
+    expect(state).toEqual({
+      perPage: { posts: 25 },
+      hiddenColumns: { posts: ['author'] },
+      viewMode: { posts: 'compact' },
+      dashboardHidden: ['events'],
+      dashboardColumns: 4,
+      editorHiddenPanels: ['format'],
+    });
+  });
+
+  it('clamps dashboard columns and ignores non-integers', async () => {
+    const { normalizeScreenOptions } = await import('../src/screen-options.js');
+    expect(normalizeScreenOptions({ dashboardColumns: 9 }).dashboardColumns).toBe(2);
+    expect(normalizeScreenOptions({ dashboardColumns: '3' }).dashboardColumns).toBe(2);
+    expect(normalizeScreenOptions({ perPage: { posts: 3.5 } }).perPage).toEqual({});
+  });
+});

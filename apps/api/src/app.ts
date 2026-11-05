@@ -24,6 +24,7 @@ import {
   createCustomizerService,
   createSpamGuardService,
   createNoteService,
+  createScreenOptionsService,
   createImportService,
   createConnectorService,
   createApplicationPasswordService,
@@ -312,6 +313,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   app.decorate('spamGuard', spamGuard);
   const notes = createNoteService({ prisma: database });
   app.decorate('notes', notes);
+  const screenOptions = createScreenOptionsService({ prisma: database });
   app.decorate('imports', imports);
   app.decorate('privacy', privacy);
 
@@ -382,7 +384,14 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerContentRoutes(app, { env, auth, content });
   registerTaxonomyRoutes(app, { env, auth, taxonomy });
   registerUserRoutes(app, { env, auth, users, twoFactor });
-  registerProfileRoutes(app, { env, auth, users, appPasswords, twoFactor });
+  registerProfileRoutes(app, {
+    screenOptions,
+    env,
+    auth,
+    users,
+    appPasswords,
+    twoFactor,
+  });
   registerOptionRoutes(app, { env, auth, options: optionService });
   registerScheduleRoutes(app, { env, auth, schedule });
   registerContentBulkRoutes(app, { env, auth, bulk });

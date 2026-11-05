@@ -564,6 +564,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
             ogDescription: draft.ogDescription,
             authorId: principal.userId,
             format,
+            sticky: draft.type === 'post' ? (input.sticky ?? false) : false,
           },
           include: WITH_TERMS,
         });

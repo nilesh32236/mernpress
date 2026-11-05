@@ -30,6 +30,7 @@ owner decision.
 | --- | --- | --- |
 | Login | D/P | WordPress login layout, error copy, Remember Me, Lost Password form, reset-token screen |
 | Dashboard + widgets | D/P | Welcome, Site Health, At a Glance, Activity, Quick Draft, Events and News |
+| Screen Options | D/P | Per-user columns, items per page, view mode, dashboard boxes/columns and editor panel visibility; stored on the user and synced across browsers |
 | Editor → Notes / All notes | D/P | Per-post threads with author names, timestamps, replies and resolve/reopen, plus an unresolved count in the header; post-level rather than block-anchored, no mail or delete yet (ADR 0045) |
 | Posts list / editor / Quick Edit / revisions / preview | D/P | Row actions, Bulk edit/Move to Trash, WordPress sidebar order and Options menu; Quick Edit has date/author/terms/password/private/comments/sticky; Bulk Edit has terms/author/comments/sticky/format/status |
 | Safe client editing | D/P | Per-post block-structure lock enforced by the API (409 on structural edits) while text edits remain allowed; editor banner, panel and canvas guard. WordPress has no core equivalent |

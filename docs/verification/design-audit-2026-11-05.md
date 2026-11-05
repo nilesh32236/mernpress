@@ -40,6 +40,7 @@ MERNPress development admin at `http://127.0.0.1:5173/admin/`.
 | Tools | Tools | Tools | Cards | MERNPress adds Redirects and Backups, which WordPress needs plugins for |
 | Settings → General | General Settings | General Settings | **Save Changes** | Same field groups and labels |
 | Profile | Profile | Profile | **Update Profile** | MERNPress uses sections instead of WordPress's five tables; it adds Two-Factor Authentication and Application Passwords. The nine colour schemes now match WordPress's names and persist per user |
+| Editor → Preferences | Block-editor Preferences: General/Appearance/Blocks | Preferences: Welcome guide, word count, density, preview target and **Document panels** (Author, Template, Discussion, Format, Slug, Categories and tags, Sticky) | match in purpose; the panel visibility list mirrors classic-editor Screen Options and persists per user (ADR 0046) |
 | Single post (public) | n/a | — | — | Reading time, related posts and the author box verified in the browser and in production |
 
 Screenshots from this pass (development, git-ignored):

@@ -26,6 +26,7 @@ export const createPostSchema = z
     robots: robots.optional(),
     ogTitle: seoTitle.optional(),
     ogDescription: seoDescription.optional(),
+    sticky: z.boolean().optional(),
     format: z
       .enum([
         'standard',

@@ -398,3 +398,10 @@ export {
 // ---- Editor notes (per-post threads) ----
 export { createNoteService, type NoteService, type NoteServiceOptions } from './notes/service.js';
 export type { CreatePostNoteInput, NoteAuthor, PostNote } from './notes/types.js';
+
+// ---- Per-user Screen Options ----
+export {
+  createScreenOptionsService,
+  type ScreenOptionsService,
+  type ScreenOptionsServiceOptions,
+} from './preferences/screen-options.js';

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { fetchSession, setUnauthorizedHandler, type AuthUser } from './api.js';
+import { fetchScreenOptions, fetchSession, setUnauthorizedHandler, type AuthUser } from './api.js';
 import { applyColorScheme } from './colorScheme.js';
+import { hydrateScreenOptions } from './screenOptions.js';
 import { ContentEditor } from './ContentEditor.js';
 import { ToolsPage } from './ToolsPage.js';
 import { RedirectsPage } from './RedirectsPage.js';
@@ -41,13 +42,17 @@ export function App() {
     setSessionError(null);
 
     fetchSession()
-      .then((sessionUser) => {
+      .then(async (sessionUser) => {
         if (!active) return;
         if (sessionUser?.adminColor) {
           // The server is authoritative; replace the localStorage cache.
           applyColorScheme(sessionUser.adminColor);
         }
-        setUser(sessionUser);
+        if (sessionUser) {
+          const options = await fetchScreenOptions().catch(() => null);
+          if (active && options) hydrateScreenOptions(options);
+        }
+        if (active) setUser(sessionUser);
       })
       .catch(() => {
         if (active) {

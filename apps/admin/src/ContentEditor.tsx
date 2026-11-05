@@ -61,6 +61,12 @@ import {
 import type { BlockCanvasHandle } from './editor/BlockCanvas.js';
 import { NotesPanel } from './editor/NotesPanel.js';
 import { usePostNotes } from './editor/usePostNotes.js';
+import {
+  EDITOR_PANELS,
+  SCREEN_EDITOR_PANELS_EVENT,
+  editorHiddenPanels,
+  setEditorPanelHidden,
+} from './screenOptions.js';
 
 // The WordPress canvas is a large chunk; load it only on new/edit routes.
 const BlockCanvas = lazy(() => import('./editor/BlockCanvas.js'));
@@ -85,6 +91,7 @@ interface Baseline {
   featuredMediaId: string | null;
   format: PostFormat;
   structureLocked: boolean;
+  sticky: boolean;
 }
 
 const EMPTY_FORM: FormState = {
@@ -228,7 +235,9 @@ export function ContentEditor({
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [featuredMedia, setFeaturedMedia] = useState<FeaturedImage | null>(null);
   const [format, setFormat] = useState<PostFormat>('standard');
+  const [sticky, setSticky] = useState(false);
   const [structureLocked, setStructureLocked] = useState(false);
+  const [hiddenPanels, setHiddenPanels] = useState<Set<string>>(() => editorHiddenPanels());
   const [permalinkPattern, setPermalinkPattern] = useState('/posts/%postname%/');
   const [featuredPickerOpen, setFeaturedPickerOpen] = useState(false);
   const [featuredPickerItems, setFeaturedPickerItems] = useState<MediaItem[] | null>(null);
@@ -307,7 +316,8 @@ export function ContentEditor({
       !sameIds(tagIds, baseline.tagIds) ||
       (featuredMedia?.id ?? null) !== baseline.featuredMediaId ||
       format !== baseline.format ||
-      structureLocked !== baseline.structureLocked
+      structureLocked !== baseline.structureLocked ||
+      sticky !== baseline.sticky
     );
   }, [
     baseline,
@@ -321,6 +331,7 @@ export function ContentEditor({
     tagIds,
     format,
     structureLocked,
+    sticky,
   ]);
 
   useUnsavedChanges(dirty, 'You have unsaved changes. Leave this page without saving?');
@@ -376,6 +387,14 @@ export function ContentEditor({
     // Only on editor mount, not whenever preferences change.
   }, []);
 
+  // Screen Options can be changed from the Preferences dialog or another tab;
+  // re-read the shared map whenever it changes.
+  useEffect(() => {
+    const sync = () => setHiddenPanels(editorHiddenPanels());
+    window.addEventListener(SCREEN_EDITOR_PANELS_EVENT, sync);
+    return () => window.removeEventListener(SCREEN_EDITOR_PANELS_EVENT, sync);
+  }, []);
+
   useEffect(() => {
     if (isNew) {
       setLoading(false);
@@ -399,6 +418,7 @@ export function ContentEditor({
         setTagIds(nextTerms.tagIds);
         setFeaturedMedia(loaded.featuredMedia ?? null);
         setFormat(loaded.format);
+        setSticky(loaded.sticky);
         setStructureLocked(loaded.structureLocked);
         setBaseline({
           form: nextForm,
@@ -406,6 +426,7 @@ export function ContentEditor({
           featuredMediaId: loaded.featuredMedia?.id ?? null,
           format: loaded.format,
           structureLocked: loaded.structureLocked,
+          sticky: loaded.sticky,
         });
         setContentTouched(false);
         setLoading(false);
@@ -807,6 +828,7 @@ export function ContentEditor({
     setTagIds(nextTerms.tagIds);
     setFeaturedMedia(nextPost.featuredMedia ?? null);
     setFormat(nextPost.format);
+    setSticky(nextPost.sticky);
     setStructureLocked(nextPost.structureLocked);
     setBaseline({
       form: nextForm,
@@ -814,6 +836,7 @@ export function ContentEditor({
       featuredMediaId: nextPost.featuredMedia?.id ?? null,
       format: nextPost.format,
       structureLocked: nextPost.structureLocked,
+      sticky: nextPost.sticky,
     });
     setContentTouched(false);
   }
@@ -900,6 +923,7 @@ export function ContentEditor({
           content,
           ...seoPayload(form),
           format,
+          ...(type === 'post' ? { sticky } : {}),
         });
         const termsResult = await saveTerms(created.id, created);
         if (!termsResult.ok) {
@@ -943,6 +967,7 @@ export function ContentEditor({
         ...seoPayload(form),
         format,
         structureLocked,
+        ...(type === 'post' ? { sticky } : {}),
         // Only send when changed; undefined keeps the server-side value.
         ...((featuredMedia?.id ?? null) !== (baseline?.featuredMediaId ?? null)
           ? { featuredMediaId: featuredMedia?.id ?? null }
@@ -956,6 +981,7 @@ export function ContentEditor({
         setForm(formFromPost(updated));
         setFeaturedMedia(updated.featuredMedia ?? null);
         setFormat(updated.format);
+        setSticky(updated.sticky);
         setStructureLocked(updated.structureLocked);
         setBaseline({
           form: formFromPost(updated),
@@ -963,6 +989,7 @@ export function ContentEditor({
           featuredMediaId: updated.featuredMedia?.id ?? null,
           format: updated.format,
           structureLocked: updated.structureLocked,
+          sticky: updated.sticky,
         });
         setContentTouched(false);
         setNotice({
@@ -1907,68 +1934,96 @@ export function ContentEditor({
                             </div>
                           </div>
                         )}
-                        <div className="publish-field">
-                          <span className="publish-label">Slug</span>
-                          <div className="publish-value">
-                            <input
-                              id="content-slug"
-                              name="slug"
-                              type="text"
-                              maxLength={200}
-                              className="editor-slug-input"
-                              value={form.slug}
-                              onChange={(event) => updateForm('slug', event.target.value)}
-                              aria-label="Slug"
-                              aria-invalid={Boolean(fieldErrors['slug'])}
-                              aria-describedby={
-                                fieldErrors['slug'] ? 'content-slug-error' : undefined
-                              }
-                            />
-                            <FieldError id="content-slug-error" message={fieldErrors['slug']} />
+                        {!hiddenPanels.has('slug') ? (
+                          <div className="publish-field">
+                            <span className="publish-label">Slug</span>
+                            <div className="publish-value">
+                              <input
+                                id="content-slug"
+                                name="slug"
+                                type="text"
+                                maxLength={200}
+                                className="editor-slug-input"
+                                value={form.slug}
+                                onChange={(event) => updateForm('slug', event.target.value)}
+                                aria-label="Slug"
+                                aria-invalid={Boolean(fieldErrors['slug'])}
+                                aria-describedby={
+                                  fieldErrors['slug'] ? 'content-slug-error' : undefined
+                                }
+                              />
+                              <FieldError id="content-slug-error" message={fieldErrors['slug']} />
+                            </div>
                           </div>
-                        </div>
-                        <div className="publish-field">
-                          <span className="publish-label">Author</span>
-                          <div className="publish-value">
-                            <span className="editor-link-value">
-                              {post.author?.username ?? user.username}
-                            </span>
+                        ) : null}
+                        {!hiddenPanels.has('author') ? (
+                          <div className="publish-field">
+                            <span className="publish-label">Author</span>
+                            <div className="publish-value">
+                              <span className="editor-link-value">
+                                {post.author?.username ?? user.username}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                        <div className="publish-field">
-                          <span className="publish-label">Template</span>
-                          <div className="publish-value">
-                            <span className="editor-link-value">
-                              {post.type === 'post' ? 'Single Posts' : 'Default Template'}
-                            </span>
+                        ) : null}
+                        {!hiddenPanels.has('template') ? (
+                          <div className="publish-field">
+                            <span className="publish-label">Template</span>
+                            <div className="publish-value">
+                              <span className="editor-link-value">
+                                {post.type === 'post' ? 'Single Posts' : 'Default Template'}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                        <div className="publish-field">
-                          <span className="publish-label">Discussion</span>
-                          <div className="publish-value">
-                            <span className="editor-link-value">
-                              {post.commentStatus === 'closed' ? 'Closed' : 'Open'}
-                            </span>
+                        ) : null}
+                        {!hiddenPanels.has('discussion') ? (
+                          <>
+                            <div className="publish-field">
+                              <span className="publish-label">Discussion</span>
+                              <div className="publish-value">
+                                <span className="editor-link-value">
+                                  {post.commentStatus === 'closed' ? 'Closed' : 'Open'}
+                                </span>
+                              </div>
+                            </div>
+                            <PingsField />
+                          </>
+                        ) : null}
+                        {!hiddenPanels.has('format') ? (
+                          <div className="publish-field">
+                            <span className="publish-label">Format</span>
+                            <div className="publish-value">
+                              <select
+                                aria-label="Format"
+                                value={format}
+                                onChange={(event) => setFormat(event.target.value as PostFormat)}
+                                disabled={!editable}
+                              >
+                                {POST_FORMAT_OPTIONS.map((option) => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
                           </div>
-                        </div>
-                        <PingsField />
-                        <div className="publish-field">
-                          <span className="publish-label">Format</span>
-                          <div className="publish-value">
-                            <select
-                              aria-label="Format"
-                              value={format}
-                              onChange={(event) => setFormat(event.target.value as PostFormat)}
-                              disabled={!editable}
-                            >
-                              {POST_FORMAT_OPTIONS.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
+                        ) : null}
+                        {type === 'post' && !hiddenPanels.has('sticky') ? (
+                          <div className="publish-field">
+                            <span className="publish-label">Sticky</span>
+                            <div className="publish-value">
+                              <label className="checkbox-row">
+                                <input
+                                  type="checkbox"
+                                  checked={sticky}
+                                  onChange={(event) => setSticky(event.target.checked)}
+                                  disabled={!editable}
+                                />
+                                <span>Stick to the top of the blog</span>
+                              </label>
+                            </div>
                           </div>
-                        </div>
+                        ) : null}
                         {post.status !== 'TRASHED' && transitions.includes('trash') ? (
                           <div className="publish-field">
                             <button
@@ -2008,63 +2063,91 @@ export function ContentEditor({
                             <span className="editor-publish-link">Immediately</span>
                           </div>
                         </div>
-                        <div className="publish-field">
-                          <span className="publish-label">Slug</span>
-                          <div className="publish-value">
-                            <input
-                              id="content-slug"
-                              name="slug"
-                              type="text"
-                              maxLength={200}
-                              className="editor-slug-input"
-                              value={form.slug}
-                              onChange={(event) => updateForm('slug', event.target.value)}
-                              aria-label="Slug"
-                              placeholder="Auto"
-                              aria-invalid={Boolean(fieldErrors['slug'])}
-                              aria-describedby={
-                                fieldErrors['slug'] ? 'content-slug-error' : undefined
-                              }
-                            />
-                            <FieldError id="content-slug-error" message={fieldErrors['slug']} />
+                        {!hiddenPanels.has('slug') ? (
+                          <div className="publish-field">
+                            <span className="publish-label">Slug</span>
+                            <div className="publish-value">
+                              <input
+                                id="content-slug"
+                                name="slug"
+                                type="text"
+                                maxLength={200}
+                                className="editor-slug-input"
+                                value={form.slug}
+                                onChange={(event) => updateForm('slug', event.target.value)}
+                                aria-label="Slug"
+                                placeholder="Auto"
+                                aria-invalid={Boolean(fieldErrors['slug'])}
+                                aria-describedby={
+                                  fieldErrors['slug'] ? 'content-slug-error' : undefined
+                                }
+                              />
+                              <FieldError id="content-slug-error" message={fieldErrors['slug']} />
+                            </div>
                           </div>
-                        </div>
-                        <div className="publish-field">
-                          <span className="publish-label">Author</span>
-                          <div className="publish-value">
-                            <span className="editor-link-value">{user.username}</span>
+                        ) : null}
+                        {!hiddenPanels.has('author') ? (
+                          <div className="publish-field">
+                            <span className="publish-label">Author</span>
+                            <div className="publish-value">
+                              <span className="editor-link-value">{user.username}</span>
+                            </div>
                           </div>
-                        </div>
-                        <div className="publish-field">
-                          <span className="publish-label">Template</span>
-                          <div className="publish-value">
-                            {type === 'post' ? 'Single Posts' : 'Default Template'}
+                        ) : null}
+                        {!hiddenPanels.has('template') ? (
+                          <div className="publish-field">
+                            <span className="publish-label">Template</span>
+                            <div className="publish-value">
+                              {type === 'post' ? 'Single Posts' : 'Default Template'}
+                            </div>
                           </div>
-                        </div>
-                        <div className="publish-field">
-                          <span className="publish-label">Discussion</span>
-                          <div className="publish-value">
-                            <span className="editor-link-value">Open</span>
+                        ) : null}
+                        {!hiddenPanels.has('discussion') ? (
+                          <>
+                            <div className="publish-field">
+                              <span className="publish-label">Discussion</span>
+                              <div className="publish-value">
+                                <span className="editor-link-value">Open</span>
+                              </div>
+                            </div>
+                            <PingsField />
+                          </>
+                        ) : null}
+                        {!hiddenPanels.has('format') ? (
+                          <div className="publish-field">
+                            <span className="publish-label">Format</span>
+                            <div className="publish-value">
+                              <select
+                                aria-label="Format"
+                                value={format}
+                                onChange={(event) => setFormat(event.target.value as PostFormat)}
+                                disabled={!editable}
+                              >
+                                {POST_FORMAT_OPTIONS.map((option) => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
                           </div>
-                        </div>
-                        <PingsField />
-                        <div className="publish-field">
-                          <span className="publish-label">Format</span>
-                          <div className="publish-value">
-                            <select
-                              aria-label="Format"
-                              value={format}
-                              onChange={(event) => setFormat(event.target.value as PostFormat)}
-                              disabled={!editable}
-                            >
-                              {POST_FORMAT_OPTIONS.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
+                        ) : null}
+                        {type === 'post' && !hiddenPanels.has('sticky') ? (
+                          <div className="publish-field">
+                            <span className="publish-label">Sticky</span>
+                            <div className="publish-value">
+                              <label className="checkbox-row">
+                                <input
+                                  type="checkbox"
+                                  checked={sticky}
+                                  onChange={(event) => setSticky(event.target.checked)}
+                                  disabled={!editable}
+                                />
+                                <span>Stick to the top of the blog</span>
+                              </label>
+                            </div>
                           </div>
-                        </div>
+                        ) : null}
                         <p className="field-help">
                           The content is created as a draft. Publish it from the top bar when it is
                           ready.
@@ -2073,68 +2156,70 @@ export function ContentEditor({
                     )}
                   </section>
 
-                  <section className="editor-panel" aria-label="Taxonomies">
-                    {!canAssign ? (
-                      <>
-                        <h3>Categories and tags</h3>
-                        <p className="field-help">Your role cannot assign taxonomy terms.</p>
-                      </>
-                    ) : termsError ? (
-                      <>
-                        <h3>Categories and tags</h3>
-                        <p className="field-help">
-                          Terms are unavailable. Content can still be saved.
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <details className="editor-term-panel">
-                          <summary>Categories</summary>
-                          {categories.length === 0 ? (
-                            <p className="field-help">No categories exist yet.</p>
-                          ) : (
-                            categories.map((term) => (
-                              <label key={term.id} className="checkbox-row">
-                                <input
-                                  type="checkbox"
-                                  checked={categoryIds.includes(term.id)}
-                                  onChange={() =>
-                                    setCategoryIds((current) => toggleId(current, term.id))
-                                  }
-                                />
-                                <span className="term-name">{term.name}</span>
-                                <span aria-hidden="true" className="term-slug">
-                                  {term.slug}
-                                </span>
-                              </label>
-                            ))
-                          )}
-                        </details>
-                        <details className="editor-term-panel">
-                          <summary>Tags</summary>
-                          {tags.length === 0 ? (
-                            <p className="field-help">No tags exist yet.</p>
-                          ) : (
-                            tags.map((term) => (
-                              <label key={term.id} className="checkbox-row">
-                                <input
-                                  type="checkbox"
-                                  checked={tagIds.includes(term.id)}
-                                  onChange={() =>
-                                    setTagIds((current) => toggleId(current, term.id))
-                                  }
-                                />
-                                <span className="term-name">{term.name}</span>
-                                <span aria-hidden="true" className="term-slug">
-                                  {term.slug}
-                                </span>
-                              </label>
-                            ))
-                          )}
-                        </details>
-                      </>
-                    )}
-                  </section>
+                  {!hiddenPanels.has('categoriesTags') ? (
+                    <section className="editor-panel" aria-label="Taxonomies">
+                      {!canAssign ? (
+                        <>
+                          <h3>Categories and tags</h3>
+                          <p className="field-help">Your role cannot assign taxonomy terms.</p>
+                        </>
+                      ) : termsError ? (
+                        <>
+                          <h3>Categories and tags</h3>
+                          <p className="field-help">
+                            Terms are unavailable. Content can still be saved.
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <details className="editor-term-panel">
+                            <summary>Categories</summary>
+                            {categories.length === 0 ? (
+                              <p className="field-help">No categories exist yet.</p>
+                            ) : (
+                              categories.map((term) => (
+                                <label key={term.id} className="checkbox-row">
+                                  <input
+                                    type="checkbox"
+                                    checked={categoryIds.includes(term.id)}
+                                    onChange={() =>
+                                      setCategoryIds((current) => toggleId(current, term.id))
+                                    }
+                                  />
+                                  <span className="term-name">{term.name}</span>
+                                  <span aria-hidden="true" className="term-slug">
+                                    {term.slug}
+                                  </span>
+                                </label>
+                              ))
+                            )}
+                          </details>
+                          <details className="editor-term-panel">
+                            <summary>Tags</summary>
+                            {tags.length === 0 ? (
+                              <p className="field-help">No tags exist yet.</p>
+                            ) : (
+                              tags.map((term) => (
+                                <label key={term.id} className="checkbox-row">
+                                  <input
+                                    type="checkbox"
+                                    checked={tagIds.includes(term.id)}
+                                    onChange={() =>
+                                      setTagIds((current) => toggleId(current, term.id))
+                                    }
+                                  />
+                                  <span className="term-name">{term.name}</span>
+                                  <span aria-hidden="true" className="term-slug">
+                                    {term.slug}
+                                  </span>
+                                </label>
+                              ))
+                            )}
+                          </details>
+                        </>
+                      )}
+                    </section>
+                  ) : null}
 
                   {post && !createdPost ? (
                     <section className="editor-panel" aria-labelledby="preview-token-heading">
@@ -2606,6 +2691,26 @@ export function ContentEditor({
                     <option value="same-tab">The same tab</option>
                   </select>
                 </label>
+                <fieldset className="editor-preference-panels">
+                  <legend>Document panels</legend>
+                  <p className="field-help">
+                    Hidden panels stay in the post; re-enable them here at any time. This matches
+                    the WordPress Screen Options for editor panels.
+                  </p>
+                  {EDITOR_PANELS.map((panel) => (
+                    <label className="checkbox-row" key={panel.id}>
+                      <input
+                        type="checkbox"
+                        checked={!hiddenPanels.has(panel.id)}
+                        onChange={(event) => {
+                          setEditorPanelHidden(panel.id, !event.target.checked);
+                          setHiddenPanels(editorHiddenPanels());
+                        }}
+                      />
+                      <span>{panel.label}</span>
+                    </label>
+                  ))}
+                </fieldset>
               </div>
             ) : (
               <div className="editor-welcome">

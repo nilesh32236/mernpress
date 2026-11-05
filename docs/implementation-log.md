@@ -3785,3 +3785,31 @@ Admin” and cleared the bubble; reloading the editor restored the thread, its
 reply and the resolved badge. The production test notes and the temporary
 administrator were deleted; production is back to 1 user, 2 posts, 0 notes and
 0 comments, with `/`, `/admin/`, `/api/health` and `/posts/testcom` at 200.
+
+### 2026-11-05 — Per-user Screen Options and editor panel visibility
+
+- Added `users.screen_options` (migration `20261105165111_add_user_screen_options`)
+  storing per-page counts, hidden columns, view mode, dashboard boxes/columns
+  and hidden editor panels. `GET/PUT /api/profile/screen-options` reads and
+  replaces the map for the signed-in user; `normalizeScreenOptions` in
+  `packages/contracts` drops unknown screens/columns/widgets/panels and clamps
+  ranges.
+- `localStorage` is now a paint-before-profile cache only: `App` hydrates the
+  server map after the session, and every setter mirrors changes through a
+  debounced whole-map PUT. The old per-key layout migrates once.
+- The editor Preferences dialog gains a “Document panels” fieldset (Author,
+  Template, Discussion, Format, Slug, Categories and tags, Sticky); hidden
+  panels are removed from the Post tab without touching data. The editor also
+  gains WordPress’s “Stick to the top of the blog” checkbox, and
+  `POST /api/admin/posts` accepts `sticky` for posts.
+- Verified in the browser: posts per page 25 + hidden Author persisted to the
+  server; clearing localStorage and reloading restored both from the session.
+  In the editor, hiding Format/Author/Categories and tags/Sticky removed those
+  panels, persisted in `editorHiddenPanels`, survived a reload and re-enabled
+  correctly; sticky was set and cleared with Save and confirmed through the API.
+  Screen options were reset afterwards.
+- Tests: contracts normalization; API defaults/save/re-read/per-user isolation/
+  malformed body; admin cache hydration, server sync and legacy migration;
+  editor panel hide/restore and sticky payload; App hydration.
+- Validation: 801 unit/integration tests (API 487, admin 203, web 38,
+  block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.

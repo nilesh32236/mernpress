@@ -1,4 +1,4 @@
-import type { AdminColorScheme } from '@mernpress/contracts';
+import type { AdminColorScheme, ScreenOptionsState } from '@mernpress/contracts';
 export type UserRole = 'administrator' | 'editor' | 'author' | 'contributor' | 'subscriber';
 export type ContentType = 'post' | 'page';
 export type PostFormat =
@@ -1011,6 +1011,34 @@ export async function updateSpamGuard(settings: SpamGuardSettings): Promise<Spam
     body: JSON.stringify(settings),
   });
   return readJson<SpamGuardState>(response);
+}
+
+// ---- Per-user Screen Options ----
+export async function fetchScreenOptions(): Promise<ScreenOptionsState> {
+  const response = await fetch('/api/profile/screen-options', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  const body = await readJson<{ options?: ScreenOptionsState }>(response);
+  if (!body.options) throw new Error('Screen options are unavailable.');
+  return body.options;
+}
+
+export async function saveScreenOptions(options: ScreenOptionsState): Promise<ScreenOptionsState> {
+  const response = await fetch('/api/profile/screen-options', {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ options }),
+  });
+  const body = await readJson<{ options: ScreenOptionsState }>(response);
+  return body.options;
 }
 
 // ---- Editor notes ----

@@ -43,6 +43,8 @@ model User {
   locale               String     @default("en_US") @db.VarChar(20)
   /// WordPress administration colour scheme (modern, fresh, light, blue, …).
   adminColor           String     @default("fresh") @map("admin_color") @db.VarChar(20)
+  /// Per-user Screen Options: columns, per-page counts, view modes and editor panels.
+  screenOptions        Json       @default("{}") @map("screen_options")
   /// AES-256-GCM sealed TOTP secret; null when 2FA is not configured.
   twoFactorSecret      String?    @map("two_factor_secret") @db.Text
   twoFactorEnabled     Boolean    @default(false) @map("two_factor_enabled")

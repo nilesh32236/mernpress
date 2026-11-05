@@ -1,6 +1,7 @@
 import type {
   ApplicationPasswordService,
   AuthService,
+  ScreenOptionsService,
   TwoFactorService,
   UserAdminService,
 } from '@mernpress/cms-core';
@@ -49,6 +50,7 @@ interface ProfileRouteOptions {
   users: UserAdminService;
   appPasswords: ApplicationPasswordService;
   twoFactor: TwoFactorService;
+  screenOptions: ScreenOptionsService;
 }
 
 /**
@@ -60,7 +62,7 @@ interface ProfileRouteOptions {
  * profile; `UserAdminService` acts only on `principal.userId`.
  */
 export function registerProfileRoutes(app: FastifyInstance, options: ProfileRouteOptions): void {
-  const { env, auth, users, appPasswords, twoFactor } = options;
+  const { env, auth, users, appPasswords, twoFactor, screenOptions } = options;
   const guard = (request: FastifyRequest, reply: FastifyReply) =>
     requireAdmin(request, reply, { env, auth });
 
@@ -80,6 +82,27 @@ export function registerProfileRoutes(app: FastifyInstance, options: ProfileRout
     try {
       const body = updateProfileSchema.parse(request.body);
       return await users.updateOwnProfile(ctx.principal, body);
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
+  app.get('/api/profile/screen-options', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      return { options: await screenOptions.get(ctx.principal) };
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
+  app.put('/api/profile/screen-options', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const body = z.object({ options: z.unknown() }).strict().parse(request.body);
+      return { options: await screenOptions.update(ctx.principal, body.options) };
     } catch (error) {
       return sendRouteError(reply, request, error);
     }
