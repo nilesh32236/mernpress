@@ -3952,3 +3952,19 @@ notes, with `/`, `/admin/`, `/api/health` and `/posts/testcom` at 200.
   mouse/empty-state behaviour, and the panel hint.
 - Validation: 822 unit/integration tests (API 496, admin 215, web 38,
   block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.
+
+**Deployment (@mention picker):** release `20261105T183054Z-07668f8` (current).
+Production verification with a temporary administrator, a temporary editor
+(`verify-temp-editor`, display name “Verify Temp Editor”) and a temporary
+contributor (`verify-outsider`):
+- A draft editor's Notes composer accepted `Please review, @verify-temp`; the
+  picker opened a listbox with only “Verify Temp Editor @verify-temp-editor”,
+  Enter inserted `@verify-temp-editor ` and the saved note stored the text.
+- `GET /api/admin/posts/:id/note-mentions` listed only accounts that can edit the
+  post (`admin`, `verify-temp-editor`) and excluded the caller; searching for
+  `verify-out` returned nothing, proving the contributor is filtered. Production
+  mail is unconfigured (`{configured:false}`), so the mention mail could not be
+  delivered; delivery is covered by the in-memory transport suite.
+- The temporary post, editor, contributor and administrator were deleted;
+  production is back to 1 user, 2 posts, 0 notes and 0 comments, with `/`,
+  `/admin/`, `/api/health` and `/posts/testcom` returning 200.
