@@ -7,10 +7,26 @@ import { sendRouteError } from './send-error.js';
 
 const postParamSchema = z.object({ id: z.string().uuid() }).strict();
 const noteParamSchema = z.object({ id: z.string().uuid(), noteId: z.string().uuid() }).strict();
+const blockAnchorSchema = z
+  .object({
+    name: z
+      .string()
+      .regex(/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/)
+      .max(100),
+    path: z
+      .string()
+      .regex(/^\d+(?:\.\d+){0,9}$/)
+      .max(100),
+    hash: z.string().regex(/^[0-9a-f]{16}$/),
+    text: z.string().max(200),
+  })
+  .strict();
+
 const createSchema = z
   .object({
     content: z.string().min(1).max(2000),
     parentId: z.string().uuid().nullable().optional(),
+    block: blockAnchorSchema.nullable().optional(),
   })
   .strict();
 const resolveSchema = z.object({ resolved: z.boolean() }).strict();

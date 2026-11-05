@@ -11,6 +11,7 @@
 | `author_id` | User; `ON DELETE SET NULL` (the note survives) |
 | `parent_id` | Null for a thread root, the root id for a reply |
 | `content` | 1–2,000 characters, trimmed |
+| `block_name`, `block_path`, `block_hash`, `block_text` | Optional root anchor (name, dot path, 16-hex hash, 200-char text fingerprint) |
 | `resolved_at`, `resolved_by_id` | Set on the root by Resolve |
 | `created_at`, `updated_at` | UTC instants |
 
@@ -19,7 +20,7 @@
 | Route | Behaviour |
 | --- | --- |
 | `GET /api/admin/posts/:id/notes` | `{ notes: PostNote[] }`, oldest first |
-| `POST /api/admin/posts/:id/notes` | `{ content, parentId? }` → 201 note |
+| `POST /api/admin/posts/:id/notes` | `{ content, parentId?, block? }` → 201 note; `block` is `{name,path,hash,text}` |
 | `PATCH /api/admin/posts/:id/notes/:noteId` | `{ resolved: boolean }` → updated root |
 
 All require a session and CSRF, then `canEditPost` (administrators/editors may
@@ -36,6 +37,15 @@ edit returns 403 even when it exists.
   button with an unresolved-count bubble. The tab only appears for a saved post
   the user can edit.
 
+## Block anchors
+
+The editor passes the selected block's anchor through `onSelectionAnchor`.
+`blockAnchors.ts` computes the hash from the block name, sorted attributes and
+its own HTML (children excluded) and a plain-text fingerprint. Notes store the
+anchor; the panel resolves it against `listBlockAnchors(form.content)` and shows
+`exact`, `moved`, `changed` or `missing`. Hiding/moving/removing a block never
+deletes the note.
+
 ## Rules and limits
 
 - One reply level; replying to a reply is 400.
@@ -43,7 +53,9 @@ edit returns 403 even when it exists.
 - Resolve applies to the root only; resolving a reply is 400.
 - No delete endpoint yet; removing a post removes its notes.
 - Notes never appear in public routes, feeds, the sitemap or search.
-- Notes are post-level, not block-level (no stable block ids in stored content).
+- Anchors are resolved by content, not persistent block ids; identical blocks
+  can make "moved" ambiguous and a same-type replacement with similar text can
+  read as "changed". Replies cannot be anchored separately.
 
 ## Adding notifications
 

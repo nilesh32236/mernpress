@@ -4,6 +4,7 @@ import {
   createPostNote,
   fetchPostNotes,
   setPostNoteResolved,
+  type NoteBlockAnchor,
   type PostNote,
 } from '../api.js';
 
@@ -13,7 +14,7 @@ export interface PostNotesState {
   error: string | null;
   busy: boolean;
   unresolvedCount: number;
-  add: (content: string) => Promise<boolean>;
+  add: (content: string, block?: NoteBlockAnchor | null) => Promise<boolean>;
   reply: (parentId: string, content: string) => Promise<boolean>;
   setResolved: (noteId: string, resolved: boolean) => Promise<boolean>;
   refresh: () => void;
@@ -79,7 +80,13 @@ export function usePostNotes(postId: string | null): PostNotesState {
   );
 
   const add = useCallback(
-    (content: string) => run(() => createPostNote(postId as string, { content })),
+    (content: string, block?: NoteBlockAnchor | null) =>
+      run(() =>
+        createPostNote(postId as string, {
+          content,
+          ...(block ? { block } : {}),
+        }),
+      ),
     [postId, run],
   );
   const reply = useCallback(

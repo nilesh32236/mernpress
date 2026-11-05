@@ -12,13 +12,18 @@ never leak to the public site.
 
 ## Decision
 
-1. **Per-post, one-level threads.** `post_notes` stores a root note (parent
-   null) and replies (parent = root). Replies to replies are rejected. The root
-   carries `resolved_at`/`resolved_by`; resolving a thread is a single record.
-   Notes are post-level rather than block-level: MERNPress's canvas does not
-   store stable block ids in content, so anchoring a note to a block would not
-   survive editing. The panel says "internal notes for everyone who can edit
-   this post"; block anchoring remains a documented difference.
+1. **Per-post, one-level threads with optional block anchors.** `post_notes`
+   stores a root note (parent null) and replies (parent = root). Replies to
+   replies are rejected. The root carries `resolved_at`/`resolved_by`;
+   resolving a thread is a single record. A root may also carry a block anchor:
+   the registered block name, its 0-based dot path, an FNV-1a hash of the
+   block's name/attributes/own HTML and a short plain-text fingerprint. The
+   editor attaches the currently selected block automatically when a note is
+   created (the composer can make it a general note instead). The canvas has no
+   persistent block ids, so the anchor is resolved against the current document:
+   exact path+hash, same hash at another path (moved), similar text with a
+   changed hash (changed), or none of those (missing). Replies inherit the
+   thread and are never anchored separately.
 2. **Same permission as editing.** List, create, reply and resolve all call the
    existing `canEditPost` policy (othered by role: administrators/editors any
    post, authors/contributors their own). Read-only users and anonymous callers
@@ -42,11 +47,17 @@ never leak to the public site.
 
 ## Consequences
 
-- One additive migration `20261105163351_add_post_notes`; deleting a post
-  cascades its notes, deleting a user nulls the author (the note remains).
+- Three additive migrations in total: `20261105163351_add_post_notes`,
+  `20261105172228_add_note_block_anchor` (name/path/hash) and
+  `add_note_block_text` (the text fingerprint). Deleting a post cascades its
+  notes; deleting a user nulls the author.
 - Notes are not revisions, do not bump the post version, and do not affect the
   public site, sitemap or feeds.
 - One extra request per editor load; a failed fetch shows an inline error and
   does not block editing.
-- Block-level anchoring, mentions, mail notifications and deletion are not
-  implemented and are documented rather than implied.
+- Anchor resolution is heuristic: a block replaced by a same-type block with
+  similar text can read as "changed" rather than "missing", and identical
+  blocks can make "moved" ambiguous. The badge states the state, and the note
+  itself is never lost.
+- Mentions, mail notifications and deletion are not implemented and are
+  documented rather than implied.

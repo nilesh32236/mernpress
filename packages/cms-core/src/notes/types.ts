@@ -5,6 +5,18 @@ export interface NoteAuthor {
   displayName: string | null;
 }
 
+/** Optional block anchor captured from the editor selection. */
+export interface NoteBlockAnchor {
+  /** Registered block name, for example `core/paragraph`. */
+  name: string;
+  /** Dot-separated 0-based path, for example `1` or `0.2`. */
+  path: string;
+  /** Stable hash of the block name, attributes and own HTML. */
+  hash: string;
+  /** Short plain-text fingerprint, used to tell "changed" from "removed". */
+  text: string;
+}
+
 /** A per-post editor note or a reply to a note thread. */
 export interface PostNote {
   id: string;
@@ -17,10 +29,14 @@ export interface PostNote {
   /** Resolved state applies to thread roots only. */
   resolvedAt: string | null;
   resolvedBy: NoteAuthor | null;
+  /** Null for an unanchored note or a reply. */
+  block: NoteBlockAnchor | null;
 }
 
 export interface CreatePostNoteInput {
   content: string;
   /** Root note id; replies are one level deep. */
   parentId?: string | null | undefined;
+  /** Block anchor for a root note (replies inherit their thread). */
+  block?: NoteBlockAnchor | null | undefined;
 }

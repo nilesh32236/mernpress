@@ -12862,3 +12862,58 @@ a.glance-chip:hover {
   padding-left: 10px;
   border-left: 1px solid #dcdcde;
 }
+
+/* Editor notes: block anchors. */
+.note-anchor-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 6px 0 0;
+  color: #646970;
+  font-size: 11px;
+}
+
+.note-anchor-line .button-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--wp-blue);
+  font: inherit;
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.note-anchor {
+  display: inline-block;
+  margin: 6px 0 0;
+  padding: 1px 7px;
+  border-radius: 8px;
+  background: #f0f0f1;
+  color: #50575e;
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.note-anchor.is-exact {
+  background: #edfaef;
+  color: #1e7b34;
+}
+
+.note-anchor.is-moved {
+  background: #fcf9e8;
+  color: #8a6d1b;
+}
+
+.note-anchor.is-changed {
+  background: #fcf0f1;
+  color: #b32d2e;
+}
+
+.note-anchor.is-missing {
+  background: #f6f7f7;
+  color: #b32d2e;
+  text-decoration: line-through;
+}

@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from 'react';
-import type { PostNote, PostNoteAuthor } from '../api.js';
+import { useEffect, useState, type FormEvent } from 'react';
+import type { NoteBlockAnchor, PostNote, PostNoteAuthor } from '../api.js';
 import { formatDateTime, formatRelativeTime } from '../format.js';
+import { anchorSummary, resolveBlockAnchor, type BlockAnchor } from './blockAnchors.js';
 import type { PostNotesState } from './usePostNotes.js';
 
 function authorName(author: PostNoteAuthor | null): string {
@@ -36,16 +37,52 @@ function Message({ note, actions }: { note: PostNote; actions?: React.ReactNode 
   );
 }
 
+function AnchorBadge({ anchor, anchors }: { anchor: NoteBlockAnchor; anchors: BlockAnchor[] }) {
+  const resolution = resolveBlockAnchor(anchor, anchors);
+  let text: string;
+  if (resolution.status === 'exact' && resolution.anchor) {
+    text = anchorSummary(resolution.anchor);
+  } else if (resolution.status === 'moved' && resolution.anchor) {
+    text = `${anchorSummary({ ...anchor, path: resolution.anchor.path })} (moved)`;
+  } else if (resolution.status === 'changed') {
+    text = `${anchorSummary({ ...anchor, path: resolution.anchor?.path ?? anchor.path })} (block changed)`;
+  } else {
+    text = 'Block no longer found';
+  }
+  return (
+    <p className={`note-anchor is-${resolution.status}`} title={JSON.stringify(anchor)}>
+      {text}
+    </p>
+  );
+}
+
 /**
  * Editor notes panel (WordPress "All notes"): per-post threads with replies and
  * a resolved state. Internal to people who can edit the post; nothing here is
  * public, and notes do not create revisions.
  */
-export function NotesPanel({ postId, state }: { postId: string | null; state: PostNotesState }) {
+export function NotesPanel({
+  postId,
+  state,
+  selectedAnchor = null,
+  anchors = [],
+}: {
+  postId: string | null;
+  state: PostNotesState;
+  /** Anchor of the block selected in the canvas, if any. */
+  selectedAnchor?: NoteBlockAnchor | null;
+  /** Current document anchors, used to resolve stored note anchors. */
+  anchors?: BlockAnchor[];
+}) {
   const [draft, setDraft] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyDraft, setReplyDraft] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
+  const [attach, setAttach] = useState(Boolean(selectedAnchor));
+
+  useEffect(() => {
+    setAttach(Boolean(selectedAnchor));
+  }, [selectedAnchor?.hash, selectedAnchor?.path]);
 
   if (!postId) {
     return (
@@ -70,7 +107,7 @@ export function NotesPanel({ postId, state }: { postId: string | null; state: Po
     const content = draft.trim();
     if (!content) return;
     setLocalError(null);
-    const saved = await state.add(content);
+    const saved = await state.add(content, attach ? selectedAnchor : null);
     if (saved) setDraft('');
   }
 
@@ -127,6 +164,25 @@ export function NotesPanel({ postId, state }: { postId: string | null; state: Po
           onChange={(event) => setDraft(event.target.value)}
           disabled={state.busy}
         />
+        <p className="note-anchor-line">
+          {selectedAnchor ? (
+            <>
+              <span>
+                {attach ? 'Attached to ' : 'General note · '}
+                <strong>{anchorSummary(selectedAnchor)}</strong>
+              </span>
+              <button
+                type="button"
+                className="button-link"
+                onClick={() => setAttach((value) => !value)}
+              >
+                {attach ? 'Make general' : 'Attach to selected block'}
+              </button>
+            </>
+          ) : (
+            <span>Select a block to anchor this note, or add it as a general note.</span>
+          )}
+        </p>
         <div className="note-compose-actions">
           <span className="field-help">{draft.length} / 2000</span>
           <button
@@ -188,6 +244,8 @@ export function NotesPanel({ postId, state }: { postId: string | null; state: Po
                     </>
                   }
                 />
+
+                {thread.block ? <AnchorBadge anchor={thread.block} anchors={anchors} /> : null}
 
                 {replies.length > 0 ? (
                   <ol className="note-replies">

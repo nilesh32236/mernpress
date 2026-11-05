@@ -58,8 +58,9 @@ import {
   writeEditorPreferences,
   type EditorPreferences,
 } from './editorPreferences.js';
-import type { BlockCanvasHandle } from './editor/BlockCanvas.js';
+import type { BlockCanvasHandle, SelectedBlockInfo } from './editor/BlockCanvas.js';
 import { NotesPanel } from './editor/NotesPanel.js';
+import { listBlockAnchors } from './editor/blockAnchors.js';
 import { usePostNotes } from './editor/usePostNotes.js';
 import {
   EDITOR_PANELS,
@@ -280,6 +281,8 @@ export function ContentEditor({
   const canAssign = editable && canAssignTerms(user);
   const notesPostId = post && !createdPost && editable ? post.id : null;
   const postNotes = usePostNotes(notesPostId);
+  const [selectedBlockAnchor, setSelectedBlockAnchor] = useState<SelectedBlockInfo | null>(null);
+  const blockAnchors = useMemo(() => listBlockAnchors(form.content), [form.content]);
 
   const dirty = useMemo(() => {
     if (!editable || createdPost) return false;
@@ -1596,6 +1599,7 @@ export function ContentEditor({
                     initialContent={form.content}
                     onChange={updateContent}
                     onDirty={() => setContentTouched(true)}
+                    onSelectionAnchor={setSelectedBlockAnchor}
                     structureLocked={structureLocked}
                     onStructureBlocked={() =>
                       setNotice({
@@ -2558,7 +2562,12 @@ export function ContentEditor({
                 </div>
 
                 <div hidden={sideTab !== 'notes'}>
-                  <NotesPanel postId={notesPostId} state={postNotes} />
+                  <NotesPanel
+                    postId={notesPostId}
+                    state={postNotes}
+                    selectedAnchor={selectedBlockAnchor}
+                    anchors={blockAnchors}
+                  />
                 </div>
               </div>
             </aside>

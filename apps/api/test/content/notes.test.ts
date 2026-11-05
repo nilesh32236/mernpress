@@ -155,6 +155,52 @@ describe('editor notes', () => {
     expect(missing.statusCode).toBe(404);
   });
 
+  it('stores a block anchor on root notes and rejects invalid anchors', async () => {
+    const post = await createPost();
+    const block = {
+      name: 'core/paragraph',
+      path: '1.0',
+      hash: '0123456789abcdef',
+      text: 'Anchored note',
+    };
+
+    const created = await app.inject({
+      method: 'POST',
+      url: `/api/admin/posts/${post.id}/notes`,
+      headers,
+      payload: { content: 'Anchored note', block },
+    });
+    expect(created.statusCode).toBe(201);
+    const root = created.json() as PostNote;
+    expect(root.block).toEqual(block);
+
+    const list = await listNotes(post.id);
+    expect((list.json() as { notes: PostNote[] }).notes[0]?.block).toEqual(block);
+
+    // Replies inherit their thread and cannot carry their own anchor.
+    const reply = await app.inject({
+      method: 'POST',
+      url: `/api/admin/posts/${post.id}/notes`,
+      headers,
+      payload: { content: 'Reply', parentId: root.id, block },
+    });
+    expect(reply.statusCode).toBe(400);
+
+    for (const invalid of [
+      { name: 'not a block', path: '0', hash: '0123456789abcdef' },
+      { name: 'core/paragraph', path: 'x.y', hash: '0123456789abcdef' },
+      { name: 'core/paragraph', path: '0', hash: 'XYZ' },
+    ]) {
+      const response = await app.inject({
+        method: 'POST',
+        url: `/api/admin/posts/${post.id}/notes`,
+        headers,
+        payload: { content: 'Bad anchor', block: invalid },
+      });
+      expect(response.statusCode, JSON.stringify(invalid)).toBe(400);
+    }
+  });
+
   it('limits notes to users who can edit the post', async () => {
     const post = await createPost();
     const root = (await addNote(post.id, 'Admin note')).json() as PostNote;

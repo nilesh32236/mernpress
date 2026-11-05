@@ -14,6 +14,7 @@ function note(overrides: Partial<PostNote> = {}): PostNote {
     createdAt: '2026-11-05T10:00:00.000Z',
     resolvedAt: null,
     resolvedBy: null,
+    block: null,
     ...overrides,
   };
 }
@@ -50,7 +51,7 @@ describe('editor notes panel', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Add note' }));
 
-    await waitFor(() => expect(notes.add).toHaveBeenCalledWith('Check the intro.'));
+    await waitFor(() => expect(notes.add).toHaveBeenCalledWith('Check the intro.', null));
     expect((screen.getByLabelText('Add a note') as HTMLTextAreaElement).value).toBe('');
   });
 
@@ -109,5 +110,95 @@ describe('editor notes panel', () => {
     const notes = state({ error: 'Cannot reach the API. Check your connection and try again.' });
     render(<NotesPanel postId="p1" state={notes} />);
     expect(screen.getByRole('alert').textContent).toContain('Cannot reach the API');
+  });
+
+  it('attaches a note to the selected block and can make it general', async () => {
+    const notes = state();
+    const anchor = {
+      name: 'core/paragraph',
+      path: '1',
+      hash: '0123456789abcdef',
+      text: 'Tighten this paragraph.',
+    };
+    render(<NotesPanel postId="p1" state={notes} selectedAnchor={anchor} anchors={[]} />);
+
+    expect(screen.getByText('Attached to')).toBeDefined();
+    expect(screen.getByText('Paragraph · block 1')).toBeDefined();
+    fireEvent.change(screen.getByLabelText('Add a note'), {
+      target: { value: 'Tighten this paragraph.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add note' }));
+    await waitFor(() => expect(notes.add).toHaveBeenCalledWith('Tighten this paragraph.', anchor));
+
+    fireEvent.change(screen.getByLabelText('Add a note'), {
+      target: { value: 'A general note.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Make general' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add note' }));
+    await waitFor(() => expect(notes.add).toHaveBeenCalledWith('A general note.', null));
+  });
+
+  it('shows exact, moved, changed and missing anchor states', () => {
+    const exact = note({
+      id: 'n1',
+      block: {
+        name: 'core/paragraph',
+        path: '0',
+        hash: '0123456789abcdef',
+        text: 'First paragraph',
+      },
+    });
+    const moved = note({
+      id: 'n2',
+      block: {
+        name: 'core/paragraph',
+        path: '0',
+        hash: 'fedcba9876543210',
+        text: 'Moved paragraph',
+      },
+    });
+    const changed = note({
+      id: 'n3',
+      block: { name: 'core/heading', path: '2', hash: 'aaaaaaaaaaaaaaaa', text: 'Heading text' },
+    });
+    const missing = note({
+      id: 'n4',
+      block: { name: 'core/image', path: '5', hash: 'bbbbbbbbbbbbbbbb', text: 'Image' },
+    });
+    const anchors = [
+      {
+        name: 'core/paragraph',
+        path: '0',
+        hash: '0123456789abcdef',
+        text: 'First paragraph',
+        label: 'Paragraph',
+      },
+      {
+        name: 'core/paragraph',
+        path: '3',
+        hash: 'fedcba9876543210',
+        text: 'Moved paragraph',
+        label: 'Paragraph',
+      },
+      {
+        name: 'core/heading',
+        path: '2',
+        hash: 'cccccccccccccccc',
+        text: 'Heading text edited',
+        label: 'Heading',
+      },
+    ];
+    render(
+      <NotesPanel
+        postId="p1"
+        state={state({ notes: [exact, moved, changed, missing], unresolvedCount: 4 })}
+        anchors={anchors}
+      />,
+    );
+
+    expect(screen.getByText('Paragraph · block 0')).toBeDefined();
+    expect(screen.getByText('Paragraph · block 3 (moved)')).toBeDefined();
+    expect(screen.getByText('Heading · block 2 (block changed)')).toBeDefined();
+    expect(screen.getByText('Block no longer found')).toBeDefined();
   });
 });

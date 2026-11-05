@@ -3829,3 +3829,28 @@ administrator:
 - The temporary administrator was deleted (its screen options with it);
   production is back to 1 user and 2 posts, with `/`, `/admin/`,
   `/api/health` and `/posts/testcom` at 200.
+
+### 2026-11-05 — Block-anchored editor notes
+
+- Root notes can now carry a block anchor: name, 0-based dot path, a 16-hex
+  FNV-1a hash of the block name/attributes/own HTML and a 200-character plain
+  text fingerprint. Two additive migrations add the four columns
+  (`20261105172228_add_note_block_anchor`, `add_note_block_text`).
+- The canvas reports the selected block through `onSelectionAnchor`; the notes
+  composer attaches automatically and offers “Make general”. Replies inherit the
+  thread and are rejected if they carry an anchor; invalid names/paths/hashes/
+  text are 400.
+- `blockAnchors.ts` flattens the parsed document (ignoring whitespace-only
+  freeform separators) and resolves anchors as exact, moved (same hash at a new
+  path), changed (similar text with a new hash, including a move) or missing.
+  Badges show “Paragraph · block 1”, “… block 2 (moved)”, “… block 2 (block
+  changed)” and “Block no longer found”.
+- Browser verification on a three-block post: selecting the second paragraph
+  attached the note (`Paragraph · block 1`, exact); reordering it through the
+  code editor showed “block 2 (moved)”; editing its text showed “block 2 (block
+  changed)”; removing it showed “Block no longer found”. The temporary post and
+  notes were deleted.
+- Tests: anchor listing/hash stability/resolution (unit), panel attach/general
+  and all badge states, API anchor persistence/validation/reply rejection.
+- Validation: 807 unit/integration tests (API 488, admin 208, web 38,
+  block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.

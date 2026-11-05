@@ -1048,6 +1048,17 @@ export interface PostNoteAuthor {
   displayName: string | null;
 }
 
+export interface NoteBlockAnchor {
+  /** Registered block name, for example `core/paragraph`. */
+  name: string;
+  /** Dot-separated 0-based path, for example `1` or `0.2`. */
+  path: string;
+  /** Stable hash of the block name, attributes and own HTML. */
+  hash: string;
+  /** Short plain-text fingerprint, used to tell changed from removed. */
+  text: string;
+}
+
 export interface PostNote {
   id: string;
   postId: string;
@@ -1057,6 +1068,8 @@ export interface PostNote {
   createdAt: string;
   resolvedAt: string | null;
   resolvedBy: PostNoteAuthor | null;
+  /** Null for an unanchored note or a reply. */
+  block: NoteBlockAnchor | null;
 }
 
 export async function fetchPostNotes(postId: string): Promise<PostNote[]> {
@@ -1071,7 +1084,7 @@ export async function fetchPostNotes(postId: string): Promise<PostNote[]> {
 
 export async function createPostNote(
   postId: string,
-  input: { content: string; parentId?: string | null },
+  input: { content: string; parentId?: string | null; block?: NoteBlockAnchor | null },
 ): Promise<PostNote> {
   const response = await fetch(`/api/admin/posts/${encodeURIComponent(postId)}/notes`, {
     method: 'POST',

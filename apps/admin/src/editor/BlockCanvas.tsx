@@ -32,6 +32,8 @@ import type { Block } from '@wordpress/blocks';
 import { editorSettings, ensureEditorBootstrap } from './blocks.js';
 import { structureUnchanged } from '@mernpress/block-system/structure';
 import { blocksFromContent, historySeed, serializeBlocks } from './content.js';
+import { blockHash, blockText } from './blockAnchors.js';
+import { parseBlockMarkup } from '@mernpress/block-system/parser';
 
 import '@wordpress/components/build-style/style.css';
 import '@wordpress/block-editor/build-style/style.css';
@@ -63,11 +65,20 @@ interface HistoryState {
   index: number;
 }
 
+export interface SelectedBlockInfo {
+  name: string;
+  path: string;
+  hash: string;
+  text: string;
+}
+
 export interface BlockCanvasHandle {
   /** Serialize the latest keystrokes and hand them to the parent synchronously. */
   flush: () => string;
   /** Open the block-settings inspector (the editor sidebar's Block tab). */
   openInspector: () => void;
+  /** Anchor for the selected block (null when nothing is selected). */
+  getSelectedBlockInfo: () => SelectedBlockInfo | null;
 }
 
 export interface BlockCanvasProps {
@@ -83,6 +94,8 @@ export interface BlockCanvasProps {
   onChange: (content: string) => void;
   /** Called synchronously on the first keystroke of a typing burst. */
   onDirty?: () => void;
+  /** Called when the selected block changes, with its stable anchor (or null). */
+  onSelectionAnchor?: (anchor: SelectedBlockInfo | null) => void;
   /** Rendered above the block list, inside the white canvas (the title field). */
   titleSlot?: ReactNode;
   /**
@@ -103,11 +116,46 @@ export interface BlockCanvasProps {
  * component owns a bounded snapshot history (50 serialized states) and wires
  * the keyboard shortcuts WordPress users expect.
  */
+
+function findBlockByClientId(
+  blocks: Array<Block<Record<string, unknown>>>,
+  clientId: string,
+  prefix = '',
+): { block: Block<Record<string, unknown>>; path: string } | null {
+  for (let index = 0; index < blocks.length; index += 1) {
+    const block = blocks[index]!;
+    const path = prefix === '' ? String(index) : `${prefix}.${index}`;
+    if (block.clientId === clientId) return { block, path };
+    const nested = findBlockByClientId(block.innerBlocks ?? [], clientId, path);
+    if (nested) return nested;
+  }
+  return null;
+}
+
+function anchorForBlock(
+  block: Block<Record<string, unknown>>,
+  path: string,
+): SelectedBlockInfo | null {
+  try {
+    const [parsed] = parseBlockMarkup(serializeBlocks([block]));
+    const name = parsed?.blockName ?? block.name;
+    return {
+      name,
+      path,
+      hash: blockHash(name, parsed?.attrs ?? block.attributes ?? {}, parsed?.innerHTML ?? ''),
+      text: blockText(parsed?.innerHTML ?? ''),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(function BlockCanvas(
   {
     initialContent,
     onChange,
     onDirty,
+    onSelectionAnchor,
     titleSlot,
     toolbarSlot,
     structureLocked = false,
@@ -126,6 +174,9 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
   const historyRef = useRef<HistoryState>(history);
   const [listViewOpen, setListViewOpen] = useState(false);
   const [hasSelection, setHasSelection] = useState(false);
+  const selectedClientIdRef = useRef<string | null>(null);
+  const onSelectionAnchorRef = useRef(onSelectionAnchor);
+  onSelectionAnchorRef.current = onSelectionAnchor;
   const contentRef = useRef<HTMLDivElement>(null);
   const [inspectorOpen, setInspectorOpen] = useState(false);
 
@@ -346,6 +397,12 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
         return emit(blocksRef.current);
       },
       openInspector: () => setInspectorOpen(true),
+      getSelectedBlockInfo: () => {
+        const clientId = selectedClientIdRef.current;
+        if (!clientId) return null;
+        const found = findBlockByClientId(blocksRef.current, clientId);
+        return found ? anchorForBlock(found.block, found.path) : null;
+      },
     }),
     [clearTimer, emit],
   );
@@ -387,7 +444,17 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
             settings={settings as never}
             onChangeSelection={(selection: unknown) => {
               const next = selection as { selectionStart?: { clientId?: string } } | undefined;
-              setHasSelection(Boolean(next?.selectionStart?.clientId));
+              const clientId = next?.selectionStart?.clientId ?? null;
+              selectedClientIdRef.current = clientId;
+              setHasSelection(Boolean(clientId));
+              if (!clientId) {
+                onSelectionAnchorRef.current?.(null);
+                return;
+              }
+              const found = findBlockByClientId(blocksRef.current, clientId);
+              onSelectionAnchorRef.current?.(
+                found ? anchorForBlock(found.block, found.path) : null,
+              );
             }}
           >
             {toolbarSlot
