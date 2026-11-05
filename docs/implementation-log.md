@@ -3288,3 +3288,13 @@ redirect were deleted and the temporary administrator removed; production has
   and the related/fallback rendering with the current post excluded.
 - Validation: 696 unit/integration tests (API 434, admin 166, web 31,
   block-system 65), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (reading time + related posts):** releases
+`20261105T094335Z-af6d466` and `20261105T095026Z-87efaed` (current).
+Production post pages render the estimated read time. Verification with
+temporary posts in development showed a same-category "Related posts" section
+with date + read time and the current post excluded; the production routes
+return 200 and a post card contains "min read". The final release corrects the
+fallback label to "More posts" when no same-category matches exist. Temporary
+posts and the temporary administrator were removed; production is back to 1
+user, 0 redirects, 0 mail log rows.
