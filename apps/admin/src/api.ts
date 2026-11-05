@@ -971,6 +971,41 @@ export interface ApplicationPassword {
 
 export type OptionValues = Record<string, unknown>;
 
+// ---- Settings → Privacy: policy page helpers ----
+export interface PrivacyPolicyPageResult {
+  pageId: string | null;
+}
+
+export async function createPrivacyPolicyPage(): Promise<{
+  pageId: string;
+  page: AdminPost;
+}> {
+  const response = await fetch('/api/admin/privacy/policy-page', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  return readJson<{ pageId: string; page: AdminPost }>(response);
+}
+
+export async function setPrivacyPolicyPage(
+  pageId: string | null,
+): Promise<PrivacyPolicyPageResult> {
+  const response = await fetch('/api/admin/privacy/policy-page', {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ pageId }),
+  });
+  return readJson<PrivacyPolicyPageResult>(response);
+}
+
 // ---- Tools: backup packages ----
 export interface BackupFile {
   fileName: string;

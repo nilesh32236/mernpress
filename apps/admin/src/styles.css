@@ -12400,3 +12400,17 @@ a.glance-chip:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* Settings → Privacy: create/select policy page actions. */
+.privacy-policy-actions {
+  margin-top: 10px;
+}
+
+.privacy-policy-actions .button {
+  min-height: 32px;
+}
+
+.privacy-policy-actions .field-help {
+  margin: 8px 0 0;
+  max-width: 720px;
+}

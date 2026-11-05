@@ -3487,3 +3487,26 @@ date and Status; `content=posts&status=publish` returned the published post,
 returned 400 `VALIDATION_ERROR`, and a category filter with `content=pages`
 returned 400. The temporary administrator was deleted; production is back to
 1 user and its normal content; `/`, `/admin/` and `/api/health` return 200.
+
+### 2026-11-05 — Privacy policy page helpers
+
+- Added `PrivacyPolicyService` and two administrator-only routes:
+  `POST /api/admin/privacy/policy-page` creates a **draft** “Privacy Policy”
+  page from a suggested template and selects it; `PUT` accepts
+  `{ pageId: uuid | null }` for “Use This Page”/clear and validates an existing,
+  non-trashed page (wrong type → 400, missing → 404).
+- Creation goes through `ContentService.createPost`, so slug allocation,
+  validation, hooks and revision baselines match the editor. The template is
+  original prose for this data model (comments, media re-encoding, session
+  cookies, no third-party analytics, personal-data export/erasure, mail log)
+  and carries a “starting point, not legal advice” note; the site title is
+  HTML-escaped into it.
+- Settings → Privacy now shows **Create a new Privacy Policy page** when none is
+  selected, and Edit page / View page links plus **Use This Page** once one is
+  chosen. The dropdown includes drafts (the new page is a draft) and hides
+  trashed pages.
+- Tests: creation/selection/option persistence, draft not public, slug suffix on
+  a second creation, page-type and missing-page validation, clearing, and
+  anonymous/editor denial; admin tests cover Create and Use This Page.
+- Validation: 737 unit/integration tests (API 460, admin 178, web 34,
+  block-system 65), 23 Playwright E2E tests and six builds pass.

@@ -20,6 +20,7 @@ import {
   createUpdateService,
   createDashboardFeedService,
   createPrivacyService,
+  createPrivacyPolicyService,
   createImportService,
   createConnectorService,
   createApplicationPasswordService,
@@ -60,6 +61,7 @@ import { registerPrivacyRoutes } from './routes/privacy.js';
 import { registerConnectorRoutes } from './routes/connectors.js';
 import { registerMailRoutes } from './routes/mail.js';
 import { registerExportRoutes } from './routes/export.js';
+import { registerPrivacyPolicyRoutes } from './routes/privacy-policy.js';
 import { registerBackupRoutes } from './routes/backups.js';
 import { registerRedirectRoutes, registerPublicRedirectRoutes } from './routes/redirects.js';
 import { registerAdminHealthRoutes } from './routes/admin-health.js';
@@ -281,6 +283,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   const imports = createImportService({ prisma: database });
   const privacy = createPrivacyService({ prisma: database });
+  const privacyPolicy = createPrivacyPolicyService({ prisma: database, content });
+  app.decorate('privacyPolicy', privacyPolicy);
   app.decorate('imports', imports);
   app.decorate('privacy', privacy);
 
@@ -369,6 +373,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerConnectorRoutes(app, { env, auth, connectors });
   registerMailRoutes(app, { env, auth, mail });
   registerExportRoutes(app, { env, auth, exports: exportsService });
+  registerPrivacyPolicyRoutes(app, { env, auth, privacyPolicy });
   registerRedirectRoutes(app, { env, auth, redirects });
   registerBackupRoutes(app, { env, auth, backups });
   registerPublicRedirectRoutes(app, { redirects });

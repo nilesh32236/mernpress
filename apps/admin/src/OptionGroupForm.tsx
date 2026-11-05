@@ -1,13 +1,16 @@
 import { Fragment, useEffect, useState, type FormEvent } from 'react';
 import {
   actionErrorMessage,
+  createPrivacyPolicyPage,
   fetchOptions,
   fetchPosts,
+  setPrivacyPolicyPage,
   updateOptions,
   type OptionGroup,
   type OptionValues,
 } from './api.js';
 import { Notice, type NoticeMessage } from './components.js';
+import { navigate } from './router.js';
 
 type FieldType = 'text' | 'number' | 'checkbox' | 'select' | 'textarea' | 'page';
 
@@ -271,7 +274,10 @@ export function OptionGroupForm({
 }) {
   const config = GROUPS[group];
   const [values, setValues] = useState<OptionValues>({});
-  const [pages, setPages] = useState<Array<{ id: string; title: string }>>([]);
+  const [pages, setPages] = useState<
+    Array<{ id: string; title: string; slug: string; status: string }>
+  >([]);
+  const [privacyBusy, setPrivacyBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -306,9 +312,21 @@ export function OptionGroupForm({
   useEffect(() => {
     if (group !== 'privacy') return;
     let active = true;
-    fetchPosts({ type: 'page', status: 'PUBLISHED', page: 1, perPage: 100 })
+    // Include drafts: WordPress lets a newly created policy draft be selected.
+    fetchPosts({ type: 'page', page: 1, perPage: 100 })
       .then((result) => {
-        if (active) setPages(result.items.map((page) => ({ id: page.id, title: page.title })));
+        if (active) {
+          setPages(
+            result.items
+              .filter((page) => page.status !== 'TRASHED')
+              .map((page) => ({
+                id: page.id,
+                title: page.title,
+                slug: page.slug,
+                status: page.status,
+              })),
+          );
+        }
       })
       .catch(() => {
         if (active) setPages([]);
@@ -319,6 +337,57 @@ export function OptionGroupForm({
   }, [group]);
 
   if (!config) return null;
+
+  const policyKey = 'wp_page_for_privacy_policy';
+  const selectedPolicyId = String(fieldValue(values, policyKey) ?? '');
+  const selectedPolicy = pages.find((page) => page.id === selectedPolicyId) ?? null;
+
+  async function createPrivacyPolicy(): Promise<void> {
+    if (privacyBusy) return;
+    setPrivacyBusy(true);
+    setNotice(null);
+    setError(null);
+    try {
+      const created = await createPrivacyPolicyPage();
+      setPages((current) =>
+        current.some((page) => page.id === created.pageId)
+          ? current
+          : [
+              ...current,
+              {
+                id: created.page.id,
+                title: created.page.title,
+                slug: created.page.slug,
+                status: created.page.status,
+              },
+            ],
+      );
+      setValues((current) => ({ ...current, [policyKey]: created.pageId }));
+      setDirty(false);
+      setNotice({ tone: 'success', text: 'Privacy Policy page created.' });
+    } catch (caught) {
+      setError(actionErrorMessage(caught));
+    } finally {
+      setPrivacyBusy(false);
+    }
+  }
+
+  async function usePrivacyPolicy(): Promise<void> {
+    if (privacyBusy || !selectedPolicyId) return;
+    setPrivacyBusy(true);
+    setNotice(null);
+    setError(null);
+    try {
+      const result = await setPrivacyPolicyPage(selectedPolicyId);
+      setValues((current) => ({ ...current, [policyKey]: result.pageId }));
+      setDirty(false);
+      setNotice({ tone: 'success', text: 'Privacy Policy page updated.' });
+    } catch (caught) {
+      setError(actionErrorMessage(caught));
+    } finally {
+      setPrivacyBusy(false);
+    }
+  }
 
   function update(key: string, value: string | number | boolean | null) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -440,6 +509,53 @@ export function OptionGroupForm({
                         </option>
                       ))}
                     </select>
+                  ) : null}
+                  {group === 'privacy' && field.key === policyKey ? (
+                    <div className="privacy-policy-actions">
+                      {selectedPolicyId ? (
+                        <>
+                          {selectedPolicy ? (
+                            <p className="field-help">
+                              <a
+                                href={`/admin/pages/${selectedPolicy.id}/edit`}
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  navigate(`/pages/${selectedPolicy.id}/edit`);
+                                }}
+                              >
+                                Edit page
+                              </a>
+                              <span aria-hidden="true"> | </span>
+                              <a href={`/${selectedPolicy.slug}`} target="_blank" rel="noreferrer">
+                                View page
+                              </a>
+                            </p>
+                          ) : null}
+                          <button
+                            type="button"
+                            className="button secondary-button"
+                            onClick={() => void usePrivacyPolicy()}
+                            disabled={privacyBusy || saving}
+                          >
+                            {privacyBusy ? 'Applying…' : 'Use This Page'}
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          className="button primary-button"
+                          onClick={() => void createPrivacyPolicy()}
+                          disabled={privacyBusy || saving}
+                        >
+                          {privacyBusy ? 'Creating…' : 'Create a new Privacy Policy page'}
+                        </button>
+                      )}
+                      <p className="field-help">
+                        Creating a page starts from a suggested template and selects it. &ldquo;Use
+                        This Page&rdquo; selects the page chosen above without changing other
+                        settings.
+                      </p>
+                    </div>
                   ) : null}
                   {field.key === 'permalink_base' ? (
                     <p className="field-help">

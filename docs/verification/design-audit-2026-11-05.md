@@ -78,7 +78,7 @@ controls MERNPress implements.
 | Settings → Discussion | “Discussion Settings”: article settings, other comment settings, email me, moderation, disallowed keys, avatars | Same sections plus a Mail delivery log panel | match + MERNPress addition |
 | Settings → Media | “Media Settings”: Image sizes, Uploading Files | Same | match |
 | Settings → Permalinks | “Permalink Settings”: structure presets, category base, tag base | “Permalink Settings”: one Post URL base | narrower (the router supports one base); documented |
-| Settings → Privacy | `<h1>Privacy</h1>`, “Privacy Settings”, policy page picker, Create/Use This Page helpers | Fixed this pass to `<h1>Privacy</h1>` + “Privacy Settings” + policy page picker | match in headline; the policy-page creation helpers are not implemented |
+| Settings → Privacy | `<h1>Privacy</h1>`, “Privacy Settings”, policy page picker, Create/Use This Page helpers | `<h1>Privacy</h1>`, “Privacy Settings”, policy page picker, **Create a new Privacy Policy page**, Edit/View links and **Use This Page** | match (follow-up slice; see ADR 0039) |
 | Settings → Connectors | “Connectors”: Akismet, Anthropic, Google, OpenAI cards | “Connectors”: OpenAI / Google / Anthropic key cards | narrower: AI providers only (no spam service) |
 | Dashboard → Updates | “WordPress Updates”: core, Plugins, Themes, re-install | “MERNPress Updates”: MERNPress, Plugins, Themes, Check again | match adapted to the product name |
 
@@ -94,7 +94,6 @@ now matches WordPress.
 | Permalink presets and category/tag bases | The public router supports one configurable base segment; other structures would require route changes. |
 | Customizer scope | Themes are token packages; colours/menus are edited in the Site Editor, not a second Customizer panel set. |
 | Connectors providers | No spam service is bundled; only the three AI providers with server-side key storage exist. |
-| Privacy policy creation helpers | Pages are created in the normal editor; WordPress's guided “Create/Use This Page” flow is not implemented. |
 
 ## Still not re-checked
 

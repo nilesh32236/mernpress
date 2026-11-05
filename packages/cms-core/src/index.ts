@@ -341,3 +341,14 @@ export {
   type TwoFactorSetup,
   type TwoFactorStatus,
 } from './auth/two-factor.js';
+
+// ---- Privacy policy page helpers (Settings → Privacy) ----
+export {
+  createPrivacyPolicyService,
+  privacyPolicyTemplate,
+  PRIVACY_POLICY_OPTION,
+  type PrivacyPolicyCreateResult,
+  type PrivacyPolicyResult,
+  type PrivacyPolicyService,
+  type PrivacyPolicyServiceOptions,
+} from './privacy/policy.js';
