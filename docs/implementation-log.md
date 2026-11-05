@@ -2956,3 +2956,12 @@ The temporary administrator was deleted afterwards.
   Keyboard shortcuts, Welcome guide, Copy all content, Preferences or Plugins.
 - Validation: 646 unit/integration tests (API 411, admin 157, block-system 65,
   web 13), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (Posts/Pages chrome audit):** release `20261105T070320Z-11e0ac8`
+(current). Production verification with a temporary administrator: the Posts list
+showed bulk actions `Bulk edit | Move to Trash` and row actions
+`Edit | Quick Edit | Trash | View`; the editor sidebar order was
+`Status | Publish | Slug | Author | Template | Discussion | Format`, and the
+top-bar Options menu contained `Settings | Switch to draft | Move to trash`.
+Screenshots: `prod12-posts-list.png`, `prod12-editor.png`,
+`prod12-editor-options.png`. The temporary administrator was deleted.
