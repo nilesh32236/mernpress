@@ -3736,3 +3736,16 @@ and `/posts/testcom` returning 200.
   assertion now allows the single cosmetic cache key.
 - Validation: 782 unit/integration tests (API 481, admin 192, web 38,
   block-system 65, contracts 6), 23 Playwright E2E tests and seven builds pass.
+
+**Deployment (per-user colour schemes):** release `20261105T163024Z-2d8fdcc`
+(current), migration `20261105161547_add_user_admin_color` applied
+(`users.admin_color`, default `fresh`). Production verification with a temporary
+administrator: the Profile picker listed the nine WordPress labels (Default,
+Light, Modern, Blue, Coffee, Ectoplasm, Midnight, Ocean, Sunrise) with Default
+selected and the `fresh` accent (`#2271b1`). Choosing Midnight previewed
+immediately (`--wp-blue: #e14d43`, hover `#69a8bb`); **Update Profile** returned
+`adminColor: "midnight"` and the confirmation notice. Clearing localStorage and
+reloading restored midnight from the session (cache repopulated, radio checked,
+accent `#e14d43`), proving the server is authoritative. The temporary
+administrator was deleted; production is back to 1 user with the default
+scheme, and `/`, `/admin/`, `/api/health` and `/posts/testcom` return 200.
