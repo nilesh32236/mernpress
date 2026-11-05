@@ -30,7 +30,7 @@ interface MediaShape {
   caption: string;
   description: string;
   url: string;
-  derivatives: { '300': string; '600': string; '1200': string };
+  derivatives: Record<string, string>;
   uploadedById: string | null;
   editedAt: string | null;
   hasOriginal: boolean;
@@ -231,6 +231,9 @@ describe('admin media library', () => {
       expect(media.derivatives['300']).toBe(
         `/api/media/${media.id}/${media.fileName.replace(/\.webp$/, '-300.webp')}`,
       );
+      expect(media.derivatives['300:avif']).toBe(
+        `/api/media/${media.id}/${media.fileName.replace(/\.webp$/, '-300.avif')}`,
+      );
       expect(media.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
 
       // Stored under <root>/<YYYY>/<MM>/ and served as WebP.
@@ -251,6 +254,41 @@ describe('admin media library', () => {
       expect(media.width).toBeLessThan(3000);
     });
 
+    it('generates AVIF alongside WebP for every derivative', async () => {
+      const media = await createMedia({
+        filename: 'wide.png',
+        contentType: 'image/png',
+        data: widePng,
+      });
+      for (const width of [300, 600, 1200] as const) {
+        const url = media.derivatives[`${width}:avif`];
+        expect(url).toBeDefined();
+        const name = url!.split('/').pop() ?? '';
+        expect(name).toBe(media.fileName.replace(/\.webp$/, `-${width}.avif`));
+        const storedPath = await findStoredFile(storageRoot, name);
+        const metadata = await sharp(await readFile(storedPath)).metadata();
+        expect(metadata.format).toBe('heif');
+        expect(metadata.width).toBe(width);
+        // AVIF size is content-dependent (flat synthetic images can be larger
+        // than WebP); the guarantee under test is that the file decodes and
+        // matches the requested width.
+        expect((await readFile(storedPath)).length).toBeGreaterThan(0);
+      }
+    });
+
+    it('serves AVIF derivatives with the correct content type', async () => {
+      const media = await createMedia({
+        filename: 'wide.png',
+        contentType: 'image/png',
+        data: widePng,
+      });
+      const response = await app.inject({ method: 'GET', url: media.derivatives['300:avif']! });
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['content-type']).toBe('image/avif');
+      const metadata = await sharp(response.rawPayload).metadata();
+      expect(metadata.width).toBe(300);
+    });
+
     it('generates real 300/600/1200 derivatives', async () => {
       const media = await createMedia({
         filename: 'wide.png',
@@ -259,7 +297,7 @@ describe('admin media library', () => {
       });
 
       for (const width of [300, 600, 1200] as const) {
-        const url = media.derivatives[String(width) as '300' | '600' | '1200'];
+        const url = media.derivatives[String(width) as '300' | '600' | '1200']!;
         const name = url.split('/').pop() ?? '';
         expect(name).toBe(media.fileName.replace(/\.webp$/, `-${width}.webp`));
         const storedPath = await findStoredFile(storageRoot, name);
@@ -836,7 +874,7 @@ describe('admin media library', () => {
         contentType: 'image/png',
         data: widePng,
       });
-      const response = await app.inject({ method: 'GET', url: created.derivatives['300'] });
+      const response = await app.inject({ method: 'GET', url: created.derivatives['300']! });
       expect(response.statusCode).toBe(200);
       expect(response.headers['content-type']).toBe('image/webp');
       const metadata = await sharp(response.rawPayload).metadata();

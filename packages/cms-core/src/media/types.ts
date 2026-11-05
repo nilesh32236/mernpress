@@ -17,6 +17,13 @@ export const MEDIA_MAIN_MAX_DIMENSION = 2560;
 /** Widths generated for every upload, in addition to the canonical image. */
 export const MEDIA_DERIVATIVE_WIDTHS = [300, 600, 1200] as const;
 
+/**
+ * Every derivative exists twice: modern AVIF for browsers that support it and
+ * WebP as the universal fallback. Keys are `<width>` (WebP) and
+ * `<width>:avif` (AVIF), e.g. `{ "300": "…-300.webp", "300:avif": "…-300.avif" }`.
+ */
+export const MEDIA_AVIF_QUALITY = 52;
+
 export type MediaDerivativeWidth = (typeof MEDIA_DERIVATIVE_WIDTHS)[number];
 
 /** Extensions accepted by the upload endpoint (lower case, no dot). */
@@ -46,7 +53,10 @@ export interface MediaDto {
   description: string;
   /** Canonical public URL: `/api/media/<id>/<fileName>`. */
   url: string;
-  /** Width-keyed public URLs for the generated variants. */
+  /**
+   * Width-keyed public URLs for the generated variants. WebP uses the plain
+   * width key (`300`); AVIF uses the same key with `:avif` (`300:avif`).
+   */
   derivatives: MediaDerivatives;
   uploadedById: string | null;
   /** ISO instant of the last saved image edit, or null when pristine. */

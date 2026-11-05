@@ -3001,3 +3001,19 @@ Categories, Tags, Status plus Allow Comments and Make sticky; Bulk Edit showed
 Categories, Tags, Author, Comments, Sticky and Status with "— No Change —"
 defaults. Screenshots: `prod13-quick-edit.png`, `prod13-bulk-edit.png`. The
 temporary administrator was deleted.
+
+### 2026-11-05 — AVIF derivatives and responsive content images
+
+- `writeDerivatives` now writes AVIF alongside WebP for every fixed (300/600/
+  1200) and configured derivative. AVIF quality is 52; the canonical file stays
+  WebP so the edit/restore pipeline is unchanged. DTO keys are `<width>` (WebP)
+  and `<width>:avif` (AVIF).
+- `resolvePublicFile` chooses the served `Content-Type` from the file extension,
+  so AVIF derivatives are served as `image/avif` and WebP as `image/webp`.
+- New `apps/web/components/ResponsiveImage.tsx` renders `<picture>` with AVIF
+  and WebP `srcset`/`sizes`, intrinsic width/height and lazy loading; the single
+  post hero uses `loading="eager"` + `fetchPriority="high"`. PostList and
+  PostView now use it.
+- Tests: AVIF files decode as `heif` at the right widths, AVIF derivatives are
+  served with `image/avif`, and the component emits both source sets plus a
+  WebP fallback (and no AVIF keys in the WebP srcset).

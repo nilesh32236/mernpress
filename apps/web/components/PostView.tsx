@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { mediaUrl, postPath, type PublicPost } from '@/lib/api';
+import { postPath, type PublicPost } from '@/lib/api';
+import ResponsiveImage from './ResponsiveImage';
 import MorePosts from './MorePosts';
 import Comments from './Comments';
 
@@ -25,11 +26,11 @@ export default function PostView({
 
   const featured = post.featuredImage ? (
     <figure className="entry-featured">
-      <img
-        src={mediaUrl(post.featuredImage.derivatives['1200'] ?? post.featuredImage.url)}
-        alt={post.featuredImage.altText}
-        width={post.featuredImage.width ?? undefined}
-        height={post.featuredImage.height ?? undefined}
+      <ResponsiveImage
+        image={post.featuredImage}
+        sizes="(max-width: 760px) 100vw, 760px"
+        loading="eager"
+        fetchPriority="high"
       />
     </figure>
   ) : null;

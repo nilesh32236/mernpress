@@ -87,6 +87,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-064 | 2026-11-05 | Plugins are packages on disk (`plugins/<id>/plugin.json`) in a writable, persistent store (`PLUGIN_STORAGE_DIR`, required in production) seeded once from the release `plugins/` directory via a `.initialized` marker. Delete recursively removes the package directory after requiring deactivation; nothing is re-seeded by restarts or deploys, and lists, counts, update checks and toolbar output all read the store. The `deleted_plugins` tombstone is removed. Production adds `ReadWritePaths=/opt/mernpress/plugins` to the API unit. | accepted | [ADR 0025](docs/adr/0025-plugin-package-store.md) |
 
+| D-065 | 2026-11-05 | Every media derivative is generated twice: WebP (existing plain width keys) and AVIF (quality 52, `<width>:avif` keys). The canonical file stays WebP for the edit pipeline. Public serving picks `Content-Type` from the file extension (`image/avif`/`image/webp`), and the public site renders `<picture>` with AVIF and WebP `<source>` sets, an intrinsic-size WebP fallback, lazy loading for lists and eager/high priority for the single-post hero. Additive, no migration; AVIF failure fails the upload rather than leaving partial files. | accepted | [ADR 0026](docs/adr/0026-avif-derivatives.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

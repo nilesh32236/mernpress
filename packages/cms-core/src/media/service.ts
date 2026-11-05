@@ -10,6 +10,7 @@ import type { Paged, Principal } from '../content/types.js';
 import {
   MEDIA_ALLOWED_EXTENSIONS,
   MEDIA_ALLOWED_IMAGE_FORMATS,
+  MEDIA_AVIF_QUALITY,
   MEDIA_DERIVATIVE_WIDTHS,
   MEDIA_MAIN_MAX_DIMENSION,
   MEDIA_MAX_UPLOAD_BYTES,
@@ -51,9 +52,16 @@ const EXTENSION_MIME_TYPES: Readonly<Record<string, readonly string[]>> = {
 
 const SERVED_MIME_TYPES: Readonly<Record<string, string>> = {
   'image/webp': 'image/webp',
+  'image/avif': 'image/avif',
   'image/jpeg': 'image/jpeg',
   'image/png': 'image/png',
   'image/gif': 'image/gif',
+};
+
+/** Derivatives are served with the type of the file that is actually sent. */
+const SERVED_EXTENSION_MIME_TYPES: Readonly<Record<string, string>> = {
+  '.webp': 'image/webp',
+  '.avif': 'image/avif',
 };
 
 export interface MediaServiceOptions {
@@ -339,22 +347,36 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
         .webp({ quality: DERIVATIVE_WEBP_QUALITY })
         .toFile(derivativePath);
       derivatives[derivativeKey(derivativeWidth)] = `${relativeDir}/${derivativeName}`;
+      const avifName = `${base}-${derivativeWidth}.avif`;
+      const avifPath = path.join(dir, avifName);
+      paths.push(avifPath);
+      await sharp(mainPath)
+        .resize({ width: derivativeWidth, withoutEnlargement: true })
+        .avif({ quality: MEDIA_AVIF_QUALITY })
+        .toFile(avifPath);
+      derivatives[`${derivativeWidth}:avif`] = `${relativeDir}/${avifName}`;
     }
     for (const [key, size] of await configuredDerivativeSizes()) {
       if (derivatives[key]) continue;
       const derivativeName = `${base}-${key}.webp`;
       const derivativePath = path.join(dir, derivativeName);
       paths.push(derivativePath);
+      const resize = {
+        ...(size.width > 0 ? { width: size.width } : {}),
+        ...(size.height > 0 ? { height: size.height } : {}),
+        fit: (size.crop ? 'cover' : 'inside') as 'cover' | 'inside',
+        withoutEnlargement: true,
+      };
       await sharp(mainPath)
-        .resize({
-          ...(size.width > 0 ? { width: size.width } : {}),
-          ...(size.height > 0 ? { height: size.height } : {}),
-          fit: size.crop ? 'cover' : 'inside',
-          withoutEnlargement: true,
-        })
+        .resize(resize)
         .webp({ quality: DERIVATIVE_WEBP_QUALITY })
         .toFile(derivativePath);
       derivatives[key] = `${relativeDir}/${derivativeName}`;
+      const avifName = `${base}-${key}.avif`;
+      const avifPath = path.join(dir, avifName);
+      paths.push(avifPath);
+      await sharp(mainPath).resize(resize).avif({ quality: MEDIA_AVIF_QUALITY }).toFile(avifPath);
+      derivatives[`${key}:avif`] = `${relativeDir}/${avifName}`;
     }
     return { derivatives, paths };
   }
@@ -780,8 +802,12 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
 
     return {
       absolutePath,
-      // Rows always store WebP; fall back to a non-executable type for outliers.
-      mimeType: SERVED_MIME_TYPES[row.mimeType] ?? 'application/octet-stream',
+      // Derivatives can be AVIF even though the canonical file is WebP; the
+      // extension of the served file decides, so Content-Type is always right.
+      mimeType:
+        SERVED_EXTENSION_MIME_TYPES[path.extname(relativePath).toLowerCase()] ??
+        SERVED_MIME_TYPES[row.mimeType] ??
+        'application/octet-stream',
       sizeBytes: stats.size,
     };
   }

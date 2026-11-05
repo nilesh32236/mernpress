@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { mediaUrl, postPath, type PublicPost } from '@/lib/api';
+import { postPath, type PublicPost } from '@/lib/api';
+import ResponsiveImage from './ResponsiveImage';
 
 function formatDate(iso: string | null): string | null {
   if (!iso) return null;
@@ -40,11 +41,9 @@ export default function PostList({
             {post.featuredImage ? (
               <figure className="post-featured">
                 <Link href={postPath(post.slug, base)}>
-                  <img
-                    src={mediaUrl(post.featuredImage.derivatives['1200'] ?? post.featuredImage.url)}
-                    alt={post.featuredImage.altText}
-                    width={post.featuredImage.width ?? undefined}
-                    height={post.featuredImage.height ?? undefined}
+                  <ResponsiveImage
+                    image={post.featuredImage}
+                    sizes="(max-width: 760px) 100vw, 720px"
                   />
                 </Link>
               </figure>
