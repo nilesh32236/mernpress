@@ -2,8 +2,11 @@ import {
   ContentError,
   type ContentService,
   type OptionService,
+  type PublicPost,
+  type SiteSettings,
   type ThemeService,
 } from '@mernpress/cms-core';
+import { pagePath, postPath, termPath } from '@mernpress/contracts';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { createMemoryRateLimit } from '../security/memory-rate-limit.js';
@@ -14,6 +17,13 @@ import {
 } from './content-schemas.js';
 
 const previewTokenParamSchema = z.object({ token: z.string().min(1).max(200) }).strict();
+const resolveQuerySchema = z
+  .object({
+    path: z.string().min(1).max(2048).optional(),
+    p: z.string().uuid().optional(),
+    slug: z.string().min(1).max(200).optional(),
+  })
+  .strict();
 const unlockBodySchema = z.object({ password: z.string().min(1).max(200) }).strict();
 const termParamSchema = z
   .object({ taxonomy: z.enum(['category', 'tag']), slug: z.string().min(1).max(200) })
@@ -42,6 +52,38 @@ export function registerPublicContentRoutes(
   // WordPress has no built-in throttle for post passwords; Argon2 verification
   // is expensive, so MERNPress bounds attempts per client and post.
   const unlockLimiter = createMemoryRateLimit({ max: 10, windowMs: 10 * 60 * 1000 });
+
+  /**
+   * Add the public URL to a post and its terms. URLs are generated centrally by
+   * `@mernpress/contracts` from the configured structure, so the web app never
+   * re-implements permalink rules.
+   */
+  function presentPost(post: PublicPost, settings: SiteSettings) {
+    const categorySlug = post.terms.categories[0]?.slug ?? null;
+    return {
+      ...post,
+      path:
+        post.type === 'page'
+          ? pagePath(post.slug)
+          : postPath(settings.permalinkPattern, {
+              id: post.id,
+              slug: post.slug,
+              publishedAt: post.publishedAt,
+              createdAt: post.publishedAt ?? post.updatedAt,
+              categorySlug,
+            }),
+      terms: {
+        categories: post.terms.categories.map((term) => ({
+          ...term,
+          path: termPath('category', term.slug, { categoryBase: settings.categoryBase }),
+        })),
+        tags: post.terms.tags.map((term) => ({
+          ...term,
+          path: termPath('tag', term.slug, { tagBase: settings.tagBase }),
+        })),
+      },
+    };
+  }
 
   async function handle(
     request: FastifyRequest,
@@ -105,7 +147,11 @@ export function registerPublicContentRoutes(
       if (!parsed.success) {
         throw new ContentError('VALIDATION_ERROR', validationMessage(parsed.error.issues), 400);
       }
-      return content.listPublic(parsed.data);
+      const [page, settings] = await Promise.all([
+        content.listPublic(parsed.data),
+        optionService.getPublicSettings(),
+      ]);
+      return { ...page, items: page.items.map((post) => presentPost(post, settings)) };
     }),
   );
 
@@ -136,7 +182,11 @@ export function registerPublicContentRoutes(
       if (!query.success) {
         throw new ContentError('VALIDATION_ERROR', validationMessage(query.error.issues), 400);
       }
-      return content.getPublicBySlug(query.data.type, params.data.slug);
+      const [post, settings] = await Promise.all([
+        content.getPublicBySlug(query.data.type, params.data.slug),
+        optionService.getPublicSettings(),
+      ]);
+      return presentPost(post, settings);
     }),
   );
 
@@ -150,7 +200,36 @@ export function registerPublicContentRoutes(
       if (!params.success) {
         throw new ContentError('VALIDATION_ERROR', 'Invalid preview token', 400);
       }
-      return content.getPreviewPost(params.data.token);
+      const [post, settings] = await Promise.all([
+        content.getPreviewPost(params.data.token),
+        optionService.getPublicSettings(),
+      ]);
+      return presentPost(post, settings);
     });
   });
+
+  /**
+   * Resolve a public URL to a post slug for the edge middleware. Returns only
+   * the slug and canonical path; it never leaks unpublished content.
+   */
+  app.get('/api/public/resolve', async (request, reply) =>
+    handle(request, reply, async () => {
+      const parsed = resolveQuerySchema.safeParse(request.query);
+      if (!parsed.success || (!parsed.data.path && !parsed.data.p && !parsed.data.slug)) {
+        throw new ContentError('VALIDATION_ERROR', 'Invalid request', 400);
+      }
+      const settings = await optionService.getPublicSettings();
+      const resolved = parsed.data.p
+        ? settings.permalinkStructure === 'plain'
+          ? await content.resolvePublicId(settings.permalinkPattern, parsed.data.p)
+          : null
+        : parsed.data.slug
+          ? await content.resolvePublicSlug(settings.permalinkPattern, parsed.data.slug)
+          : await content.resolvePublicPath(settings.permalinkPattern, parsed.data.path as string);
+      if (!resolved) {
+        throw new ContentError('NOT_FOUND', 'Not found', 404);
+      }
+      return resolved;
+    }),
+  );
 }

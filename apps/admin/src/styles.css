@@ -12414,3 +12414,47 @@ a.glance-chip:hover {
   margin: 8px 0 0;
   max-width: 720px;
 }
+
+/* Settings → Permalinks: preset radios, pattern and preview. */
+.permalink-structure {
+  margin: 0 0 18px;
+  padding: 0;
+  border: 0;
+}
+
+.permalink-structure legend {
+  margin-bottom: 8px;
+  color: #1d2327;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.permalink-choice {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.permalink-pattern {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 1px 6px;
+  background: #f0f0f1;
+  color: #50575e;
+  font-size: 12px;
+}
+
+.permalink-custom {
+  margin: 10px 0 0 26px;
+  max-width: 620px;
+}
+
+.permalink-preview {
+  margin: 12px 0 4px;
+  font-size: 13px;
+}
+
+.permalink-preview code {
+  padding: 2px 6px;
+  background: #f0f0f1;
+  word-break: break-all;
+}

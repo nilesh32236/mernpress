@@ -1,4 +1,5 @@
 import type { DatabaseClient, PostStatus, Prisma } from '@mernpress/database';
+import { matchPostPath, postPath } from '@mernpress/contracts';
 import { validateBlockMarkup } from '@mernpress/block-system/validate';
 import { renderBlockMarkup } from '@mernpress/block-system/render';
 import { structureUnchanged } from '@mernpress/block-system/structure';
@@ -67,8 +68,11 @@ export interface ContentServiceOptions {
   /** Called after a published post/page slug changes (redirect creation). */
   onSlugChanged?: (change: {
     type: ContentType;
+    id: string;
     oldSlug: string;
     newSlug: string;
+    publishedAt: string | null;
+    categorySlug: string | null;
   }) => Promise<void>;
 }
 
@@ -105,6 +109,21 @@ export interface ContentService {
   getPreviewPost(token: string): Promise<PublicPost>;
   listPublic(query: PublicListQuery): Promise<Paged<PublicPost>>;
   getPublicBySlug(type: ContentType, slug: string): Promise<PublicPost>;
+  /** Resolve a structured public URL (middleware rewrites). */
+  resolvePublicPath(
+    pattern: string,
+    pathname: string,
+  ): Promise<{ slug: string; canonicalPath: string } | null>;
+  /** Resolve the Plain permalink form `?p=<id>`. */
+  resolvePublicId(
+    pattern: string,
+    id: string,
+  ): Promise<{ slug: string; canonicalPath: string } | null>;
+  /** Resolve a slug to its canonical path (internal-path redirects). */
+  resolvePublicSlug(
+    pattern: string,
+    slug: string,
+  ): Promise<{ slug: string; canonicalPath: string } | null>;
   unlockPublicPost(
     slug: string,
     password: string,
@@ -801,8 +820,12 @@ export function createContentService(options: ContentServiceOptions): ContentSer
       try {
         await options.onSlugChanged({
           type: row.type as ContentType,
+          id: row.id,
           oldSlug: previousSlugForRedirect,
           newSlug: row.slug,
+          publishedAt: row.publishedAt?.toISOString() ?? null,
+          categorySlug:
+            row.terms.find((entry) => entry.term.taxonomy === 'category')?.term.slug ?? null,
         });
       } catch (error) {
         options.logger?.warn('automatic redirect failed', {
@@ -1309,6 +1332,136 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     return { renderedContent: rendered.html, toc: rendered.toc };
   }
 
+  const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  function primaryCategorySlug(row: PostWithTerms): string | null {
+    const category = row.terms.find((entry) => entry.term.taxonomy === 'category');
+    return category?.term.slug ?? null;
+  }
+
+  function publicPathFor(row: PostWithTerms, pattern: string): string {
+    return postPath(pattern, {
+      id: row.id,
+      slug: row.slug,
+      publishedAt: row.publishedAt,
+      createdAt: row.createdAt,
+      categorySlug: primaryCategorySlug(row),
+    });
+  }
+
+  async function publishedPostById(id: string): Promise<PostWithTerms | null> {
+    if (!UUID_PATTERN.test(id)) return null;
+    return prisma.post.findFirst({
+      where: {
+        id,
+        type: 'post',
+        status: 'PUBLISHED',
+        isPrivate: false,
+        publishedAt: { lte: now() },
+      },
+      include: WITH_TERMS,
+    });
+  }
+
+  function dateMatches(
+    row: PostWithTerms,
+    matched: {
+      year?: string;
+      month?: string;
+      day?: string;
+      hour?: string;
+      minute?: string;
+      second?: string;
+    },
+  ): boolean {
+    const wantsDate =
+      matched.year ||
+      matched.month ||
+      matched.day ||
+      matched.hour ||
+      matched.minute ||
+      matched.second;
+    if (!wantsDate) return true;
+    if (!row.publishedAt) return false;
+    const date = row.publishedAt;
+    const pad = (value: number) => String(value).padStart(2, '0');
+    if (matched.year && matched.year !== String(date.getUTCFullYear())) return false;
+    if (matched.month && matched.month !== pad(date.getUTCMonth() + 1)) return false;
+    if (matched.day && matched.day !== pad(date.getUTCDate())) return false;
+    if (matched.hour && matched.hour !== pad(date.getUTCHours())) return false;
+    if (matched.minute && matched.minute !== pad(date.getUTCMinutes())) return false;
+    if (matched.second && matched.second !== pad(date.getUTCSeconds())) return false;
+    return true;
+  }
+
+  async function resolvePublicPath(
+    pattern: string,
+    pathname: string,
+  ): Promise<{ slug: string; canonicalPath: string } | null> {
+    if (pattern === '') return null;
+    const matched = matchPostPath(pattern, pathname);
+    if (!matched) return null;
+
+    let row: PostWithTerms | null = null;
+    if (matched.id) {
+      row = await publishedPostById(matched.id);
+    } else if (matched.slug) {
+      // With root-level post names a page takes precedence, matching WordPress's
+      // rewrite order. Draft pages never shadow a public post.
+      if (pattern === '/%postname%/') {
+        const page = await prisma.post.findFirst({
+          where: { type: 'page', slug: matched.slug, status: 'PUBLISHED' },
+          select: { id: true },
+        });
+        if (page) return null;
+      }
+      row = await prisma.post.findFirst({
+        where: {
+          type: 'post',
+          slug: matched.slug,
+          status: 'PUBLISHED',
+          isPrivate: false,
+          publishedAt: { lte: now() },
+        },
+        include: WITH_TERMS,
+      });
+    }
+    if (!row) return null;
+    if (!dateMatches(row, matched)) return null;
+    if (matched.category) {
+      const categories = row.terms
+        .filter((entry) => entry.term.taxonomy === 'category')
+        .map((entry) => entry.term.slug);
+      if (!categories.includes(matched.category)) return null;
+    }
+    return { slug: row.slug, canonicalPath: publicPathFor(row, pattern) };
+  }
+
+  async function resolvePublicId(
+    pattern: string,
+    id: string,
+  ): Promise<{ slug: string; canonicalPath: string } | null> {
+    const row = await publishedPostById(id);
+    return row ? { slug: row.slug, canonicalPath: publicPathFor(row, pattern) } : null;
+  }
+
+  async function resolvePublicSlug(
+    pattern: string,
+    slug: string,
+  ): Promise<{ slug: string; canonicalPath: string } | null> {
+    const row = await prisma.post.findFirst({
+      where: {
+        type: 'post',
+        slug,
+        status: 'PUBLISHED',
+        isPrivate: false,
+        publishedAt: { lte: now() },
+      },
+      include: WITH_TERMS,
+    });
+    return row ? { slug: row.slug, canonicalPath: publicPathFor(row, pattern) } : null;
+  }
+
   async function listPublic(query: PublicListQuery): Promise<Paged<PublicPost>> {
     const current = now();
     const where: Prisma.PostWhereInput = {
@@ -1416,6 +1569,9 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     getPreviewPost,
     listPublic,
     getPublicBySlug,
+    resolvePublicPath,
+    resolvePublicId,
+    resolvePublicSlug,
     unlockPublicPost,
     getPublicTerm,
   };

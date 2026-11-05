@@ -15,6 +15,7 @@ const samplePost = {
   type: 'post' as const,
   title: 'Hello World',
   slug: 'hello-world',
+  path: '/posts/hello-world',
   excerpt: 'An excerpt',
   content: '',
   contentFormat: 'wp_block_html',
@@ -30,8 +31,8 @@ const samplePost = {
   publishedAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-02T00:00:00.000Z',
   terms: {
-    categories: [{ id: 'c1', name: 'Cat', slug: 'cat' }],
-    tags: [{ id: 't1', name: 'Tag', slug: 'tag' }],
+    categories: [{ id: 'c1', name: 'Cat', slug: 'cat', path: '/category/cat' }],
+    tags: [{ id: 't1', name: 'Tag', slug: 'tag', path: '/tag/tag' }],
   },
 };
 
@@ -160,5 +161,17 @@ describe('post page', () => {
     expect(meta.robots).toBeUndefined();
     // WordPress always emits a canonical; the default is derived from the slug.
     expect(meta.alternates?.canonical).toBe('http://localhost:3000/posts/hello-world');
+  });
+  it('uses the canonical path supplied by the API under a custom structure', async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      jsonResponse({
+        ...samplePost,
+        canonicalUrl: null,
+        path: '/2026/01/hello-world',
+        featuredImage: null,
+      }),
+    );
+    const meta = await generateMetadata({ params: Promise.resolve({ slug: 'hello-world' }) });
+    expect(meta.alternates?.canonical).toBe('http://localhost:3000/2026/01/hello-world');
   });
 });

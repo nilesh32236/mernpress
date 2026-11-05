@@ -1,4 +1,4 @@
-import { getSiteSettings, listPublishedPosts, siteUrl } from '@/lib/api';
+import { getSiteSettings, listPublishedPosts, postHref, siteUrl } from '@/lib/api';
 
 export const revalidate = 60;
 
@@ -15,7 +15,6 @@ function escapeXml(value: string): string {
 export async function GET(): Promise<Response> {
   const base = siteUrl();
   const settings = await getSiteSettings().catch(() => null);
-  const postBase = settings?.permalinkBase ?? 'posts';
   const data = await listPublishedPosts(1, settings?.postsPerRss ?? 20).catch(() => null);
   const items = data?.items ?? [];
   const siteTitle = settings?.siteTitle ?? 'MERNPress';
@@ -24,7 +23,7 @@ export async function GET(): Promise<Response> {
 
   const entries = items
     .map((post) => {
-      const link = `${base}/${postBase}/${post.slug}`;
+      const link = `${base}${postHref(post)}`;
       const pubDate = post.publishedAt ? new Date(post.publishedAt).toUTCString() : '';
       return `    <item>
       <title>${escapeXml(post.title)}</title>

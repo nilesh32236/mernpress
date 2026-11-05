@@ -1,11 +1,9 @@
 import { notFound } from 'next/navigation';
 import {
-  getPermalinkBase,
   getPublishedBySlug,
   listPublicPosts,
   listPublishedPosts,
   mediaUrl,
-  postPath,
   siteUrl,
 } from '@/lib/api';
 import type { PublicPost } from '@/lib/api';
@@ -34,10 +32,9 @@ function fallbackDescription(post: PublicPost): string {
 export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   let error = false;
-  // The canonical post URL is driven by the Permalinks setting. When the base
-  // is not "posts", /posts/<slug> is not a valid permalink (the catch-all
-  // /[base]/[slug] route serves the post instead).
-  if ((await getPermalinkBase()) !== 'posts') notFound();
+  // This route is the internal renderer. The middleware rewrites the public
+  // permalink (whatever the configured structure) to /posts/<slug>, so the
+  // browser URL and canonical tags stay structure-aware.
   const post = await getPublishedBySlug('post', slug).catch(() => {
     error = true;
     return null;
@@ -61,7 +58,6 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   // post itself rather than breaking the page.
   const recent = await listPublishedPosts(1, 10).catch(() => null);
   const morePosts = recent?.items ?? [];
-  const base = await getPermalinkBase();
 
   // Related posts come from the primary category. The current post is always
   // excluded; when no category matches exist the component falls back to the
@@ -75,10 +71,10 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   const relatedPosts = primaryCategory
     ? (relatedData?.items ?? []).filter((entry) => entry.id !== post.id).slice(0, 3)
     : [];
-  const canonical = post.canonicalUrl ?? `${siteUrl()}${postPath(post.slug, base)}`;
+  const canonical = post.canonicalUrl ?? `${siteUrl()}${post.path}`;
   return (
     <>
-      <JsonLd data={articleSchema(siteUrl(), post, base)} />
+      <JsonLd data={articleSchema(siteUrl(), post)} />
       <JsonLd
         data={breadcrumbSchema(siteUrl(), [
           { name: 'Home', url: siteUrl() },
@@ -86,7 +82,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           { name: post.title, url: canonical },
         ])}
       />
-      <PostView post={post} morePosts={morePosts} relatedPosts={relatedPosts} base={base} />
+      <PostView post={post} morePosts={morePosts} relatedPosts={relatedPosts} />
     </>
   );
 }
@@ -107,8 +103,7 @@ export async function generateMetadata({
     description: description || undefined,
     robots: post.robots ?? undefined,
     alternates: {
-      canonical:
-        post.canonicalUrl ?? `${siteUrl()}${postPath(post.slug, await getPermalinkBase())}`,
+      canonical: post.canonicalUrl ?? `${siteUrl()}${post.path}`,
     },
     twitter: {
       card: 'summary_large_image',

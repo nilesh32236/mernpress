@@ -17,6 +17,7 @@ const post: PublicPost = {
   type: 'post',
   title: 'Analytical engines',
   slug: 'analytical-engines',
+  path: '/posts/analytical-engines',
   excerpt: null,
   content: '',
   contentFormat: 'wp_block_html',

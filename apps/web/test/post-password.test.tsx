@@ -8,6 +8,7 @@ const basePost: PublicPost = {
   type: 'post',
   title: 'Secret notes',
   slug: 'secret-notes',
+  path: '/posts/secret-notes',
   excerpt: 'An excerpt',
   content: '',
   contentFormat: 'wp_block_html',

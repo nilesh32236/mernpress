@@ -20,6 +20,7 @@
     "@fastify/multipart": "10.1.6",
     "@mernpress/block-system": "workspace:*",
     "@mernpress/cms-core": "workspace:*",
+    "@mernpress/contracts": "workspace:*",
     "@mernpress/database": "workspace:*",
     "@wordpress/block-serialization-default-parser": "6.0.0",
     "dotenv": "18.0.9",

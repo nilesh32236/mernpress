@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { postPath, type PublicPost } from '@/lib/api';
+import { postHref, termHref, type PublicPost } from '@/lib/api';
 import ResponsiveImage from './ResponsiveImage';
 import RelatedPosts from './RelatedPosts';
 import AuthorBox from './AuthorBox';
@@ -11,13 +11,11 @@ export default function PostView({
   post,
   morePosts = [],
   relatedPosts = [],
-  base = 'posts',
 }: {
   post: PublicPost;
   morePosts?: PublicPost[];
   /** Same-category posts; falls back to `morePosts` when empty. */
   relatedPosts?: PublicPost[];
-  base?: string;
 }) {
   const isPage = post.type === 'page';
   const author = post.author?.username ?? null;
@@ -64,7 +62,7 @@ export default function PostView({
               categories.map((term, index) => (
                 <span key={term.id}>
                   {index > 0 ? ', ' : ''}
-                  <Link className="entry-category" href={`/category/${term.slug}`}>
+                  <Link className="entry-category" href={termHref(term, 'category')}>
                     {term.name}
                   </Link>
                 </span>
@@ -87,7 +85,7 @@ export default function PostView({
             {tags.map((term, index) => (
               <span key={term.id}>
                 {index > 0 ? '  ' : ''}
-                <Link href={`/tag/${term.slug}`}>{term.name}</Link>
+                <Link href={termHref(term, 'tag')}>{term.name}</Link>
               </span>
             ))}
           </div>
@@ -101,14 +99,14 @@ export default function PostView({
             <nav className="post-navigation" aria-label="Post navigation">
               <span className="post-navigation-slot">
                 {older ? (
-                  <Link className="post-navigation-link" href={postPath(older.slug, base)}>
+                  <Link className="post-navigation-link" href={postHref(older)}>
                     <span aria-hidden="true">←</span> {older.title}
                   </Link>
                 ) : null}
               </span>
               <span className="post-navigation-slot is-next">
                 {newer ? (
-                  <Link className="post-navigation-link" href={postPath(newer.slug, base)}>
+                  <Link className="post-navigation-link" href={postHref(newer)}>
                     {newer.title} <span aria-hidden="true">→</span>
                   </Link>
                 ) : null}
@@ -119,7 +117,6 @@ export default function PostView({
           <Comments postId={post.id} postTitle={post.title} />
           <RelatedPosts
             posts={related}
-            base={base}
             heading={relatedPosts.length > 0 ? 'Related posts' : 'More posts'}
           />
         </>

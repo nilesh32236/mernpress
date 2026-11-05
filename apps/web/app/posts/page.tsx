@@ -1,4 +1,4 @@
-import { getPermalinkBase, listPublishedPosts } from '@/lib/api';
+import { listPublishedPosts } from '@/lib/api';
 import type { PublicPost } from '@/lib/api';
 import PostList from '@/components/PostList';
 import Pagination from '@/components/Pagination';
@@ -28,8 +28,6 @@ export default async function PostsPage({
     error = true;
   }
 
-  const base = await getPermalinkBase();
-
   const home = `${siteUrl()}/posts`;
   return (
     <main id="main-content" className="site-main">
@@ -38,7 +36,6 @@ export default async function PostsPage({
           url: home,
           name: 'Blog',
           posts: items,
-          permalinkBase: base,
         })}
       />
       <JsonLd
@@ -59,7 +56,7 @@ export default async function PostsPage({
             Sorry, but nothing was found. Please try a search with different keywords.
           </p>
         ) : (
-          <PostList posts={items} base={base} />
+          <PostList posts={items} />
         )}
       </div>
       {!error ? <Pagination page={page} totalPages={totalPages} basePath="/posts" /> : null}

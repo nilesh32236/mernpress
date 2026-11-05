@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { postPath } from '@mernpress/contracts';
 import {
   actionErrorMessage,
   assignTerms,
@@ -201,6 +202,7 @@ export function ContentEditor({
   const [featuredMedia, setFeaturedMedia] = useState<FeaturedImage | null>(null);
   const [format, setFormat] = useState<PostFormat>('standard');
   const [structureLocked, setStructureLocked] = useState(false);
+  const [permalinkPattern, setPermalinkPattern] = useState('/posts/%postname%/');
   const [featuredPickerOpen, setFeaturedPickerOpen] = useState(false);
   const [featuredPickerItems, setFeaturedPickerItems] = useState<MediaItem[] | null>(null);
   const [featuredPickerSearch, setFeaturedPickerSearch] = useState('');
@@ -389,6 +391,28 @@ export function ContentEditor({
       active = false;
     };
   }, [id, isNew, reloadKey]);
+
+  // Public URL preview uses the configured permalink structure. Loaded lazily
+  // for published posts so document editing performs no extra request.
+  useEffect(() => {
+    if (!post || post.type !== 'post' || post.status !== 'PUBLISHED') return;
+    let active = true;
+    void (async () => {
+      try {
+        const response = await fetch('/api/public/site', { cache: 'no-store' });
+        if (!active || !response?.ok) return;
+        const body = (await response.json()) as { permalinkPattern?: unknown };
+        if (typeof body.permalinkPattern === 'string') {
+          setPermalinkPattern(body.permalinkPattern);
+        }
+      } catch {
+        // The fallback pattern still produces a usable link.
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [post?.id, post?.status, post?.type]);
 
   useEffect(() => {
     let active = true;
@@ -1182,7 +1206,17 @@ export function ContentEditor({
             {post?.status === 'PUBLISHED' ? (
               <a
                 className="editor-topbar-icon-button editor-topbar-view-link"
-                href={type === 'post' ? `/posts/${post.slug}` : `/${post.slug}`}
+                href={
+                  post.type === 'post'
+                    ? postPath(permalinkPattern, {
+                        id: post.id,
+                        slug: post.slug,
+                        publishedAt: post.publishedAt,
+                        createdAt: post.updatedAt,
+                        categorySlug: post.terms.categories[0]?.slug ?? null,
+                      })
+                    : `/${post.slug}`
+                }
                 target="_blank"
                 rel="noreferrer"
                 aria-label="View post"

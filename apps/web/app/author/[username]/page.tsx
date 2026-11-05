@@ -1,4 +1,4 @@
-import { getPermalinkBase, listPublicPosts } from '@/lib/api';
+import { listPublicPosts } from '@/lib/api';
 import type { PublicPost } from '@/lib/api';
 import PostList from '@/components/PostList';
 import Pagination from '@/components/Pagination';
@@ -28,8 +28,6 @@ export default async function AuthorArchive({
     error = true;
   }
 
-  const base = await getPermalinkBase();
-
   const profileUrl = `${siteUrl()}/author/${username}`;
   return (
     <main id="main-content" className="site-main">
@@ -47,7 +45,7 @@ export default async function AuthorArchive({
             We couldn&rsquo;t load this author right now. Please try again later.
           </p>
         ) : items.length > 0 ? (
-          <PostList posts={items} base={base} />
+          <PostList posts={items} />
         ) : (
           <p role="status" className="status archive-empty">
             Sorry, but nothing was found. Please try a search with different keywords.

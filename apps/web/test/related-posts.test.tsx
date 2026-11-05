@@ -8,6 +8,7 @@ const basePost: PublicPost = {
   type: 'post',
   title: 'Current post',
   slug: 'current-post',
+  path: '/posts/current-post',
   excerpt: 'An excerpt',
   content: '',
   contentFormat: 'wp_block_html',
@@ -26,7 +27,10 @@ const basePost: PublicPost = {
   passwordProtected: false,
   format: 'standard',
   updatedAt: '2026-01-01T00:00:00.000Z',
-  terms: { categories: [{ id: 'c1', name: 'Cat', slug: 'cat' }], tags: [] },
+  terms: {
+    categories: [{ id: 'c1', name: 'Cat', slug: 'cat', path: '/category/cat' }],
+    tags: [],
+  },
   author: {
     id: 'u1',
     username: 'admin',

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchOptions, type AuthUser } from './api.js';
+import type { AuthUser } from './api.js';
 import { previewUrl } from './sitePreview.js';
 import { navigate } from './router.js';
 
@@ -76,9 +76,6 @@ export function SiteEditorPage({ user }: { user: AuthUser }) {
     async function load() {
       const next = defaultSamples();
       try {
-        const settings = await fetchOptions('permalinks').catch(() => null);
-        const configured =
-          typeof settings?.permalink_base === 'string' ? settings.permalink_base : '';
         const posts = await fetch('/api/public/posts?type=post&perPage=1&page=1').then(
           (response) => (response.ok ? response.json() : null),
         );
@@ -87,15 +84,13 @@ export function SiteEditorPage({ user }: { user: AuthUser }) {
         );
         const postItem = posts?.items?.[0];
         const pageItem = pages?.items?.[0];
-        next.base = configured || 'posts';
+        // The API supplies canonical paths for the active permalink structure.
         if (postItem) {
-          next.post = `/${next.base}/${postItem.slug}`;
-          next.category = postItem.terms?.categories?.[0]
-            ? `/category/${postItem.terms.categories[0].slug}`
-            : null;
-          next.tag = postItem.terms?.tags?.[0] ? `/tag/${postItem.terms.tags[0].slug}` : null;
+          next.post = typeof postItem.path === 'string' ? postItem.path : null;
+          next.category = postItem.terms?.categories?.[0]?.path ?? null;
+          next.tag = postItem.terms?.tags?.[0]?.path ?? null;
         }
-        if (pageItem) next.page = `/${pageItem.slug}`;
+        if (pageItem) next.page = typeof pageItem.path === 'string' ? pageItem.path : null;
       } catch {
         // Templates still preview the static routes.
       }

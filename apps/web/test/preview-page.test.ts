@@ -17,6 +17,7 @@ const sampleDraft = {
   type: 'post' as const,
   title: 'Draft Preview',
   slug: 'draft-preview',
+  path: '/posts/draft-preview',
   excerpt: null,
   content: '',
   contentFormat: 'wp_block_html',

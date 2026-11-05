@@ -12,6 +12,7 @@
     "postbuild": "node scripts/copy-standalone.mjs"
   },
   "dependencies": {
+    "@mernpress/contracts": "workspace:*",
     "next": "16.4.3",
     "react": "19.3.1",
     "react-dom": "19.3.1"

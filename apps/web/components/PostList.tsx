@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { postPath, type PublicPost } from '@/lib/api';
+import { postHref, type PublicPost } from '@/lib/api';
 import ResponsiveImage from './ResponsiveImage';
 import { readingTime } from '@/lib/reading-time';
 
@@ -25,13 +25,7 @@ function excerptText(post: PublicPost): string | null {
 }
 
 /** WordPress query loop used by the blog, archives and search results. */
-export default function PostList({
-  posts,
-  base = 'posts',
-}: {
-  posts: PublicPost[];
-  base?: string;
-}) {
+export default function PostList({ posts }: { posts: PublicPost[] }) {
   return (
     <ul className="post-list">
       {posts.map((post) => {
@@ -42,7 +36,7 @@ export default function PostList({
           <li key={post.id} className="post-item">
             {post.featuredImage ? (
               <figure className="post-featured">
-                <Link href={postPath(post.slug, base)}>
+                <Link href={postHref(post)}>
                   <ResponsiveImage
                     image={post.featuredImage}
                     sizes="(max-width: 760px) 100vw, 720px"
@@ -51,12 +45,12 @@ export default function PostList({
               </figure>
             ) : null}
             <h2 className="post-title">
-              <Link href={postPath(post.slug, base)}>{post.title}</Link>
+              <Link href={postHref(post)}>{post.title}</Link>
             </h2>
             {excerpt ? <p className="post-excerpt">{excerpt}</p> : null}
             {date ? (
               <p className="post-date">
-                <Link href={postPath(post.slug, base)}>
+                <Link href={postHref(post)}>
                   <time dateTime={post.publishedAt ?? undefined}>{date}</time>
                 </Link>
                 <span aria-hidden="true"> · </span>

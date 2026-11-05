@@ -281,6 +281,7 @@ Start here, then follow the links.
 | [docs/research/plugin-theme-roadmap.md](docs/research/plugin-theme-roadmap.md) | WordPress user complaints, plugin/theme opportunities and ranked next slices |
 | [docs/architecture/plugin-runtime.md](docs/architecture/plugin-runtime.md) | Trusted local plugin package and hook contract for developers |
 | [docs/architecture/theme-packages.md](docs/architecture/theme-packages.md) | Theme package manifest, tokens and layout variants |
+| [docs/architecture/permalinks.md](docs/architecture/permalinks.md) | Shared permalink pattern rules, routing and resolver flow |
 | [docs/architecture/system-overview.md](docs/architecture/system-overview.md) | Components, boundaries, request/content flow and local runtime |
 | [docs/architecture/code-standards.md](docs/architecture/code-standards.md) | Module boundaries, SOLID/DRY rules, error/logging, testing and scalability conventions |
 | [docs/design/wordpress-admin-target.md](docs/design/wordpress-admin-target.md) | WordPress-style admin design target (tokens, shell contract, screen patterns, parity roadmap) |

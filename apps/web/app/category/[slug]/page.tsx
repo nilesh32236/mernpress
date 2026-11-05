@@ -1,11 +1,12 @@
 import { notFound } from 'next/navigation';
-import { getPermalinkBase, getPublicTerm, listPublicPosts } from '@/lib/api';
+import { getPublicTerm, getSiteSettings, listPublicPosts } from '@/lib/api';
 import type { PublicPost, PublicTermInfo } from '@/lib/api';
 import PostList from '@/components/PostList';
 import Pagination from '@/components/Pagination';
 import JsonLd from '@/components/JsonLd';
 import { breadcrumbSchema, collectionSchema } from '@/lib/seo';
 import { siteUrl } from '@/lib/api';
+import { termPath } from '@mernpress/contracts';
 
 export default async function CategoryArchive({
   params,
@@ -51,9 +52,10 @@ export default async function CategoryArchive({
     );
   }
 
-  const base = await getPermalinkBase();
-
-  const archiveUrl = `${siteUrl()}/category/${slug}`;
+  const settings = await getSiteSettings().catch(() => null);
+  const archiveUrl = `${siteUrl()}${termPath('category', slug, {
+    categoryBase: settings?.categoryBase ?? 'category',
+  })}`;
   return (
     <main id="main-content" className="site-main">
       <JsonLd
@@ -62,7 +64,6 @@ export default async function CategoryArchive({
           name: `Category: ${term.name}`,
           description: term.description,
           posts: items,
-          permalinkBase: base,
         })}
       />
       <JsonLd
@@ -75,14 +76,18 @@ export default async function CategoryArchive({
         <h1 className="blog-title">Category: {term.name}</h1>
         {term.description ? <p className="archive-description">{term.description}</p> : null}
         {items.length > 0 ? (
-          <PostList posts={items} base={base} />
+          <PostList posts={items} />
         ) : (
           <p role="status" className="status archive-empty">
             Sorry, but nothing was found. Please try a search with different keywords.
           </p>
         )}
       </div>
-      <Pagination page={page} totalPages={totalPages} basePath={`/category/${slug}`} />
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        basePath={`${termPath('category', slug, { categoryBase: settings?.categoryBase ?? 'category' })}`}
+      />
     </main>
   );
 }

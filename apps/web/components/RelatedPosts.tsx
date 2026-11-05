@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { postPath, type PublicPost } from '@/lib/api';
+import { postHref, type PublicPost } from '@/lib/api';
 import { readingTime } from '@/lib/reading-time';
 
 function formatDate(iso: string | null): string | null {
@@ -19,11 +19,9 @@ function formatDate(iso: string | null): string | null {
  */
 export default function RelatedPosts({
   posts,
-  base = 'posts',
   heading = 'Related posts',
 }: {
   posts: PublicPost[];
-  base?: string;
   heading?: string;
 }) {
   if (posts.length === 0) return null;
@@ -36,7 +34,7 @@ export default function RelatedPosts({
           const { minutes } = readingTime(post.renderedContent);
           return (
             <li key={post.id} className="related-post">
-              <Link className="related-post-title" href={postPath(post.slug, base)}>
+              <Link className="related-post-title" href={postHref(post)}>
                 {post.title}
               </Link>
               <p className="related-post-meta">

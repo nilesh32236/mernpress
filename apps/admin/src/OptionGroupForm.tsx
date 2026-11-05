@@ -232,15 +232,6 @@ const MEDIA_FIELDS: Field[] = [
   },
 ];
 
-const PERMALINKS_FIELDS: Field[] = [
-  {
-    key: 'permalink_base',
-    label: 'Post URL base',
-    type: 'text',
-    help: 'Posts are served at /<base>/<slug>/. Lowercase letters, numbers and hyphens only.',
-  },
-];
-
 const PRIVACY_FIELDS: Field[] = [
   {
     key: 'wp_page_for_privacy_policy',
@@ -253,7 +244,6 @@ const PRIVACY_FIELDS: Field[] = [
 const GROUPS: Partial<Record<OptionGroup, { title: string; fields: Field[] }>> = {
   discussion: { title: 'Discussion Settings', fields: DISCUSSION_FIELDS },
   media: { title: 'Media Settings', fields: MEDIA_FIELDS },
-  permalinks: { title: 'Permalink Settings', fields: PERMALINKS_FIELDS },
   privacy: { title: 'Privacy Settings', fields: PRIVACY_FIELDS },
 };
 
@@ -556,15 +546,6 @@ export function OptionGroupForm({
                         settings.
                       </p>
                     </div>
-                  ) : null}
-                  {field.key === 'permalink_base' ? (
-                    <p className="field-help">
-                      Post URL preview:{' '}
-                      <code>
-                        {typeof window === 'undefined' ? '' : window.location.origin}/
-                        {String(fieldValue(values, field.key) || 'posts')}/sample-post/
-                      </code>
-                    </p>
                   ) : null}
                   {field.help ? <p className="field-help">{field.help}</p> : null}
                 </div>

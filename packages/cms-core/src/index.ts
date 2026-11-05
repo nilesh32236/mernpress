@@ -157,7 +157,12 @@ export type {
 // ---- Options store (Settings) ----
 export { createOptionService, type OptionService } from './options/service.js';
 export { OptionError, type OptionErrorCode } from './options/errors.js';
-export type { OptionGroup, GetOptionsInput, UpdateOptionsInput } from './options/types.js';
+export type {
+  OptionGroup,
+  GetOptionsInput,
+  UpdateOptionsInput,
+  SiteSettings,
+} from './options/types.js';
 
 // ---- Phase 6: media library (P6-01/P6-02/P6-03/P6-05) ----
 export { createMediaService, type MediaServiceOptions } from './media/service.js';

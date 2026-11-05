@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { getSiteSettings, listPublished, mediaUrl, siteUrl } from '@/lib/api';
+import { getSiteSettings, listPublished, mediaUrl, postHref, siteUrl } from '@/lib/api';
 
 export const revalidate = 3600;
 
@@ -10,7 +10,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   const base = siteUrl();
-  const postBase = settings?.permalinkBase ?? 'posts';
   const entries: MetadataRoute.Sitemap = [
     { url: base, lastModified: new Date() },
     { url: `${base}/posts`, lastModified: new Date() },
@@ -20,7 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     try {
       const data = await listPublished(type, 1, 100);
       for (const post of data?.items ?? []) {
-        const url = type === 'post' ? `${base}/${postBase}/${post.slug}` : `${base}/${post.slug}`;
+        const url = `${base}${postHref(post)}`;
         entries.push({
           url,
           lastModified: new Date(post.updatedAt),

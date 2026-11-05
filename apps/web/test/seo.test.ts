@@ -15,6 +15,7 @@ const post: PublicPost = {
   type: 'post',
   title: 'Hello World',
   slug: 'hello-world',
+  path: '/posts/hello-world',
   excerpt: 'An excerpt',
   content: '',
   contentFormat: 'wp_block_html',
@@ -41,8 +42,8 @@ const post: PublicPost = {
   format: 'standard',
   updatedAt: '2026-01-02T00:00:00.000Z',
   terms: {
-    categories: [{ id: 'c1', name: 'News', slug: 'news' }],
-    tags: [{ id: 't1', name: 'Demo', slug: 'demo' }],
+    categories: [{ id: 'c1', name: 'News', slug: 'news', path: '/category/news' }],
+    tags: [{ id: 't1', name: 'Demo', slug: 'demo', path: '/tag/demo' }],
   },
   author: {
     id: 'u1',
@@ -73,7 +74,7 @@ describe('SEO structured data', () => {
   });
 
   it('describes a post with BlogPosting and visible metadata only', () => {
-    const article = articleSchema(base, post, 'posts') as Record<string, unknown>;
+    const article = articleSchema(base, post) as Record<string, unknown>;
     expect(article).toMatchObject({
       '@type': 'BlogPosting',
       headline: 'Hello World',
@@ -95,11 +96,13 @@ describe('SEO structured data', () => {
   });
 
   it('uses WebPage for pages and omits publication dates that do not exist', () => {
-    const page = articleSchema(
-      base,
-      { ...post, type: 'page', publishedAt: null, slug: 'about' },
-      'posts',
-    ) as Record<string, unknown>;
+    const page = articleSchema(base, {
+      ...post,
+      type: 'page',
+      publishedAt: null,
+      slug: 'about',
+      path: '/about',
+    }) as Record<string, unknown>;
     expect(page['@type']).toBe('WebPage');
     expect(page['url']).toBe(`${base}/about`);
     expect(page).not.toHaveProperty('datePublished');
@@ -117,7 +120,6 @@ describe('SEO structured data', () => {
       url: `${base}/posts`,
       name: 'Blog',
       posts: [post],
-      permalinkBase: 'posts',
     }) as { mainEntity: { itemListElement: Array<Record<string, unknown>> } };
     expect(collection.mainEntity.itemListElement[0]).toMatchObject({
       position: 1,

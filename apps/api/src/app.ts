@@ -61,6 +61,7 @@ import { registerPrivacyRoutes } from './routes/privacy.js';
 import { registerConnectorRoutes } from './routes/connectors.js';
 import { registerMailRoutes } from './routes/mail.js';
 import { registerExportRoutes } from './routes/export.js';
+import { postPath } from '@mernpress/contracts';
 import { registerPrivacyPolicyRoutes } from './routes/privacy-policy.js';
 import { registerBackupRoutes } from './routes/backups.js';
 import { registerRedirectRoutes, registerPublicRedirectRoutes } from './routes/redirects.js';
@@ -157,12 +158,26 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     logger: {
       warn: (message, meta) => app.log.warn({ ...meta }, message),
     },
-    onSlugChanged: async ({ type, oldSlug, newSlug }) => {
+    onSlugChanged: async ({ type, id, oldSlug, newSlug, publishedAt, categorySlug }) => {
       if (!redirectsForSlugs) return;
       const settings = await optionService.getPublicSettings();
-      const base = settings.permalinkBase || 'posts';
-      const oldPath = type === 'post' ? `/${base}/${oldSlug}` : `/${oldSlug}`;
-      const newPath = type === 'post' ? `/${base}/${newSlug}` : `/${newSlug}`;
+      let oldPath: string;
+      let newPath: string;
+      if (type === 'page') {
+        oldPath = `/${oldSlug}`;
+        newPath = `/${newSlug}`;
+      } else {
+        // Plain and id-based permalinks do not change when the slug changes.
+        if (
+          settings.permalinkStructure === 'plain' ||
+          settings.permalinkPattern.includes('%post_id%')
+        ) {
+          return;
+        }
+        const basePost = { id, publishedAt, categorySlug };
+        oldPath = postPath(settings.permalinkPattern, { ...basePost, slug: oldSlug });
+        newPath = postPath(settings.permalinkPattern, { ...basePost, slug: newSlug });
+      }
       await redirectsForSlugs.createAutomatic(oldPath, newPath);
     },
   });

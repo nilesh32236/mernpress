@@ -47,10 +47,10 @@ export default async function PageBySlug({ params }: { params: Promise<{ slug: s
     );
   }
   if (!post) notFound();
-  const canonical = post.canonicalUrl ?? `${siteUrl()}/${post.slug}`;
+  const canonical = post.canonicalUrl ?? `${siteUrl()}${post.path}`;
   return (
     <>
-      <JsonLd data={articleSchema(siteUrl(), post, 'posts')} />
+      <JsonLd data={articleSchema(siteUrl(), post)} />
       <JsonLd
         data={breadcrumbSchema(siteUrl(), [
           { name: 'Home', url: siteUrl() },

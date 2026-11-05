@@ -13,13 +13,21 @@ export interface UpdateOptionsInput {
 }
 
 /** Public-safe site settings used by the web frontend. */
+import type { PermalinkPreset } from '@mernpress/contracts';
+
 export interface SiteSettings {
   siteTitle: string;
   tagline: string;
   blogPublic: boolean;
   postsPerRss: number;
   rssUseExcerpt: boolean;
+  /** Legacy single base; kept for clients that still read it. */
   permalinkBase: string;
+  permalinkStructure: PermalinkPreset;
+  /** Effective pattern ('' for Plain). */
+  permalinkPattern: string;
+  categoryBase: string;
+  tagBase: string;
   showAvatars: boolean;
 }
 

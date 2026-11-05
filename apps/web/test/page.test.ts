@@ -27,6 +27,7 @@ describe('home page', () => {
             type: 'post',
             title: 'Hello World',
             slug: 'hello-world',
+            path: '/2026/01/hello-world',
             excerpt: 'An excerpt',
             content: '',
             contentFormat: 'wp_block_html',
@@ -50,7 +51,7 @@ describe('home page', () => {
     expect(html).toContain('Blog');
     expect(html).toContain('Hello World');
     expect(html).toContain('An excerpt');
-    expect(html).toContain('/posts/hello-world');
+    expect(html).toContain('/2026/01/hello-world');
   });
 
   it('renders empty state when no posts', async () => {

@@ -65,12 +65,12 @@ export function breadcrumbSchema(base: string, crumbs: Crumb[]): JsonLd {
   };
 }
 
-function postUrl(base: string, post: PublicPost, permalinkBase: string): string {
-  return post.type === 'page' ? `${base}/${post.slug}` : `${base}/${permalinkBase}/${post.slug}`;
+function postUrl(base: string, post: PublicPost): string {
+  return `${base}${post.path}`;
 }
 
-export function articleSchema(base: string, post: PublicPost, permalinkBase: string): JsonLd {
-  const url = post.canonicalUrl ?? postUrl(base, post, permalinkBase);
+export function articleSchema(base: string, post: PublicPost): JsonLd {
+  const url = post.canonicalUrl ?? postUrl(base, post);
   const description = post.seoDescription ?? post.excerpt ?? undefined;
   const images = post.featuredImage
     ? [
@@ -125,7 +125,6 @@ export function collectionSchema(
     name: string;
     description?: string | null;
     posts: PublicPost[];
-    permalinkBase: string;
   },
 ): JsonLd {
   return {
@@ -141,7 +140,7 @@ export function collectionSchema(
       itemListElement: options.posts.slice(0, 20).map((post, index) => ({
         '@type': 'ListItem',
         position: index + 1,
-        url: postUrl(base, post, options.permalinkBase),
+        url: postUrl(base, post),
         name: post.title,
       })),
     },

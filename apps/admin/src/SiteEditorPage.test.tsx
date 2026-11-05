@@ -21,18 +21,23 @@ afterEach(() => {
 function mockApi() {
   vi.mocked(fetch).mockImplementation(async (input) => {
     const url = String(input);
-    if (url.includes('group=permalinks')) return response({ permalink_base: 'posts' });
     if (url.includes('type=post')) {
       return response({
         items: [
           {
             slug: 'welcome-to-mernpress',
-            terms: { categories: [{ slug: 'news' }], tags: [{ slug: 'demo' }] },
+            path: '/posts/welcome-to-mernpress',
+            terms: {
+              categories: [{ slug: 'news', path: '/category/news' }],
+              tags: [{ slug: 'demo', path: '/tag/demo' }],
+            },
           },
         ],
       });
     }
-    if (url.includes('type=page')) return response({ items: [{ slug: 'about' }] });
+    if (url.includes('type=page')) {
+      return response({ items: [{ slug: 'about', path: '/about' }] });
+    }
     return response({ items: [] });
   });
 }

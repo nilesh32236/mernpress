@@ -260,4 +260,108 @@ describe('redirects and 404 log', () => {
     });
     expect((list.json() as RedirectListShape).redirects).toEqual([]);
   });
+  it('builds the automatic redirect from the active date structure', async () => {
+    const set = await app.inject({
+      method: 'PUT',
+      url: '/api/options',
+      headers,
+      payload: {
+        group: 'permalinks',
+        values: {
+          permalink_structure: 'custom',
+          permalink_pattern: '/%year%/%monthnum%/%day%/%postname%/',
+        },
+      },
+    });
+    expect(set.statusCode).toBe(200);
+
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/admin/posts',
+      headers,
+      payload: { type: 'post', title: 'Dated slug post' },
+    });
+    const post = created.json() as { id: string; version: number };
+    const published = await app.inject({
+      method: 'POST',
+      url: `/api/admin/posts/${post.id}/publish`,
+      headers,
+      payload: { baseVersion: post.version },
+    });
+    const dated = await app.inject({
+      method: 'PATCH',
+      url: `/api/admin/posts/${post.id}`,
+      headers,
+      payload: {
+        baseVersion: (published.json() as { version: number }).version,
+        publishedAt: '2026-01-15T09:30:00.000Z',
+      },
+    });
+    const renamed = await app.inject({
+      method: 'PATCH',
+      url: `/api/admin/posts/${post.id}`,
+      headers,
+      payload: {
+        baseVersion: (dated.json() as { version: number }).version,
+        slug: 'dated-slug-renamed',
+      },
+    });
+    expect(renamed.statusCode).toBe(200);
+
+    const list = await app.inject({
+      method: 'GET',
+      url: '/api/admin/redirects',
+      headers: { cookie },
+    });
+    expect((list.json() as RedirectListShape).redirects).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          fromPath: '/2026/01/15/dated-slug-post',
+          toPath: '/2026/01/15/dated-slug-renamed',
+        }),
+      ]),
+    );
+  });
+
+  it('creates no redirect when Plain permalinks keep the id URL', async () => {
+    const set = await app.inject({
+      method: 'PUT',
+      url: '/api/options',
+      headers,
+      payload: {
+        group: 'permalinks',
+        values: { permalink_structure: 'plain', permalink_pattern: null },
+      },
+    });
+    expect(set.statusCode).toBe(200);
+
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/admin/posts',
+      headers,
+      payload: { type: 'post', title: 'Plain slug post' },
+    });
+    const post = created.json() as { id: string; version: number };
+    const published = await app.inject({
+      method: 'POST',
+      url: `/api/admin/posts/${post.id}/publish`,
+      headers,
+      payload: { baseVersion: post.version },
+    });
+    await app.inject({
+      method: 'PATCH',
+      url: `/api/admin/posts/${post.id}`,
+      headers,
+      payload: {
+        baseVersion: (published.json() as { version: number }).version,
+        slug: 'plain-slug-renamed',
+      },
+    });
+    const list = await app.inject({
+      method: 'GET',
+      url: '/api/admin/redirects',
+      headers: { cookie },
+    });
+    expect((list.json() as RedirectListShape).redirects).toEqual([]);
+  });
 });

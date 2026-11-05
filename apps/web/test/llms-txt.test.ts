@@ -14,6 +14,7 @@ const post = {
   type: 'post',
   title: 'Hello World',
   slug: 'hello-world',
+  path: '/posts/hello-world',
   excerpt: 'An <excerpt>',
   content: '',
   contentFormat: 'wp_block_html',
@@ -66,7 +67,7 @@ describe('llms.txt', () => {
         });
       }
       return jsonResponse({
-        items: [{ ...post, id: 'p1', type: 'page', title: 'About', slug: 'about' }],
+        items: [{ ...post, id: 'p1', type: 'page', title: 'About', slug: 'about', path: '/about' }],
         pagination: { page: 1, perPage: 100, total: 1, totalPages: 1 },
       });
     });

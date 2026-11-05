@@ -53,7 +53,7 @@ owner decision.
 | Tools → Theme/Plugin File Editor | X | In-browser server-code editing excluded (RCE surface) |
 | Settings → General/Reading/Writing | D/P | Site identity, formats, feed options, mail fields |
 | Settings → Discussion → Mail delivery | D/P | Transport status, sender and a metadata-only delivery log with Clear; WordPress needs a plugin |
-| Settings → Discussion/Media/Permalinks/Privacy | D/P | Options drive comments, uploads, URLs, privacy page; comment/moderation e-mails sent when mail is configured |
+| Settings → Discussion/Media/Permalinks/Privacy | D/P | Options drive comments, uploads, permalink structures (presets, custom pattern, category/tag bases), privacy page; comment/moderation e-mails sent when mail is configured |
 | Settings → Connectors | D/P | Encrypted provider credentials, masked state |
 | Updates | D/P | Version report, "Check again", manifest checks |
 | Public: home/blog/single/page/archives/search/404/author/feed/sitemap | D/P | Twenty Twenty-Five geometry, comments, pagination |
@@ -132,7 +132,6 @@ missing screens. The per-screen evidence for what was checked is recorded in
 | Post sidebar extras | Preview token, SEO and revisions are MERNPress additions shown after the WordPress panels. | No equivalent panels; WordPress revisions live in the document overview. |
 | Admin colour schemes | A single default scheme. | Eight built-in schemes on the Profile screen. |
 | Export filters | One filter set applies to the posts/pages in scope; category is posts-only. | Separate Posts and Pages fieldsets with independent filters; a Pending status. |
-| Permalink structures | One configurable Post URL base. | Plain, day/name, month/name, numeric, post name and custom structures, plus category/tag bases. |
 | Customizer panels | Site Identity only; colours/menus live in the Site Editor. | Site Identity, Colors, Menus, Homepage Settings and Additional CSS. |
 | Connectors | OpenAI, Google and Anthropic keys. | Akismet, Anthropic, Google and OpenAI. |
 | Screen Options per screen | Persisted per screen (columns and paging where applicable). | Some screens expose panels MERNPress does not have. |

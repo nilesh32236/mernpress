@@ -4,6 +4,8 @@ export interface PublicTerm {
   id: string;
   name: string;
   slug: string;
+  /** Canonical archive path from the active permalink settings. */
+  path: string;
 }
 
 /** Taxonomy archive metadata (category/tag title and description). */
@@ -36,6 +38,8 @@ export interface PublicPost {
   type: ContentType;
   title: string;
   slug: string;
+  /** Canonical public path from the active permalink structure. */
+  path: string;
   excerpt: string | null;
   content: string;
   contentFormat: string;
@@ -93,6 +97,26 @@ export interface PublicTheme {
   tokens: ThemeTokens;
 }
 
+/**
+ * Canonical link target for a post/page. The API supplies `path`; the fallback
+ * keeps stale revalidated payloads from crashing a render during a rollout.
+ */
+export function postHref(post: Pick<PublicPost, 'type' | 'slug' | 'path'>): string {
+  if (post.path && post.path.length > 0) return post.path;
+  return post.type === 'page'
+    ? `/${encodeURIComponent(post.slug)}`
+    : `/posts/${encodeURIComponent(post.slug)}`;
+}
+
+/** Canonical archive link for a term, with the same rollout fallback. */
+export function termHref(
+  term: Pick<PublicTerm, 'slug' | 'path'>,
+  taxonomy: 'category' | 'tag',
+): string {
+  if (term.path && term.path.length > 0) return term.path;
+  return `/${taxonomy}/${encodeURIComponent(term.slug)}`;
+}
+
 export interface SiteSettings {
   siteTitle: string;
   tagline: string;
@@ -100,17 +124,12 @@ export interface SiteSettings {
   postsPerRss: number;
   rssUseExcerpt: boolean;
   permalinkBase: string;
+  permalinkStructure: 'plain' | 'day' | 'month' | 'numeric' | 'postname' | 'custom';
+  permalinkPattern: string;
+  categoryBase: string;
+  tagBase: string;
   showAvatars: boolean;
   theme?: PublicTheme | null;
-}
-
-export function postPath(slug: string, base = 'posts'): string {
-  return `/${base}/${encodeURIComponent(slug)}`;
-}
-
-export async function getPermalinkBase(): Promise<string> {
-  const settings = await getSiteSettings().catch(() => null);
-  return settings?.permalinkBase ?? 'posts';
 }
 
 export interface PostsPage {

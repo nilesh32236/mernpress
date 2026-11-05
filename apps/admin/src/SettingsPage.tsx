@@ -16,6 +16,7 @@ import {
 import { ErrorState, Notice, PageHeader, Skeleton, type NoticeMessage } from './components.js';
 import { OptionGroupForm } from './OptionGroupForm.js';
 import { MailLogPanel } from './MailLogPanel.js';
+import { PermalinkSettings } from './PermalinkSettings.js';
 import { useLocation } from './router.js';
 import { cacheSiteFormats, formatSettingsDate, formatSettingsTime } from './format.js';
 
@@ -1058,6 +1059,10 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
           </form>
         </div>
       );
+    }
+
+    if (activeTab === 'permalinks') {
+      return <PermalinkSettings />;
     }
 
     if (SIMPLE_GROUPS.has(activeTab)) {

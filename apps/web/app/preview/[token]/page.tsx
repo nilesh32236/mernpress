@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { getPermalinkBase, getPreviewByToken } from '@/lib/api';
+import { getPreviewByToken } from '@/lib/api';
 import PostView from '@/components/PostView';
 
 export const dynamic = 'force-dynamic';
@@ -26,14 +26,13 @@ export default async function PreviewPage({ params }: { params: Promise<{ token:
     );
   }
   if (!post) notFound();
-  const base = await getPermalinkBase();
   return (
     <>
       <div className="preview-banner" role="status">
         You are viewing a preview of unpublished content. It is not publicly indexed and the link
         can be revoked at any time.
       </div>
-      <PostView post={post} base={base} />
+      <PostView post={post} />
     </>
   );
 }

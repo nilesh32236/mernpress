@@ -3521,3 +3521,36 @@ existing “Test” page and clicking **Use This Page** updated the option and s
 the confirmation notice. The option was then cleared, the draft deleted and the
 temporary administrator removed; production is back to 1 user and its normal
 content, with `/`, `/admin/` and `/api/health` at 200.
+
+### 2026-11-05 — WordPress permalink structure presets
+
+- Added `packages/contracts` (isomorphic) with the permalink pattern language:
+  Plain, Day and name, Month and name, Numeric, Post name, Custom (with tokens),
+  category/tag bases, path generation and matching. The package is built to
+  `dist` for the Next edge runtime.
+- Options now include `permalink_structure`, `permalink_pattern`,
+  `category_base` and `tag_base`; an unset structure migrates from the legacy
+  `permalink_base` to `custom` + `/<base>/%postname%/`, preserving existing
+  URLs. Public settings expose the four values.
+- Public post responses carry `path` and each term a `path`; the web app uses
+  them for links, canonical tags, JSON-LD, sitemap, RSS and `llms.txt`. The old
+  `[base]/[slug]` route was removed.
+- `GET /api/public/resolve` resolves structured paths (and Plain `?p=`, plus
+  slug lookups); it only returns published, non-private posts, validates date
+  parts and `%category%`, and lets a published page shadow a root-level post
+  name. The edge middleware rewrites matches to `/posts/<slug>`, 301s
+  non-canonical date/category variants and rewrites custom category/tag bases.
+  Settings are cached 10 s, resolutions 30 s.
+- Settings → Permalinks is a dedicated screen with the six radio choices,
+  pattern previews, custom pattern validation, category/tag bases and a live
+  sample URL; changing the structure warns that old URLs are not redirected.
+- Slug-change automatic redirects now build old/new paths from the active
+  structure (id, publish date, primary category); Plain and id-based structures
+  create none.
+- Verified in the browser against the dev install for all presets: month/day
+  paths resolve and wrong dates 404, numeric `/archives/<id>`, root-level
+  `/%postname%/` (posts and pages), Plain `?p=<id>` (pretty URLs 404), custom
+  category base `/topics/news`, canonical tags matching each structure, and the
+  legacy `/posts/<slug>` restored at the end.
+- Validation: 754 unit/integration tests (API 468, admin 181, web 35,
+  block-system 65, contracts 5), 23 Playwright E2E tests and six builds pass.

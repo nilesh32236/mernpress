@@ -1,3 +1,4 @@
+import { normalizePattern, validatePattern, validateTermBase } from '@mernpress/contracts';
 import type { DatabaseClient, Prisma } from '@mernpress/database';
 import { ContentError } from '../content/errors.js';
 import { requireCapability } from '../auth/capabilities.js';
@@ -673,6 +674,63 @@ const SPECS: Record<string, OptionSpec> = {
       return value;
     },
   },
+  permalink_structure: {
+    group: 'permalinks',
+    defaultValue: null,
+    validate: (value) => {
+      if (value === null || value === '') return null;
+      if (
+        typeof value !== 'string' ||
+        !['plain', 'day', 'month', 'numeric', 'postname', 'custom'].includes(value)
+      ) {
+        throwValidation('permalink_structure must be a known permalink preset.');
+      }
+      return value;
+    },
+  },
+  permalink_pattern: {
+    group: 'permalinks',
+    defaultValue: null,
+    validate: (value) => {
+      if (value === null || value === '') return null;
+      if (typeof value !== 'string') {
+        throwValidation('permalink_pattern must be a string or null.');
+      }
+      const checked = validatePattern(value);
+      if (!checked.ok) {
+        throwValidation(checked.reason);
+      }
+      return checked.pattern;
+    },
+  },
+  category_base: {
+    group: 'permalinks',
+    defaultValue: 'category',
+    validate: (value) => {
+      if (typeof value !== 'string') {
+        throwValidation('category_base must be a short URL slug.');
+      }
+      try {
+        return validateTermBase(value, 'category');
+      } catch {
+        throwValidation('category_base must be a short URL slug.');
+      }
+    },
+  },
+  tag_base: {
+    group: 'permalinks',
+    defaultValue: 'tag',
+    validate: (value) => {
+      if (typeof value !== 'string') {
+        throwValidation('tag_base must be a short URL slug.');
+      }
+      try {
+        return validateTermBase(value, 'tag');
+      } catch {
+        throwValidation('tag_base must be a short URL slug.');
+      }
+    },
+  },
   permalink_base: {
     group: 'permalinks',
     defaultValue: 'posts',
@@ -810,6 +868,10 @@ export function createOptionService(options: OptionServiceOptions) {
       'posts_per_rss',
       'rss_use_excerpt',
       'permalink_base',
+      'permalink_structure',
+      'permalink_pattern',
+      'category_base',
+      'tag_base',
       'show_avatars',
     ]);
     return {
@@ -825,6 +887,33 @@ export function createOptionService(options: OptionServiceOptions) {
         typeof values.permalink_base === 'string' && values.permalink_base
           ? values.permalink_base
           : 'posts',
+      permalinkStructure: (() => {
+        const stored = values.permalink_structure;
+        if (
+          typeof stored === 'string' &&
+          ['plain', 'day', 'month', 'numeric', 'postname', 'custom'].includes(stored)
+        ) {
+          return stored as 'plain' | 'day' | 'month' | 'numeric' | 'postname' | 'custom';
+        }
+        return 'custom' as const;
+      })(),
+      permalinkPattern: (() => {
+        if (values.permalink_structure === 'plain') return '';
+        const legacyBase =
+          typeof values.permalink_base === 'string' && values.permalink_base
+            ? values.permalink_base
+            : 'posts';
+        const stored =
+          typeof values.permalink_pattern === 'string' && values.permalink_pattern
+            ? values.permalink_pattern
+            : `/${legacyBase}/%postname%/`;
+        return normalizePattern(stored);
+      })(),
+      categoryBase:
+        typeof values.category_base === 'string' && values.category_base
+          ? values.category_base
+          : 'category',
+      tagBase: typeof values.tag_base === 'string' && values.tag_base ? values.tag_base : 'tag',
       showAvatars: values.show_avatars !== false,
     };
   }

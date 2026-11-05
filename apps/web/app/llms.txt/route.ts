@@ -1,4 +1,4 @@
-import { getPermalinkBase, getSiteSettings, listPublished, siteUrl } from '@/lib/api';
+import { getSiteSettings, listPublished, postHref, siteUrl } from '@/lib/api';
 
 export const revalidate = 600;
 
@@ -14,7 +14,6 @@ export async function GET(): Promise<Response> {
   const settings = await getSiteSettings().catch(() => null);
   const title = settings?.siteTitle ?? 'MERNPress';
   const tagline = settings?.tagline?.trim();
-  const postBase = settings?.permalinkBase ?? (await getPermalinkBase().catch(() => 'posts'));
 
   if (settings?.blogPublic === false) {
     return new Response(`# ${title}\n\nThis site is not public.\n`, {
@@ -34,15 +33,15 @@ export async function GET(): Promise<Response> {
   if (tagline) lines.push('', `> ${tagline}`);
   lines.push('', '## Posts');
   for (const post of posts?.items ?? []) {
-    lines.push(
-      link(post.title, `${base}/${postBase}/${post.slug}`, post.excerpt ?? post.seoDescription),
-    );
+    lines.push(link(post.title, `${base}${post.path}`, post.excerpt ?? post.seoDescription));
   }
   if ((posts?.items.length ?? 0) === 0) lines.push('- No published posts.');
 
   lines.push('', '## Pages');
   for (const page of pages?.items ?? []) {
-    lines.push(`${link(page.title, `${base}/${page.slug}`, page.excerpt ?? page.seoDescription)}`);
+    lines.push(
+      `${link(page.title, `${base}${postHref(page)}`, page.excerpt ?? page.seoDescription)}`,
+    );
   }
   if ((pages?.items.length ?? 0) === 0) lines.push('- No published pages.');
 
