@@ -4276,3 +4276,16 @@ verification:
   keyboard-reachable row actions).
 - Validation: 855 unit/integration tests (API 512, admin 230, web 40,
   block-system 65, contracts 8), 24 Playwright E2E tests and seven builds pass.
+
+**Deployment (admin chrome pass):** release `20261105T221235Z-2e09cdc`
+(current), no migration. Production measurements on the deployed build:
+- Posts: search input `1px solid rgb(148,148,148)`, radius `2px`, line-height
+  `normal`, height 32; list select `appearance:none`, line-height `30px`, height
+  32; table button height 32 with 2px radius; first sidebar nav link at y=44.
+- Row actions start off-screen (`left:-129987px`, `visibility:visible`) and, after
+  focusing the first “Edit” action, move to `left:0px` with no horizontal
+  overflow (scrollWidth = innerWidth = 1440).
+- Settings → General: text input 40px high, `#949494` border, 2px radius,
+  normal line-height; select `appearance:none` with `0 24px 0 12px` padding.
+- The temporary administrator was deleted; production is back to 1 user and
+  2 posts, with `/`, `/admin/`, `/api/health` and `/posts/testcom` at 200.
