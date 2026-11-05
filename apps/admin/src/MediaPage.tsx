@@ -791,6 +791,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
         onProgress: (percent) => patchUpload(key, { progress: percent }),
       });
       patchUpload(key, { progress: 100, status: 'done' });
+      void refreshFolders();
       // Insert locally so the grid updates immediately; if the first page is
       // still loading there is nothing to insert into, so refetch instead.
       if (dataRef.current) {
@@ -830,10 +831,13 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
         : current,
     );
     setSelected(updated);
+    // Assignment changes the folder counts shown in the filter.
+    void refreshFolders();
   }
 
   function handleDeleted(removed: MediaItem) {
     setSelected(null);
+    void refreshFolders();
     setData((current) => {
       if (!current) {
         return current;
