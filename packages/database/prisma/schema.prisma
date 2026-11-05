@@ -269,6 +269,8 @@ model Post {
   format          String      @default("standard") @db.VarChar(20)
   /// WordPress "Make this post sticky": pinned above normal posts on the blog.
   sticky          Boolean     @default(false)
+  /// Safe client editing: structural block edits are rejected while locked.
+  structureLocked Boolean     @default(false) @map("structure_locked")
 
   author        User?             @relation(fields: [authorId], references: [id], onDelete: SetNull)
   terms         PostTerm[]

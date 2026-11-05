@@ -11,6 +11,10 @@ export default defineConfig({
         here,
         '../../packages/block-system/src/parser.ts',
       ),
+      '@mernpress/block-system/structure': path.resolve(
+        here,
+        '../../packages/block-system/src/structure.ts',
+      ),
       '@mernpress/block-system/validate': path.resolve(
         here,
         '../../packages/block-system/src/validate.ts',

@@ -63,6 +63,7 @@ export const updatePostSchema = z
     sticky: z.boolean().optional(),
     password: z.string().max(100).nullable().optional(),
     isPrivate: z.boolean().optional(),
+    structureLocked: z.boolean().optional(),
     format: z
       .enum([
         'standard',

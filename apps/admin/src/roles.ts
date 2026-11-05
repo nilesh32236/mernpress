@@ -57,6 +57,14 @@ export function canEditPost(user: AuthUser, post: AdminPost): boolean {
   return user.role === 'contributor' && post.status === 'DRAFT';
 }
 
+/**
+ * Mirrors the server's `content.edit.any` capability: only administrators and
+ * editors may lock or unlock a post's block structure.
+ */
+export function canLockStructure(user: AuthUser): boolean {
+  return user.role === 'administrator' || user.role === 'editor';
+}
+
 export function canPublishPost(user: AuthUser, post: AdminPost): boolean {
   if (user.role === 'administrator' || user.role === 'editor') {
     return true;

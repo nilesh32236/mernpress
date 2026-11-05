@@ -39,6 +39,7 @@ function makePost(overrides: Partial<AdminPost> = {}): AdminPost {
     publishedAt: null,
     commentStatus: 'open',
     sticky: false,
+    structureLocked: false,
     passwordProtected: false,
     isPrivate: false,
     format: 'standard',

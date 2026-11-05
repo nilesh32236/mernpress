@@ -250,9 +250,7 @@ export function createAuthService(options: {
     };
   }
 
-  async function login(
-    input: LoginInput,
-  ): Promise<LoginResult | TwoFactorLoginChallenge> {
+  async function login(input: LoginInput): Promise<LoginResult | TwoFactorLoginChallenge> {
     const rawIdentifier = input.username.trim();
     const emailMode = rawIdentifier.includes('@');
     const username = emailMode ? rawIdentifier.toLowerCase() : normalizeUsername(rawIdentifier);

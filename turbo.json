@@ -41,6 +41,10 @@
     "test": {
       "dependsOn": ["^build"],
       "outputs": []
+    },
+    "@mernpress/database#typecheck": {
+      "dependsOn": ["build"],
+      "outputs": []
     }
   }
 }

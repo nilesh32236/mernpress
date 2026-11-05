@@ -27,6 +27,7 @@ afterEach(() => {
 
 const authorA: AuthUser = { id: 'a1', username: 'author-a', role: 'author', status: 'active' };
 const authorB: AuthUser = { id: 'a2', username: 'author-b', role: 'author', status: 'active' };
+const editorUser: AuthUser = { id: 'e1', username: 'editor', role: 'editor', status: 'active' };
 
 function makePost(overrides: Partial<AdminPost> = {}): AdminPost {
   return {
@@ -49,6 +50,7 @@ function makePost(overrides: Partial<AdminPost> = {}): AdminPost {
     publishedAt: null,
     commentStatus: 'open',
     sticky: false,
+    structureLocked: false,
     passwordProtected: false,
     isPrivate: false,
     format: 'standard',
@@ -1111,5 +1113,61 @@ describe('editor autosave (P8-02)', () => {
     expect(window.localStorage.getItem('mernpress.editorPreferences')).toContain('compact');
 
     window.localStorage.removeItem('mernpress.editorPreferences');
+  });
+});
+
+describe('safe client editing', () => {
+  it('shows the structure lock, lets an editor unlock it and sends the change', async () => {
+    const post = makePost({ authorId: 'e1', status: 'DRAFT', structureLocked: true, version: 4 });
+    let patchBody: Record<string, unknown> | null = null;
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input, init) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+      if (method === 'PATCH') {
+        patchBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        return response({ ...post, structureLocked: false, version: 5 });
+      }
+      if (url.includes('/revisions')) return response([]);
+      if (url.includes('/schedule')) return response({ scheduledAt: null });
+      if (url.includes('/api/terms')) return response(termsPage());
+      if (url.includes('/api/admin/posts/')) return response(post);
+      return response(termsPage());
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(editorUser, post.id);
+
+    expect(await screen.findByText('Structure locked.')).toBeDefined();
+    const toggle = screen.getByLabelText('Lock block structure') as HTMLInputElement;
+    expect(toggle.checked).toBe(true);
+    expect(toggle.disabled).toBe(false);
+    fireEvent.click(toggle);
+    expect(toggle.checked).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+
+    await waitFor(() => expect(patchBody).not.toBeNull());
+    expect(patchBody).toMatchObject({ baseVersion: 4, structureLocked: false });
+    await waitFor(() => expect(screen.queryByText('Structure locked.')).toBeNull());
+  });
+
+  it('explains why an author cannot change the structure lock', async () => {
+    const post = makePost({ authorId: 'a1', structureLocked: true });
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes('/revisions')) return response([]);
+      if (url.includes('/schedule')) return response({ scheduledAt: null });
+      if (url.includes('/api/terms')) return response(termsPage());
+      if (url.includes('/api/admin/posts/')) return response(post);
+      return response(termsPage());
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA, post.id);
+
+    expect(await screen.findByText('Structure locked.')).toBeDefined();
+    const toggle = screen.getByLabelText('Lock block structure') as HTMLInputElement;
+    expect(toggle.checked).toBe(true);
+    expect(toggle.disabled).toBe(true);
+    expect(screen.getByText(/Only administrators and editors can change this lock/)).toBeDefined();
   });
 });

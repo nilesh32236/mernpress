@@ -44,7 +44,13 @@ import {
 } from './components.js';
 import { formatDateTime, formatRelativeTime } from './format.js';
 import { useUnsavedChanges } from './navigation-guard.js';
-import { availableTransitions, canAssignTerms, canCreateContent, canEditPost } from './roles.js';
+import {
+  availableTransitions,
+  canAssignTerms,
+  canCreateContent,
+  canEditPost,
+  canLockStructure,
+} from './roles.js';
 import { editContentPath, listPath, navigate } from './router.js';
 import {
   readEditorPreferences,
@@ -75,6 +81,7 @@ interface Baseline {
   tagIds: string[];
   featuredMediaId: string | null;
   format: PostFormat;
+  structureLocked: boolean;
 }
 
 const EMPTY_FORM: FormState = {
@@ -193,6 +200,7 @@ export function ContentEditor({
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [featuredMedia, setFeaturedMedia] = useState<FeaturedImage | null>(null);
   const [format, setFormat] = useState<PostFormat>('standard');
+  const [structureLocked, setStructureLocked] = useState(false);
   const [featuredPickerOpen, setFeaturedPickerOpen] = useState(false);
   const [featuredPickerItems, setFeaturedPickerItems] = useState<MediaItem[] | null>(null);
   const [featuredPickerSearch, setFeaturedPickerSearch] = useState('');
@@ -267,7 +275,8 @@ export function ContentEditor({
       !sameIds(categoryIds, baseline.categoryIds) ||
       !sameIds(tagIds, baseline.tagIds) ||
       (featuredMedia?.id ?? null) !== baseline.featuredMediaId ||
-      format !== baseline.format
+      format !== baseline.format ||
+      structureLocked !== baseline.structureLocked
     );
   }, [
     baseline,
@@ -280,6 +289,7 @@ export function ContentEditor({
     isNew,
     tagIds,
     format,
+    structureLocked,
   ]);
 
   useUnsavedChanges(dirty, 'You have unsaved changes. Leave this page without saving?');
@@ -358,11 +368,13 @@ export function ContentEditor({
         setTagIds(nextTerms.tagIds);
         setFeaturedMedia(loaded.featuredMedia ?? null);
         setFormat(loaded.format);
+        setStructureLocked(loaded.structureLocked);
         setBaseline({
           form: nextForm,
           ...nextTerms,
           featuredMediaId: loaded.featuredMedia?.id ?? null,
           format: loaded.format,
+          structureLocked: loaded.structureLocked,
         });
         setContentTouched(false);
         setLoading(false);
@@ -742,11 +754,13 @@ export function ContentEditor({
     setTagIds(nextTerms.tagIds);
     setFeaturedMedia(nextPost.featuredMedia ?? null);
     setFormat(nextPost.format);
+    setStructureLocked(nextPost.structureLocked);
     setBaseline({
       form: nextForm,
       ...nextTerms,
       featuredMediaId: nextPost.featuredMedia?.id ?? null,
       format: nextPost.format,
+      structureLocked: nextPost.structureLocked,
     });
     setContentTouched(false);
   }
@@ -801,7 +815,13 @@ export function ContentEditor({
     }
 
     // Persist exactly what is on screen: flush pending debounced keystrokes.
-    const content = contentTouched ? (canvasRef.current?.flush() ?? form.content) : form.content;
+    // Locking (or unlocking) also flushes, so the structure baseline is stored
+    // in the editor's canonical serialization. Without this, locking raw
+    // imported markup would reject the first text edit because the editor
+    // normalizes attributes (e.g. it drops a heading's default level).
+    const lockChanged = post ? structureLocked !== post.structureLocked : false;
+    const content =
+      contentTouched || lockChanged ? (canvasRef.current?.flush() ?? form.content) : form.content;
 
     setSaving(true);
     setNotice(null);
@@ -869,6 +889,7 @@ export function ContentEditor({
         content,
         ...seoPayload(form),
         format,
+        structureLocked,
         // Only send when changed; undefined keeps the server-side value.
         ...((featuredMedia?.id ?? null) !== (baseline?.featuredMediaId ?? null)
           ? { featuredMediaId: featuredMedia?.id ?? null }
@@ -882,11 +903,13 @@ export function ContentEditor({
         setForm(formFromPost(updated));
         setFeaturedMedia(updated.featuredMedia ?? null);
         setFormat(updated.format);
+        setStructureLocked(updated.structureLocked);
         setBaseline({
           form: formFromPost(updated),
           ...serverTerms,
           featuredMediaId: updated.featuredMedia?.id ?? null,
           format: updated.format,
+          structureLocked: updated.structureLocked,
         });
         setContentTouched(false);
         setNotice({
@@ -1414,6 +1437,12 @@ export function ContentEditor({
                   />
                   <FieldError id="content-title-error" message={fieldErrors['title']} />
                 </div>
+                {structureLocked ? (
+                  <div className="editor-structure-banner" role="status">
+                    <strong>Structure locked.</strong> You can edit text; adding, removing, moving
+                    or restyling blocks is disabled.
+                  </div>
+                ) : null}
                 <Suspense fallback={<Skeleton label="Loading block editor…" lines={6} />}>
                   <BlockCanvas
                     ref={canvasRef}
@@ -1421,6 +1450,13 @@ export function ContentEditor({
                     initialContent={form.content}
                     onChange={updateContent}
                     onDirty={() => setContentTouched(true)}
+                    structureLocked={structureLocked}
+                    onStructureBlocked={() =>
+                      setNotice({
+                        tone: 'error',
+                        text: 'The block structure is locked. You can edit text, but not add, remove, move or restyle blocks.',
+                      })
+                    }
                   />
                 </Suspense>
               </div>
@@ -2227,6 +2263,35 @@ export function ContentEditor({
                       </section>
                     </div>
                   </details>
+
+                  <section
+                    className="editor-panel editor-structure-panel"
+                    aria-labelledby="structure-lock-heading"
+                  >
+                    <h3 id="structure-lock-heading">Safe client editing</h3>
+                    <p className="field-help">
+                      Freeze the block structure so a client can rewrite text without adding,
+                      removing, moving or restyling blocks. The server rejects structural changes
+                      while the lock is on.
+                    </p>
+                    <label className="checkbox-row">
+                      <input
+                        type="checkbox"
+                        checked={structureLocked}
+                        onChange={(event) => setStructureLocked(event.target.checked)}
+                        disabled={!editable || createdPost || !canLockStructure(user)}
+                      />
+                      <span>Lock block structure</span>
+                    </label>
+                    {!canLockStructure(user) ? (
+                      <p className="field-help">
+                        Only administrators and editors can change this lock.
+                      </p>
+                    ) : null}
+                    {structureLocked ? (
+                      <p className="editor-structure-status">Structure locked — text edits only.</p>
+                    ) : null}
+                  </section>
 
                   {post && !createdPost ? (
                     <section className="editor-panel" aria-labelledby="revisions-heading">

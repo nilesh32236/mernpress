@@ -3365,3 +3365,36 @@ tables verified). Production verification with a temporary administrator:
 - The temporary administrator (and cascaded codes/challenges/sessions) was
   deleted; production has 1 user, 0 recovery codes, 0 challenges and 0 accounts
   with 2FA enabled.
+
+### 2026-11-05 — Safe client editing (per-post structure lock)
+
+- Added `posts.structure_locked` (migration
+  `20261105103105_add_post_structure_lock`). The admin DTO exposes
+  `structureLocked`; `PATCH /api/admin/posts/:id` accepts it and only users with
+  `content.edit.any` may change it (authors get 403).
+- Server enforcement: while locked, `updatePost` compares the stored document
+  with the filtered draft using `structureUnchanged` (ordered block names,
+  attributes and nesting; inner HTML ignored) and returns
+  `409 STRUCTURE_LOCKED` without touching the row. Text-only edits, titles,
+  SEO fields, terms, status and revision restore keep working.
+- Editor: a banner while locked, a "Safe client editing" panel with the toggle
+  and a permission explanation, and a canvas guard that hides the
+  inserter/appender/document overview and reverts structural changes. Enabling
+  the lock re-freezes the baseline at the current document.
+- Developer guide: `docs/architecture/content-structure-lock.md`.
+- Locking (or unlocking) flushes and stores the editor's canonical serialization.
+  Gutenberg rewrites markup on save (it drops a heading's default `level` and adds
+  support classes); signing raw imported markup would otherwise reject the first
+  legitimate text edit. The canvas baseline is the canonical document, not the
+  raw stored text.
+- Tests cover the signature (text vs attributes/nesting), a locked post allowing
+  text changes and rejecting added blocks/attribute changes (409, row unchanged,
+  version unchanged), title edits while locked, unlock-then-edit, and an author
+  being unable to toggle the lock but still able to edit text.
+- Verified in the browser: locking a post with non-canonical markup stored the
+  canonical document and turned the lock on; typing " Client-friendly words."
+  persisted; pressing Enter (a new block) showed "The block structure is locked…"
+  and left 2 blocks with the typed text intact; saving stored the text with the
+  lock still on.
+- Validation: 719 unit/integration tests (API 449, admin 174, web 31,
+  block-system 65), 23 Playwright E2E tests and six builds pass.

@@ -58,6 +58,8 @@ export interface AdminPost {
   publishedAt: string | null;
   commentStatus: 'open' | 'closed';
   sticky: boolean;
+  /** Safe client editing: structural block edits are rejected while locked. */
+  structureLocked: boolean;
   passwordProtected: boolean;
   isPrivate: boolean;
   format: PostFormat;
@@ -310,6 +312,7 @@ export interface UpdatePostPayload {
   password?: string | null;
   isPrivate?: boolean;
   format?: PostFormat;
+  structureLocked?: boolean;
 }
 
 interface ErrorBody {

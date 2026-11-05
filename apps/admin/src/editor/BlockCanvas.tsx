@@ -30,6 +30,7 @@ import { store as noticesStore } from '@wordpress/notices';
 import type { Block } from '@wordpress/blocks';
 
 import { editorSettings, ensureEditorBootstrap } from './blocks.js';
+import { structureUnchanged } from '@mernpress/block-system/structure';
 import { blocksFromContent, historySeed, serializeBlocks } from './content.js';
 
 import '@wordpress/components/build-style/style.css';
@@ -84,6 +85,14 @@ export interface BlockCanvasProps {
   onDirty?: () => void;
   /** Rendered above the block list, inside the white canvas (the title field). */
   titleSlot?: ReactNode;
+  /**
+   * Safe client editing. When true, only text/innerHTML may change: adding,
+   * removing, reordering, nesting or restyling a block is rejected in the
+   * canvas (the API enforces the same rule with a 409).
+   */
+  structureLocked?: boolean;
+  /** Called when a structural edit is rejected while the structure is locked. */
+  onStructureBlocked?: () => void;
 }
 
 /**
@@ -95,7 +104,15 @@ export interface BlockCanvasProps {
  * the keyboard shortcuts WordPress users expect.
  */
 export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(function BlockCanvas(
-  { initialContent, onChange, onDirty, titleSlot, toolbarSlot },
+  {
+    initialContent,
+    onChange,
+    onDirty,
+    titleSlot,
+    toolbarSlot,
+    structureLocked = false,
+    onStructureBlocked,
+  },
   ref,
 ) {
   const [blocks, setBlocks] = useState<Array<Block<Record<string, unknown>>>>(() =>
@@ -117,6 +134,38 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
+  // Structure-lock guard state. `allowedBlocks` is the last document that passed
+  // the structural check; `structureBaseline` is the locked signature.
+  const structureBaselineRef = useRef<string | null>(null);
+  if (structureBaselineRef.current === null) {
+    structureBaselineRef.current = initialContent;
+  }
+  const allowedBlocksRef = useRef(blocks);
+  const structureLockedRef = useRef(structureLocked);
+  structureLockedRef.current = structureLocked;
+  const onStructureBlockedRef = useRef(onStructureBlocked);
+  onStructureBlockedRef.current = onStructureBlocked;
+  const wasLockedRef = useRef(false);
+
+  // Turning the lock on freezes the document as the editor would serialize it,
+  // not as it was stored. Gutenberg canonicalizes markup (it drops a heading's
+  // default level and adds support classes), so signing the raw stored content
+  // would flag the first legitimate text edit. This also runs when a post opens
+  // already locked.
+  useEffect(() => {
+    if (structureLocked && !wasLockedRef.current) {
+      try {
+        // The baseline is canonical *markup*, not a signature: the editor must
+        // compare like-for-like with what it serializes on change.
+        structureBaselineRef.current = serializeBlocks(blocksRef.current);
+      } catch {
+        structureBaselineRef.current = lastEmitted.current;
+      }
+      allowedBlocksRef.current = blocksRef.current;
+    }
+    wasLockedRef.current = structureLocked;
+  }, [structureLocked]);
+
   const clearTimer = useCallback(() => {
     if (timer.current) {
       clearTimeout(timer.current);
@@ -124,19 +173,39 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
     }
   }, []);
 
-  const emit = useCallback((next: Array<Block<Record<string, unknown>>>) => {
-    let serialized: string;
-    try {
-      serialized = serializeBlocks(next);
-    } catch {
-      // Never hand an empty document to the parent (and then to the API) when
-      // the serializer fails; keep the last known-good content instead.
-      return lastEmitted.current;
-    }
-    lastEmitted.current = serialized;
-    onChangeRef.current(serialized);
-    return serialized;
-  }, []);
+  const rejectStructuralChange = useCallback(() => {
+    clearTimer();
+    setBlocks(allowedBlocksRef.current);
+    onStructureBlockedRef.current?.();
+  }, [clearTimer]);
+
+  const emit = useCallback(
+    (next: Array<Block<Record<string, unknown>>>) => {
+      let serialized: string;
+      try {
+        serialized = serializeBlocks(next);
+      } catch {
+        // Never hand an empty document to the parent (and then to the API) when
+        // the serializer fails; keep the last known-good content instead.
+        return lastEmitted.current;
+      }
+      if (
+        structureLockedRef.current &&
+        !structureUnchanged(structureBaselineRef.current ?? '', serialized)
+      ) {
+        // A structural edit reached the debounced path (typing is allowed, so
+        // the per-keystroke handler stays cheap). Revert to the last document
+        // that passed and tell the editor why.
+        rejectStructuralChange();
+        return lastEmitted.current;
+      }
+      allowedBlocksRef.current = next;
+      lastEmitted.current = serialized;
+      onChangeRef.current(serialized);
+      return serialized;
+    },
+    [rejectStructuralChange],
+  );
 
   const resetHistory = useCallback((seed: string) => {
     const next: HistoryState = { entries: [seed], index: 0 };
@@ -185,6 +254,10 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
     clearTimer();
     lastEmitted.current = initialContent;
     blocksRef.current = parsed;
+    allowedBlocksRef.current = parsed;
+    if (structureLockedRef.current) {
+      structureBaselineRef.current = normalized;
+    }
     setBlocks(parsed);
     resetHistory(normalized);
   }, [clearTimer, initialContent, resetHistory]);
@@ -203,6 +276,19 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
 
   const handleChange = useCallback(
     (next: Array<Block<Record<string, unknown>>>) => {
+      if (structureLockedRef.current) {
+        let serialized: string;
+        try {
+          serialized = serializeBlocks(next);
+        } catch {
+          rejectStructuralChange();
+          return;
+        }
+        if (!structureUnchanged(structureBaselineRef.current ?? '', serialized)) {
+          rejectStructuralChange();
+          return;
+        }
+      }
       const previous = lastEmitted.current;
       blocksRef.current = next;
       setBlocks(next);
@@ -214,7 +300,7 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
       }
       pushHistory(emit(next));
     },
-    [clearTimer, emit, pushHistory],
+    [clearTimer, emit, pushHistory, rejectStructuralChange],
   );
 
   const applySnapshot = useCallback(
@@ -307,21 +393,25 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
             {toolbarSlot
               ? createPortal(
                   <div className="editor-topbar-tools" role="toolbar" aria-label="Editor tools">
-                    <InserterControl
-                      renderToggle={({ onToggle, disabled }) => (
-                        <button
-                          type="button"
-                          className="editor-topbar-tool editor-topbar-tool-primary"
-                          onClick={onToggle}
-                          disabled={disabled}
-                          aria-label="Add block"
-                          title="Add block"
-                        >
-                          <Icon icon={plus} size={20} />
-                        </button>
-                      )}
-                    />
-                    <span className="editor-topbar-divider" aria-hidden="true" />
+                    {structureLocked ? null : (
+                      <>
+                        <InserterControl
+                          renderToggle={({ onToggle, disabled }) => (
+                            <button
+                              type="button"
+                              className="editor-topbar-tool editor-topbar-tool-primary"
+                              onClick={onToggle}
+                              disabled={disabled}
+                              aria-label="Add block"
+                              title="Add block"
+                            >
+                              <Icon icon={plus} size={20} />
+                            </button>
+                          )}
+                        />
+                        <span className="editor-topbar-divider" aria-hidden="true" />
+                      </>
+                    )}
                     <button
                       type="button"
                       className="editor-topbar-tool"
@@ -342,16 +432,18 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
                     >
                       <Icon icon={redo} size={20} />
                     </button>
-                    <button
-                      type="button"
-                      className={`editor-topbar-tool${listViewOpen ? ' is-active' : ''}`}
-                      onClick={() => setListViewOpen((open) => !open)}
-                      aria-label="Document overview"
-                      aria-expanded={listViewOpen}
-                      title="Document overview"
-                    >
-                      <Icon icon={listView} size={20} />
-                    </button>
+                    {structureLocked ? null : (
+                      <button
+                        type="button"
+                        className={`editor-topbar-tool${listViewOpen ? ' is-active' : ''}`}
+                        onClick={() => setListViewOpen((open) => !open)}
+                        aria-label="Document overview"
+                        aria-expanded={listViewOpen}
+                        title="Document overview"
+                      >
+                        <Icon icon={listView} size={20} />
+                      </button>
+                    )}
                   </div>,
                   toolbarSlot,
                 )
@@ -383,26 +475,28 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
                   <BlockTools __unstableContentRef={contentRef}>
                     <WritingFlow>
                       <ObserveTyping>
-                        <BlockList />
+                        <BlockList {...(structureLocked ? { renderAppender: false } : {})} />
                       </ObserveTyping>
                     </WritingFlow>
                   </BlockTools>
-                  <div className="block-canvas-appender">
-                    <InserterControl
-                      renderToggle={({ onToggle, disabled }) => (
-                        <button
-                          type="button"
-                          className="block-canvas-appender-button"
-                          onClick={onToggle}
-                          disabled={disabled}
-                          aria-label="Add block"
-                          title="Add block"
-                        >
-                          <Icon icon={plus} size={24} />
-                        </button>
-                      )}
-                    />
-                  </div>
+                  {structureLocked ? null : (
+                    <div className="block-canvas-appender">
+                      <InserterControl
+                        renderToggle={({ onToggle, disabled }) => (
+                          <button
+                            type="button"
+                            className="block-canvas-appender-button"
+                            onClick={onToggle}
+                            disabled={disabled}
+                            aria-label="Add block"
+                            title="Add block"
+                          >
+                            <Icon icon={plus} size={24} />
+                          </button>
+                        )}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 

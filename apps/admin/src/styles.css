@@ -12337,3 +12337,26 @@ a.glance-chip:hover {
   font-size: 11px;
   word-break: break-all;
 }
+
+/* Safe client editing: structure lock banner and panel. */
+.editor-structure-banner {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-left: 4px solid #dba617;
+  background: #fcf9e8;
+  color: #1d2327;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.editor-structure-panel .checkbox-row {
+  margin: 10px 0 6px;
+  font-size: 13px;
+}
+
+.editor-structure-status {
+  margin: 6px 0 0;
+  color: #8a6d1b;
+  font-size: 12px;
+  font-weight: 600;
+}

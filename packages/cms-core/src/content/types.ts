@@ -92,6 +92,8 @@ export interface AdminPost {
   commentStatus: 'open' | 'closed';
   /** WordPress "Make this post sticky". */
   sticky: boolean;
+  /** Safe client editing: structural block edits are rejected while locked. */
+  structureLocked: boolean;
   /** True when a post password is set (the hash itself never leaves the DB). */
   passwordProtected: boolean;
   /** WordPress "Private": excluded from every public surface. */
@@ -236,6 +238,11 @@ export interface UpdatePostInput {
   password?: string | null | undefined;
   isPrivate?: boolean | undefined;
   format?: PostFormat | undefined;
+  /**
+   * Safe client editing lock. Only users with `content.edit.any` may change it;
+   * while true the server rejects structural block edits with 409.
+   */
+  structureLocked?: boolean | undefined;
 }
 
 export type AdminPostSort = 'updatedAt' | 'createdAt' | 'publishedAt' | 'title';

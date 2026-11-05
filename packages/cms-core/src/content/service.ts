@@ -1,6 +1,7 @@
 import type { DatabaseClient, PostStatus, Prisma } from '@mernpress/database';
 import { validateBlockMarkup } from '@mernpress/block-system/validate';
 import { renderBlockMarkup } from '@mernpress/block-system/render';
+import { structureUnchanged } from '@mernpress/block-system/structure';
 import type { HookRegistry } from '../hooks/types.js';
 import { HookRejectedError } from '../hooks/types.js';
 import {
@@ -291,6 +292,7 @@ function toAdmin(row: PostWithTerms, options: { includePreviewToken?: boolean } 
     publishedAt: row.publishedAt?.toISOString() ?? null,
     commentStatus: row.commentStatus === 'closed' ? 'closed' : 'open',
     sticky: row.sticky,
+    structureLocked: row.structureLocked,
     passwordProtected: row.passwordHash !== null,
     isPrivate: row.isPrivate,
     format: (POST_FORMATS as readonly string[]).includes(row.format)
@@ -653,6 +655,31 @@ export function createContentService(options: ContentServiceOptions): ContentSer
         }
       }
 
+      // Safe client editing: while the structure is locked, only text/innerHTML
+      // may change. Adding, removing, reordering, nesting or restyling a block
+      // is a structural edit and is rejected. The server enforces this; the
+      // editor's guard is only a convenience.
+      if (
+        existing.structureLocked &&
+        draft.content !== existing.content &&
+        !structureUnchanged(existing.content, draft.content)
+      ) {
+        throw new ContentError(
+          'STRUCTURE_LOCKED',
+          'This post’s block structure is locked. You can edit text, but not add, remove, move or restyle blocks.',
+          409,
+        );
+      }
+
+      const structureLocked =
+        input.structureLocked === undefined ? existing.structureLocked : input.structureLocked;
+      if (
+        input.structureLocked !== undefined &&
+        input.structureLocked !== existing.structureLocked
+      ) {
+        requireCapability(principal, 'content.edit.any');
+      }
+
       const slugChanged = draft.slug !== existing.slug;
       // Revisions snapshot only content-bearing edits. Terms-only, status and
       // slug-only operations must not create a revision (P8-01).
@@ -715,6 +742,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
             ...(passwordHashUpdate === undefined ? {} : { passwordHash: passwordHashUpdate }),
             commentStatus,
             sticky,
+            structureLocked,
             isPrivate,
             format,
           },
