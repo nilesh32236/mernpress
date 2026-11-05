@@ -3263,3 +3263,13 @@ temporary administrator was deleted; production has 1 user, 0 mail log rows and
   rename creating nothing.
 - Validation: 691 unit/integration tests (API 434, admin 166, web 26,
   block-system 65), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (automatic slug redirects):** release
+`20261105T093612Z-ec16ca4` (current). Production verification with a temporary
+administrator: created and published `Prod slug redirect check`, renamed its slug
+to `prod-slug-redirect-renamed`; Tools → Redirects immediately contained
+`/posts/prod-slug-redirect-check → /posts/prod-slug-redirect-renamed` (301), and
+after the middleware cache window the old URL returned
+`HTTP/2 301 location: /posts/prod-slug-redirect-renamed`. The test post and
+redirect were deleted and the temporary administrator removed; production has
+1 user, 0 redirects and 0 mail log rows.
