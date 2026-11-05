@@ -4201,3 +4201,20 @@ with a temporary administrator:
   assignment, rename/delete flows and notices.
 - Validation: 846 unit/integration tests (API 509, admin 226, web 38,
   block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.
+
+**Deployment (virtual media folders):** release `20261105T211255Z-bd388f9`
+(current), migration `20261105204647_add_media_folders` applied
+(`media_folders` + `media_items.folder_id`). Production verification with a
+temporary administrator:
+- The Media Library Folder bar created “Production Trips”, selected it
+  immediately and showed the success notice; the upload drawer’s Folder select
+  moved an uploaded PNG into it (`?folder=<id>` returned 1 item).
+- The folder filter hid everything else (1 visible card) and the option list
+  showed “Production Trips”; renaming to “Trips 2026” updated the list and count
+  to 1; deleting the folder produced “Folder deleted; its media items are now
+  Uncategorized.” and `?folder=none` returned the item.
+- A follow-up check confirmed the fixed count refresh: assigning an item showed
+  “Count Check (1)” in the filter immediately, without a reload.
+- The temporary folder, media item and administrator were deleted; production
+  is back to 1 user, 2 posts, 0 media and 0 folders, with `/`, `/admin/`,
+  `/api/health` and `/posts/testcom` at 200.
