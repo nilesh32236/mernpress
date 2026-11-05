@@ -3210,5 +3210,5 @@ password-protected and zero private posts.
   10-second cached map and reports hits asynchronously. A root catch-all logs
   missing paths (path/count/timestamps only) and renders the standard 404 page.
   Public hit/404 writes are validated and limited to 120/min per client.
-- Validation: 685 unit/integration tests (API 429, admin 163, web 28,
+- Validation: 683 unit/integration tests (API 429, admin 163, web 26,
   block-system 65), 23 Playwright E2E tests and six builds pass.

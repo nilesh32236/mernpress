@@ -1,6 +1,8 @@
 import SearchForm from '@/components/SearchForm';
+import { logCurrentNotFound } from '@/lib/not-found-log';
 
-export default function NotFound() {
+export default async function NotFound() {
+  await logCurrentNotFound();
   return (
     <main id="main-content" className="site-main not-found-main">
       <div className="not-found-columns">

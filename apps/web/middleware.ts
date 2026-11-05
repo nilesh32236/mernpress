@@ -42,7 +42,12 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
   }
   const path = normalize(pathname);
   const match = (await redirectMap()).find((entry) => entry.fromPath === path);
-  if (!match) return NextResponse.next();
+  if (!match) {
+    // The not-found component cannot read the URL; forward it for 404 logging.
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-mn-path', path);
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
 
   const destination = match.toPath.startsWith('/')
     ? new URL(match.toPath, request.url)
