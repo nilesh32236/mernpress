@@ -115,8 +115,8 @@ instant and safe; no PHP or template execution.
    for agencies.
 5. ~~**Reading time / related posts**~~ — delivered (ADR 0033); author box
    remains a future theme feature.
-6. **Two-factor authentication** — TOTP for administrators, recovery codes. Core
-   security gap users call out; needs its own ADR.
+6. ~~**Two-factor authentication**~~ — delivered (ADR 0035): TOTP, recovery
+   codes, login challenge, profile enrollment and admin reset.
 7. ~~**Redirect-aware slug rename**~~ — delivered (ADR 0032): published slug
    changes create/retarget a 301 automatically.
 8. **Admin performance budget** — keep the admin bundle and dashboard queries

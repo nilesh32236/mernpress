@@ -39,6 +39,10 @@ export interface AuthAudit {
   sessionRevoked(input: { userId: string; reason: string }): Promise<void>;
   passwordResetRequested(input: { userId: string; ip: string }): Promise<void>;
   passwordResetCompleted(input: { userId: string; ip: string }): Promise<void>;
+  twoFactorChanged(input: {
+    userId: string;
+    action: 'enabled' | 'disabled' | 'reset' | 'recovery_used';
+  }): Promise<void>;
 }
 
 export function createAuthAudit(prisma: DatabaseClient, hasher: IdentifierHasher): AuthAudit {
@@ -132,6 +136,17 @@ export function createAuthAudit(prisma: DatabaseClient, hasher: IdentifierHasher
           targetUserId: input.userId,
           ipHash: hasher.ip(input.ip),
           metadata: { source: 'self-service' },
+        },
+      });
+    },
+
+    async twoFactorChanged(input) {
+      await prisma.auditEvent.create({
+        data: {
+          eventType: `auth.two_factor.${input.action}`,
+          actorUserId: input.userId,
+          targetUserId: input.userId,
+          metadata: { action: input.action },
         },
       });
     },

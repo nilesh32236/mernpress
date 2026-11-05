@@ -3329,3 +3329,25 @@ administrator: Tools → Backups created `mernpress-backup-20261105T100410Z.tar.
 contains `DROP TABLE IF EXISTS`/`CREATE TABLE` for users, posts, redirects and
 mail log; the test archive was deleted afterwards. Production is back to 1 user
 and zero stored backups.
+
+### 2026-11-05 — Two-factor authentication (TOTP + recovery codes)
+
+- Added `auth/totp.ts` (RFC 6238 SHA-1, 6 digits, 30 s, ±1 drift, local base32)
+  and `TwoFactorService`: AES-256-GCM sealed TOTP secret derived from
+  `AUTH_HASH_PEPPER`, eight single-use HMAC recovery codes, a 10-minute
+  five-attempt hashed login challenge, and replay protection via the highest
+  accepted counter.
+- Password login now returns `{ twoFactorRequired, challengeToken, username }`
+  with no cookies when 2FA is enabled; `POST /api/auth/two-factor` verifies a
+  TOTP or recovery code and only then creates the session/CSRF cookies.
+- Profile → Two-Factor Authentication: setup shows the secret, `otpauth://` URI
+  and recovery codes once; confirm enables; disable requires password + code;
+  recovery codes regenerate with the password. Users rows show **Reset 2FA** when
+  enabled; the admin reset endpoint is audited.
+- Migrations `20261105100529_add_two_factor_auth` and
+  `20261105100707_add_two_factor_user_fields`.
+- Tests cover RFC vector, drift/replay, enrollment, challenge success/failure,
+  recovery-code single use, disable, admin reset, anonymous access and the login
+  UI challenge.
+- Validation: 714 unit/integration tests (API 446, admin 172, web 31,
+  block-system 65), 23 Playwright E2E tests and six builds pass.

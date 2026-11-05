@@ -31,6 +31,13 @@ const loginSchema = z
 
 const lostPasswordSchema = z.object({ identifier: z.string().min(1).max(254) }).strict();
 
+const twoFactorSchema = z
+  .object({
+    challengeToken: z.string().min(16).max(200),
+    code: z.string().min(4).max(32),
+  })
+  .strict();
+
 const resetPasswordSchema = z
   .object({
     key: z.string().min(16).max(300),
@@ -121,6 +128,27 @@ export function registerAuthRoutes(app: FastifyInstance, options: AuthRouteOptio
     return { csrfToken };
   });
 
+  function establishSession(
+    reply: FastifyReply,
+    result: {
+      user: unknown;
+      sessionToken: string;
+      csrfToken: string;
+      expiresAt: Date;
+    },
+  ) {
+    // Follow the session's actual expiry so "Remember Me" can extend it.
+    const maxAge = Math.max(60, Math.round((result.expiresAt.getTime() - Date.now()) / 1000));
+    reply.setCookie(SESSION_COOKIE, result.sessionToken, sessionCookieOptions(env, maxAge));
+    reply.setCookie(CSRF_COOKIE, result.csrfToken, csrfCookieOptions(env, maxAge));
+    reply.clearCookie(PREAUTH_CSRF_COOKIE, clearCsrfCookieOptions(env));
+    return {
+      user: result.user,
+      csrfToken: result.csrfToken,
+      expiresAt: result.expiresAt.toISOString(),
+    };
+  }
+
   app.post('/api/auth/login', async (request, reply) => {
     noStore(reply);
 
@@ -141,18 +169,37 @@ export function registerAuthRoutes(app: FastifyInstance, options: AuthRouteOptio
         ...(parsed.data.remember === undefined ? {} : { remember: parsed.data.remember }),
       });
 
-      // Follow the session's actual expiry so "Remember Me" can extend it.
-      const maxAge = Math.max(60, Math.round((result.expiresAt.getTime() - Date.now()) / 1000));
+      if ('twoFactorRequired' in result) {
+        return {
+          twoFactorRequired: true,
+          challengeToken: result.challengeToken,
+          username: result.username,
+          expiresAt: result.expiresAt.toISOString(),
+        };
+      }
 
-      reply.setCookie(SESSION_COOKIE, result.sessionToken, sessionCookieOptions(env, maxAge));
-      reply.setCookie(CSRF_COOKIE, result.csrfToken, csrfCookieOptions(env, maxAge));
-      reply.clearCookie(PREAUTH_CSRF_COOKIE, clearCsrfCookieOptions(env));
+      return establishSession(reply, result);
+    } catch (error) {
+      return handleAuthError(error, reply, request);
+    }
+  });
 
-      return {
-        user: result.user,
-        csrfToken: result.csrfToken,
-        expiresAt: result.expiresAt.toISOString(),
-      };
+  app.post('/api/auth/two-factor', async (request, reply) => {
+    noStore(reply);
+    const parsed = twoFactorSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return sendError(reply, request, 400, 'VALIDATION_ERROR', 'Invalid request');
+    }
+    if (!preAuthCsrfValid(request)) {
+      return sendError(reply, request, 403, 'CSRF_INVALID', 'Invalid CSRF token');
+    }
+    try {
+      const result = await auth.completeTwoFactor({
+        challengeToken: parsed.data.challengeToken,
+        code: parsed.data.code,
+        ip: request.ip,
+      });
+      return establishSession(reply, result);
     } catch (error) {
       return handleAuthError(error, reply, request);
     }

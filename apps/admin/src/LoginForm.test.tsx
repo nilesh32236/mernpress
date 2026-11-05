@@ -132,4 +132,49 @@ describe('LoginForm', () => {
     expect(JSON.parse(String(init.body))).toEqual({ identifier: 'admin@example.com' });
     expect((init.headers as Record<string, string>)['x-csrf-token']).toBe('pre-auth-token');
   });
+  it('challenges a password login and verifies a two-factor code', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(200, { csrfToken: 'pre-auth-token' }))
+      .mockResolvedValueOnce(
+        jsonResponse(200, {
+          twoFactorRequired: true,
+          challengeToken: 'challenge-token-value',
+          username: 'admin',
+          expiresAt: '2026-11-05T10:30:00.000Z',
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse(200, { csrfToken: 'pre-auth-token-2' }))
+      .mockResolvedValueOnce(
+        jsonResponse(200, {
+          user: { id: 'u1', username: 'admin', role: 'administrator', status: 'active' },
+          csrfToken: 'session-token',
+          expiresAt: '2026-11-05T18:00:00.000Z',
+        }),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    const onSuccess = vi.fn();
+
+    render(<LoginForm onSuccess={onSuccess} />);
+    fireEvent.change(screen.getByLabelText('Username or Email Address'), {
+      target: { value: 'admin' },
+    });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password-2026' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Log In' }));
+
+    const codeInput = await screen.findByLabelText('Authentication code');
+    expect(screen.getByText(/Enter the six-digit code/)).toBeDefined();
+    fireEvent.change(codeInput, { target: { value: '123456' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
+
+    await waitFor(() =>
+      expect(onSuccess).toHaveBeenCalledWith(expect.objectContaining({ username: 'admin' })),
+    );
+    const verifyCall = fetchMock.mock.calls[3];
+    expect(String(verifyCall?.[0])).toBe('/api/auth/two-factor');
+    expect(JSON.parse(String(verifyCall?.[1]?.body))).toEqual({
+      challengeToken: 'challenge-token-value',
+      code: '123456',
+    });
+  });
 });

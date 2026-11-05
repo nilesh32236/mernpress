@@ -474,11 +474,24 @@ export async function fetchCsrfToken(): Promise<string> {
   return body.csrfToken;
 }
 
+export interface LoginResult {
+  user: AuthUser;
+  csrfToken: string;
+  expiresAt: string;
+}
+
+export interface LoginTwoFactorChallenge {
+  twoFactorRequired: true;
+  challengeToken: string;
+  username: string;
+  expiresAt: string;
+}
+
 export async function login(
   username: string,
   password: string,
   remember = false,
-): Promise<{ user: AuthUser; csrfToken: string; expiresAt: string }> {
+): Promise<LoginResult | LoginTwoFactorChallenge> {
   const csrfToken = await fetchCsrfToken();
   const response = await fetch('/api/auth/login', {
     method: 'POST',
@@ -496,11 +509,29 @@ export async function login(
     throw await toApiError(response);
   }
 
-  return (await response.json()) as {
-    user: AuthUser;
-    csrfToken: string;
-    expiresAt: string;
-  };
+  return (await response.json()) as LoginResult | LoginTwoFactorChallenge;
+}
+
+export async function completeTwoFactorLogin(
+  challengeToken: string,
+  code: string,
+): Promise<LoginResult> {
+  const csrfToken = await fetchCsrfToken();
+  const response = await fetch('/api/auth/two-factor', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      'x-csrf-token': csrfToken,
+    },
+    body: JSON.stringify({ challengeToken, code }),
+  });
+  if (!response.ok) {
+    throw await toApiError(response);
+  }
+  return (await response.json()) as LoginResult;
 }
 
 export async function requestPasswordReset(identifier: string): Promise<void> {
@@ -898,6 +929,7 @@ export interface AdminUser {
   status: UserStatus;
   createdAt: string;
   postCount: number;
+  twoFactorEnabled: boolean;
 }
 
 export interface AdminUserList {
@@ -1336,6 +1368,96 @@ export async function createApplicationPassword(name: string): Promise<{
 
 export async function revokeApplicationPassword(id: string): Promise<void> {
   const response = await fetch(`/api/profile/app-passwords/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  if (!response.ok) {
+    await readJson(response);
+  }
+}
+
+export interface TwoFactorStatus {
+  enabled: boolean;
+  confirmedAt: string | null;
+  recoveryCodesRemaining: number;
+}
+
+export interface TwoFactorSetup {
+  secret: string;
+  otpauthUrl: string;
+  recoveryCodes: string[];
+}
+
+export async function fetchTwoFactorStatus(): Promise<TwoFactorStatus> {
+  const response = await fetch('/api/profile/two-factor', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<TwoFactorStatus>(response);
+}
+
+export async function setupTwoFactor(): Promise<TwoFactorSetup> {
+  const response = await fetch('/api/profile/two-factor/setup', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  return readJson<TwoFactorSetup>(response);
+}
+
+export async function confirmTwoFactor(code: string): Promise<TwoFactorStatus> {
+  const response = await fetch('/api/profile/two-factor/confirm', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ code }),
+  });
+  return readJson<TwoFactorStatus>(response);
+}
+
+export async function disableTwoFactor(password: string, code: string): Promise<TwoFactorStatus> {
+  const response = await fetch('/api/profile/two-factor/disable', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ password, code }),
+  });
+  return readJson<TwoFactorStatus>(response);
+}
+
+export async function regenerateRecoveryCodes(
+  password: string,
+): Promise<{ recoveryCodes: string[] }> {
+  const response = await fetch('/api/profile/two-factor/recovery-codes', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ password }),
+  });
+  return readJson<{ recoveryCodes: string[] }>(response);
+}
+
+export async function resetUserTwoFactor(id: string): Promise<void> {
+  const response = await fetch(`/api/users/${encodeURIComponent(id)}/two-factor`, {
     method: 'DELETE',
     credentials: 'include',
     cache: 'no-store',

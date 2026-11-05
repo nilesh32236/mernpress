@@ -15,6 +15,7 @@ import {
 } from './api.js';
 import { Notice, PageHeader, Skeleton, ErrorState, type NoticeMessage } from './components.js';
 import { COLOR_SCHEMES, applyColorScheme, getColorScheme } from './colorScheme.js';
+import { TwoFactorPanel } from './TwoFactorPanel.js';
 import {
   infiniteScrollEnabled,
   keyboardShortcutsEnabled,
@@ -660,6 +661,8 @@ export function ProfilePage({
               </>
             )}
           </form>
+
+          <TwoFactorPanel />
 
           <section
             className="application-passwords"

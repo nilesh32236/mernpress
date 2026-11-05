@@ -15,6 +15,7 @@ import {
   fetchMailStatus,
   fetchUsers,
   resetUserPassword,
+  resetUserTwoFactor,
   sendUserPasswordReset,
   updateUserRole,
   updateUserStatus,
@@ -920,6 +921,25 @@ export function UsersPage({ user }: { user: AuthUser }) {
     }
   }
 
+  async function resetTwoFactor(target: AdminUser) {
+    if (pendingAction !== null) return;
+    if (!window.confirm(`Reset two-factor authentication for “${target.username}”?`)) return;
+    setPendingAction(`2fa:${target.id}`);
+    setNotice(null);
+    try {
+      await resetUserTwoFactor(target.id);
+      setNotice({
+        tone: 'success',
+        text: `Two-factor authentication reset for “${target.username}”.`,
+      });
+      setReloadKey((value) => value + 1);
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
   async function toggleStatus(target: AdminUser) {
     const nextStatus = target.status === 'active' ? 'disabled' : 'active';
     if (
@@ -1271,6 +1291,22 @@ export function UsersPage({ user }: { user: AuthUser }) {
                               >
                                 Send password reset
                               </button>
+                              {item.twoFactorEnabled ? (
+                                <>
+                                  <span className="row-action-sep" aria-hidden="true">
+                                    {' '}
+                                    |{' '}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    className="row-action-link is-danger"
+                                    onClick={() => void resetTwoFactor(item)}
+                                    disabled={pendingAction === `2fa:${item.id}`}
+                                  >
+                                    Reset 2FA
+                                  </button>
+                                </>
+                              ) : null}
                             </>
                           ) : null}
                         </div>

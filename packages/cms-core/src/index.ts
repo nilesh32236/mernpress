@@ -30,6 +30,7 @@ export type {
   BootstrapInput,
   LoginInput,
   LoginResult,
+  TwoFactorLoginChallenge,
   ManualTestAccountInput,
   ManualTestRole,
   PublicUser,
@@ -316,3 +317,26 @@ export {
   type BackupService,
   type BackupServiceOptions,
 } from './backups/service.js';
+
+// ---- TOTP primitives (two-factor authentication) ----
+export {
+  base32Decode,
+  base32Encode,
+  generateTotp,
+  generateTotpSecret,
+  otpauthUrl,
+  totpCounter,
+  verifyTotp,
+  type TotpVerification,
+} from './auth/totp.js';
+
+// ---- Two-factor authentication service ----
+export {
+  createTwoFactorService,
+  type TwoFactorChallenge,
+  type TwoFactorChallengeResult,
+  type TwoFactorService,
+  type TwoFactorServiceOptions,
+  type TwoFactorSetup,
+  type TwoFactorStatus,
+} from './auth/two-factor.js';

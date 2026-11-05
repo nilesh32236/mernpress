@@ -23,6 +23,7 @@ import {
   createImportService,
   createConnectorService,
   createApplicationPasswordService,
+  createTwoFactorService,
   createMailService,
   createPasswordResetService,
   createExportService,
@@ -128,7 +129,14 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     loginRateLimitWindowMinutes: env.LOGIN_RATE_LIMIT_WINDOW_MINUTES,
     ...(options.now === undefined ? {} : { now: options.now }),
   };
-  const auth = createAuthService({ prisma: database, config: authConfig });
+  const twoFactor = createTwoFactorService({
+    prisma: database,
+    pepper: env.AUTH_HASH_PEPPER,
+    ...(options.now === undefined ? {} : { now: options.now }),
+  });
+  app.decorate('twoFactor', twoFactor);
+
+  const auth = createAuthService({ prisma: database, config: authConfig, twoFactor });
   app.decorate('auth', auth);
 
   // Phase 3: internal hook registry + content/taxonomy services (ADR 0003).
@@ -342,8 +350,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerAuthRoutes(app, { env, auth, passwordResets });
   registerContentRoutes(app, { env, auth, content });
   registerTaxonomyRoutes(app, { env, auth, taxonomy });
-  registerUserRoutes(app, { env, auth, users });
-  registerProfileRoutes(app, { env, auth, users, appPasswords });
+  registerUserRoutes(app, { env, auth, users, twoFactor });
+  registerProfileRoutes(app, { env, auth, users, appPasswords, twoFactor });
   registerOptionRoutes(app, { env, auth, options: optionService });
   registerScheduleRoutes(app, { env, auth, schedule });
   registerContentBulkRoutes(app, { env, auth, bulk });

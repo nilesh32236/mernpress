@@ -8,7 +8,13 @@ export type AuthErrorCode =
   | 'RATE_LIMITED'
   | 'UNAUTHENTICATED'
   | 'INVALID_RESET_KEY'
-  | 'MAIL_NOT_CONFIGURED';
+  | 'MAIL_NOT_CONFIGURED'
+  | 'TWO_FACTOR_NOT_ENABLED'
+  | 'TWO_FACTOR_ALREADY_ENABLED'
+  | 'INVALID_TWO_FACTOR_CODE'
+  | 'INVALID_TWO_FACTOR_CHALLENGE'
+  | 'INVALID_PASSWORD'
+  | 'USER_NOT_FOUND';
 
 export class AuthError extends Error {
   readonly code: AuthErrorCode;
@@ -66,6 +72,14 @@ export interface LoginResult {
   expiresAt: Date;
 }
 
+/** Returned instead of a session when the account has two-factor enabled. */
+export interface TwoFactorLoginChallenge {
+  twoFactorRequired: true;
+  challengeToken: string;
+  username: string;
+  expiresAt: Date;
+}
+
 export interface SessionValidation {
   user: PublicUser;
   sessionId: string;
@@ -91,7 +105,13 @@ export interface ManualTestAccountInput {
 export interface AuthService {
   bootstrapAdmin(input: BootstrapInput): Promise<PublicUser>;
   createManualTestAccount(input: ManualTestAccountInput): Promise<PublicUser>;
-  login(input: LoginInput): Promise<LoginResult>;
+  login(input: LoginInput): Promise<LoginResult | TwoFactorLoginChallenge>;
+  /** Complete a password login by verifying a TOTP or recovery code. */
+  completeTwoFactor(input: {
+    challengeToken: string;
+    code: string;
+    ip: string;
+  }): Promise<LoginResult>;
   validateSession(sessionToken: string): Promise<SessionValidation | null>;
   logout(sessionToken: string): Promise<void>;
 }

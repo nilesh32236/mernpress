@@ -12239,3 +12239,101 @@ a.glance-chip:hover {
   background: #ffffff;
   font-size: 13px;
 }
+
+/* Profile → Two-Factor Authentication. */
+.two-factor-panel {
+  margin-top: 28px;
+  padding-top: 8px;
+  border-top: 1px solid #dcdcde;
+}
+
+.two-factor-panel .field-help {
+  max-width: 780px;
+}
+
+.two-factor-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.two-factor-form .field {
+  margin: 0;
+  min-width: 240px;
+}
+
+.two-factor-form .button {
+  min-height: 34px;
+}
+
+.two-factor-codes {
+  margin: 14px 0;
+  padding: 12px 16px;
+  border-left: 4px solid #72aee6;
+  background: #f0f6fc;
+  font-size: 13px;
+}
+
+.two-factor-codes pre {
+  margin: 8px 0 0;
+  font-family: Consolas, Monaco, monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.two-factor-uri code {
+  font-size: 11px;
+  word-break: break-all;
+}
+
+/* Profile → Two-Factor Authentication. */
+.two-factor-panel {
+  margin-top: 28px;
+  padding-top: 8px;
+  border-top: 1px solid #dcdcde;
+}
+
+.two-factor-panel .field-help {
+  max-width: 780px;
+}
+
+.two-factor-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.two-factor-form .field {
+  margin: 0;
+  min-width: 240px;
+}
+
+.two-factor-form .button {
+  min-height: 34px;
+}
+
+.two-factor-codes {
+  margin: 14px 0;
+  padding: 12px 16px;
+  border-left: 4px solid #72aee6;
+  background: #f0f6fc;
+  font-size: 13px;
+}
+
+.two-factor-codes pre {
+  margin: 8px 0 0;
+  font-family: Consolas, Monaco, monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.two-factor-uri code {
+  font-size: 11px;
+  word-break: break-all;
+}

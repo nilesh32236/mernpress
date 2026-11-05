@@ -1,4 +1,4 @@
-import type { AuthService, UserAdminService } from '@mernpress/cms-core';
+import type { AuthService, TwoFactorService, UserAdminService } from '@mernpress/cms-core';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { requireAdmin } from '../auth/require-admin.js';
@@ -47,6 +47,7 @@ interface UserRouteOptions {
   env: Env;
   auth: AuthService;
   users: UserAdminService;
+  twoFactor: TwoFactorService;
 }
 
 function deleteOptions(query: z.infer<typeof deleteUserQuerySchema>) {
@@ -62,7 +63,7 @@ function deleteOptions(query: z.infer<typeof deleteUserQuerySchema>) {
  * editor/author/subscriber session gets 403 FORBIDDEN from the service.
  */
 export function registerUserRoutes(app: FastifyInstance, options: UserRouteOptions): void {
-  const { env, auth, users } = options;
+  const { env, auth, users, twoFactor } = options;
   const guard = (request: FastifyRequest, reply: FastifyReply) =>
     requireAdmin(request, reply, { env, auth });
 
@@ -95,6 +96,17 @@ export function registerUserRoutes(app: FastifyInstance, options: UserRouteOptio
     try {
       const { id } = userIdParamSchema.parse(request.params);
       return await users.sendPasswordReset(ctx.principal, id);
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
+  app.delete('/api/users/:id/two-factor', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const { id } = userIdParamSchema.parse(request.params);
+      return await twoFactor.resetForUser(ctx.principal, id);
     } catch (error) {
       return sendRouteError(reply, request, error);
     }

@@ -6,6 +6,7 @@ import {
   deleteUser,
   fetchMailStatus,
   fetchUsers,
+  resetUserTwoFactor,
   sendUserPasswordReset,
   updateUserRole,
   type AdminUser,
@@ -25,6 +26,7 @@ vi.mock('./api.js', async (importOriginal) => {
     updateUserRole: vi.fn(),
     updateUserStatus: vi.fn(),
     resetUserPassword: vi.fn(),
+    resetUserTwoFactor: vi.fn(),
     deleteUser: vi.fn(),
   };
 });
@@ -36,6 +38,7 @@ const SELF = makeUser({
   username: 'admin',
   role: 'administrator',
   postCount: 0,
+  twoFactorEnabled: false,
   createdAt: '2026-10-15T08:00:00.000Z',
 });
 const EDITOR = makeUser({});
@@ -57,6 +60,7 @@ function makeUser(overrides: Partial<AdminUser> = {}): AdminUser {
     displayName: 'Editor B',
     role: 'editor',
     status: 'active',
+    twoFactorEnabled: false,
     createdAt: '2026-10-20T09:00:00.000Z',
     postCount: 3,
     ...overrides,
@@ -87,6 +91,7 @@ beforeEach(() => {
   vi.mocked(createUser).mockResolvedValue(makeUser({ id: 'u4', username: 'new-user' }));
   vi.mocked(updateUserRole).mockResolvedValue(makeUser({ role: 'editor' }));
   vi.mocked(deleteUser).mockResolvedValue(undefined);
+  vi.mocked(resetUserTwoFactor).mockResolvedValue(undefined);
   vi.mocked(sendUserPasswordReset).mockResolvedValue(undefined);
 });
 
@@ -306,5 +311,19 @@ describe('users page', () => {
       expect(vi.mocked(sendUserPasswordReset)).toHaveBeenCalledWith(AUTHOR.id);
     });
     expect(await screen.findByText('2 password reset link(s) sent.')).toBeDefined();
+  });
+  it('offers Reset 2FA for a user with two-factor enabled', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    vi.mocked(fetchUsers).mockResolvedValue(
+      list([SELF, makeUser({ id: 'u2', username: 'editor-b', twoFactorEnabled: true })]),
+    );
+    render(<UsersPage user={admin} />);
+    await screen.findByText('editor-b');
+
+    fireEvent.click(within(rowFor('editor-b')).getByRole('button', { name: 'Reset 2FA' }));
+    await waitFor(() => expect(vi.mocked(resetUserTwoFactor)).toHaveBeenCalledWith('u2'));
+    expect(
+      await screen.findByText('Two-factor authentication reset for “editor-b”.'),
+    ).toBeDefined();
   });
 });

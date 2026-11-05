@@ -1,6 +1,7 @@
 import type {
   ApplicationPasswordService,
   AuthService,
+  TwoFactorService,
   UserAdminService,
 } from '@mernpress/cms-core';
 import { AVAILABLE_LOCALES } from '@mernpress/cms-core';
@@ -27,6 +28,11 @@ export const updateProfileSchema = z
 
 const applicationPasswordNameSchema = z.object({ name: z.string().min(1).max(200) }).strict();
 const applicationPasswordParamSchema = z.object({ id: z.string().uuid() }).strict();
+const twoFactorCodeSchema = z.object({ code: z.string().min(4).max(32) }).strict();
+const twoFactorDisableSchema = z
+  .object({ password: z.string().min(1).max(128), code: z.string().min(4).max(32) })
+  .strict();
+const twoFactorPasswordSchema = z.object({ password: z.string().min(1).max(128) }).strict();
 
 export const changeOwnPasswordSchema = z
   .object({
@@ -40,6 +46,7 @@ interface ProfileRouteOptions {
   auth: AuthService;
   users: UserAdminService;
   appPasswords: ApplicationPasswordService;
+  twoFactor: TwoFactorService;
 }
 
 /**
@@ -51,7 +58,7 @@ interface ProfileRouteOptions {
  * profile; `UserAdminService` acts only on `principal.userId`.
  */
 export function registerProfileRoutes(app: FastifyInstance, options: ProfileRouteOptions): void {
-  const { env, auth, users, appPasswords } = options;
+  const { env, auth, users, appPasswords, twoFactor } = options;
   const guard = (request: FastifyRequest, reply: FastifyReply) =>
     requireAdmin(request, reply, { env, auth });
 
@@ -80,6 +87,59 @@ export function registerProfileRoutes(app: FastifyInstance, options: ProfileRout
     const ctx = await guard(request, reply);
     if (!ctx) return;
     return { items: AVAILABLE_LOCALES };
+  });
+
+  app.get('/api/profile/two-factor', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      return await twoFactor.status(ctx.principal);
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
+  app.post('/api/profile/two-factor/setup', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      return await twoFactor.beginSetup(ctx.principal);
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
+  app.post('/api/profile/two-factor/confirm', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const body = twoFactorCodeSchema.parse(request.body);
+      return await twoFactor.confirmSetup(ctx.principal, body.code);
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
+  app.post('/api/profile/two-factor/disable', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const body = twoFactorDisableSchema.parse(request.body);
+      return await twoFactor.disable(ctx.principal, body.password, body.code);
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
+  app.post('/api/profile/two-factor/recovery-codes', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const body = twoFactorPasswordSchema.parse(request.body);
+      return await twoFactor.regenerateRecoveryCodes(ctx.principal, body.password);
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
   });
 
   app.get('/api/profile/app-passwords', async (request, reply) => {

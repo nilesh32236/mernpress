@@ -15,11 +15,13 @@ import type {
   BootstrapInput,
   LoginInput,
   LoginResult,
+  TwoFactorLoginChallenge,
   ManualTestAccountInput,
   PublicUser,
   SessionValidation,
 } from './types.js';
 import { AuthError } from './types.js';
+import type { TwoFactorService } from './two-factor.js';
 import { normalizeUsername, usernamePolicyError } from './username.js';
 
 const BOOTSTRAP_LOCK = 'mernpress.auth.bootstrap';
@@ -37,8 +39,9 @@ const BOOTSTRAP_LOCK = 'mernpress.auth.bootstrap';
 export function createAuthService(options: {
   prisma: DatabaseClient;
   config: AuthConfig;
+  twoFactor?: TwoFactorService;
 }): AuthService {
-  const { prisma, config } = options;
+  const { prisma, config, twoFactor } = options;
   const now = config.now ?? (() => new Date());
   const sessionTtlMs = config.sessionTtlMinutes * 60_000;
   const sessionIdleMs = config.sessionIdleMinutes * 60_000;
@@ -205,7 +208,51 @@ export function createAuthService(options: {
     });
   }
 
-  async function login(input: LoginInput): Promise<LoginResult> {
+  async function issueSession(
+    user: {
+      id: string;
+      username: string;
+      role: string;
+      status: string;
+    },
+    remember: boolean,
+    ip: string,
+  ): Promise<LoginResult> {
+    const sessionToken = generateOpaqueToken();
+    const csrfToken = generateOpaqueToken();
+    const createdAt = now();
+    // WordPress "Remember Me" keeps the session for 14 days; the default TTL
+    // stays the server-configured window.
+    const ttlMs = remember ? Math.max(sessionTtlMs, 14 * 24 * 60 * 60 * 1000) : sessionTtlMs;
+    const expiresAt = new Date(createdAt.getTime() + ttlMs);
+    const keys = rateLimiter.keysFor(user.username, ip);
+
+    await prisma.$transaction(async (tx) => {
+      await rateLimiter.clear(keys, tx);
+      await tx.session.create({
+        data: {
+          userId: user.id,
+          tokenHash: hashSessionToken(sessionToken),
+          csrfHash: hashCsrfToken(csrfToken),
+          createdAt,
+          lastUsedAt: createdAt,
+          expiresAt,
+        },
+      });
+      await audit.loginSuccess({ userId: user.id, role: user.role, ip }, tx);
+    });
+
+    return {
+      user: toPublicUser(user),
+      sessionToken,
+      csrfToken,
+      expiresAt,
+    };
+  }
+
+  async function login(
+    input: LoginInput,
+  ): Promise<LoginResult | TwoFactorLoginChallenge> {
     const rawIdentifier = input.username.trim();
     const emailMode = rawIdentifier.includes('@');
     const username = emailMode ? rawIdentifier.toLowerCase() : normalizeUsername(rawIdentifier);
@@ -268,35 +315,45 @@ export function createAuthService(options: {
       return fail('invalid_password', { userId: user.id });
     }
 
-    const sessionToken = generateOpaqueToken();
-    const csrfToken = generateOpaqueToken();
-    const createdAt = now();
-    // WordPress "Remember Me" keeps the session for 14 days; the default TTL
-    // stays the server-configured window.
-    const ttlMs = input.remember ? Math.max(sessionTtlMs, 14 * 24 * 60 * 60 * 1000) : sessionTtlMs;
-    const expiresAt = new Date(createdAt.getTime() + ttlMs);
-
-    await prisma.$transaction(async (tx) => {
-      await rateLimiter.clear(keys, tx);
-      await tx.session.create({
-        data: {
-          userId: user.id,
-          tokenHash: hashSessionToken(sessionToken),
-          csrfHash: hashCsrfToken(csrfToken),
-          createdAt,
-          lastUsedAt: createdAt,
-          expiresAt,
-        },
+    if (twoFactor && (await twoFactor.isEnabled(user.id))) {
+      const challenge = await twoFactor.beginChallenge({
+        userId: user.id,
+        remember: input.remember === true,
+        ip: input.ip,
       });
-      await audit.loginSuccess({ userId: user.id, role: user.role, ip: input.ip }, tx);
-    });
+      return {
+        twoFactorRequired: true,
+        challengeToken: challenge.token,
+        username: user.username,
+        expiresAt: challenge.expiresAt,
+      };
+    }
 
-    return {
-      user: toPublicUser(user),
-      sessionToken,
-      csrfToken,
-      expiresAt,
-    };
+    return issueSession(user, input.remember === true, input.ip);
+  }
+
+  async function completeTwoFactor(input: {
+    challengeToken: string;
+    code: string;
+    ip: string;
+  }): Promise<LoginResult> {
+    if (!twoFactor) {
+      throw new AuthError(
+        'INVALID_TWO_FACTOR_CHALLENGE',
+        'Two-factor authentication is not available.',
+        400,
+      );
+    }
+    const result = await twoFactor.consumeChallenge({
+      token: input.challengeToken,
+      code: input.code,
+      ip: input.ip,
+    });
+    const user = await prisma.user.findUnique({ where: { id: result.userId } });
+    if (!user || user.status !== 'active') {
+      throw invalidCredentials();
+    }
+    return issueSession(user, result.remember, input.ip);
   }
 
   async function validateSession(sessionToken: string): Promise<SessionValidation | null> {
@@ -368,6 +425,7 @@ export function createAuthService(options: {
     bootstrapAdmin,
     createManualTestAccount,
     login,
+    completeTwoFactor,
     validateSession,
     logout,
   };

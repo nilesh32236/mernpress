@@ -60,6 +60,8 @@ export interface AdminUser {
   createdAt: string;
   /** Number of posts/pages currently authored by this user. */
   postCount: number;
+  /** True when TOTP two-factor authentication is enabled. */
+  twoFactorEnabled: boolean;
 }
 
 /** Self-service profile record. Never includes `passwordHash` or status. */
@@ -186,6 +188,7 @@ const SUMMARY_SELECT = {
   displayName: true,
   role: true,
   status: true,
+  twoFactorEnabled: true,
   createdAt: true,
 } as const;
 
@@ -214,6 +217,7 @@ type SummaryRow = {
   displayName: string | null;
   role: UserRole;
   status: UserStatus;
+  twoFactorEnabled: boolean;
   createdAt: Date;
 };
 
@@ -295,6 +299,7 @@ function toAdminUser(row: SummaryRow & { _count: { posts: number } }): AdminUser
     displayName: row.displayName,
     role: row.role,
     status: row.status,
+    twoFactorEnabled: row.twoFactorEnabled,
     createdAt: row.createdAt.toISOString(),
     postCount: row._count.posts,
   };

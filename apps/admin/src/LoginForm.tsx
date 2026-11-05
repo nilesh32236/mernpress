@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { actionErrorMessage, login, loginErrorMessage, requestPasswordReset } from './api.js';
+import {
+  actionErrorMessage,
+  completeTwoFactorLogin,
+  login,
+  loginErrorMessage,
+  requestPasswordReset,
+  type LoginTwoFactorChallenge,
+} from './api.js';
 import type { AuthUser } from './api.js';
 
 interface LoginFormProps {
@@ -18,6 +25,10 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   const [lostSubmitting, setLostSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [challenge, setChallenge] = useState<LoginTwoFactorChallenge | null>(null);
+  const [code, setCode] = useState('');
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [codeSubmitting, setCodeSubmitting] = useState(false);
   const usernameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -31,6 +42,13 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
     try {
       const result = await login(username, password, remember);
+      if ('twoFactorRequired' in result) {
+        setPassword('');
+        setChallenge(result);
+        setCode('');
+        setCodeError(null);
+        return;
+      }
       setPassword('');
       onSuccess(result.user);
     } catch (caught) {
@@ -138,6 +156,86 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               </p>
             </>
           )}
+        </div>
+      </section>
+    );
+  }
+
+  async function handleTwoFactor(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!challenge || codeSubmitting) return;
+    setCodeSubmitting(true);
+    setCodeError(null);
+    try {
+      const result = await completeTwoFactorLogin(challenge.challengeToken, code.trim());
+      setChallenge(null);
+      setCode('');
+      onSuccess(result.user);
+    } catch (caught) {
+      setCodeError(loginErrorMessage(caught));
+    } finally {
+      setCodeSubmitting(false);
+    }
+  }
+
+  if (challenge) {
+    return (
+      <section className="login-screen" aria-labelledby="two-factor-heading">
+        <div className="login-logo" aria-hidden="true">
+          <span>M</span>
+        </div>
+        <div className="login-card">
+          <h1 id="two-factor-heading" className="screen-reader-text">
+            Two-factor authentication
+          </h1>
+          <p className="login-help">
+            Enter the six-digit code from your authenticator app for{' '}
+            <strong>{challenge.username}</strong>, or one of your recovery codes.
+          </p>
+          <form className="auth-form" onSubmit={(event) => void handleTwoFactor(event)}>
+            {codeError ? (
+              <p className="login-error" role="alert">
+                {codeError}
+              </p>
+            ) : null}
+            <div className="field">
+              <label htmlFor="two-factor-code">Authentication code</label>
+              <input
+                id="two-factor-code"
+                name="code"
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={32}
+                required
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                disabled={codeSubmitting}
+              />
+            </div>
+            <p className="login-submit">
+              <button
+                type="submit"
+                className="button primary-button button-large"
+                disabled={codeSubmitting}
+              >
+                {codeSubmitting ? 'Verifying…' : 'Verify'}
+              </button>
+            </p>
+          </form>
+          <p className="login-back">
+            <a
+              href="#login"
+              onClick={(event) => {
+                event.preventDefault();
+                setChallenge(null);
+                setCode('');
+                setCodeError(null);
+              }}
+            >
+              ← Back to Log In
+            </a>
+          </p>
         </div>
       </section>
     );

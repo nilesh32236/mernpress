@@ -5,6 +5,7 @@ import {
   changeOwnPassword,
   createApplicationPassword,
   fetchApplicationPasswords,
+  fetchTwoFactorStatus,
   fetchLocales,
   fetchProfile,
   revokeApplicationPassword,
@@ -23,6 +24,7 @@ vi.mock('./api.js', async (importOriginal) => {
     changeOwnPassword: vi.fn(),
     fetchLocales: vi.fn(),
     fetchApplicationPasswords: vi.fn(),
+    fetchTwoFactorStatus: vi.fn(),
     createApplicationPassword: vi.fn(),
     revokeApplicationPassword: vi.fn(),
   };
@@ -55,6 +57,11 @@ beforeEach(() => {
   vi.mocked(changeOwnPassword).mockResolvedValue(undefined);
   vi.mocked(fetchLocales).mockResolvedValue([{ value: 'en_US', label: 'English (United States)' }]);
   vi.mocked(fetchApplicationPasswords).mockResolvedValue([]);
+  vi.mocked(fetchTwoFactorStatus).mockResolvedValue({
+    enabled: false,
+    confirmedAt: null,
+    recoveryCodesRemaining: 0,
+  });
 });
 
 afterEach(() => {

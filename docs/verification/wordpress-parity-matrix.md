@@ -40,6 +40,7 @@ owner decision.
 | Appearance → Fonts | D/P | Library, weights, samples, unavailable upload/install |
 | Plugins → Installed | D/P | Filters, bulk, active edge, auto-update column, View details, Delete (inactive only, removes the package directory); plugins can ship a real runtime module (Auto Excerpt) |
 | Plugins → Add Plugin | D/P | WordPress description + filter bar/search; directory tabs disabled and explained; installed packages listed |
+| Profile → Two-Factor / Login challenge | D/P | TOTP enrollment, recovery codes, password+code disable, admin reset, two-step login; WordPress needs a plugin |
 | Users / Add User / Profile | D/P | Roles, display name select, colour schemes, syntax highlighting, language, application passwords, password, Send password reset (row + bulk); Send User Notification enabled when mail is configured and includes a reset link |
 | Public post template | D/P | Reading time, related posts by category with newest fallback, prev/next, comments; WordPress themes need code/plugins for this |
 | SEO / metadata | D/P | Per-post SEO fields, JSON-LD (BlogPosting/WebPage/Breadcrumb/Collection/Profile), Twitter cards, image sitemap, /llms.txt; WordPress needs plugins for all of this |

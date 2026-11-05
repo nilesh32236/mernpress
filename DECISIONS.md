@@ -107,6 +107,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-074 | 2026-11-05 | Core backup packages: one `mernpress-backup-YYYYMMDDTHHMMSSZ.tar.gz` containing `database.sql` (pg_dump plain, --clean --if-exists, --no-owner --no-privileges), `media.tar.gz` and `MANIFEST.txt`; password passed via PGPASSWORD, files 0600, `BACKUP_STORAGE_DIR` required in production, newest `BACKUP_RETENTION` (default 5) kept. Administrator-only list/create/download/delete, strict filename validation, concurrency 409 and failure cleanup. Restore is deliberately CLI-only and documented in `docs/operations/backup-restore.md`; archives are unencrypted and must be copied to private storage. | accepted | [ADR 0034](docs/adr/0034-backup-packages.md) |
 
+| D-075 | 2026-11-05 | Core two-factor authentication: RFC 6238 TOTP (SHA-1, 6 digits, 30 s, ±1 period) implemented locally; TOTP secret sealed with AES-256-GCM derived from `AUTH_HASH_PEPPER`, recovery codes stored as HMAC hashes (8, single-use). Password login returns a hashed, 10-minute, 5-attempt challenge instead of a session when 2FA is on; `POST /api/auth/two-factor` creates the session only after a valid TOTP/recovery code. Highest TOTP counter prevents replay. Enrollment is confirm-before-enable; disabling requires password + code; recovery codes regenerate with password; administrators can reset another user's 2FA (audited). Profile enrollment and login challenge UI included. | accepted | [ADR 0035](docs/adr/0035-two-factor-authentication.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.
