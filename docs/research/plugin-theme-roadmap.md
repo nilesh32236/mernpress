@@ -106,9 +106,8 @@ instant and safe; no PHP or template execution.
 1. ~~**Redirect & 404 manager**~~ — delivered (ADR 0030): normalized
    redirect table, loop rejection, aggregated 404 log, public middleware and
    Redirect/Dismiss actions.
-2. **Transactional mail log** — store the last N sends with status, recipient
-   and error; show deliverability status. Complements the SMTP transport and
-   answers the most common support question without exposing message bodies.
+2. ~~**Transactional mail log**~~ — delivered (ADR 0031): metadata-only log,
+   200-row retention, admin API and Settings → Discussion panel.
 3. **Backup/export packages** — database + media archive with retention and a
    documented restore, built on the existing WXR/media services rather than a
    new vendor. High demand, but needs careful security and disk handling.

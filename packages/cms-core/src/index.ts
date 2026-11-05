@@ -282,6 +282,7 @@ export {
   createSmtpMailTransport,
   type CommentMailInput,
   type CommentNotificationInput,
+  type MailLogEntry,
   type MailMessage,
   type MailResult,
   type MailService,

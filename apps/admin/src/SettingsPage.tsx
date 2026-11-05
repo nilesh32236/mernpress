@@ -15,6 +15,7 @@ import {
 } from './api.js';
 import { ErrorState, Notice, PageHeader, Skeleton, type NoticeMessage } from './components.js';
 import { OptionGroupForm } from './OptionGroupForm.js';
+import { MailLogPanel } from './MailLogPanel.js';
 import { useLocation } from './router.js';
 import { cacheSiteFormats, formatSettingsDate, formatSettingsTime } from './format.js';
 
@@ -1060,7 +1061,12 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
     }
 
     if (SIMPLE_GROUPS.has(activeTab)) {
-      return <OptionGroupForm group={activeTab} />;
+      return (
+        <>
+          <OptionGroupForm group={activeTab} />
+          {activeTab === 'discussion' ? <MailLogPanel /> : null}
+        </>
+      );
     }
 
     return (

@@ -48,6 +48,7 @@ owner decision.
 | Tools → Export/Erase Personal Data | D/P | Request queue, JSON export, anonymising erasure |
 | Tools → Theme/Plugin File Editor | X | In-browser server-code editing excluded (RCE surface) |
 | Settings → General/Reading/Writing | D/P | Site identity, formats, feed options, mail fields |
+| Settings → Discussion → Mail delivery | D/P | Transport status, sender and a metadata-only delivery log with Clear; WordPress needs a plugin |
 | Settings → Discussion/Media/Permalinks/Privacy | D/P | Options drive comments, uploads, URLs, privacy page; comment/moderation e-mails sent when mail is configured |
 | Settings → Connectors | D/P | Encrypted provider credentials, masked state |
 | Updates | D/P | Version report, "Check again", manifest checks |

@@ -99,6 +99,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-070 | 2026-11-05 | Core redirects and 404 manager (Tools → Redirects): `redirects` stores a normalized unique source path, relative/http(s) destination, 301/302 and hit count; loops and self-redirects are rejected (bounded chain walk). The public Next.js middleware applies redirects from a 10-second cached map and reports hits asynchronously. A catch-all route logs 404 paths (path/count/timestamps only, no PII) and renders the normal 404 page. Public writes are validated and limited to 120/min per client; admin routes require `manage_options`. Automatic redirects on slug change remain a follow-up. | accepted | [ADR 0030](docs/adr/0030-redirects-404-manager.md) |
 
+| D-071 | 2026-11-05 | Transactional mail delivery log: `mail_log_entries` stores recipient, subject, sent/failed, a short reason and timestamp only (never bodies, tokens, credentials, IPs or agents). `MailService.deliver` records every attempted delivery; disabled transport/preferences record nothing; retention keeps the newest 200 rows. Admin-only `GET/DELETE /api/admin/mail/log`, exposed in Settings → Discussion with transport status, sender, the latest 100 entries and a confirmed Clear log action. Production remains dependent on owner-supplied SMTP credentials. | accepted | [ADR 0031](docs/adr/0031-mail-delivery-log.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

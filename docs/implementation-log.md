@@ -3224,3 +3224,18 @@ temporary administrator:
   middleware forwards `x-mn-path`).
 - The test redirect and 404 entry were deleted and the temporary administrator
   removed; production has 1 user, 0 redirects and 0 404 rows.
+
+### 2026-11-05 — Transactional mail delivery log
+
+- Added `mail_log_entries` (migration `20261105091716_add_mail_log`): recipient,
+  subject, sent/failed, reason and timestamp only — no bodies, tokens,
+  credentials, IPs or user agents. Retention keeps the newest 200 rows.
+- `MailService.deliver` now records every attempted delivery, including
+  `no-recipient` and `transport-failed`; a disabled transport or notification
+  preference records nothing. Log-write failures are contained.
+- Admin-only `GET/DELETE /api/admin/mail/log`; Settings → Discussion shows the
+  transport status, sender, latest 100 deliveries and a confirmed Clear log
+  action. The panel states when SMTP is not configured instead of inventing
+  rows.
+- Validation: 689 unit/integration tests (API 432, admin 166, web 26,
+  block-system 65), 23 Playwright E2E tests and six builds pass.

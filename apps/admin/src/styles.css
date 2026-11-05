@@ -12161,3 +12161,48 @@ a.glance-chip:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* Settings → Discussion: mail delivery log. */
+.mail-log-panel {
+  margin-top: 20px;
+}
+
+.mail-log-status p {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.mail-log-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 12px 0;
+}
+
+.mail-log-actions .field-help {
+  margin: 0;
+}
+
+.mail-log-empty {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #c3c4c7;
+  background: #ffffff;
+  font-size: 13px;
+}
+
+.mail-status-sent {
+  background: #edfaef;
+  color: #1e7c2f;
+}
+
+.mail-status-failed {
+  background: #fcf0f1;
+  color: #b32d2e;
+}
+
+.mail-log-reason {
+  color: var(--wp-muted);
+  font-size: 12px;
+}

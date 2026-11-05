@@ -77,6 +77,20 @@ model ApplicationPassword {
   @@map("application_passwords")
 }
 
+/// Delivery log for transactional mail. Recipient/subject/status only —
+/// message bodies are never stored (they may contain passwords or tokens).
+model MailLogEntry {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  recipient String   @default("") @db.VarChar(320)
+  subject   String   @default("") @db.VarChar(500)
+  status    String   @db.VarChar(20)
+  reason    String?  @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([createdAt])
+  @@map("mail_log_entries")
+}
+
 /// Admin-managed path redirects (Tools → Redirects).
 model Redirect {
   id         String   @id @default(uuid(7)) @db.Uuid

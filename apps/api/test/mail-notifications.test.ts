@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { createMailService } from '@mernpress/cms-core';
 import {
   ADMIN_ORIGIN,
   ADMIN_PASSWORD,
@@ -242,5 +243,90 @@ describe('comment and new-user mail notifications', () => {
 
     expect(app.mail.outbox).toHaveLength(1);
     expect(app.mail.outbox[0]!.to).toBe('post-author@example.com');
+  });
+  it('records deliveries in the admin mail log without bodies', async () => {
+    await setDiscussion({ comment_moderation: false, comment_previously_approved: false });
+    const post = await publishedPost('Log target');
+    await addComment(post.id, 'Please log this delivery.', 'logged@example.com');
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/admin/mail/log',
+      headers: { cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    const items = (response.json() as { items: Array<Record<string, unknown>> }).items;
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({
+      recipient: 'admin@example.com',
+      status: 'sent',
+      reason: null,
+    });
+    expect(String(items[0]!.subject)).toContain('New comment on "Log target"');
+    expect(items[0]).not.toHaveProperty('body');
+    expect(items[0]).not.toHaveProperty('text');
+
+    const { 'content-type': _contentType, ...bodyless } = headers();
+    const cleared = await app.inject({
+      method: 'DELETE',
+      url: '/api/admin/mail/log',
+      headers: bodyless,
+    });
+    expect(cleared.statusCode).toBe(204);
+    const after = await app.inject({
+      method: 'GET',
+      url: '/api/admin/mail/log',
+      headers: { cookie },
+    });
+    expect((after.json() as { items: unknown[] }).items).toEqual([]);
+  });
+
+  it('logs failed deliveries and missing recipients with a reason', async () => {
+    const failing = createMailService({
+      prisma: app.database,
+      transport: {
+        kind: 'smtp',
+        send: async () => {
+          throw new Error('relay down');
+        },
+      },
+      from: 'MERNPress <no-reply@example.com>',
+    });
+    const failed = await failing.notifyNewUser({
+      username: 'invitee-log',
+      email: 'invitee-log@example.com',
+      displayName: null,
+    });
+    expect(failed.sent).toBe(false);
+
+    const noRecipient = await app.mail.notifyNewUser({
+      username: 'invitee-log',
+      email: '',
+      displayName: null,
+    });
+    expect(noRecipient).toMatchObject({ sent: false, reason: 'no-recipient' });
+
+    const entries = await app.mail.log();
+    expect(entries[0]).toMatchObject({
+      recipient: '',
+      status: 'failed',
+      reason: 'no-recipient',
+    });
+    expect(entries[1]).toMatchObject({
+      recipient: 'invitee-log@example.com',
+      status: 'failed',
+      reason: 'transport-failed',
+    });
+  });
+
+  it('rejects anonymous access to the mail log', async () => {
+    const anonymous = await app.inject({ method: 'GET', url: '/api/admin/mail/log' });
+    expect(anonymous.statusCode).toBe(401);
+    const clear = await app.inject({
+      method: 'DELETE',
+      url: '/api/admin/mail/log',
+      headers: { origin: ADMIN_ORIGIN },
+    });
+    expect(clear.statusCode).toBe(401);
   });
 });

@@ -44,6 +44,15 @@ export interface MailServiceOptions {
   logger?: (message: string, meta?: Record<string, unknown>) => void;
 }
 
+export interface MailLogEntry {
+  id: string;
+  recipient: string;
+  subject: string;
+  status: 'sent' | 'failed';
+  reason: string | null;
+  createdAt: string;
+}
+
 export interface MailStatus {
   configured: boolean;
   transport: 'smtp' | 'memory' | null;
@@ -85,6 +94,8 @@ export interface PasswordResetMailInput {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const EXCERPT_LIMIT = 2000;
+/** Rows kept in the delivery log; older rows are pruned after each write. */
+const MAIL_LOG_LIMIT = 200;
 
 function singleLine(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
@@ -202,6 +213,40 @@ export function createMailService({
     return admin?.email && EMAIL_PATTERN.test(admin.email) ? admin.email : null;
   }
 
+  /** Delivery log: metadata only, never the message body or credentials. */
+  async function writeLog(entry: {
+    recipient: string;
+    subject: string;
+    status: 'sent' | 'failed';
+    reason?: string | null;
+  }): Promise<void> {
+    try {
+      await prisma.mailLogEntry.create({
+        data: {
+          recipient: entry.recipient.slice(0, 320),
+          subject: entry.subject.slice(0, 500),
+          status: entry.status,
+          reason: entry.reason?.slice(0, 100) ?? null,
+        },
+      });
+      const stale = await prisma.mailLogEntry.findMany({
+        orderBy: { createdAt: 'desc' },
+        skip: MAIL_LOG_LIMIT,
+        take: 200,
+        select: { id: true },
+      });
+      if (stale.length > 0) {
+        await prisma.mailLogEntry.deleteMany({
+          where: { id: { in: stale.map((row) => row.id) } },
+        });
+      }
+    } catch (error) {
+      logger?.('mail log write failed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
   async function deliver(
     to: string | null,
     build: () => Promise<{ subject: string; text: string }>,
@@ -210,21 +255,36 @@ export function createMailService({
       return { sent: false, reason: 'not-configured' };
     }
     if (!to || !EMAIL_PATTERN.test(to)) {
+      await writeLog({
+        recipient: to ?? '',
+        subject: '',
+        status: 'failed',
+        reason: 'no-recipient',
+      });
       return { sent: false, reason: 'no-recipient' };
     }
+    let subject = '';
     try {
       const context = await siteContext();
-      const { subject, text } = await build();
+      const built = await build();
+      subject = built.subject;
       await transport.send({
         from: defaultFrom(context.siteTitle),
         to,
-        subject,
-        text,
+        subject: built.subject,
+        text: built.text,
       });
+      await writeLog({ recipient: to, subject, status: 'sent' });
       return { sent: true };
     } catch (error) {
       logger?.('mail delivery failed', {
         error: error instanceof Error ? error.message : String(error),
+      });
+      await writeLog({
+        recipient: to,
+        subject,
+        status: 'failed',
+        reason: 'transport-failed',
       });
       return { sent: false, reason: 'transport-failed' };
     }
@@ -341,12 +401,33 @@ export function createMailService({
     };
   }
 
+  async function log(limit = 100): Promise<MailLogEntry[]> {
+    const rows = await prisma.mailLogEntry.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: Math.min(Math.max(limit, 1), MAIL_LOG_LIMIT),
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      recipient: row.recipient,
+      subject: row.subject,
+      status: row.status === 'failed' ? 'failed' : 'sent',
+      reason: row.reason,
+      createdAt: row.createdAt.toISOString(),
+    }));
+  }
+
+  async function clearLog(): Promise<void> {
+    await prisma.mailLogEntry.deleteMany({});
+  }
+
   return {
     status,
     notifyModeration,
     notifyComment,
     notifyNewUser,
     notifyPasswordReset,
+    log,
+    clearLog,
     /** Messages captured by the in-memory transport (tests/dev only). */
     outbox: transport?.outbox ?? [],
   };

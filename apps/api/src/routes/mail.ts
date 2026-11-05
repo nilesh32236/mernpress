@@ -16,6 +16,27 @@ export function registerMailRoutes(app: FastifyInstance, options: MailRouteOptio
   const guard = (request: FastifyRequest, reply: FastifyReply) =>
     requireAdmin(request, reply, { env, auth });
 
+  app.get('/api/admin/mail/log', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      return { items: await mail.log(100) };
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
+  app.delete('/api/admin/mail/log', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      await mail.clearLog();
+      return reply.code(204).send();
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
   app.get('/api/admin/mail/status', async (request, reply) => {
     const ctx = await guard(request, reply);
     if (!ctx) return;

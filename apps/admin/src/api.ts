@@ -1057,6 +1057,36 @@ export interface MailStatus {
   from: string | null;
 }
 
+export interface MailLogEntry {
+  id: string;
+  recipient: string;
+  subject: string;
+  status: 'sent' | 'failed';
+  reason: string | null;
+  createdAt: string;
+}
+
+export async function fetchMailLog(): Promise<MailLogEntry[]> {
+  const response = await fetch('/api/admin/mail/log', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return (await readJson<{ items: MailLogEntry[] }>(response)).items;
+}
+
+export async function clearMailLog(): Promise<void> {
+  const response = await fetch('/api/admin/mail/log', {
+    method: 'DELETE',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  if (!response.ok) {
+    await readJson(response);
+  }
+}
+
 export async function fetchMailStatus(): Promise<MailStatus> {
   const response = await fetch('/api/admin/mail/status', {
     credentials: 'include',
