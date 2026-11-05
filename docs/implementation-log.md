@@ -2799,3 +2799,10 @@ production page and post. Two issues were found and fixed:
   base URL.
 - Page items were linked as `/<permalink base>/<slug>`; pages now link as
   `/<slug>`, while posts keep `/<base>/<slug>`.
+
+**Deployment (export link fix):** release `20261105T054350Z-e71c0bd`
+(current). After setting the production site URL and rebuilding, the downloaded
+WXR contains `<wp:base_site_url>https://mernpress.duckdns.org</wp:base_site_url>`,
+the page item links to `https://mernpress.duckdns.org/test` and the post to
+`https://mernpress.duckdns.org/posts/testcom`. The temporary administrator was
+deleted; production is back to the owner's single account.
