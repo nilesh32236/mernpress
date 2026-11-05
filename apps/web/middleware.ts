@@ -98,15 +98,17 @@ async function resolvePost(query: string): Promise<ResolvedPost | null> {
 }
 
 /**
- * Rewrites stay internal: cloning `nextUrl` avoids asking Next to proxy to the
- * incoming host (which, behind Caddy, carries https while Next listens on
- * plain HTTP and would fail with a TLS handshake error).
+ * Rewrites target the Next process directly. Behind Caddy the incoming URL
+ * carries https while Next listens on plain HTTP; an absolute URL with the
+ * incoming origin makes Next try an implicit HTTPS proxy to itself (EPROTO).
+ * The internal HTTP origin always works and the rewritten path is reserved, so
+ * middleware passes it through on the second hop.
  */
+const INTERNAL_ORIGIN = `http://127.0.0.1:${process.env.PORT ?? '3000'}`;
+
 function rewriteTo(request: NextRequest, pathname: string) {
-  const url = request.nextUrl.clone();
-  url.pathname = pathname;
-  url.search = '';
-  return NextResponse.rewrite(url);
+  void request;
+  return NextResponse.rewrite(new URL(pathname, INTERNAL_ORIGIN));
 }
 
 function redirectTo(request: NextRequest, pathname: string) {
