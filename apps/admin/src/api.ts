@@ -1104,9 +1104,26 @@ export async function dismissNotFound(id: string): Promise<RedirectListResult> {
 
 // ---- Tools: WordPress WXR export ----
 export type ExportScope = 'all' | 'posts' | 'pages' | 'media';
+export type ExportStatus = 'publish' | 'draft' | 'private' | 'future';
 
-export async function downloadExport(scope: ExportScope): Promise<void> {
-  const response = await fetch(`/api/admin/export?content=${scope}`, {
+/** WordPress-style export filters (published/draft/private/scheduled). */
+export interface ExportFilters {
+  author?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: ExportStatus;
+  category?: string;
+}
+
+export async function downloadExport(
+  scope: ExportScope,
+  filters: ExportFilters = {},
+): Promise<void> {
+  const params = new URLSearchParams({ content: scope });
+  for (const [key, value] of Object.entries(filters)) {
+    if (typeof value === 'string' && value.length > 0) params.set(key, value);
+  }
+  const response = await fetch(`/api/admin/export?${params.toString()}`, {
     credentials: 'include',
     cache: 'no-store',
     headers: { accept: 'application/rss+xml' },

@@ -1,5 +1,6 @@
-import type { DatabaseClient } from '@mernpress/database';
+import type { DatabaseClient, Prisma } from '@mernpress/database';
 import { requireCapability } from '../auth/capabilities.js';
+import { ContentError } from '../content/errors.js';
 import type { Principal } from '../content/types.js';
 
 /**
@@ -11,6 +12,93 @@ import type { Principal } from '../content/types.js';
  * to the selected scope.
  */
 export type ExportScope = 'all' | 'posts' | 'pages' | 'media';
+
+/**
+ * WordPress export filters. WordPress exposes a separate fieldset per content
+ * type; MERNPress applies one filter set to whichever post types the scope
+ * includes. `category` only applies to posts (a term id).
+ */
+export type ExportStatus = 'publish' | 'draft' | 'private' | 'future';
+
+export interface ExportFilters {
+  /** Author user id. */
+  author?: string | undefined;
+  /** Inclusive UTC start date, `YYYY-MM-DD`. */
+  startDate?: string | undefined;
+  /** Inclusive UTC end date, `YYYY-MM-DD`. */
+  endDate?: string | undefined;
+  status?: ExportStatus | undefined;
+  /** Category term id; posts only. */
+  category?: string | undefined;
+}
+
+function parseDate(value: string, field: string): Date {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new ContentError('VALIDATION_ERROR', `${field} must be a YYYY-MM-DD date`, 400);
+  }
+  const date = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+    throw new ContentError('VALIDATION_ERROR', `${field} is not a real date`, 400);
+  }
+  return date;
+}
+
+function postWhere(types: string[], filters: ExportFilters, now: Date): Prisma.PostWhereInput {
+  const includePosts = types.includes('post');
+  if (filters.category !== undefined && !includePosts) {
+    throw new ContentError('VALIDATION_ERROR', 'The category filter only applies to posts', 400);
+  }
+
+  const where: Prisma.PostWhereInput = { type: { in: types } };
+  if (filters.author) where.authorId = filters.author;
+  if (filters.category) {
+    where.terms = { some: { termId: filters.category, term: { taxonomy: 'category' } } };
+  }
+
+  const start = filters.startDate ? parseDate(filters.startDate, 'startDate') : null;
+  const endExclusive = filters.endDate
+    ? new Date(parseDate(filters.endDate, 'endDate').getTime() + 24 * 60 * 60 * 1000)
+    : null;
+  if (start && endExclusive && start.getTime() >= endExclusive.getTime()) {
+    throw new ContentError(
+      'VALIDATION_ERROR',
+      'The start date must be on or before the end date',
+      400,
+    );
+  }
+  if (start || endExclusive) {
+    const range: Prisma.DateTimeFilter = {};
+    if (start) range.gte = start;
+    if (endExclusive) range.lt = endExclusive;
+    // WordPress filters on post_date: the publish date once published, the
+    // creation date for drafts.
+    where.OR = [{ publishedAt: range }, { publishedAt: null, createdAt: range }];
+  }
+
+  switch (filters.status) {
+    case 'publish':
+      where.status = 'PUBLISHED';
+      where.isPrivate = false;
+      break;
+    case 'draft':
+      where.status = 'DRAFT';
+      where.isPrivate = false;
+      where.scheduledAt = null;
+      break;
+    case 'private':
+      where.isPrivate = true;
+      break;
+    case 'future':
+      where.status = 'DRAFT';
+      where.isPrivate = false;
+      where.scheduledAt = { gt: now };
+      break;
+    case undefined:
+      where.status = { not: 'TRASHED' };
+      break;
+  }
+  return where;
+}
 
 export interface ExportServiceOptions {
   prisma: DatabaseClient;
@@ -63,7 +151,7 @@ function slugFromName(value: string): string {
   );
 }
 
-export function createExportService({ prisma }: ExportServiceOptions) {
+export function createExportService({ prisma, now = () => new Date() }: ExportServiceOptions) {
   async function option<T>(key: string, fallback: T): Promise<T> {
     const row = await prisma.option.findUnique({ where: { key } });
     if (!row) return fallback;
@@ -74,7 +162,11 @@ export function createExportService({ prisma }: ExportServiceOptions) {
     }
   }
 
-  async function exportWxr(principal: Principal, scope: ExportScope): Promise<string> {
+  async function exportWxr(
+    principal: Principal,
+    scope: ExportScope,
+    filters: ExportFilters = {},
+  ): Promise<string> {
     // WordPress gates Tools → Export on the export capability; this build
     // grants it to administrators (manage_options).
     requireCapability(principal, 'manage_options');
@@ -100,7 +192,7 @@ export function createExportService({ prisma }: ExportServiceOptions) {
     const posts =
       types.length > 0
         ? await prisma.post.findMany({
-            where: { type: { in: types }, status: { not: 'TRASHED' } },
+            where: types.length > 0 ? postWhere(types, filters, now()) : { type: { in: types } },
             orderBy: { createdAt: 'asc' },
             include: {
               author: {

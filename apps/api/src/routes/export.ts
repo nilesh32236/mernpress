@@ -6,7 +6,20 @@ import type { Env } from '../config/env.js';
 import { sendRouteError } from './send-error.js';
 
 const exportQuerySchema = z
-  .object({ content: z.enum(['all', 'posts', 'pages', 'media']).default('all') })
+  .object({
+    content: z.enum(['all', 'posts', 'pages', 'media']).default('all'),
+    author: z.string().uuid().optional(),
+    startDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'startDate must be YYYY-MM-DD')
+      .optional(),
+    endDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'endDate must be YYYY-MM-DD')
+      .optional(),
+    status: z.enum(['publish', 'draft', 'private', 'future']).optional(),
+    category: z.string().uuid().optional(),
+  })
   .strict();
 
 interface ExportRouteOptions {
@@ -25,8 +38,8 @@ export function registerExportRoutes(app: FastifyInstance, options: ExportRouteO
     const ctx = await guard(request, reply);
     if (!ctx) return;
     try {
-      const query = exportQuerySchema.parse(request.query);
-      const xml = await exports.exportWxr(ctx.principal, query.content as ExportScope);
+      const { content, ...filters } = exportQuerySchema.parse(request.query);
+      const xml = await exports.exportWxr(ctx.principal, content as ExportScope, filters);
       const date = new Date().toISOString().slice(0, 10);
       reply.header('content-type', 'application/rss+xml; charset=utf-8');
       reply.header('content-disposition', `attachment; filename="mernpress-export-${date}.xml"`);

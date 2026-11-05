@@ -98,12 +98,16 @@ describe('Tools → Export (WXR)', () => {
     await app.close();
   });
 
-  async function exportXml(scope: string): Promise<string> {
-    const response = await app.inject({
+  async function exportQuery(query: string) {
+    return app.inject({
       method: 'GET',
-      url: `/api/admin/export?content=${scope}`,
+      url: `/api/admin/export?${query}`,
       headers: { cookie },
     });
+  }
+
+  async function exportXml(scope: string): Promise<string> {
+    const response = await exportQuery(`content=${scope}`);
     expect(response.statusCode).toBe(200);
     expect(response.headers['content-type']).toContain('application/rss+xml');
     expect(response.headers['content-disposition']).toContain('.xml');
@@ -169,5 +173,131 @@ describe('Tools → Export (WXR)', () => {
       headers: { cookie: editor.cookieHeader },
     });
     expect(forbidden.statusCode).toBe(403);
+  });
+  it('filters posts by author', async () => {
+    const other = await seedUser(app, {
+      username: 'export-author',
+      password: 'Author-pass-2026!',
+      role: 'author',
+    });
+    await app.database.post.create({
+      data: {
+        type: 'post',
+        status: 'PUBLISHED',
+        title: 'Other author post',
+        slug: 'other-author-post',
+        content: '<!-- wp:paragraph --><p>Other</p><!-- /wp:paragraph -->',
+        authorId: other.id,
+        publishedAt: new Date('2026-10-02T09:00:00.000Z'),
+      },
+    });
+
+    const response = await exportQuery(`content=posts&author=${other.id}`);
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toContain('Other author post');
+    expect(response.body).not.toContain('Published post');
+    expect(response.body).not.toContain('Draft & <export>');
+  });
+
+  it('filters posts by category', async () => {
+    const category = await app.database.term.findFirstOrThrow({
+      where: { taxonomy: 'category', slug: 'news-updates' },
+    });
+    const response = await exportQuery(`content=posts&category=${category.id}`);
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toContain('Published post');
+    expect(response.body).not.toContain('Draft & <export>');
+  });
+
+  it('filters by status, including private and scheduled posts', async () => {
+    const admin = await app.database.user.findUniqueOrThrow({
+      where: { username: ADMIN_USERNAME },
+    });
+    await app.database.post.create({
+      data: {
+        type: 'post',
+        status: 'PUBLISHED',
+        title: 'Private export post',
+        slug: 'private-export-post',
+        content: '<!-- wp:paragraph --><p>Private</p><!-- /wp:paragraph -->',
+        authorId: admin.id,
+        isPrivate: true,
+        publishedAt: new Date('2026-10-03T09:00:00.000Z'),
+      },
+    });
+    await app.database.post.create({
+      data: {
+        type: 'post',
+        status: 'DRAFT',
+        title: 'Scheduled export post',
+        slug: 'scheduled-export-post',
+        content: '<!-- wp:paragraph --><p>Scheduled</p><!-- /wp:paragraph -->',
+        authorId: admin.id,
+        scheduledAt: new Date('2099-01-01T09:00:00.000Z'),
+      },
+    });
+
+    const drafts = await exportQuery('content=posts&status=draft');
+    expect(drafts.statusCode).toBe(200);
+    expect(drafts.body).toContain('Draft & <export>');
+    expect(drafts.body).not.toContain('Published post');
+    expect(drafts.body).not.toContain('Scheduled export post');
+
+    const published = await exportQuery('content=posts&status=publish');
+    expect(published.body).toContain('Published post');
+    expect(published.body).not.toContain('Draft & <export>');
+    expect(published.body).not.toContain('Private export post');
+
+    const privatePosts = await exportQuery('content=posts&status=private');
+    expect(privatePosts.body).toContain('Private export post');
+    expect(privatePosts.body).not.toContain('Published post');
+
+    const future = await exportQuery('content=posts&status=future');
+    expect(future.body).toContain('Scheduled export post');
+    expect(future.body).not.toContain('Draft & <export>');
+  });
+
+  it('filters by an inclusive UTC date range', async () => {
+    const sameDay = await exportQuery('content=posts&startDate=2026-10-01&endDate=2026-10-01');
+    expect(sameDay.statusCode).toBe(200);
+    expect(sameDay.body).toContain('Published post');
+    expect(sameDay.body).not.toContain('Draft & <export>');
+
+    const after = await exportQuery('content=posts&startDate=2026-10-02');
+    expect(after.body).not.toContain('Published post');
+
+    const before = await exportQuery('content=posts&endDate=2026-09-30');
+    expect(before.body).not.toContain('Published post');
+  });
+
+  it('filters pages by author and status', async () => {
+    const admin = await app.database.user.findUniqueOrThrow({
+      where: { username: ADMIN_USERNAME },
+    });
+    const byAuthor = await exportQuery(`content=pages&author=${admin.id}`);
+    expect(byAuthor.statusCode).toBe(200);
+    expect(byAuthor.body).toContain('Exported page');
+
+    const drafts = await exportQuery('content=pages&status=draft');
+    expect(drafts.body).toContain('Exported page');
+    const publishedPages = await exportQuery('content=pages&status=publish');
+    expect(publishedPages.body).not.toContain('Exported page');
+  });
+
+  it('rejects a category filter for pages and invalid date ranges', async () => {
+    const category = await app.database.term.findFirstOrThrow({
+      where: { taxonomy: 'category', slug: 'news-updates' },
+    });
+    const categoryOnPages = await exportQuery(`content=pages&category=${category.id}`);
+    expect(categoryOnPages.statusCode).toBe(400);
+    expect((categoryOnPages.json() as { error: { code: string } }).error.code).toBe(
+      'VALIDATION_ERROR',
+    );
+
+    const reversed = await exportQuery('content=posts&startDate=2026-10-05&endDate=2026-10-01');
+    expect(reversed.statusCode).toBe(400);
+
+    const impossible = await exportQuery('content=posts&startDate=2026-13-01');
+    expect(impossible.statusCode).toBe(400);
   });
 });

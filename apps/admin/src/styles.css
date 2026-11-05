@@ -12369,3 +12369,34 @@ a.glance-chip:hover {
   font-weight: 600;
   color: #1d2327;
 }
+
+/* Tools → Export filters (WordPress fieldset layout). */
+.export-filters {
+  margin-top: 8px;
+}
+
+.export-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 18px;
+  margin: 10px 0 6px;
+}
+
+.export-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: #1d2327;
+}
+
+.export-filter select,
+.export-filter input {
+  min-height: 32px;
+}
+
+@media (max-width: 900px) {
+  .export-filter-grid {
+    grid-template-columns: 1fr;
+  }
+}

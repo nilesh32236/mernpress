@@ -47,7 +47,7 @@ owner decision.
 | SEO / metadata | D/P | Per-post SEO fields, JSON-LD (BlogPosting/WebPage/Breadcrumb/Collection/Profile), Twitter cards, image sitemap, /llms.txt; WordPress needs plugins for all of this |
 | Tools → Backups | D/P | Database + media archive, retention, admin download/delete, documented CLI restore; WordPress needs a plugin |
 | Tools → Redirects | D/P | Admin-managed 301/302 redirects applied by public middleware, loop rejection, aggregated 404 log with Redirect/Dismiss; WordPress needs a plugin |
-| Tools → Available Tools / Export / Site Health | D/P | Cards, WordPress WXR export with All/Posts/Pages/Media scopes, health checks |
+| Tools → Available Tools / Export / Site Health | D/P | Cards; WordPress WXR export with All/Posts/Pages/Media scopes and author, date-range, status and category filters; health checks |
 | Tools → Import | D/P | WordPress importer order, real WXR import, unavailable importers stated, closing marketplace note |
 | Tools → Export/Erase Personal Data | D/P | Request queue, JSON export, anonymising erasure |
 | Tools → Theme/Plugin File Editor | X | In-browser server-code editing excluded (RCE surface) |
@@ -131,7 +131,7 @@ missing screens. The per-screen evidence for what was checked is recorded in
 | Allow Pings | Not modelled. | Pingbacks/trackbacks require XML-RPC or inbound verification; this is a security-sensitive legacy surface, so it is stated as unavailable rather than stored as an inert checkbox. |
 | Post sidebar extras | Preview token, SEO and revisions are MERNPress additions shown after the WordPress panels. | No equivalent panels; WordPress revisions live in the document overview. |
 | Admin colour schemes | A single default scheme. | Eight built-in schemes on the Profile screen. |
-| Export filters | Export supports All content / Posts / Pages / Media. | Per-scope author, date, status and category/term filters. |
+| Export filters | One filter set applies to the posts/pages in scope; category is posts-only. | Separate Posts and Pages fieldsets with independent filters; a Pending status. |
 | Permalink structures | One configurable Post URL base. | Plain, day/name, month/name, numeric, post name and custom structures, plus category/tag bases. |
 | Customizer panels | Site Identity only; colours/menus live in the Site Editor. | Site Identity, Colors, Menus, Homepage Settings and Additional CSS. |
 | Connectors | OpenAI, Google and Anthropic keys. | Akismet, Anthropic, Google and OpenAI. |

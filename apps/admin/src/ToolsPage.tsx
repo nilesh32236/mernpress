@@ -4,7 +4,13 @@ import {
   convertTerms,
   downloadExport,
   fetchSiteHealth,
+  fetchTerms,
+  fetchUsers,
+  type AdminTerm,
+  type AdminUser,
+  type ExportFilters,
   type ExportScope,
+  type ExportStatus,
   type SiteHealth,
   type TaxonomyType,
 } from './api.js';
@@ -15,6 +21,13 @@ export function ToolsPage() {
   const location = useLocation();
   const [exporting, setExporting] = useState(false);
   const [exportScope, setExportScope] = useState<ExportScope>('all');
+  const [exportAuthor, setExportAuthor] = useState('');
+  const [exportCategory, setExportCategory] = useState('');
+  const [exportStart, setExportStart] = useState('');
+  const [exportEnd, setExportEnd] = useState('');
+  const [exportStatus, setExportStatus] = useState<'' | ExportStatus>('');
+  const [exportAuthors, setExportAuthors] = useState<AdminUser[]>([]);
+  const [exportCategories, setExportCategories] = useState<AdminTerm[]>([]);
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
   const [health, setHealth] = useState<SiteHealth | null>(null);
   const [converting, setConverting] = useState(false);
@@ -34,6 +47,27 @@ export function ToolsPage() {
   }, []);
 
   useEffect(() => {
+    let active = true;
+    fetchUsers({ perPage: 100 })
+      .then((result) => {
+        if (active) setExportAuthors(result.items);
+      })
+      .catch(() => {
+        if (active) setExportAuthors([]);
+      });
+    fetchTerms({ taxonomy: 'category', perPage: 100 })
+      .then((result) => {
+        if (active) setExportCategories(result.items);
+      })
+      .catch(() => {
+        if (active) setExportCategories([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
     const section = new URLSearchParams(location.search).get('section');
     if (section) {
       window.setTimeout(() => {
@@ -44,10 +78,22 @@ export function ToolsPage() {
 
   async function exportContent(): Promise<void> {
     if (exporting) return;
+    if (exportStart && exportEnd && exportStart > exportEnd) {
+      setNotice({ tone: 'error', text: 'The start date must be on or before the end date.' });
+      return;
+    }
+    const filters: ExportFilters = {};
+    if (exportScope !== 'media') {
+      if (exportAuthor) filters.author = exportAuthor;
+      if (exportStart) filters.startDate = exportStart;
+      if (exportEnd) filters.endDate = exportEnd;
+      if (exportStatus) filters.status = exportStatus;
+      if (exportCategory && exportScope !== 'pages') filters.category = exportCategory;
+    }
     setExporting(true);
     setNotice(null);
     try {
-      await downloadExport(exportScope);
+      await downloadExport(exportScope, filters);
       setNotice({ tone: 'success', text: 'Export file downloaded.' });
     } catch (caught) {
       setNotice({ tone: 'error', text: actionErrorMessage(caught) });
@@ -228,6 +274,82 @@ export function ToolsPage() {
             </label>
           ))}
         </fieldset>
+        {exportScope !== 'media' ? (
+          <fieldset className="tools-choice export-filters">
+            <legend>
+              {exportScope === 'posts'
+                ? 'Posts'
+                : exportScope === 'pages'
+                  ? 'Pages'
+                  : 'Posts and pages'}
+            </legend>
+            <div className="export-filter-grid">
+              <label className="export-filter">
+                <span>Authors</span>
+                <select
+                  value={exportAuthor}
+                  onChange={(event) => setExportAuthor(event.target.value)}
+                >
+                  <option value="">All authors</option>
+                  {exportAuthors.map((author) => (
+                    <option key={author.id} value={author.id}>
+                      {author.displayName?.trim() || author.username}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {exportScope !== 'pages' ? (
+                <label className="export-filter">
+                  <span>Categories</span>
+                  <select
+                    value={exportCategory}
+                    onChange={(event) => setExportCategory(event.target.value)}
+                  >
+                    <option value="">All categories</option>
+                    {exportCategories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              <label className="export-filter">
+                <span>Start date</span>
+                <input
+                  type="date"
+                  value={exportStart}
+                  onChange={(event) => setExportStart(event.target.value)}
+                />
+              </label>
+              <label className="export-filter">
+                <span>End date</span>
+                <input
+                  type="date"
+                  value={exportEnd}
+                  onChange={(event) => setExportEnd(event.target.value)}
+                />
+              </label>
+              <label className="export-filter">
+                <span>Status</span>
+                <select
+                  value={exportStatus}
+                  onChange={(event) => setExportStatus(event.target.value as '' | ExportStatus)}
+                >
+                  <option value="">All statuses</option>
+                  <option value="publish">Published</option>
+                  <option value="draft">Drafts</option>
+                  <option value="private">Private</option>
+                  <option value="future">Scheduled</option>
+                </select>
+              </label>
+            </div>
+            <p className="field-help">
+              Filters apply to the posts and pages in this export. Dates are UTC; the category
+              filter applies to posts only.
+            </p>
+          </fieldset>
+        ) : null}
         <p>
           <button
             type="button"

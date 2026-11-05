@@ -71,7 +71,7 @@ controls MERNPress implements.
 | Appearance → Site Editor | `<h1>Design</h1>` | `<h1>Design</h1>`, Identity / Styles / Pages | match |
 | Appearance → Fonts | “Fonts” (Font Library) | “Fonts”, Library / Upload / Install Fonts, installed font list | match in name and purpose |
 | Tools → Import | “Import” + importer list | “Import” + importer list with Open / Run Importer | match; third-party importers remain unavailable by design |
-| Tools → Export | “Export”, *Choose what to export*: All content, Posts, Pages, Media, per-type author/date/status filters, Download Export File | “Export”, same four scopes, Download Export File | narrower: the four scopes exist, the per-scope filters do not; documented |
+| Tools → Export | “Export”, *Choose what to export*: All content, Posts, Pages, Media, author/date/status/category filters, Download Export File | “Export”, same four scopes and author/date/status/category filters, Download Export File | match (one filter set applies to the included types; WordPress has separate Posts/Pages fieldsets) |
 | Tools → Export / Erase Personal Data | Request form, request list, status filters, bulk actions | Request form, request list with complete/download actions | match in structure; WordPress adds Screen Options and bulk filters |
 | Settings → Writing | “Writing Settings”: Post via email, Update Services | Same headings and fields | match |
 | Settings → Reading | “Reading Settings”: front page, posts per page, feed items, full text/excerpt, visibility | Same | match |
@@ -90,7 +90,7 @@ now matches WordPress.
 
 | Deviation | Reason |
 | --- | --- |
-| Export per-scope filters | The WXR export service supports the four scopes; author/date/status filters are not implemented. |
+
 | Permalink presets and category/tag bases | The public router supports one configurable base segment; other structures would require route changes. |
 | Customizer scope | Themes are token packages; colours/menus are edited in the Site Editor, not a second Customizer panel set. |
 | Connectors providers | No spam service is bundled; only the three AI providers with server-side key storage exist. |

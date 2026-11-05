@@ -3459,3 +3459,22 @@ section heading and the policy-page selector (matching WordPress 7.1), and
 Tools → Export opens with `<h1>Export</h1>`, the four scopes (All content,
 Posts, Pages, Media) and Download Export File. The temporary administrator was
 deleted; `/`, `/admin/` and `/api/health` return 200.
+
+### 2026-11-05 — WXR export filters (author, dates, status, category)
+
+- `GET /api/admin/export` now accepts `author`, `startDate`, `endDate`, `status`
+  and `category` with `content`. The service builds the Prisma filter, validates
+  real UTC dates and a non-reversed range, and maps WordPress statuses to the
+  MERNPress model: publish (PUBLISHED, not private), draft (DRAFT, not private,
+  not scheduled), private (`isPrivate`), future (scheduled drafts). WordPress's
+  pending status has no equivalent and is not offered.
+- `category` (term id) applies to posts only and returns 400 for pages/media.
+- Tools → Export shows the WordPress filter fieldset (Authors, Categories,
+  Start/End date, Status) with “All …” defaults and a client-side reversed-range
+  check. Authors and categories load from the existing admin APIs.
+- Tests cover author, category, each status (including private and scheduled),
+  an inclusive single-day range, pages by author/status, category-with-pages
+  rejection and invalid/reversed dates; the admin test asserts the exact query
+  string and the pre-request validation.
+- Validation: 732 unit/integration tests (API 457, admin 176, web 34,
+  block-system 65), 23 Playwright E2E tests and six builds pass.
