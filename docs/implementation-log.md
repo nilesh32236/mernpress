@@ -3813,3 +3813,19 @@ administrator were deleted; production is back to 1 user, 2 posts, 0 notes and
   editor panel hide/restore and sticky payload; App hydration.
 - Validation: 801 unit/integration tests (API 487, admin 203, web 38,
   block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.
+
+**Deployment (per-user Screen Options):** release `20261105T171824Z-32188b8`
+(current), migration `20261105165111_add_user_screen_options` applied
+(`users.screen_options jsonb`). Production verification with a temporary
+administrator:
+- Posts list: hiding Author and setting 25 items per page wrote
+  `{perPage:{posts:25}, hiddenColumns:{posts:["author"]}}`; clearing
+  localStorage and reloading restored both from the session, and the Author
+  column stayed hidden.
+- Editor: unchecking Format in Preferences removed the panel, wrote
+  `editorHiddenPanels:["format"]`, survived a reload and re-enabled cleanly.
+  On a temporary draft, “Stick to the top of the blog” saved and the API
+  returned `sticky: true`; the draft was deleted after the check.
+- The temporary administrator was deleted (its screen options with it);
+  production is back to 1 user and 2 posts, with `/`, `/admin/`,
+  `/api/health` and `/posts/testcom` at 200.
