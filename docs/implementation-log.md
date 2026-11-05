@@ -3607,3 +3607,20 @@ EPROTO); middleware now rewrites to the internal HTTP origin.
   save and server error).
 - Validation: 766 unit/integration tests (API 472, admin 186, web 38,
   block-system 65, contracts 5), 23 Playwright E2E tests and seven builds pass.
+
+**Deployment (Customizer panels):** release `20261105T153053Z-d60a4de`
+(current). Production verification with a temporary administrator through the
+real UI:
+- Appearance → Customize listed Site Identity, Colors, Menus, Homepage Settings
+  and Additional CSS.
+- Colors (`#f4f4f4` background, `#cc0000` accent), a menu item (About →
+  `/testcom`) and `.site-title { text-transform: uppercase; }` each saved with a
+  per-panel notice; `/` then served the overridden CSS variables, the injected
+  `<style id="customizer-css">`, `text-transform: uppercase` computed on the
+  title and the custom navigation link.
+- A static homepage (published “Test” page) rendered at `/` with its title, and
+  a newly created “Blog” page rendered the post loop at `/blog`.
+- Settings were reset to latest posts with no colours/menu/CSS, the Blog page
+  and temporary administrator were deleted, and `/`, `/admin/`, `/api/health`,
+  `/posts/testcom` and `/test` return 200. Production is back to 1 user, 2 posts
+  and the default blog front page.
