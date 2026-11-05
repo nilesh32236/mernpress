@@ -2823,3 +2823,12 @@ deleted; production is back to the owner's single account.
   logged in with it; the bulk action sent links to both selected users.
 - Validation: 641 unit/integration tests (API 407, admin 156, block-system 65,
   web 13), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (Send password reset):** release `20261105T055851Z-5e20518`
+(current). Production verification with a temporary administrator and a
+temporary target user matched the live WordPress 7.1.4 screen exactly:
+row actions `Edit | Delete | View | Send password reset`, and both bulk
+toolbars offer `Send password reset`. Clicking the action in production
+reported "Email delivery is not configured." because no SMTP credentials are
+set; no token was created and nothing was claimed as sent. Both temporary
+accounts and their sessions were deleted afterwards.
