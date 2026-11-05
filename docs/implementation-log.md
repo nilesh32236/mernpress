@@ -2832,3 +2832,26 @@ toolbars offer `Send password reset`. Clicking the action in production
 reported "Email delivery is not configured." because no SMTP credentials are
 set; no token was created and nothing was claimed as sent. Both temporary
 accounts and their sessions were deleted afterwards.
+
+### 2026-11-05 — Media → Edit Image
+
+- Added the media editor: rotate left/right, flip horizontal/vertical,
+  aspect-ratio crop with a drag selection and corner handles, scale, undo/redo,
+  Save/Cancel and Restore original image. The canvas composes edits locally;
+  nothing is saved until Save.
+- New `POST /api/admin/media/:id/edit` (multipart, administrator/session + CSRF)
+  re-validates and re-encodes the image exactly like an upload, writes it through
+  a temporary file, keeps the first pre-edit file at `<storagePath>.original`,
+  regenerates all derivatives and records `edited_at`/`original_path`.
+  `POST /api/admin/media/:id/restore` puts the original back, regenerates
+  derivatives and clears the backup. Deleting the media row removes the backup.
+- `MediaItem` gains `editedAt` and `hasOriginal`; drawer/grid image URLs carry a
+  cache-busting version so edited bytes appear immediately.
+- Migration `20261105060220_add_media_edit`.
+- Verified in the browser on a 1200×800 upload: rotate right → 800×1200, undo →
+  1200×800, redo → 800×1200, flip (no dimension change), default crop → 640×960,
+  scale to 320×480, Save → drawer showed 320×480 and “Image edited.” with the
+  cache-busted preview; Restore original → 1200×800, `editedAt: null`,
+  `hasOriginal: false`, “Original image restored.”
+- Validation: 645 unit/integration tests (API 410, admin 157, block-system 65,
+  web 13), 23 Playwright E2E tests and six builds pass.

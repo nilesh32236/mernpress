@@ -49,6 +49,10 @@ export interface MediaDto {
   /** Width-keyed public URLs for the generated variants. */
   derivatives: MediaDerivatives;
   uploadedById: string | null;
+  /** ISO instant of the last saved image edit, or null when pristine. */
+  editedAt: string | null;
+  /** True when a pre-edit backup exists and "Restore original" is available. */
+  hasOriginal: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -75,6 +79,11 @@ export interface UploadMediaInput {
   description?: string | undefined;
 }
 
+export interface EditMediaInput {
+  /** The edited image bytes; validated and re-encoded like an upload. */
+  buffer: Buffer;
+}
+
 export interface UpdateMediaInput {
   altText?: string | undefined;
   caption?: string | undefined;
@@ -93,6 +102,10 @@ export interface MediaService {
   list(principal: Principal, query: MediaListQuery): Promise<Paged<MediaDto>>;
   get(principal: Principal, id: string): Promise<MediaDto>;
   update(principal: Principal, id: string, input: UpdateMediaInput): Promise<MediaDto>;
+  /** Replace the canonical file with an edited image, keeping a backup. */
+  editImage(principal: Principal, id: string, input: EditMediaInput): Promise<MediaDto>;
+  /** Restore the pre-edit backup and regenerate derivatives. */
+  restoreOriginal(principal: Principal, id: string): Promise<MediaDto>;
   /** Deletes the row (authoritative) and its files best-effort. */
   remove(principal: Principal, id: string): Promise<void>;
   /** Public, unauthenticated file resolution with path confinement. */

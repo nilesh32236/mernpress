@@ -291,24 +291,28 @@ model DataRequest {
 /// random names; derivatives (WebP thumbnails) are tracked in `derivatives`.
 /// Raster images only — no SVG (T-12), no video/documents in this slice.
 model MediaItem {
-  id           String   @id @default(uuid(7)) @db.Uuid
+  id           String    @id @default(uuid(7)) @db.Uuid
   /// Random stored base name without directories, e.g. "ab12cd34.webp".
-  fileName     String   @map("file_name") @db.VarChar(120)
-  originalName String   @map("original_name") @db.VarChar(255)
-  mimeType     String   @map("mime_type") @db.VarChar(100)
-  sizeBytes    Int      @map("size_bytes")
+  fileName     String    @map("file_name") @db.VarChar(120)
+  originalName String    @map("original_name") @db.VarChar(255)
+  mimeType     String    @map("mime_type") @db.VarChar(100)
+  sizeBytes    Int       @map("size_bytes")
   width        Int?
   height       Int?
-  altText      String   @default("") @map("alt_text") @db.VarChar(500)
-  caption      String   @default("") @db.VarChar(2000)
-  description  String   @default("") @db.Text
+  altText      String    @default("") @map("alt_text") @db.VarChar(500)
+  caption      String    @default("") @db.VarChar(2000)
+  description  String    @default("") @db.Text
   /// Path relative to the storage root, e.g. "2026/10/ab12cd34.webp".
-  storagePath  String   @map("storage_path") @db.VarChar(300)
+  storagePath  String    @map("storage_path") @db.VarChar(300)
   /// {"300": "2026/10/ab12cd34-300.webp", "600": ..., "1200": ...}
   derivatives  Json?
-  uploadedById String?  @map("uploaded_by_id") @db.Uuid
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  uploadedById String?   @map("uploaded_by_id") @db.Uuid
+  /// Set when the image was edited in the media editor (null = pristine).
+  editedAt     DateTime? @map("edited_at") @db.Timestamptz(6)
+  /// Relative path of the pre-edit backup used by "Restore original image".
+  originalPath String?   @map("original_path") @db.VarChar(400)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   uploadedBy User?  @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
   featuredOn Post[]

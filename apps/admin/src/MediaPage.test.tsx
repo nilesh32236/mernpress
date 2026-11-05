@@ -3,7 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ApiError,
   deleteMedia,
+  editMediaImage,
   listMedia,
+  restoreMediaOriginal,
   updateMedia,
   uploadMedia,
   type AuthUser,
@@ -21,6 +23,8 @@ vi.mock('./api.js', async (importOriginal) => {
     uploadMedia: vi.fn(),
     updateMedia: vi.fn(),
     deleteMedia: vi.fn(),
+    editMediaImage: vi.fn(),
+    restoreMediaOriginal: vi.fn(),
   };
 });
 
@@ -45,6 +49,8 @@ function makeMedia(overrides: Partial<MediaItem> = {}): MediaItem {
       '1200': '/api/media/m1/a1b2c3d4-1200.webp',
     },
     uploadedById: 'u1',
+    editedAt: null,
+    hasOriginal: false,
     createdAt: '2026-10-28T10:00:00.000Z',
     updatedAt: '2026-10-28T10:00:00.000Z',
     ...overrides,
@@ -83,6 +89,10 @@ beforeEach(() => {
   });
   vi.mocked(updateMedia).mockImplementation(async (id, patch) => makeMedia({ id, ...patch }));
   vi.mocked(deleteMedia).mockResolvedValue(undefined);
+  vi.mocked(editMediaImage).mockResolvedValue(makeMedia());
+  vi.mocked(restoreMediaOriginal).mockResolvedValue(makeMedia());
+  // jsdom has no 2D canvas; the editor still renders its controls.
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
 });
 
 afterEach(() => {
@@ -107,7 +117,9 @@ describe('media library page', () => {
 
     // The grid uses the 300px derivative, not the original.
     const card = screen.getByRole('button', { name: 'View sunset.png' });
-    expect(card.querySelector('img')?.getAttribute('src')).toBe('/api/media/m1/a1b2c3d4-300.webp');
+    expect(card.querySelector('img')?.getAttribute('src')).toBe(
+      '/api/media/m1/a1b2c3d4-300.webp?v=2026-10-28T10%3A00%3A00.000Z',
+    );
   });
 
   it('searches on the server and resets to page one', async () => {
@@ -280,5 +292,26 @@ describe('media library page', () => {
       }),
     );
     expect(screen.getByText('Page 2 of 2')).toBeDefined();
+  });
+  it('opens the image editor from the media drawer', async () => {
+    render(<MediaPage user={admin} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'View sunset.png' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Image' }));
+
+    const editor = await screen.findByRole('dialog', { name: 'Edit image' });
+    expect(within(editor).getByRole('heading', { name: 'Edit Image' })).toBeDefined();
+    expect(within(editor).getByRole('button', { name: 'Rotate left' })).toBeDefined();
+    expect(within(editor).getByRole('button', { name: 'Rotate right' })).toBeDefined();
+    expect(within(editor).getByRole('button', { name: 'Flip vertical' })).toBeDefined();
+    expect(within(editor).getByRole('button', { name: 'Flip horizontal' })).toBeDefined();
+    expect(within(editor).getByRole('button', { name: 'Undo' })).toBeDefined();
+    expect(within(editor).getByRole('button', { name: 'Redo' })).toBeDefined();
+    expect(within(editor).getByRole('button', { name: 'Crop' })).toBeDefined();
+    expect(within(editor).getByRole('button', { name: 'Scale' })).toBeDefined();
+    expect(within(editor).getByRole('button', { name: 'Save' })).toBeDefined();
+
+    fireEvent.click(within(editor).getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Edit image' })).toBeNull());
   });
 });

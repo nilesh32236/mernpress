@@ -83,6 +83,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-062 | 2026-11-05 | Users → Send password reset is implemented as a WordPress-style row action and bulk action. The administrator endpoint issues the existing single-use 24-hour reset token and e-mails the Password Reset message; the target must be active with an email and mail configured (404/400/502 otherwise), and the send is audited with actor and target. Self rows omit the action; bulk reports sent/failed counts. | accepted | [ADR 0023](docs/adr/0023-users-send-password-reset.md) |
 
+| D-063 | 2026-11-05 | Media → Edit Image is implemented: a canvas editor with rotate, flip, aspect-ratio crop (drag selection with corner handles), scale, undo/redo and cancel; Save posts the composed image to `POST /api/admin/media/:id/edit`, which re-validates/re-encodes it like an upload, keeps the first pre-edit file as `<storagePath>.original`, regenerates all derivatives and records `edited_at`/`original_path`. `POST /api/admin/media/:id/restore` restores the original and clears the backup. Media DTOs expose `editedAt`/`hasOriginal`, and image URLs carry a cache-busting version. Capability, CSRF and size/pixel limits are enforced. | accepted | [ADR 0024](docs/adr/0024-media-edit-image.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

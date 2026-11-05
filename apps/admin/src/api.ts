@@ -1228,6 +1228,8 @@ export interface MediaItem {
   url: string;
   derivatives: MediaDerivatives;
   uploadedById: string | null;
+  editedAt: string | null;
+  hasOriginal: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -1372,6 +1374,33 @@ export function uploadMedia(file: File, options: UploadMediaOptions = {}): Promi
 
     xhr.send(form);
   });
+}
+
+export async function editMediaImage(id: string, blob: Blob): Promise<MediaItem> {
+  const csrf = getCookie('mernpress_csrf');
+  const form = new FormData();
+  form.append('file', blob, 'edited.webp');
+  const response = await fetch(`/api/admin/media/${encodeURIComponent(id)}/edit`, {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      ...(csrf ? { 'x-csrf-token': csrf } : {}),
+    },
+    body: form,
+  });
+  return readJson<MediaItem>(response);
+}
+
+export async function restoreMediaOriginal(id: string): Promise<MediaItem> {
+  const response = await fetch(`/api/admin/media/${encodeURIComponent(id)}/restore`, {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  return readJson<MediaItem>(response);
 }
 
 export async function updateMedia(id: string, payload: UpdateMediaPayload): Promise<MediaItem> {

@@ -32,6 +32,8 @@ interface MediaShape {
   url: string;
   derivatives: { '300': string; '600': string; '1200': string };
   uploadedById: string | null;
+  editedAt: string | null;
+  hasOriginal: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -893,6 +895,161 @@ describe('admin media library', () => {
 
       const response = await app.inject({ method: 'GET', url: created.url });
       expect(response.statusCode).toBe(404);
+    });
+  });
+  describe('image edits', () => {
+    async function editRaw(
+      id: string,
+      file: TestFile,
+      headers: Record<string, string> = adminHeaders(),
+    ) {
+      const { body, contentType } = multipartPayload(file, {});
+      return app.inject({
+        method: 'POST',
+        url: `/api/admin/media/${id}/edit`,
+        headers: { ...headers, 'content-type': contentType },
+        payload: body,
+      });
+    }
+
+    function restore(id: string, headers: Record<string, string> = adminHeaders()) {
+      return app.inject({
+        method: 'POST',
+        url: `/api/admin/media/${id}/restore`,
+        headers,
+      });
+    }
+
+    it('saves an edited image, keeps the original backup and restores it', async () => {
+      const created = await createMedia({
+        filename: 'wide.png',
+        contentType: 'image/png',
+        data: widePng,
+      });
+      expect(created.hasOriginal).toBe(false);
+      const originalPath = await findStoredFile(storageRoot, created.fileName);
+      const originalBytes = await readFile(originalPath);
+
+      const editedPng = await sharp({
+        create: { width: 400, height: 300, channels: 3, background: { r: 200, g: 20, b: 60 } },
+      })
+        .png()
+        .toBuffer();
+
+      const edited = await editRaw(created.id, {
+        filename: 'edited.png',
+        contentType: 'image/png',
+        data: editedPng,
+      });
+      expect(edited.statusCode).toBe(200);
+      const updated = edited.json() as MediaShape;
+      expect(updated).toMatchObject({
+        id: created.id,
+        width: 400,
+        height: 300,
+        mimeType: 'image/webp',
+        hasOriginal: true,
+      });
+      expect(typeof updated.editedAt).toBe('string');
+      expect(updated.derivatives['300']).toContain('-300.webp');
+
+      const metadata = await sharp(await readFile(originalPath)).metadata();
+      expect([metadata.width, metadata.height]).toEqual([400, 300]);
+      expect((await readFile(originalPath)).equals(originalBytes)).toBe(false);
+
+      const served = await app.inject({ method: 'GET', url: updated.url });
+      expect(served.statusCode).toBe(200);
+      expect((await sharp(served.rawPayload).metadata()).width).toBe(400);
+
+      // A second edit keeps the first backup, so restore still returns the upload.
+      const second = await editRaw(created.id, {
+        filename: 'second.png',
+        contentType: 'image/png',
+        data: await sharp({
+          create: { width: 200, height: 100, channels: 3, background: { r: 10, g: 20, b: 30 } },
+        })
+          .png()
+          .toBuffer(),
+      });
+      expect(second.statusCode).toBe(200);
+      expect((second.json() as MediaShape).hasOriginal).toBe(true);
+
+      const restored = await restore(created.id);
+      expect(restored.statusCode).toBe(200);
+      const original = restored.json() as MediaShape;
+      expect(original).toMatchObject({
+        width: 1600,
+        height: 900,
+        editedAt: null,
+        hasOriginal: false,
+      });
+      expect((await readFile(originalPath)).equals(originalBytes)).toBe(true);
+      await expect(findStoredFile(storageRoot, `${created.fileName}.original`)).rejects.toThrow();
+
+      const missing = await restore(created.id);
+      expect(missing.statusCode).toBe(400);
+    });
+
+    it('rejects unauthorized, anonymous and invalid edits without touching the file', async () => {
+      const created = await createMedia({
+        filename: 'owned.png',
+        contentType: 'image/png',
+        data: png,
+      });
+      const { session } = await createSession('author-edit', 'author');
+      const failed = await editRaw(
+        created.id,
+        { filename: 'x.png', contentType: 'image/png', data: png },
+        sessionHeaders(session),
+      );
+      expect(failed.statusCode).toBe(403);
+
+      const anonymous = await app.inject({
+        method: 'POST',
+        url: `/api/admin/media/${created.id}/restore`,
+        headers: { origin: ADMIN_ORIGIN },
+      });
+      expect(anonymous.statusCode).toBe(401);
+
+      const invalid = await editRaw(created.id, {
+        filename: 'not-an-image.png',
+        contentType: 'image/png',
+        data: SVG,
+      });
+      expect(invalid.statusCode).toBe(400);
+      const after = await app.inject({
+        method: 'GET',
+        url: `/api/admin/media/${created.id}`,
+        headers: adminHeaders(),
+      });
+      expect((after.json() as MediaShape).hasOriginal).toBe(false);
+    });
+
+    it('removes the backup when the edited media is deleted', async () => {
+      const created = await createMedia({
+        filename: 'delete-me.png',
+        contentType: 'image/png',
+        data: png,
+      });
+      const edit = await editRaw(created.id, {
+        filename: 'edited.png',
+        contentType: 'image/png',
+        data: await sharp({
+          create: { width: 60, height: 40, channels: 3, background: { r: 1, g: 2, b: 3 } },
+        })
+          .png()
+          .toBuffer(),
+      });
+      expect(edit.statusCode).toBe(200);
+      const backupPath = await findStoredFile(storageRoot, `${created.fileName}.original`);
+
+      const deleted = await app.inject({
+        method: 'DELETE',
+        url: `/api/admin/media/${created.id}`,
+        headers: adminHeaders(),
+      });
+      expect(deleted.statusCode).toBe(204);
+      await expect(readFile(backupPath)).rejects.toThrow();
     });
   });
 });

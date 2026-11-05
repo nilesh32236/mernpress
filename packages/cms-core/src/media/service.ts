@@ -13,6 +13,7 @@ import {
   MEDIA_DERIVATIVE_WIDTHS,
   MEDIA_MAIN_MAX_DIMENSION,
   MEDIA_MAX_UPLOAD_BYTES,
+  type EditMediaInput,
   type MediaDerivativeWidth,
   type MediaDerivatives,
   type MediaDto,
@@ -78,6 +79,8 @@ interface MediaRow {
   storagePath: string;
   derivatives: unknown;
   uploadedById: string | null;
+  editedAt: Date | null;
+  originalPath: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -132,6 +135,8 @@ function toMediaDto(row: MediaRow): MediaDto {
     url: toPublicUrl(row.id, row.fileName),
     derivatives,
     uploadedById: row.uploadedById,
+    editedAt: row.editedAt?.toISOString() ?? null,
+    hasOriginal: row.originalPath !== null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -281,6 +286,79 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
     throw new Error('Could not allocate a media storage name');
   }
 
+  async function configuredDerivativeSizes(): Promise<
+    Map<string, { width: number; height: number; crop: boolean }>
+  > {
+    const configured = new Map<string, { width: number; height: number; crop: boolean }>();
+    const thumbnailW = await setting('thumbnail_size_w', 150);
+    const thumbnailH = await setting('thumbnail_size_h', 150);
+    const thumbnailCrop = await boolSetting('thumbnail_crop', true);
+    if (thumbnailW > 0 || thumbnailH > 0) {
+      configured.set(`${thumbnailW}x${thumbnailH}`, {
+        width: thumbnailW,
+        height: thumbnailH,
+        crop: thumbnailCrop,
+      });
+    }
+    const mediumW = await setting('medium_size_w', 300);
+    const mediumH = await setting('medium_size_h', 300);
+    if (mediumW > 0 || mediumH > 0) {
+      configured.set(`${mediumW}x${mediumH}`, {
+        width: mediumW,
+        height: mediumH,
+        crop: false,
+      });
+    }
+    const largeW = await setting('large_size_w', 1024);
+    const largeH = await setting('large_size_h', 1024);
+    if (largeW > 0 || largeH > 0) {
+      configured.set(`${largeW}x${largeH}`, {
+        width: largeW,
+        height: largeH,
+        crop: false,
+      });
+    }
+    return configured;
+  }
+
+  /** (Re)build every fixed and configured derivative from the canonical file. */
+  async function writeDerivatives(
+    mainPath: string,
+    base: string,
+    dir: string,
+    relativeDir: string,
+  ): Promise<{ derivatives: Record<string, string>; paths: string[] }> {
+    const derivatives: Record<string, string> = {};
+    const paths: string[] = [];
+    for (const derivativeWidth of MEDIA_DERIVATIVE_WIDTHS) {
+      const derivativeName = `${base}-${derivativeWidth}.webp`;
+      const derivativePath = path.join(dir, derivativeName);
+      paths.push(derivativePath);
+      await sharp(mainPath)
+        .resize({ width: derivativeWidth, withoutEnlargement: true })
+        .webp({ quality: DERIVATIVE_WEBP_QUALITY })
+        .toFile(derivativePath);
+      derivatives[derivativeKey(derivativeWidth)] = `${relativeDir}/${derivativeName}`;
+    }
+    for (const [key, size] of await configuredDerivativeSizes()) {
+      if (derivatives[key]) continue;
+      const derivativeName = `${base}-${key}.webp`;
+      const derivativePath = path.join(dir, derivativeName);
+      paths.push(derivativePath);
+      await sharp(mainPath)
+        .resize({
+          ...(size.width > 0 ? { width: size.width } : {}),
+          ...(size.height > 0 ? { height: size.height } : {}),
+          fit: size.crop ? 'cover' : 'inside',
+          withoutEnlargement: true,
+        })
+        .webp({ quality: DERIVATIVE_WEBP_QUALITY })
+        .toFile(derivativePath);
+      derivatives[key] = `${relativeDir}/${derivativeName}`;
+    }
+    return { derivatives, paths };
+  }
+
   async function upload(principal: Principal, input: UploadMediaInput): Promise<MediaDto> {
     requireCapability(principal, 'content.create');
     validateDeclaredType(input.originalName, input.mimeType);
@@ -338,62 +416,9 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
       width = info.width;
       height = info.height;
 
-      for (const derivativeWidth of MEDIA_DERIVATIVE_WIDTHS) {
-        const derivativeName = `${base}-${derivativeWidth}.webp`;
-        const derivativePath = path.join(dir, derivativeName);
-        derivativePaths.push(derivativePath);
-        await sharp(mainPath)
-          .resize({ width: derivativeWidth, withoutEnlargement: true })
-          .webp({ quality: DERIVATIVE_WEBP_QUALITY })
-          .toFile(derivativePath);
-        derivatives[derivativeKey(derivativeWidth)] = `${year}/${month}/${derivativeName}`;
-      }
-
-      const configured = new Map<string, { width: number; height: number; crop: boolean }>();
-      const thumbnailW = await setting('thumbnail_size_w', 150);
-      const thumbnailH = await setting('thumbnail_size_h', 150);
-      const thumbnailCrop = await boolSetting('thumbnail_crop', true);
-      if (thumbnailW > 0 || thumbnailH > 0) {
-        configured.set(`${thumbnailW}x${thumbnailH}`, {
-          width: thumbnailW,
-          height: thumbnailH,
-          crop: thumbnailCrop,
-        });
-      }
-      const mediumW = await setting('medium_size_w', 300);
-      const mediumH = await setting('medium_size_h', 300);
-      if (mediumW > 0 || mediumH > 0) {
-        configured.set(`${mediumW}x${mediumH}`, {
-          width: mediumW,
-          height: mediumH,
-          crop: false,
-        });
-      }
-      const largeW = await setting('large_size_w', 1024);
-      const largeH = await setting('large_size_h', 1024);
-      if (largeW > 0 || largeH > 0) {
-        configured.set(`${largeW}x${largeH}`, {
-          width: largeW,
-          height: largeH,
-          crop: false,
-        });
-      }
-      for (const [key, size] of configured) {
-        if (derivatives[key]) continue;
-        const derivativeName = `${base}-${key}.webp`;
-        const derivativePath = path.join(dir, derivativeName);
-        derivativePaths.push(derivativePath);
-        await sharp(mainPath)
-          .resize({
-            ...(size.width > 0 ? { width: size.width } : {}),
-            ...(size.height > 0 ? { height: size.height } : {}),
-            fit: size.crop ? 'cover' : 'inside',
-            withoutEnlargement: true,
-          })
-          .webp({ quality: DERIVATIVE_WEBP_QUALITY })
-          .toFile(derivativePath);
-        derivatives[key] = `${year}/${month}/${derivativeName}`;
-      }
+      const generated = await writeDerivatives(mainPath, base, dir, `${year}/${month}`);
+      derivativePaths.push(...generated.paths);
+      Object.assign(derivatives, generated.derivatives);
 
       const stats = await fs.stat(mainPath);
       sizeBytes = stats.size;
@@ -521,10 +546,166 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
     return toMediaDto(row);
   }
 
+  async function editImage(
+    principal: Principal,
+    id: string,
+    input: EditMediaInput,
+  ): Promise<MediaDto> {
+    const existing = await prisma.mediaItem.findUnique({ where: { id } });
+    if (!existing) {
+      throw notFound();
+    }
+    canEditMedia(principal, existing.uploadedById);
+
+    if (input.buffer.length === 0) {
+      throw new ContentError('VALIDATION_ERROR', 'The edited image is empty', 400);
+    }
+    if (input.buffer.length > MEDIA_MAX_UPLOAD_BYTES) {
+      throw new ContentError('CONTENT_TOO_LARGE', 'File too large', 413);
+    }
+    await inspectImage(input.buffer);
+
+    const mainPath = path.resolve(storageRoot, existing.storagePath);
+    if (!mainPath.startsWith(`${storageRoot}${path.sep}`)) {
+      throw notFound();
+    }
+    const dir = path.dirname(mainPath);
+    const base = existing.fileName.replace(/\.webp$/i, '');
+    const relativeDir = path.posix.dirname(existing.storagePath);
+    const backupRelative = `${existing.storagePath}.original`;
+    const backupPath = path.resolve(storageRoot, backupRelative);
+    const tempPath = path.join(dir, `${base}.edit-${randomBytes(4).toString('hex')}.webp`);
+
+    let info;
+    let mainReplaced = false;
+    try {
+      info = await sharp(input.buffer, { limitInputPixels: LIMIT_INPUT_PIXELS })
+        .rotate()
+        .resize({
+          width: MEDIA_MAIN_MAX_DIMENSION,
+          height: MEDIA_MAIN_MAX_DIMENSION,
+          fit: 'inside',
+          withoutEnlargement: true,
+        })
+        .webp({ quality: MAIN_WEBP_QUALITY })
+        .toFile(tempPath);
+      if (info.width === undefined || info.height === undefined) {
+        throw invalidImage();
+      }
+
+      // Keep the first pre-edit file so "Restore original image" can bring it
+      // back, matching WordPress's backup of the untouched upload.
+      if (existing.originalPath === null) {
+        await fs.copyFile(mainPath, backupPath);
+      }
+      await fs.rename(tempPath, mainPath);
+      mainReplaced = true;
+
+      const generated = await writeDerivatives(mainPath, base, dir, relativeDir);
+      const stats = await fs.stat(mainPath);
+      const row = await prisma.mediaItem.update({
+        where: { id },
+        data: {
+          width: info.width,
+          height: info.height,
+          sizeBytes: stats.size,
+          mimeType: 'image/webp',
+          derivatives: generated.derivatives,
+          editedAt: now(),
+          originalPath: existing.originalPath ?? backupRelative,
+        },
+      });
+      return toMediaDto(row);
+    } catch (error) {
+      await unlinkQuiet(tempPath, logger);
+      if (mainReplaced) {
+        // Leave the media usable even if derivative generation failed midway.
+        try {
+          await fs.copyFile(backupPath, mainPath);
+        } catch {
+          logger?.warn('media edit rollback failed', { id });
+        }
+      }
+      if (error instanceof ContentError) {
+        throw error;
+      }
+      logger?.warn('media edit failed', {
+        id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw new ContentError('VALIDATION_ERROR', 'Failed to process image file', 400);
+    }
+  }
+
+  async function restoreOriginal(principal: Principal, id: string): Promise<MediaDto> {
+    const existing = await prisma.mediaItem.findUnique({ where: { id } });
+    if (!existing) {
+      throw notFound();
+    }
+    canEditMedia(principal, existing.uploadedById);
+    if (existing.originalPath === null) {
+      throw new ContentError('VALIDATION_ERROR', 'This image has no original to restore.', 400);
+    }
+
+    const mainPath = path.resolve(storageRoot, existing.storagePath);
+    const backupPath = path.resolve(storageRoot, existing.originalPath);
+    if (
+      !mainPath.startsWith(`${storageRoot}${path.sep}`) ||
+      !backupPath.startsWith(`${storageRoot}${path.sep}`)
+    ) {
+      throw notFound();
+    }
+    const dir = path.dirname(mainPath);
+    const base = existing.fileName.replace(/\.webp$/i, '');
+    const relativeDir = path.posix.dirname(existing.storagePath);
+    const tempPath = path.join(dir, `${base}.restore-${randomBytes(4).toString('hex')}.webp`);
+
+    try {
+      await fs.copyFile(backupPath, tempPath);
+      const info = await sharp(tempPath, { limitInputPixels: LIMIT_INPUT_PIXELS }).metadata();
+      if (info.width === undefined || info.height === undefined) {
+        throw invalidImage();
+      }
+      await fs.rename(tempPath, mainPath);
+      const generated = await writeDerivatives(mainPath, base, dir, relativeDir);
+      const stats = await fs.stat(mainPath);
+      const row = await prisma.mediaItem.update({
+        where: { id },
+        data: {
+          width: info.width,
+          height: info.height,
+          sizeBytes: stats.size,
+          mimeType: 'image/webp',
+          derivatives: generated.derivatives,
+          editedAt: null,
+          originalPath: null,
+        },
+      });
+      await unlinkQuiet(backupPath, logger);
+      return toMediaDto(row);
+    } catch (error) {
+      await unlinkQuiet(tempPath, logger);
+      if (error instanceof ContentError) {
+        throw error;
+      }
+      logger?.warn('media restore failed', {
+        id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw new ContentError('VALIDATION_ERROR', 'Failed to restore the original image', 400);
+    }
+  }
+
   async function remove(principal: Principal, id: string): Promise<void> {
     const existing = await prisma.mediaItem.findUnique({
       where: { id },
-      select: { id: true, uploadedById: true, storagePath: true, derivatives: true },
+      select: {
+        id: true,
+        uploadedById: true,
+        storagePath: true,
+        derivatives: true,
+        originalPath: true,
+      },
     });
     if (!existing) {
       throw notFound();
@@ -544,7 +725,11 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
     }
 
     const stored = readDerivatives(existing.derivatives);
-    const relativePaths = [existing.storagePath, ...Object.values(stored)];
+    const relativePaths = [
+      existing.storagePath,
+      ...(existing.originalPath ? [existing.originalPath] : []),
+      ...Object.values(stored),
+    ];
     for (const relativePath of relativePaths) {
       const absolutePath = path.resolve(storageRoot, relativePath);
       if (!absolutePath.startsWith(`${storageRoot}${path.sep}`)) {
@@ -601,5 +786,5 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
     };
   }
 
-  return { upload, list, get, update, remove, resolvePublicFile };
+  return { upload, list, get, update, editImage, restoreOriginal, remove, resolvePublicFile };
 }

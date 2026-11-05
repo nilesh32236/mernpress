@@ -183,6 +183,53 @@ export function registerMediaRoutes(app: FastifyInstance, options: MediaRouteOpt
     },
   );
 
+  app.post(
+    '/api/admin/media/:id/edit',
+    { bodyLimit: MEDIA_MAX_UPLOAD_BYTES + 1024 * 1024 },
+    async (request, reply) => {
+      const ctx = await guard(request, reply);
+      if (!ctx) return;
+      try {
+        const { id } = mediaIdParamSchema.parse(request.params);
+        if (!request.isMultipart()) {
+          throw new ContentError('VALIDATION_ERROR', 'Expected multipart/form-data', 400);
+        }
+        let uploaded: Buffer | null = null;
+        for await (const part of request.parts()) {
+          if (part.type === 'file') {
+            if (part.fieldname !== 'file' || uploaded !== null) {
+              await part.toBuffer();
+              throw new ContentError('VALIDATION_ERROR', 'Only one file is allowed', 400);
+            }
+            uploaded = await part.toBuffer();
+            if (part.file.truncated) {
+              throw new ContentError('CONTENT_TOO_LARGE', 'File too large', 413);
+            }
+          } else {
+            void part.value;
+          }
+        }
+        if (uploaded === null) {
+          throw new ContentError('VALIDATION_ERROR', 'A file is required', 400);
+        }
+        return await media.editImage(ctx.principal, id, { buffer: uploaded });
+      } catch (error) {
+        return sendRouteError(reply, request, mapUploadError(error));
+      }
+    },
+  );
+
+  app.post('/api/admin/media/:id/restore', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const { id } = mediaIdParamSchema.parse(request.params);
+      return await media.restoreOriginal(ctx.principal, id);
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
   app.get('/api/admin/media', async (request, reply) => {
     const ctx = await guard(request, reply);
     if (!ctx) return;

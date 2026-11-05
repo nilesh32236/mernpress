@@ -32,7 +32,7 @@ owner decision.
 | Dashboard + widgets | D/P | Welcome, Site Health, At a Glance, Activity, Quick Draft, Events and News |
 | Posts list / editor / Quick Edit / revisions / preview | D/P | Gutenberg-compatible editor, status tabs, filters, bulk actions |
 | Categories / Tags | D/P | Add/edit/delete, hierarchy, counts |
-| Media library / grid / list / details | D/P | Upload, derivatives, alt text, grid/list toggle |
+| Media library / grid / list / details | D/P | Upload, derivatives, alt text, grid/list toggle, Edit Image (rotate/flip/crop/scale/undo/redo/restore) |
 | Pages list / editor | D/P | Same editor chrome as posts |
 | Comments | D/P | Status tabs, moderation, edit, bulk, dashboard widget, e-mail notifications when mail is configured |
 | Appearance → Themes | D/P | Grid, details dialog, search, Customize |

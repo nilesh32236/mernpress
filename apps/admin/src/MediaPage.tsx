@@ -25,6 +25,7 @@ import {
   Pagination,
 } from './components.js';
 import { formatDateTime } from './format.js';
+import { MediaImageEditor } from './MediaImageEditor.js';
 import { INFINITE_SCROLL_EVENT, infiniteScrollEnabled } from './preferences.js';
 
 const DEFAULT_PER_PAGE = 24;
@@ -93,8 +94,17 @@ function monthOptions(): Array<{ value: string; label: string }> {
   return options;
 }
 
+/** Edits keep the same file name but change the bytes; bust the immutable cache. */
+function mediaVersion(item: MediaItem): string {
+  return encodeURIComponent(item.editedAt ?? item.updatedAt);
+}
+
 function thumbnailUrl(item: MediaItem): string {
-  return item.derivatives['300'] ?? item.url;
+  return `${item.derivatives['300'] ?? item.url}?v=${mediaVersion(item)}`;
+}
+
+function fullMediaUrl(item: MediaItem): string {
+  return `${item.url}?v=${mediaVersion(item)}`;
 }
 
 interface UploadJob {
@@ -127,18 +137,19 @@ function MediaDrawer({ item, onClose, onSaved, onDeleted, onPrev, onNext }: Medi
   const [description, setDescription] = useState(item.description);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && !editing) {
         event.preventDefault();
         onClose();
       }
     }
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  }, [onClose, editing]);
 
   // Move focus into the panel (UsersPage dialogs behave the same way).
   useEffect(() => {
@@ -277,7 +288,16 @@ function MediaDrawer({ item, onClose, onSaved, onDeleted, onPrev, onNext }: Medi
 
         <div className="media-drawer-body">
           <div className="media-drawer-preview">
-            <img src={item.url} alt={item.altText || ''} />
+            <img src={fullMediaUrl(item)} alt={item.altText || ''} />
+            <p className="media-drawer-edit">
+              <button
+                type="button"
+                className="button secondary-button"
+                onClick={() => setEditing(true)}
+              >
+                Edit Image
+              </button>
+            </p>
           </div>
 
           <div className="media-drawer-sidebar">
@@ -389,6 +409,21 @@ function MediaDrawer({ item, onClose, onSaved, onDeleted, onPrev, onNext }: Medi
           </div>
         </div>
       </aside>
+
+      {editing ? (
+        <MediaImageEditor
+          item={item}
+          onClose={() => setEditing(false)}
+          onSaved={(updated, reason) => {
+            onSaved(updated);
+            setEditing(false);
+            setNotice({
+              tone: 'success',
+              text: reason === 'restored' ? 'Original image restored.' : 'Image edited.',
+            });
+          }}
+        />
+      ) : null}
     </div>
   );
 }
