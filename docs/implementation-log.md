@@ -3478,3 +3478,12 @@ deleted; `/`, `/admin/` and `/api/health` return 200.
   string and the pre-request validation.
 - Validation: 732 unit/integration tests (API 457, admin 176, web 34,
   block-system 65), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (export filters):** release `20261105T140810Z-23482eb`
+(current). Production verification with a temporary administrator:
+Tools → Export showed Authors, Categories (hidden for Pages), Start date, End
+date and Status; `content=posts&status=publish` returned the published post,
+`status=draft` and a 2099 start date returned no posts, a reversed date range
+returned 400 `VALIDATION_ERROR`, and a category filter with `content=pages`
+returned 400. The temporary administrator was deleted; production is back to
+1 user and its normal content; `/`, `/admin/` and `/api/health` return 200.
