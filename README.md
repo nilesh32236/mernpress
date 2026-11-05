@@ -277,6 +277,10 @@ Start here, then follow the links.
 | [docs/research/stack-comparison.md](docs/research/stack-comparison.md) | Versions, compatibility evidence, alternatives and trade-offs |
 | [docs/research/opencode-tooling.md](docs/research/opencode-tooling.md) | OpenCode tooling history from Phase 0 |
 | [docs/research/editor-model-benchmark-2026-10-28.md](docs/research/editor-model-benchmark-2026-10-28.md) | Three-model microbenchmark run during Phase 5 |
+| [docs/research/seo-2026.md](docs/research/seo-2026.md) | 2026 SEO research, structured data, AI search/`llms.txt` and WordPress gaps |
+| [docs/research/plugin-theme-roadmap.md](docs/research/plugin-theme-roadmap.md) | WordPress user complaints, plugin/theme opportunities and ranked next slices |
+| [docs/architecture/plugin-runtime.md](docs/architecture/plugin-runtime.md) | Trusted local plugin package and hook contract for developers |
+| [docs/architecture/theme-packages.md](docs/architecture/theme-packages.md) | Theme package manifest, tokens and layout variants |
 | [docs/architecture/system-overview.md](docs/architecture/system-overview.md) | Components, boundaries, request/content flow and local runtime |
 | [docs/architecture/code-standards.md](docs/architecture/code-standards.md) | Module boundaries, SOLID/DRY rules, error/logging, testing and scalability conventions |
 | [docs/design/wordpress-admin-target.md](docs/design/wordpress-admin-target.md) | WordPress-style admin design target (tokens, shell contract, screen patterns, parity roadmap) |

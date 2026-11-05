@@ -1,0 +1,8 @@
+{
+  "id": "seo-fallback",
+  "name": "SEO Fallbacks",
+  "version": "1.0.0",
+  "author": "MERNPress",
+  "description": "Fills missing SEO fields from content you already wrote: the meta description from the excerpt or body, the social title from the SEO/post title and the social description from the meta description. Authored values always win.",
+  "details": "Filters content.post.create and content.post.update; no external requests and no keyword scoring."
+}

@@ -3063,6 +3063,15 @@ the WebP-only fallback, and newly uploaded images emit the AVIF source set.
   from the block body when the author left it empty, and never overwrites an
   authored excerpt. Developer documentation is in
   `docs/architecture/plugin-runtime.md`.
+- New **SEO Fallbacks** plugin (`plugins/seo-fallback/`): fills a missing meta
+  description from the excerpt or body, the social title from the SEO/post title
+  and the social description from the meta description. Authored values always
+  win; it performs no external request and no keyword scoring.
+- Research added: `docs/research/plugin-theme-roadmap.md` maps WordPress user
+  complaints (plugin bloat, redirects/404s, mail visibility, backups, safe client
+  editing, performance, 2FA) to ranked MERNPress slices, and
+  `docs/research/seo-2026.md` records the SEO evidence. README links the new
+  docs; both plugins and the theme package have developer guides.
 - Verified in the browser with the real store: Plugins listed Auto Excerpt
   (inactive) alongside Hello MERNPress; activating it made a body-only post come
   back with a generated excerpt; deactivating it made the next post return
