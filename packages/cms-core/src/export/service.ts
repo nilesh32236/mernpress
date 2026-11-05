@@ -196,7 +196,10 @@ export function createExportService({ prisma }: ExportServiceOptions) {
       const id = numericId;
       numericId += 1;
       const date = post.publishedAt ?? post.createdAt;
-      const link = `${baseUrl}/${permalinkBase}/${encodeURIComponent(post.slug)}`;
+      const link =
+        post.type === 'page'
+          ? `${baseUrl}/${encodeURIComponent(post.slug)}`
+          : `${baseUrl}/${permalinkBase}/${encodeURIComponent(post.slug)}`;
       lines.push('\t<item>');
       lines.push(`\t\t<title>${cdata(post.title)}</title>`);
       lines.push(`\t\t<link>${escapeXml(link)}</link>`);

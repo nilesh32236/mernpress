@@ -2785,3 +2785,17 @@ verified in production. `/`, `/admin/` and `/api/health` return 200.
   attachments), 4 category elements and 3 comments.
 - Validation: 635 unit/integration tests (API 403, admin 154, block-system 65,
   web 13), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (WXR export):** release `20261105T053559Z-74639ae`, later
+superseded by the page-link fix release. Production verification with a
+temporary administrator: Tools → Export showed "Choose what to export" and the
+four scopes with All content selected; the download produced
+`mernpress-export-2026-11-05.xml`, which parsed as well-formed WXR 1.2 with the
+production page and post. Two issues were found and fixed:
+- Production's `site_url`/`wordpress_url` options were **unset**, so export
+  links fell back to `http://localhost` (and e-mail links would have done the
+  same once mail is enabled). Both options are now
+  `https://mernpress.duckdns.org`, and the re-downloaded export contains that
+  base URL.
+- Page items were linked as `/<permalink base>/<slug>`; pages now link as
+  `/<slug>`, while posts keep `/<base>/<slug>`.

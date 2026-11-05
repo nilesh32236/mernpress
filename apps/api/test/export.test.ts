@@ -118,6 +118,8 @@ describe('Tools → Export (WXR)', () => {
     expect(xml).toContain('<![CDATA[Draft & <export>]]>');
     expect(xml).toContain('<content:encoded><![CDATA[<!-- wp:paragraph -->');
     expect(xml).toContain('<wp:post_type><![CDATA[page]]></wp:post_type>');
+    expect(xml).toContain('<link>https://mernpress.example/exported-page</link>');
+    expect(xml).toContain('<link>https://mernpress.example/posts/published-post</link>');
     expect(xml).toContain(
       '<category domain="category" nicename="news-updates"><![CDATA[News & Updates]]></category>',
     );
