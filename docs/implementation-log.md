@@ -2855,3 +2855,13 @@ accounts and their sessions were deleted afterwards.
   `hasOriginal: false`, “Original image restored.”
 - Validation: 645 unit/integration tests (API 410, admin 157, block-system 65,
   web 13), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (Media Edit Image):** release `20261105T061704Z-8cfb8c3`
+(current), with migration `20261105060220_add_media_edit` applied
+(`media_items.edited_at`/`original_path` verified). Production verification with
+a temporary administrator: uploaded a 1000×600 PNG, opened Edit Image (1000×600),
+rotated right (600×1000), saved → drawer showed 600×1000 with "Image edited.";
+re-opened, restored the original → 1000×600 with `editedAt: null`,
+`hasOriginal: false` and "Original image restored."; deleted the media row (204)
+and the upload/backup files were removed. The temporary administrator was
+deleted and production is back to one user and zero media rows.
