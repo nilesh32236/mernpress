@@ -3017,3 +3017,8 @@ temporary administrator was deleted.
 - Tests: AVIF files decode as `heif` at the right widths, AVIF derivatives are
   served with `image/avif`, and the component emits both source sets plus a
   WebP fallback (and no AVIF keys in the WebP srcset).
+
+**Deployment (AVIF):** release `20261105T073416Z-23f3003` (current). `/`,
+`/admin/` and `/api/health` return 200 and the production build contains the
+`image/avif` serving path. Public posts without an AVIF-capable image still emit
+the WebP-only fallback, and newly uploaded images emit the AVIF source set.
