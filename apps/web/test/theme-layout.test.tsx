@@ -80,4 +80,70 @@ describe('theme application', () => {
     expect(html).not.toContain('data-theme=');
     expect(html).toContain('MERNPress');
   });
+
+  it('applies customizer colours, menu and Additional CSS', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input) => {
+        const url = String(input);
+        if (url.includes('/api/public/site')) {
+          return jsonResponse({
+            siteTitle: 'Custom Site',
+            tagline: 'Writing',
+            blogPublic: true,
+            postsPerRss: 10,
+            rssUseExcerpt: false,
+            permalinkBase: 'posts',
+            showAvatars: true,
+            customColors: { background: '#101010', accent: '#ff0066' },
+            customMenu: [
+              { label: 'About', url: '/about' },
+              { label: 'Docs', url: 'https://example.com/docs' },
+            ],
+            customCss: '.site-title { letter-spacing: 1px; }',
+            showOnFront: 'posts',
+            pageOnFrontSlug: null,
+            pageForPostsSlug: null,
+            theme: {
+              id: 'journal',
+              name: 'MERNPress Journal',
+              layout: 'journal',
+              tokens: {
+                background: '#f7f2e8',
+                surface: '#fffdf8',
+                text: '#1f1b16',
+                muted: '#6b6157',
+                accent: '#8a3b2e',
+                headingFont: 'Georgia, serif',
+                bodyFont: 'Manrope, sans-serif',
+                contentWidth: '700px',
+                radius: '10px',
+                headerAlign: 'center',
+              },
+            },
+          });
+        }
+        return jsonResponse({
+          items: [],
+          pagination: { page: 1, perPage: 6, total: 0, totalPages: 0 },
+        });
+      }),
+    );
+    const html = renderToStaticMarkup(
+      await RootLayout({ children: <main id="main-content">Hello</main> }),
+    );
+    // Custom colours override the theme tokens, unset tokens keep the theme.
+    expect(html).toContain('--site-bg:#101010');
+    expect(html).toContain('--site-accent:#ff0066');
+    expect(html).toContain('--site-text:#1f1b16');
+    // Additional CSS is injected raw into a dedicated style element.
+    expect(html).toContain('id="customizer-css"');
+    expect(html).toContain('.site-title { letter-spacing: 1px; }');
+    // The custom menu replaces the published-page links.
+    expect(html).toContain('href="/about"');
+    expect(html).toContain('href="https://example.com/docs"');
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('rel="noopener noreferrer"');
+    expect(html).toContain('Custom Site');
+  });
 });

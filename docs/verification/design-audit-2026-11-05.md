@@ -67,7 +67,7 @@ controls MERNPress implements.
 | Screen | WordPress 7.1.4 | MERNPress | Result |
 | --- | --- | --- | --- |
 | Media attachment details | “Attachment details” modal: Edit Image, uploaded date/author, file name/type/size/dimensions, alt/caption/description, File URL + copy, view/download/delete | Same dialog title, same fields and actions; previous/next navigation between items | match (the reference library has no uploads, so the field set was compared against the WordPress attachment-details contract) |
-| Appearance → Customize | “Customizing: …”, Site Identity, Colors, Menus, Homepage Settings, Additional CSS, “Use Site Editor” notice | “Customizing: MERNPress”, Site Identity (title, tagline) and Save & Publish | narrower: colours/menus live in the Site Editor and theme tokens; documented deviation |
+| Appearance → Customize | “Customizing: …”, Site Identity, Colors, Menus, Homepage Settings, Additional CSS, “Use Site Editor” notice | “Customizing: MERNPress” with Site Identity, Colors (five theme tokens), Menus, Homepage Settings (static front page + posts page) and Additional CSS, live preview and per-panel saves | match in panel set (single menu location; no postMessage preview; see ADR 0041) |
 | Appearance → Site Editor | `<h1>Design</h1>` | `<h1>Design</h1>`, Identity / Styles / Pages | match |
 | Appearance → Fonts | “Fonts” (Font Library) | “Fonts”, Library / Upload / Install Fonts, installed font list | match in name and purpose |
 | Tools → Import | “Import” + importer list | “Import” + importer list with Open / Run Importer | match; third-party importers remain unavailable by design |

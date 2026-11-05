@@ -12458,3 +12458,74 @@ a.glance-chip:hover {
   background: #f0f0f1;
   word-break: break-all;
 }
+
+/* Appearance → Customize: section navigation, menu rows and CSS editor. */
+.customize-sections {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 14px;
+  border-bottom: 1px solid #dcdcde;
+}
+
+.customize-section-link {
+  padding: 9px 4px;
+  border: 0;
+  border-bottom: 1px solid #f0f0f1;
+  background: transparent;
+  color: #1d2327;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.customize-section-link.is-active {
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 #3858e9;
+}
+
+.customize-empty {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid #c3c4c7;
+  background: #ffffff;
+  font-size: 13px;
+}
+
+.customize-menu-list {
+  margin: 10px 0;
+  padding-left: 18px;
+}
+
+.customize-menu-item {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid #dcdcde;
+  background: #ffffff;
+}
+
+.customize-menu-item label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.customize-menu-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.customize-css-input {
+  width: 100%;
+  font-family: Consolas, Monaco, 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.customize-footnote {
+  margin: 16px 0 0;
+  color: #646970;
+  font-size: 12px;
+}

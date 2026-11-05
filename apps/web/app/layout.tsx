@@ -60,19 +60,29 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   }
   const siteTitle = settings?.siteTitle ?? 'MERNPress';
   const theme = settings?.theme ?? null;
-  const themeStyle = theme
-    ? ({
-        '--site-bg': theme.tokens.background,
-        '--site-surface': theme.tokens.surface,
-        '--site-text': theme.tokens.text,
-        '--site-muted': theme.tokens.muted,
-        '--site-accent': theme.tokens.accent,
-        '--site-heading-font': theme.tokens.headingFont,
-        '--site-body-font': theme.tokens.bodyFont,
-        '--content-width': theme.tokens.contentWidth,
-        '--site-radius': theme.tokens.radius,
-      } as CSSProperties)
-    : undefined;
+  const customColors = settings?.customColors ?? null;
+  const customMenu = settings?.customMenu ?? null;
+  const style: Record<string, string> = {};
+  if (theme) {
+    style['--site-bg'] = theme.tokens.background;
+    style['--site-surface'] = theme.tokens.surface;
+    style['--site-text'] = theme.tokens.text;
+    style['--site-muted'] = theme.tokens.muted;
+    style['--site-accent'] = theme.tokens.accent;
+    style['--site-heading-font'] = theme.tokens.headingFont;
+    style['--site-body-font'] = theme.tokens.bodyFont;
+    style['--content-width'] = theme.tokens.contentWidth;
+    style['--site-radius'] = theme.tokens.radius;
+  }
+  if (customColors) {
+    if (customColors.background) style['--site-bg'] = customColors.background;
+    if (customColors.surface) style['--site-surface'] = customColors.surface;
+    if (customColors.text) style['--site-text'] = customColors.text;
+    if (customColors.muted) style['--site-muted'] = customColors.muted;
+    if (customColors.accent) style['--site-accent'] = customColors.accent;
+  }
+  const themeStyle = Object.keys(style).length > 0 ? (style as CSSProperties) : undefined;
+  const menu = customMenu && customMenu.length > 0 ? customMenu : null;
 
   return (
     <html
@@ -83,6 +93,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       style={themeStyle}
     >
       <body>
+        {settings?.customCss ? (
+          <style id="customizer-css" dangerouslySetInnerHTML={{ __html: settings.customCss }} />
+        ) : null}
         <JsonLd
           data={siteGraph(siteUrl(), {
             title: siteTitle,
@@ -97,7 +110,26 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <Link href="/" className="site-title">
             {siteTitle}
           </Link>
-          {pageLinks.length > 0 ? (
+          {menu ? (
+            <nav className="site-nav" aria-label="Primary">
+              {menu.map((item, index) =>
+                item.url.startsWith('/') ? (
+                  <Link key={`${item.url}-${index}`} href={item.url}>
+                    {item.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={`${item.url}-${index}`}
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {item.label}
+                  </a>
+                ),
+              )}
+            </nav>
+          ) : pageLinks.length > 0 ? (
             <nav className="site-nav" aria-label="Primary">
               {pageLinks.map((page) => (
                 <Link key={page.id} href={`/${page.slug}`}>

@@ -971,6 +971,53 @@ export interface ApplicationPassword {
 
 export type OptionValues = Record<string, unknown>;
 
+// ---- Appearance → Customize ----
+export interface CustomizerColors {
+  background?: string;
+  surface?: string;
+  text?: string;
+  muted?: string;
+  accent?: string;
+}
+
+export interface CustomizerMenuItem {
+  label: string;
+  url: string;
+}
+
+export interface CustomizerSettings {
+  colors: CustomizerColors | null;
+  menu: CustomizerMenuItem[] | null;
+  css: string | null;
+  showOnFront: 'posts' | 'page';
+  pageOnFront: string | null;
+  pageForPosts: string | null;
+}
+
+export async function fetchCustomizer(): Promise<CustomizerSettings> {
+  const response = await fetch('/api/admin/customizer', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<CustomizerSettings>(response);
+}
+
+export async function updateCustomizer(settings: CustomizerSettings): Promise<CustomizerSettings> {
+  const response = await fetch('/api/admin/customizer', {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify(settings),
+  });
+  return readJson<CustomizerSettings>(response);
+}
+
 // ---- Settings → Privacy: policy page helpers ----
 export interface PrivacyPolicyPageResult {
   pageId: string | null;
@@ -1957,6 +2004,14 @@ export interface AdminTheme {
   id: string;
   name: string;
   version: string;
+  /** Present on the list response; used by the Customizer colour hints. */
+  tokens?: {
+    background: string;
+    surface: string;
+    text: string;
+    muted: string;
+    accent: string;
+  };
   author: { name: string; url: string | null };
   description: string;
   tags: string[];

@@ -1,7 +1,15 @@
 import type { Principal } from '../content/types.js';
+import type { CustomColors, CustomMenuItem } from '../customizer/validation.js';
 
 export type OptionGroup =
-  'general' | 'reading' | 'writing' | 'discussion' | 'media' | 'permalinks' | 'privacy';
+  | 'general'
+  | 'reading'
+  | 'writing'
+  | 'discussion'
+  | 'media'
+  | 'permalinks'
+  | 'privacy'
+  | 'appearance';
 
 export interface GetOptionsInput {
   group?: string;
@@ -29,6 +37,14 @@ export interface SiteSettings {
   categoryBase: string;
   tagBase: string;
   showAvatars: boolean;
+  /** Appearance → Customize overrides. */
+  customColors: CustomColors | null;
+  customMenu: CustomMenuItem[] | null;
+  customCss: string | null;
+  showOnFront: 'posts' | 'page';
+  /** Slugs of the configured static front page and posts page. */
+  pageOnFrontSlug: string | null;
+  pageForPostsSlug: string | null;
 }
 
 export interface OptionService {

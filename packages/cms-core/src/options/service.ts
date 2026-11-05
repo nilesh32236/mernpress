@@ -1,4 +1,5 @@
 import { normalizePattern, validatePattern, validateTermBase } from '@mernpress/contracts';
+import { validateColors, validateCustomCss, validateMenu } from '../customizer/validation.js';
 import type { DatabaseClient, Prisma } from '@mernpress/database';
 import { ContentError } from '../content/errors.js';
 import { requireCapability } from '../auth/capabilities.js';
@@ -17,6 +18,7 @@ const ALLOWED_GROUPS: ReadonlySet<string> = new Set([
   'media',
   'permalinks',
   'privacy',
+  'appearance',
 ]);
 
 type Validator = (value: unknown) => unknown;
@@ -731,6 +733,53 @@ const SPECS: Record<string, OptionSpec> = {
       }
     },
   },
+  customizer_colors: {
+    group: 'appearance',
+    defaultValue: null,
+    validate: (value) => validateColors(value),
+  },
+  customizer_menu: {
+    group: 'appearance',
+    defaultValue: null,
+    validate: (value) => validateMenu(value),
+  },
+  customizer_css: {
+    group: 'appearance',
+    defaultValue: null,
+    validate: (value) => validateCustomCss(value),
+  },
+  show_on_front: {
+    group: 'appearance',
+    defaultValue: 'posts',
+    validate: (value) => {
+      if (value !== 'posts' && value !== 'page') {
+        throwValidation('show_on_front must be posts or page.');
+      }
+      return value;
+    },
+  },
+  page_on_front: {
+    group: 'appearance',
+    defaultValue: null,
+    validate: (value) => {
+      if (value === null || value === '') return null;
+      if (typeof value !== 'string' || !isUuid(value)) {
+        throwValidation('page_on_front must be a page UUID or null.');
+      }
+      return value;
+    },
+  },
+  page_for_posts: {
+    group: 'appearance',
+    defaultValue: null,
+    validate: (value) => {
+      if (value === null || value === '') return null;
+      if (typeof value !== 'string' || !isUuid(value)) {
+        throwValidation('page_for_posts must be a page UUID or null.');
+      }
+      return value;
+    },
+  },
   permalink_base: {
     group: 'permalinks',
     defaultValue: 'posts',
@@ -873,7 +922,32 @@ export function createOptionService(options: OptionServiceOptions) {
       'category_base',
       'tag_base',
       'show_avatars',
+      'customizer_colors',
+      'customizer_menu',
+      'customizer_css',
+      'show_on_front',
+      'page_on_front',
+      'page_for_posts',
     ]);
+    const pageIds = [values.page_on_front, values.page_for_posts].filter(
+      (value): value is string => typeof value === 'string',
+    );
+    const pages =
+      pageIds.length > 0
+        ? await prisma.post.findMany({
+            where: { id: { in: pageIds }, type: 'page', status: 'PUBLISHED' },
+            select: { id: true, slug: true },
+          })
+        : [];
+    const frontPage =
+      typeof values.page_on_front === 'string'
+        ? (pages.find((page) => page.id === values.page_on_front) ?? null)
+        : null;
+    const postsPage =
+      typeof values.page_for_posts === 'string'
+        ? (pages.find((page) => page.id === values.page_for_posts) ?? null)
+        : null;
+
     return {
       siteTitle: typeof values.site_title === 'string' ? values.site_title : 'MERNPress',
       tagline: typeof values.site_tagline === 'string' ? values.site_tagline : '',
@@ -915,6 +989,20 @@ export function createOptionService(options: OptionServiceOptions) {
           : 'category',
       tagBase: typeof values.tag_base === 'string' && values.tag_base ? values.tag_base : 'tag',
       showAvatars: values.show_avatars !== false,
+      customColors:
+        typeof values.customizer_colors === 'object' && values.customizer_colors !== null
+          ? (values.customizer_colors as SiteSettings['customColors'])
+          : null,
+      customMenu: Array.isArray(values.customizer_menu)
+        ? (values.customizer_menu as SiteSettings['customMenu'])
+        : null,
+      customCss:
+        typeof values.customizer_css === 'string' && values.customizer_css.length > 0
+          ? values.customizer_css
+          : null,
+      showOnFront: values.show_on_front === 'page' && frontPage ? 'page' : 'posts',
+      pageOnFrontSlug: frontPage?.slug ?? null,
+      pageForPostsSlug: postsPage?.slug ?? null,
     };
   }
 

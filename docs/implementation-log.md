@@ -3568,3 +3568,42 @@ URL 404. The structure was restored to the legacy custom
 temporary administrator was deleted. The first production attempt exposed a
 reverse-proxy issue (Next rewrote to the https incoming origin and failed with
 EPROTO); middleware now rewrites to the internal HTTP origin.
+
+### 2026-11-05 — Appearance → Customize panels (colors, menus, homepage, CSS)
+
+- New `appearance` option group: `customizer_colors` (background, surface, text,
+  muted, accent — hex only), `customizer_menu` (up to 20 label/URL items),
+  `customizer_css` (up to 20,000 characters, validated), `show_on_front`,
+  `page_on_front` and `page_for_posts`.
+- `GET/PUT /api/admin/customizer` (administrator-only). The service validates
+  that front/posts pages are published, are pages and differ, then writes all
+  six options in one transaction. The route raises the body limit to 64 KB so a
+  valid 20,000-character stylesheet is not rejected with 413 before validation
+  (a real bug the API test caught).
+- The public site settings expose `customColors`, `customMenu`, `customCss`,
+  `showOnFront`, `pageOnFrontSlug` and `pageForPostsSlug` (slugs only while the
+  page is published, so an unpublished front page falls back to latest posts).
+- `layout.tsx` overrides the active theme's five colour tokens, injects the CSS
+  into `<style id="customizer-css">` and renders the custom menu (internal
+  `next/link`, external `noopener noreferrer`). Without menu items the header
+  falls back to published page links.
+- `app/page.tsx` renders the static front page; `app/[slug]/page.tsx` renders
+  the blog loop when the page is the posts page.
+- `CustomizePage` now has Site Identity, Colors, Menus, Homepage Settings and
+  Additional CSS sections with per-panel saves, a live iframe preview, hex and
+  menu validation, reorder/remove controls and a "Use theme colours" / "Use page
+  links" reset.
+- Verified in the browser: sections present; colours (`#f4f4f4`, `#cc0000`),
+  menu (`About /about`, `Docs https://example.com/docs`) and CSS saved with
+  notices; the public page showed the overridden CSS variables, the injected
+  style text (`text-transform: uppercase` applied), the custom menu with
+  `target="_blank" rel="noopener noreferrer"` on the external item; a static
+  homepage rendered the About page at `/` and a newly created Blog page showed
+  the loop at `/blog`. Settings were reset and the test page deleted.
+- Tests: API (defaults, colours/menu/CSS persistence, hex/menu/CSS validation,
+  body-limit boundary, published-page rules, same-page rejection, clear on
+  latest posts, anonymous/editor denial) and admin (panels, colour save and
+  client rejection, menu add/reorder/save, homepage validation and save, CSS
+  save and server error).
+- Validation: 766 unit/integration tests (API 472, admin 186, web 38,
+  block-system 65, contracts 5), 23 Playwright E2E tests and seven builds pass.

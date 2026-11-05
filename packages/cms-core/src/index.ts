@@ -357,3 +357,21 @@ export {
   type PrivacyPolicyService,
   type PrivacyPolicyServiceOptions,
 } from './privacy/policy.js';
+
+// ---- Appearance → Customize (colors, menus, homepage, CSS) ----
+export {
+  createCustomizerService,
+  type CustomizerService,
+  type CustomizerServiceOptions,
+  type CustomizerUpdateInput,
+} from './customizer/service.js';
+export {
+  CUSTOM_COLOR_KEYS,
+  validateColors,
+  validateCustomCss,
+  validateMenu,
+  type CustomColorKey,
+  type CustomColors,
+  type CustomizerSettings,
+  type CustomMenuItem,
+} from './customizer/validation.js';

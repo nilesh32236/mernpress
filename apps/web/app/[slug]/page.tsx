@@ -1,8 +1,16 @@
 import { notFound } from 'next/navigation';
-import { getPublishedBySlug, mediaUrl, siteUrl } from '@/lib/api';
+import {
+  getPublishedBySlug,
+  getSiteSettings,
+  listPublishedPosts,
+  mediaUrl,
+  siteUrl,
+} from '@/lib/api';
 import PostView from '@/components/PostView';
+import PostList from '@/components/PostList';
+import Pagination from '@/components/Pagination';
 import JsonLd from '@/components/JsonLd';
-import { articleSchema, breadcrumbSchema } from '@/lib/seo';
+import { articleSchema, breadcrumbSchema, collectionSchema } from '@/lib/seo';
 import type { Metadata } from 'next';
 import type { PublicPost } from '@/lib/api';
 
@@ -25,7 +33,13 @@ function fallbackDescription(post: PublicPost): string {
   return '';
 }
 
-export default async function PageBySlug({ params }: { params: Promise<{ slug: string }> }) {
+export default async function PageBySlug({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ page?: string }>;
+}) {
   const { slug } = await params;
   let post = null;
   let error = false;
@@ -47,6 +61,40 @@ export default async function PageBySlug({ params }: { params: Promise<{ slug: s
     );
   }
   if (!post) notFound();
+
+  // Appearance → Customize can assign this page as the posts index.
+  const settings = await getSiteSettings().catch(() => null);
+  if (settings?.pageForPostsSlug === slug) {
+    const sp = await searchParams;
+    const pageNumber = Math.max(1, Number(sp?.page ?? 1) || 1);
+    const data = await listPublishedPosts(pageNumber, 10).catch(() => null);
+    const items = data?.items ?? [];
+    const totalPages = data?.pagination.totalPages ?? 1;
+    const archiveUrl = `${siteUrl()}/${slug}`;
+    return (
+      <main id="main-content" className="site-main">
+        <JsonLd
+          data={collectionSchema(siteUrl(), {
+            url: archiveUrl,
+            name: post.title,
+            posts: items,
+          })}
+        />
+        <div className="site-content">
+          <h1 className="blog-title">{post.title}</h1>
+          {items.length > 0 ? (
+            <PostList posts={items} />
+          ) : (
+            <p role="status" className="status">
+              Sorry, but nothing was found. Please try a search with different keywords.
+            </p>
+          )}
+        </div>
+        <Pagination page={pageNumber} totalPages={totalPages} basePath={`/${slug}`} />
+      </main>
+    );
+  }
+
   const canonical = post.canonicalUrl ?? `${siteUrl()}${post.path}`;
   return (
     <>

@@ -117,6 +117,19 @@ export function termHref(
   return `/${taxonomy}/${encodeURIComponent(term.slug)}`;
 }
 
+export interface CustomColors {
+  background?: string;
+  surface?: string;
+  text?: string;
+  muted?: string;
+  accent?: string;
+}
+
+export interface CustomMenuItem {
+  label: string;
+  url: string;
+}
+
 export interface SiteSettings {
   siteTitle: string;
   tagline: string;
@@ -129,6 +142,12 @@ export interface SiteSettings {
   categoryBase: string;
   tagBase: string;
   showAvatars: boolean;
+  customColors: CustomColors | null;
+  customMenu: CustomMenuItem[] | null;
+  customCss: string | null;
+  showOnFront: 'posts' | 'page';
+  pageOnFrontSlug: string | null;
+  pageForPostsSlug: string | null;
   theme?: PublicTheme | null;
 }
 
