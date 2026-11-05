@@ -3854,3 +3854,17 @@ administrator:
   and all badge states, API anchor persistence/validation/reply rejection.
 - Validation: 807 unit/integration tests (API 488, admin 208, web 38,
   block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.
+
+**Deployment (block-anchored notes):** release `20261105T174640Z-cd5b789`
+(current), migrations `20261105172228_add_note_block_anchor` and
+`20261105173445_add_note_block_text` applied (`post_notes` gained
+`block_name`, `block_path`, `block_hash`, `block_text`). Production
+verification with a temporary administrator on a three-block draft:
+selecting the second paragraph and adding a note stored
+`{name:"core/paragraph", path:"1", hash:"28add994563c59a6",
+text:"Target paragraph for the anchor."}` and showed the exact badge
+“Paragraph · block 1”. Reordering the block through the code editor showed
+“… block 2 (moved)”; editing its text showed “… block 2 (block changed)”;
+removing it showed “Block no longer found”. The temporary draft (and its notes)
+and the temporary administrator were deleted; production is back to 1 user and
+2 posts, with `/`, `/admin/`, `/api/health` and `/posts/testcom` at 200.
