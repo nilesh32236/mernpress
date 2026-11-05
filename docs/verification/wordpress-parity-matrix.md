@@ -40,7 +40,7 @@ owner decision.
 | Appearance → Fonts | D/P | Library, weights, samples, unavailable upload/install |
 | Plugins → Installed | D/P | Filters, bulk, active edge, auto-update column, View details, Delete (inactive only) |
 | Plugins → Add Plugin | D/P | Honest no-marketplace boundary |
-| Users / Add User / Profile | D/P | Roles, display name select, colour schemes, syntax highlighting, language, application passwords, password; Send User Notification enabled when mail is configured and includes a reset link |
+| Users / Add User / Profile | D/P | Roles, display name select, colour schemes, syntax highlighting, language, application passwords, password, Send password reset (row + bulk); Send User Notification enabled when mail is configured and includes a reset link |
 | Tools → Available Tools / Export / Site Health | D/P | Cards, WordPress WXR export with All/Posts/Pages/Media scopes, health checks |
 | Tools → Import | D/P | Real WordPress WXR import |
 | Tools → Export/Erase Personal Data | D/P | Request queue, JSON export, anonymising erasure |

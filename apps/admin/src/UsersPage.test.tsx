@@ -6,6 +6,7 @@ import {
   deleteUser,
   fetchMailStatus,
   fetchUsers,
+  sendUserPasswordReset,
   updateUserRole,
   type AdminUser,
   type AdminUserList,
@@ -19,6 +20,7 @@ vi.mock('./api.js', async (importOriginal) => {
     ...actual,
     fetchUsers: vi.fn(),
     fetchMailStatus: vi.fn(),
+    sendUserPasswordReset: vi.fn(),
     createUser: vi.fn(),
     updateUserRole: vi.fn(),
     updateUserStatus: vi.fn(),
@@ -85,6 +87,7 @@ beforeEach(() => {
   vi.mocked(createUser).mockResolvedValue(makeUser({ id: 'u4', username: 'new-user' }));
   vi.mocked(updateUserRole).mockResolvedValue(makeUser({ role: 'editor' }));
   vi.mocked(deleteUser).mockResolvedValue(undefined);
+  vi.mocked(sendUserPasswordReset).mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -274,5 +277,34 @@ describe('users page', () => {
     expect(checkbox.disabled).toBe(true);
     expect(checkbox.checked).toBe(false);
     expect(screen.getByText(/Email delivery is not configured on this server/)).toBeDefined();
+  });
+  it('sends a password reset link from the row action', async () => {
+    render(<UsersPage user={admin} />);
+    await screen.findByText('editor-b');
+
+    fireEvent.click(
+      within(rowFor('editor-b')).getByRole('button', { name: 'Send password reset' }),
+    );
+
+    await waitFor(() => expect(vi.mocked(sendUserPasswordReset)).toHaveBeenCalledWith(EDITOR.id));
+    expect(await screen.findByText('Password reset link sent to “editor-b”.')).toBeDefined();
+  });
+
+  it('sends reset links to the selected users in bulk', async () => {
+    render(<UsersPage user={admin} />);
+    await screen.findByText('editor-b');
+
+    fireEvent.click(screen.getByLabelText('Select editor-b'));
+    fireEvent.click(screen.getByLabelText('Select author-c'));
+    fireEvent.change(document.getElementById('users-bulk-action') as HTMLSelectElement, {
+      target: { value: 'reset' },
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Apply' })[0]!);
+
+    await waitFor(() => {
+      expect(vi.mocked(sendUserPasswordReset)).toHaveBeenCalledWith(EDITOR.id);
+      expect(vi.mocked(sendUserPasswordReset)).toHaveBeenCalledWith(AUTHOR.id);
+    });
+    expect(await screen.findByText('2 password reset link(s) sent.')).toBeDefined();
   });
 });

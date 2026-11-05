@@ -31,7 +31,8 @@ export type UserAdminErrorCode =
   | 'INVALID_WEBSITE'
   | 'INVALID_NAME'
   | 'INVALID_LOCALE'
-  | 'MAIL_NOT_CONFIGURED';
+  | 'MAIL_NOT_CONFIGURED'
+  | 'MAIL_SEND_FAILED';
 
 export class UserAdminError extends Error {
   readonly code: UserAdminErrorCode;
@@ -147,6 +148,8 @@ export interface UserAdminService {
   updateUserRole(principal: Principal, userId: string, role: UserRole): Promise<AdminUser>;
   setUserStatus(principal: Principal, userId: string, status: UserStatus): Promise<AdminUser>;
   resetUserPassword(principal: Principal, userId: string, newPassword: string): Promise<void>;
+  /** WordPress Users → Send password reset: e-mail a single-use reset link. */
+  sendPasswordReset(principal: Principal, userId: string): Promise<{ sent: true }>;
   deleteUser(
     principal: Principal,
     userId: string,
@@ -732,6 +735,53 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
     });
   }
 
+  async function sendPasswordReset(principal: Principal, userId: string): Promise<{ sent: true }> {
+    requireManageUsers(principal);
+    const target = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, username: true, email: true, status: true },
+    });
+    if (!target) {
+      throw new UserAdminError('USER_NOT_FOUND', 'User not found.', 404);
+    }
+    if (!target.email) {
+      throw new UserAdminError('INVALID_EMAIL', 'This user does not have an email address.', 400);
+    }
+    if (target.status !== 'active') {
+      throw new UserAdminError(
+        'INVALID_STATUS',
+        'This user is disabled and cannot reset their password.',
+        400,
+      );
+    }
+    if (!passwordResets || !mail || !mail.status().configured) {
+      throw new UserAdminError('MAIL_NOT_CONFIGURED', 'Email delivery is not configured.', 400);
+    }
+    const token = await passwordResets.createToken(target.id);
+    if (!token) {
+      throw new UserAdminError('MAIL_SEND_FAILED', 'The reset e-mail could not be created.', 502);
+    }
+    const result = await mail.notifyPasswordReset({
+      to: target.email,
+      username: target.username,
+      token,
+      expiresInMinutes: passwordResets.tokenTtlMinutes,
+    });
+    if (!result.sent) {
+      throw new UserAdminError(
+        'MAIL_SEND_FAILED',
+        'The password reset e-mail could not be sent.',
+        502,
+      );
+    }
+    await writeAudit(prisma, 'user.password_reset.sent', {
+      actorUserId: principal.userId,
+      targetUserId: target.id,
+      metadata: { source: 'admin' },
+    });
+    return { sent: true };
+  }
+
   async function deleteUser(
     principal: Principal,
     userId: string,
@@ -974,6 +1024,7 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
     updateUserRole,
     setUserStatus,
     resetUserPassword,
+    sendPasswordReset,
     deleteUser,
     getOwnProfile,
     updateOwnProfile,

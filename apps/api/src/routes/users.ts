@@ -89,6 +89,17 @@ export function registerUserRoutes(app: FastifyInstance, options: UserRouteOptio
     }
   });
 
+  app.post('/api/users/:id/send-password-reset', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const { id } = userIdParamSchema.parse(request.params);
+      return await users.sendPasswordReset(ctx.principal, id);
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
   app.put('/api/users/:id/role', async (request, reply) => {
     const ctx = await guard(request, reply);
     if (!ctx) return;

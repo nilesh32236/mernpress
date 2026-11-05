@@ -1049,6 +1049,18 @@ export async function resetUserPassword(id: string, password: string): Promise<v
   }
 }
 
+export async function sendUserPasswordReset(id: string): Promise<void> {
+  const response = await fetch(`/api/users/${encodeURIComponent(id)}/send-password-reset`, {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  if (!response.ok) {
+    throw await toApiError(response);
+  }
+}
+
 export async function deleteUser(id: string, reassignTo?: string): Promise<void> {
   const response = await fetch(
     `/api/users/${encodeURIComponent(id)}${queryString({ reassignTo })}`,

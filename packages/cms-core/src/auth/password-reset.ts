@@ -39,6 +39,8 @@ export interface PasswordResetServiceOptions {
 }
 
 export interface PasswordResetService {
+  /** Token lifetime in minutes (used in notification copy). */
+  readonly tokenTtlMinutes: number;
   /** Create a single-use token (used by the lost-password request and welcome e-mail). */
   createToken(userId: string): Promise<string | null>;
   request(input: { identifier: string; ip: string }): Promise<void>;
@@ -239,5 +241,5 @@ export function createPasswordResetService({
     });
   }
 
-  return { createToken, request, reset };
+  return { tokenTtlMinutes, createToken, request, reset };
 }

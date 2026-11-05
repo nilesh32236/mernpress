@@ -2806,3 +2806,20 @@ WXR contains `<wp:base_site_url>https://mernpress.duckdns.org</wp:base_site_url>
 the page item links to `https://mernpress.duckdns.org/test` and the post to
 `https://mernpress.duckdns.org/posts/testcom`. The temporary administrator was
 deleted; production is back to the owner's single account.
+
+### 2026-11-05 — Users → Send password reset
+
+- Added `POST /api/users/:id/send-password-reset` (administrator + CSRF): it
+  issues the existing single-use 24-hour reset token and e-mails the Password
+  Reset message. The target must exist, be active and have an email, and mail
+  must be configured; otherwise the API returns 404 USER_NOT_FOUND, 400
+  INVALID_EMAIL/INVALID_STATUS/MAIL_NOT_CONFIGURED or 502 MAIL_SEND_FAILED. The
+  send is audited as `user.password_reset.sent` with the administrator as actor.
+- Users list rows now show WordPress's "Send password reset" action for other
+  accounts (not your own), and the bulk actions in both toolbars offer the same
+  action with a sent/failed summary.
+- Verified in the browser against the local SMTP sink: the action sent a
+  Password Reset email to the target, the link set a new password, and the user
+  logged in with it; the bulk action sent links to both selected users.
+- Validation: 641 unit/integration tests (API 407, admin 156, block-system 65,
+  web 13), 23 Playwright E2E tests and six builds pass.

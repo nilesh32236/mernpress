@@ -15,6 +15,7 @@ import {
   fetchMailStatus,
   fetchUsers,
   resetUserPassword,
+  sendUserPasswordReset,
   updateUserRole,
   updateUserStatus,
   type AdminUser,
@@ -713,7 +714,7 @@ export function UsersPage({ user }: { user: AuthUser }) {
   const showRole = !hiddenColumns.has('role');
   const showPosts = !hiddenColumns.has('posts');
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
-  const [bulkAction, setBulkAction] = useState<'delete' | ''>('');
+  const [bulkAction, setBulkAction] = useState<'delete' | 'reset' | ''>('');
   const [bulkRole, setBulkRole] = useState<UserRole | ''>('');
   const [bulkBusy, setBulkBusy] = useState(false);
 
@@ -826,14 +827,38 @@ export function UsersPage({ user }: { user: AuthUser }) {
   }
 
   async function runBulkAction(): Promise<void> {
-    if (bulkAction !== 'delete' || selected.size === 0) return;
+    if (bulkAction === '' || selected.size === 0) return;
     const targets = (data?.items ?? []).filter(
       (item) => selected.has(item.id) && item.id !== user.id,
     );
     if (targets.length === 0) {
-      setNotice({ tone: 'error', text: 'You cannot delete your own account.' });
+      setNotice({ tone: 'error', text: 'You cannot apply this action to your own account.' });
       return;
     }
+
+    if (bulkAction === 'reset') {
+      setBulkBusy(true);
+      setNotice(null);
+      let sent = 0;
+      let failed = 0;
+      for (const target of targets) {
+        try {
+          await sendUserPasswordReset(target.id);
+          sent += 1;
+        } catch {
+          failed += 1;
+        }
+      }
+      setNotice({
+        tone: failed > 0 ? 'warning' : 'success',
+        text: `${sent} password reset link(s) sent${failed > 0 ? `; ${failed} failed` : ''}.`,
+      });
+      setSelected(new Set());
+      setBulkAction('');
+      setBulkBusy(false);
+      return;
+    }
+
     if (!window.confirm(`Delete ${targets.length} user(s)? This cannot be undone.`)) {
       return;
     }
@@ -875,6 +900,23 @@ export function UsersPage({ user }: { user: AuthUser }) {
       setNotice({ tone: 'error', text: actionErrorMessage(caught) });
     } finally {
       setBulkBusy(false);
+    }
+  }
+
+  async function sendReset(target: AdminUser) {
+    if (pendingAction !== null) return;
+    setPendingAction(`reset:${target.id}`);
+    setNotice(null);
+    try {
+      await sendUserPasswordReset(target.id);
+      setNotice({
+        tone: 'success',
+        text: `Password reset link sent to “${target.username}”.`,
+      });
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setPendingAction(null);
     }
   }
 
@@ -1010,10 +1052,11 @@ export function UsersPage({ user }: { user: AuthUser }) {
             id="users-bulk-action"
             className="bulk-select"
             value={bulkAction}
-            onChange={(event) => setBulkAction(event.target.value as 'delete' | '')}
+            onChange={(event) => setBulkAction(event.target.value as 'delete' | 'reset' | '')}
           >
             <option value="">Bulk actions</option>
             <option value="delete">Delete</option>
+            <option value="reset">Send password reset</option>
           </select>
           <button
             type="button"
@@ -1214,6 +1257,22 @@ export function UsersPage({ user }: { user: AuthUser }) {
                           >
                             View
                           </button>
+                          {!isSelf ? (
+                            <>
+                              <span className="row-action-sep" aria-hidden="true">
+                                {' '}
+                                |{' '}
+                              </span>
+                              <button
+                                type="button"
+                                className="row-action-link"
+                                onClick={() => void sendReset(item)}
+                                disabled={pendingAction === `reset:${item.id}`}
+                              >
+                                Send password reset
+                              </button>
+                            </>
+                          ) : null}
                         </div>
                       </td>
                       {showName ? <td className="column-name">{item.displayName ?? '—'}</td> : null}
@@ -1308,10 +1367,11 @@ export function UsersPage({ user }: { user: AuthUser }) {
                 id="users-bulk-action-bottom"
                 className="bulk-select"
                 value={bulkAction}
-                onChange={(event) => setBulkAction(event.target.value as 'delete' | '')}
+                onChange={(event) => setBulkAction(event.target.value as 'delete' | 'reset' | '')}
               >
                 <option value="">Bulk actions</option>
                 <option value="delete">Delete</option>
+                <option value="reset">Send password reset</option>
               </select>
               <button
                 type="button"
