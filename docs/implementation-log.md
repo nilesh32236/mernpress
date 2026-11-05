@@ -2992,3 +2992,12 @@ Screenshots: `prod12-posts-list.png`, `prod12-editor.png`,
   defaults.
 - Validation: 653 unit/integration tests (API 416, admin 159, block-system 65,
   web 13), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (Quick/Bulk Edit):** release `20261105T072214Z-8d446a1`
+(current), migration `20261105070833_add_post_sticky_comment_status` applied
+(`posts.comment_status`, `posts.sticky` verified). Production verification with
+a temporary administrator: Quick Edit showed Title, Slug, Date, Author,
+Categories, Tags, Status plus Allow Comments and Make sticky; Bulk Edit showed
+Categories, Tags, Author, Comments, Sticky and Status with "— No Change —"
+defaults. Screenshots: `prod13-quick-edit.png`, `prod13-bulk-edit.png`. The
+temporary administrator was deleted.
