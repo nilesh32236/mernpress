@@ -3125,3 +3125,13 @@ showed the notice and the live site immediately rendered
 only remaining Activate switched back to MERNPress (classic). The temporary
 administrator was deleted; production is back to 1 user, active theme
 `mernpress`, active plugin `hello-mernpress`.
+
+**Deployment (SEO Fallbacks + roadmap):** release
+`20261105T081752Z-b51e4fc` (current). `seo-fallback` was copied into the
+production plugin store alongside `auto-excerpt` and `hello-mernpress`.
+Verification with a temporary administrator: both plugins activated (200), a
+body-only post returned the generated excerpt, the derived meta description, the
+social title from the post title and the social description; both plugins were
+then deactivated (Hello MERNPress remains the only active plugin). The test post
+and temporary administrator were deleted; `/`, `/admin/` and `/api/health`
+return 200.
