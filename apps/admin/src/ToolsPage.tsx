@@ -101,6 +101,15 @@ export function ToolsPage() {
               </button>
             </p>
           </section>
+          <section className="card" aria-labelledby="tool-redirects-heading">
+            <h2 id="tool-redirects-heading">Redirects</h2>
+            <p>Manage 301/302 redirects and review paths that returned 404 on the public site.</p>
+            <p>
+              <button type="button" className="button" onClick={() => navigate('/tools/redirects')}>
+                Open Redirects
+              </button>
+            </p>
+          </section>
           <section className="card" aria-labelledby="tool-health-heading">
             <h2 id="tool-health-heading">Site Health</h2>
             <p>Server and storage checks for this installation.</p>

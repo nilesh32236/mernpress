@@ -295,3 +295,14 @@ export {
 
 // ---- WordPress WXR export (Tools → Export) ----
 export { createExportService, type ExportScope, type ExportService } from './export/service.js';
+
+// ---- Redirects and 404 log (Tools → Redirects) ----
+export {
+  createRedirectService,
+  type NotFoundDto,
+  type RedirectDto,
+  type RedirectInput,
+  type RedirectListResult,
+  type RedirectService,
+  type RedirectServiceOptions,
+} from './redirects/service.js';

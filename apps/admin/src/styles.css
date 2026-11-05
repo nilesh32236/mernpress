@@ -12104,3 +12104,60 @@ a.glance-chip:hover {
 .editor-density-compact .editor-sidebar-body {
   font-size: 12px;
 }
+
+/* Tools → Redirects. */
+.redirect-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 180px;
+  gap: 12px;
+  align-items: end;
+}
+
+.redirect-form .field {
+  margin: 0;
+}
+
+.redirect-form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+  margin: 0;
+}
+
+.redirects-table code {
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.redirect-actions {
+  white-space: nowrap;
+}
+
+.redirect-actions .button-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--wp-blue);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.redirect-actions .button-link.is-danger {
+  color: var(--wp-danger);
+}
+
+.redirect-empty {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #c3c4c7;
+  background: #ffffff;
+  font-size: 13px;
+}
+
+@media (max-width: 782px) {
+  .redirect-form {
+    grid-template-columns: 1fr;
+  }
+}

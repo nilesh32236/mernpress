@@ -97,6 +97,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-069 | 2026-11-05 | WordPress post privacy/password/format parity: `posts.is_private` excludes a post from every public surface; `posts.password_hash` (Argon2id) withholds `renderedContent` until `POST /api/public/posts/:slug/unlock` verifies the password (403 on failure, 10 attempts/10 min in-memory throttle, no cookie); `posts.format` stores the ten WordPress formats and renders a `format-<name>` class. The admin DTO exposes `passwordProtected`/`isPrivate`/`format`, never the hash. Quick Edit gains Password (with Remove password) and Private; Bulk Edit gains Format; the editor Format row is a real select. Allow Pings is deliberately not modelled (XML-RPC/inbound verification, legacy security surface). | accepted | [ADR 0029](docs/adr/0029-post-privacy-format.md) |
 
+| D-070 | 2026-11-05 | Core redirects and 404 manager (Tools → Redirects): `redirects` stores a normalized unique source path, relative/http(s) destination, 301/302 and hit count; loops and self-redirects are rejected (bounded chain walk). The public Next.js middleware applies redirects from a 10-second cached map and reports hits asynchronously. A catch-all route logs 404 paths (path/count/timestamps only, no PII) and renders the normal 404 page. Public writes are validated and limited to 120/min per client; admin routes require `manage_options`. Automatic redirects on slug change remain a follow-up. | accepted | [ADR 0030](docs/adr/0030-redirects-404-manager.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

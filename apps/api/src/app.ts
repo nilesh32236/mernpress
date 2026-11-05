@@ -26,6 +26,7 @@ import {
   createMailService,
   createPasswordResetService,
   createExportService,
+  createRedirectService,
   createMemoryMailTransport,
   createSmtpMailTransport,
   type AuthConfig,
@@ -56,6 +57,7 @@ import { registerPrivacyRoutes } from './routes/privacy.js';
 import { registerConnectorRoutes } from './routes/connectors.js';
 import { registerMailRoutes } from './routes/mail.js';
 import { registerExportRoutes } from './routes/export.js';
+import { registerRedirectRoutes, registerPublicRedirectRoutes } from './routes/redirects.js';
 import { registerAdminHealthRoutes } from './routes/admin-health.js';
 import { startPublishScheduler } from './scheduler.js';
 import { resolveRequestId } from './http/request-id.js';
@@ -267,6 +269,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const exportsService = createExportService({ prisma: database });
   app.decorate('exports', exportsService);
 
+  const redirects = createRedirectService({ prisma: database });
+  app.decorate('redirects', redirects);
+
   app.addHook('onRequest', async (request, reply) => {
     if (!MUTATING_METHODS.has(request.method)) {
       return;
@@ -329,6 +334,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerConnectorRoutes(app, { env, auth, connectors });
   registerMailRoutes(app, { env, auth, mail });
   registerExportRoutes(app, { env, auth, exports: exportsService });
+  registerRedirectRoutes(app, { env, auth, redirects });
+  registerPublicRedirectRoutes(app, { redirects });
   registerPublicCommentRoutes(app, { comments, auth });
 
   if (env.SCHEDULER_ENABLED) {

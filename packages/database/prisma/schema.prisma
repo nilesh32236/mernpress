@@ -77,6 +77,30 @@ model ApplicationPassword {
   @@map("application_passwords")
 }
 
+/// Admin-managed path redirects (Tools → Redirects).
+model Redirect {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  fromPath   String   @unique @map("from_path") @db.VarChar(2048)
+  toPath     String   @map("to_path") @db.VarChar(2048)
+  statusCode Int      @default(301) @map("status_code")
+  hits       Int      @default(0)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("redirects")
+}
+
+/// Aggregated 404s for the Redirects screen. Only the path is stored (no PII).
+model NotFoundEntry {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  path        String   @unique @db.VarChar(2048)
+  hits        Int      @default(1)
+  firstSeenAt DateTime @default(now()) @map("first_seen_at") @db.Timestamptz(6)
+  lastSeenAt  DateTime @updatedAt @map("last_seen_at") @db.Timestamptz(6)
+
+  @@map("not_found_entries")
+}
+
 /// Single-use password reset tokens (lost-password flow). Only the SHA-256 hash
 /// of the token is stored; the plaintext exists only in the e-mail link.
 model PasswordReset {

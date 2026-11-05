@@ -936,6 +936,96 @@ export interface ApplicationPassword {
 
 export type OptionValues = Record<string, unknown>;
 
+// ---- Tools: redirects and 404 log ----
+export interface RedirectItem {
+  id: string;
+  fromPath: string;
+  toPath: string;
+  statusCode: 301 | 302;
+  hits: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NotFoundEntry {
+  id: string;
+  path: string;
+  hits: number;
+  firstSeenAt: string;
+  lastSeenAt: string;
+}
+
+export interface RedirectListResult {
+  redirects: RedirectItem[];
+  notFound: NotFoundEntry[];
+}
+
+export async function fetchRedirects(): Promise<RedirectListResult> {
+  const response = await fetch('/api/admin/redirects', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<RedirectListResult>(response);
+}
+
+export async function createRedirect(payload: {
+  fromPath: string;
+  toPath: string;
+  statusCode?: 301 | 302;
+}): Promise<RedirectListResult> {
+  const response = await fetch('/api/admin/redirects', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify(payload),
+  });
+  return readJson<RedirectListResult>(response);
+}
+
+export async function updateRedirect(
+  id: string,
+  payload: { fromPath: string; toPath: string; statusCode?: 301 | 302 },
+): Promise<RedirectListResult> {
+  const response = await fetch(`/api/admin/redirects/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify(payload),
+  });
+  return readJson<RedirectListResult>(response);
+}
+
+export async function deleteRedirect(id: string): Promise<RedirectListResult> {
+  const response = await fetch(`/api/admin/redirects/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  return readJson<RedirectListResult>(response);
+}
+
+export async function dismissNotFound(id: string): Promise<RedirectListResult> {
+  const response = await fetch(`/api/admin/redirects/not-found/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  return readJson<RedirectListResult>(response);
+}
+
 // ---- Tools: WordPress WXR export ----
 export type ExportScope = 'all' | 'posts' | 'pages' | 'media';
 
