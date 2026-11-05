@@ -3351,3 +3351,17 @@ and zero stored backups.
   UI challenge.
 - Validation: 714 unit/integration tests (API 446, admin 172, web 31,
   block-system 65), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (two-factor authentication):** release
+`20261105T102453Z-d42c44f` (current); migrations
+`20261105100529_add_two_factor_auth` and
+`20261105100707_add_two_factor_user_fields` applied (four user columns and both
+tables verified). Production verification with a temporary administrator:
+- Profile setup returned a 32-character secret, `otpauth://` URI and eight
+  recovery codes; confirming with a generated TOTP enabled 2FA (8 codes
+  remaining).
+- Signing out and logging in with the password produced the two-factor
+  challenge (no session yet); entering the next TOTP code reached the Dashboard.
+- The temporary administrator (and cascaded codes/challenges/sessions) was
+  deleted; production has 1 user, 0 recovery codes, 0 challenges and 0 accounts
+  with 2FA enabled.
