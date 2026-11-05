@@ -112,8 +112,8 @@ instant and safe; no PHP or template execution.
    archive, retention, admin UI and a documented CLI restore. High demand, but needs careful security and disk handling.
 4. ~~**Safe client editing mode**~~ — delivered (ADR 0036): per-post structure
    lock enforced by the server, with an editor banner/panel and canvas guard.
-5. ~~**Reading time / related posts**~~ — delivered (ADR 0033); author box
-   remains a future theme feature.
+5. ~~**Reading time / related posts**~~ (ADR 0033) and ~~**author box**~~
+   (ADR 0037, with local initials avatars) are delivered.
 6. ~~**Two-factor authentication**~~ — delivered (ADR 0035): TOTP, recovery
    codes, login challenge, profile enrollment and admin reset.
 7. ~~**Redirect-aware slug rename**~~ — delivered (ADR 0032): published slug

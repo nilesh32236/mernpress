@@ -138,6 +138,7 @@ export type {
   PreviewLinkResult,
   Principal,
   PublicListQuery,
+  PublicAuthorSummary,
   PublicPost,
   UpdatePostInput,
 } from './content/types.js';

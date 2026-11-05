@@ -27,7 +27,13 @@ const basePost: PublicPost = {
   format: 'standard',
   updatedAt: '2026-01-01T00:00:00.000Z',
   terms: { categories: [], tags: [] },
-  author: { id: 'u1', username: 'admin' },
+  author: {
+    id: 'u1',
+    username: 'admin',
+    displayName: null,
+    bio: null,
+    website: null,
+  },
 };
 
 describe('password-protected posts', () => {

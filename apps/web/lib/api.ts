@@ -22,6 +22,15 @@ export interface FeaturedImage {
   derivatives: Record<string, string>;
 }
 
+/** Public author profile shown in the single-post author box. */
+export interface PublicAuthorSummary {
+  id: string;
+  username: string;
+  displayName: string | null;
+  bio: string | null;
+  website: string | null;
+}
+
 export interface PublicPost {
   id: string;
   type: ContentType;
@@ -59,7 +68,7 @@ export interface PublicPost {
     | 'audio'
     | 'chat';
   updatedAt: string;
-  author: { id: string; username: string } | null;
+  author: PublicAuthorSummary | null;
   terms: { categories: PublicTerm[]; tags: PublicTerm[] };
 }
 

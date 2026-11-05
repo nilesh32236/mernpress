@@ -191,8 +191,20 @@ export interface PublicPost {
   /** WordPress post format. */
   format: PostFormat;
   updatedAt: string;
-  author: { id: string; username: string } | null;
+  author: PublicAuthorSummary | null;
   terms: { categories: AdminTermSummary[]; tags: AdminTermSummary[] };
+}
+
+/**
+ * Public author summary. Profile fields are opt-in (the author fills them in
+ * Profile); email is never exported.
+ */
+export interface PublicAuthorSummary {
+  id: string;
+  username: string;
+  displayName: string | null;
+  bio: string | null;
+  website: string | null;
 }
 
 /** Public taxonomy term (category/tag) with its archive description. */

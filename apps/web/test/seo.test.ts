@@ -44,7 +44,13 @@ const post: PublicPost = {
     categories: [{ id: 'c1', name: 'News', slug: 'news' }],
     tags: [{ id: 't1', name: 'Demo', slug: 'demo' }],
   },
-  author: { id: 'u1', username: 'admin' },
+  author: {
+    id: 'u1',
+    username: 'admin',
+    displayName: null,
+    bio: null,
+    website: null,
+  },
 };
 
 describe('SEO structured data', () => {

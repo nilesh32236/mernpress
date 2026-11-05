@@ -3409,3 +3409,22 @@ administrator on a canonical two-block post:
   panel with the toggle checked, and no Add block / Document overview controls.
 - The test post and temporary administrator were deleted; production has 1 user,
   0 locked posts and 0 redirects.
+
+### 2026-11-05 — Author box and local initials avatars
+
+- Single posts now render an “About the author” box between the article and the
+  previous/next navigation (pages do not). It uses the existing profile fields:
+  display name (falls back to the username), bio and website.
+- The avatar is a local CSS circle with one or two initials — no Gravatar or
+  other third-party request, so readers are not disclosed to an external
+  service. Comment avatars already worked this way.
+- `PublicPost.author` now carries `displayName`, `bio` and `website`; email,
+  role and status are never exported. A regression test asserts the public
+  payload contains neither the account email nor `passwordHash`.
+- Archive links use `rel="author"`; the author's website opens with
+  `target="_blank" rel="me noopener noreferrer"` and is validated as http(s)
+  when saved.
+- Tests cover display-name/bio/website rendering, username fallback and hidden
+  empty fields, the post-vs-page difference, and the API public contract.
+- Validation: 724 unit/integration tests (API 451, admin 174, web 34,
+  block-system 65), 23 Playwright E2E tests and six builds pass.

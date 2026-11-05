@@ -221,7 +221,9 @@ type PostWithTerms = Prisma.PostGetPayload<{
   include: {
     terms: { include: { term: true } };
     featuredMedia: true;
-    author: { select: { id: true; username: true } };
+    author: {
+      select: { id: true; username: true; displayName: true; bio: true; website: true };
+    };
   };
 }>;
 
@@ -382,7 +384,15 @@ function toPublic(row: PostWithTerms, logger?: ContentServiceOptions['logger']):
       ? (row.format as PostFormat)
       : 'standard',
     updatedAt: row.updatedAt.toISOString(),
-    author: row.author ? { id: row.author.id, username: row.author.username } : null,
+    author: row.author
+      ? {
+          id: row.author.id,
+          username: row.author.username,
+          displayName: row.author.displayName,
+          bio: row.author.bio,
+          website: row.author.website,
+        }
+      : null,
     terms: splitTerms(row),
   };
 }
@@ -390,7 +400,9 @@ function toPublic(row: PostWithTerms, logger?: ContentServiceOptions['logger']):
 const WITH_TERMS = {
   terms: { include: { term: true }, orderBy: { position: 'asc' as const } },
   featuredMedia: true,
-  author: { select: { id: true, username: true } },
+  author: {
+    select: { id: true, username: true, displayName: true, bio: true, website: true },
+  },
 };
 
 async function loadWithTerms(tx: Tx, id: string): Promise<PostWithTerms | null> {

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { postPath, type PublicPost } from '@/lib/api';
 import ResponsiveImage from './ResponsiveImage';
 import RelatedPosts from './RelatedPosts';
+import AuthorBox from './AuthorBox';
 import { readingTime } from '@/lib/reading-time';
 import Comments from './Comments';
 import PasswordForm from './PasswordForm';
@@ -95,6 +96,7 @@ export default function PostView({
 
       {!isPage ? (
         <>
+          {post.author ? <AuthorBox author={post.author} /> : null}
           <div className="entry-wide">
             <nav className="post-navigation" aria-label="Post navigation">
               <span className="post-navigation-slot">
