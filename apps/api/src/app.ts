@@ -217,10 +217,19 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const themes = createThemeService({ prisma: database });
   app.decorate('themes', themes);
 
-  const plugins = createPluginService({ prisma: database });
+  const plugins = createPluginService({
+    prisma: database,
+    pluginDir: env.PLUGIN_STORAGE_DIR,
+    seedDir: env.PLUGIN_SEED_DIR,
+    logger: (message, meta) => app.log.warn({ ...meta }, message),
+  });
   app.decorate('plugins', plugins);
 
-  const updates = createUpdateService({ prisma: database, manifestUrl: env.UPDATE_MANIFEST_URL });
+  const updates = createUpdateService({
+    prisma: database,
+    manifestUrl: env.UPDATE_MANIFEST_URL,
+    installedPlugins: () => plugins.installed(),
+  });
   app.decorate('updates', updates);
 
   const dashboardFeeds = createDashboardFeedService({

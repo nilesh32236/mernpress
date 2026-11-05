@@ -441,12 +441,9 @@ export function PluginsPage({ user }: { user: AuthUser }) {
       {pendingDelete ? (
         <Modal title="Delete plugin" onClose={() => setPendingDelete(null)}>
           <p>
-            Are you sure you want to delete <strong>{pendingDelete.name}</strong>? Its saved state
-            and activation are removed and it disappears from this list.
-          </p>
-          <p className="field-help">
-            Bundled plugin code ships with MERNPress releases; deleting removes the plugin from this
-            site but does not remove files from the release.
+            Are you sure you want to delete <strong>{pendingDelete.name}</strong>? Its data and
+            settings will be removed. This permanently deletes the plugin package from the server
+            and cannot be undone.
           </p>
           <div className="plugin-modal-actions">
             <button

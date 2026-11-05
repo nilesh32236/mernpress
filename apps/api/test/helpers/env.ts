@@ -1,6 +1,7 @@
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { loadEnv, type Env } from '../../src/config/env.js';
 
 const loadedEnv = loadEnv();
@@ -35,6 +36,8 @@ export function makeTestEnv(overrides: Partial<Env> = {}): Env {
     // (reference test-setup pattern).
     MEDIA_STORAGE_DIR: mkdtempSync(path.join(tmpdir(), 'mernpress-test-media-')),
     SCHEDULER_ENABLED: false,
+    PLUGIN_STORAGE_DIR: mkdtempSync(path.join(tmpdir(), 'mernpress-test-plugins-')),
+    PLUGIN_SEED_DIR: fileURLToPath(new URL('../../../../plugins', import.meta.url)),
     ...overrides,
   };
 }

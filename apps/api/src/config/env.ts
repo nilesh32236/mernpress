@@ -79,6 +79,10 @@ const rawEnvSchema = z.object({
   SMTP_PASS: optionalEnvString(500),
   /** Admin base URL when it is not the site origin (development). */
   ADMIN_URL: optionalEnvString(500),
+  /** Writable plugin package store; required in production (outside releases). */
+  PLUGIN_STORAGE_DIR: optionalEnvString(500),
+  /** Read-only directory containing bundled seed packages. */
+  PLUGIN_SEED_DIR: optionalEnvString(500),
   MAIL_FROM: z.preprocess(
     (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
     z.string().min(3).max(320).optional(),
@@ -132,6 +136,8 @@ export type Env = {
   SMTP_PASS: string | undefined;
   MAIL_FROM: string | undefined;
   ADMIN_URL: string | undefined;
+  PLUGIN_STORAGE_DIR: string;
+  PLUGIN_SEED_DIR: string;
 };
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
@@ -216,6 +222,9 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   if (parsed.data.SMTP_HOST && !parsed.data.MAIL_FROM) {
     throw new Error('MAIL_FROM is required when SMTP_HOST is configured');
   }
+  if (isProduction && !parsed.data.PLUGIN_STORAGE_DIR) {
+    throw new Error('PLUGIN_STORAGE_DIR is required in production');
+  }
 
   const storageDir = path.isAbsolute(parsed.data.MEDIA_STORAGE_DIR)
     ? parsed.data.MEDIA_STORAGE_DIR
@@ -240,5 +249,10 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     SMTP_PASS: parsed.data.SMTP_PASS,
     MAIL_FROM: parsed.data.MAIL_FROM,
     ADMIN_URL: parsed.data.ADMIN_URL,
+    PLUGIN_STORAGE_DIR: path.resolve(
+      process.cwd(),
+      parsed.data.PLUGIN_STORAGE_DIR ?? '../../.data/plugins',
+    ),
+    PLUGIN_SEED_DIR: path.resolve(process.cwd(), parsed.data.PLUGIN_SEED_DIR ?? '../../plugins'),
   };
 }

@@ -197,9 +197,9 @@ export { THEMES, DEFAULT_THEME_ID, findTheme, type ThemeManifest } from './theme
 export { createPluginService, type PluginService } from './plugins/service.js';
 export type { PluginListResult, PluginState } from './plugins/service.js';
 export {
-  PLUGINS,
-  HELLO_LYRICS,
-  findPlugin,
+  loadPluginManifests,
+  seedPluginStore,
+  validatePluginManifest,
   lyricFor,
   type PluginManifest,
 } from './plugins/registry.js';

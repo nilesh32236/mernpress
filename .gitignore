@@ -30,3 +30,6 @@ apps/web/next-env.d.ts
 var/media
 apps/api/var/
 .playwright-mcp/
+
+# Local runtime state (plugin store, caches)
+.data/

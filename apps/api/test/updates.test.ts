@@ -82,6 +82,16 @@ describe('update checking against a manifest', () => {
     const service = createUpdateService({
       prisma: app.database,
       manifestUrl: 'https://updates.example/manifest.json',
+      installedPlugins: async () => [
+        {
+          id: 'hello-mernpress',
+          name: 'Hello MERNPress',
+          version: '1.0.0',
+          author: 'The MERNPress team',
+          description: 'A plugin.',
+          details: 'Details.',
+        },
+      ],
       now: () => new Date('2026-11-04T10:00:00.000Z'),
       fetchImpl: async () =>
         new Response(

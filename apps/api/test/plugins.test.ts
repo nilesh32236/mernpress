@@ -1,3 +1,7 @@
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { createPluginService } from '@mernpress/cms-core';
@@ -121,6 +125,8 @@ describe('plugins api', () => {
   it('supports an injected plugin registry (runtime contract)', async () => {
     const service = createPluginService({
       prisma: app.database,
+      pluginDir: '/tmp/unused-plugin-dir',
+      seedDir: '/tmp/unused-plugin-seed',
       plugins: [
         {
           id: 'sample',
@@ -193,5 +199,31 @@ describe('plugins api', () => {
       headers: noBody,
     });
     expect(missing.statusCode).toBe(404);
+  });
+  it('removes the package directory and stays removed across restarts', async () => {
+    const pluginDir = mkdtempSync(path.join(tmpdir(), 'mernpress-plugins-'));
+    const seedDir = fileURLToPath(new URL('../../../plugins', import.meta.url));
+    const principal = { userId: '00000000-0000-7000-8000-000000000000', role: 'administrator' };
+    try {
+      const service = createPluginService({ prisma: app.database, pluginDir, seedDir });
+      const initial = await service.list(principal);
+      expect(initial.plugins.map((plugin) => plugin.id)).toEqual(['hello-mernpress']);
+      expect(existsSync(path.join(pluginDir, 'hello-mernpress', 'plugin.json'))).toBe(true);
+
+      await service.activate(principal, 'hello-mernpress');
+      await service.deactivate(principal, 'hello-mernpress');
+      const removed = await service.remove(principal, 'hello-mernpress');
+      expect(removed.plugins).toEqual([]);
+      expect(existsSync(path.join(pluginDir, 'hello-mernpress'))).toBe(false);
+
+      // A new service process (or a restart) must not re-seed a deleted package.
+      const restarted = createPluginService({ prisma: app.database, pluginDir, seedDir });
+      const after = await restarted.list(principal);
+      expect(after.plugins).toEqual([]);
+      const toolbar = await restarted.toolbar(principal);
+      expect(toolbar).toEqual({ message: null });
+    } finally {
+      rmSync(pluginDir, { recursive: true, force: true });
+    }
   });
 });

@@ -85,6 +85,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-063 | 2026-11-05 | Media → Edit Image is implemented: a canvas editor with rotate, flip, aspect-ratio crop (drag selection with corner handles), scale, undo/redo and cancel; Save posts the composed image to `POST /api/admin/media/:id/edit`, which re-validates/re-encodes it like an upload, keeps the first pre-edit file as `<storagePath>.original`, regenerates all derivatives and records `edited_at`/`original_path`. `POST /api/admin/media/:id/restore` restores the original and clears the backup. Media DTOs expose `editedAt`/`hasOriginal`, and image URLs carry a cache-busting version. Capability, CSRF and size/pixel limits are enforced. | accepted | [ADR 0024](docs/adr/0024-media-edit-image.md) |
 
+| D-064 | 2026-11-05 | Plugins are packages on disk (`plugins/<id>/plugin.json`) in a writable, persistent store (`PLUGIN_STORAGE_DIR`, required in production) seeded once from the release `plugins/` directory via a `.initialized` marker. Delete recursively removes the package directory after requiring deactivation; nothing is re-seeded by restarts or deploys, and lists, counts, update checks and toolbar output all read the store. The `deleted_plugins` tombstone is removed. Production adds `ReadWritePaths=/opt/mernpress/plugins` to the API unit. | accepted | [ADR 0025](docs/adr/0025-plugin-package-store.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

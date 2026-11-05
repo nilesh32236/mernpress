@@ -359,3 +359,27 @@ mail is enabled, reset links are valid for 24 hours, single-use, and resetting a
 password signs out every existing session. `ADMIN_URL` is only needed when the
 admin is served from a different origin (development); production uses the site
 origin.
+
+## Plugin packages
+
+Plugins are trusted local packages stored outside releases so deleting a plugin
+survives deploys:
+
+```bash
+sudo mkdir -p /opt/mernpress/plugins
+sudo chown mernpress:mernpress /opt/mernpress/plugins
+```
+
+Set the store in `/etc/mernpress/mernpress.env`:
+
+```
+PLUGIN_STORAGE_DIR=/opt/mernpress/plugins
+# optional; defaults to <release>/plugins
+PLUGIN_SEED_DIR=/opt/mernpress/current/plugins
+```
+
+The API unit already declares `ReadWritePaths=/opt/mernpress/plugins`. On first
+start the release `plugins/` directory seeds an empty store once (marker
+`.initialized`); afterwards the store is authoritative. Deleting a plugin
+removes its directory, and a restart does not re-create it. Reinstalling is an
+operator action: copy the package directory back into the store.

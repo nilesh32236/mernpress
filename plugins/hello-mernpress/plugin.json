@@ -1,0 +1,18 @@
+{
+  "id": "hello-mernpress",
+  "name": "Hello MERNPress",
+  "version": "1.0.0",
+  "author": "The MERNPress team",
+  "description": "This is not just a plugin; it symbolizes the hope and enthusiasm of an entire project summed up in two words sung most famously by Louis Armstrong: Hello, MERNPress. When activated you will randomly see a lyric from the MERNPress songbook in the upper right of your admin screen on every page.",
+  "details": "Shows a rotating lyric in the admin toolbar.",
+  "toolbarLyrics": [
+    "Hello, MERNPress, well hello, MERNPress",
+    "It's so nice to have you back where you belong",
+    "You're lookin' swell, MERNPress, we can tell, MERNPress",
+    "You're still glowin', you're still crowin', you're still goin' strong",
+    "Blocks in the editor, posts on the wire",
+    "Sanitised HTML, nothing to untire",
+    "Hello, MERNPress, well hello, MERNPress",
+    "It's so nice to have you back where you belong"
+  ]
+}

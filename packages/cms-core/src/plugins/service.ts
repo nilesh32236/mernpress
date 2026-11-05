@@ -1,8 +1,10 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import type { DatabaseClient } from '@mernpress/database';
 import { requireCapability } from '../auth/capabilities.js';
 import { ContentError } from '../content/errors.js';
 import type { Principal } from '../content/types.js';
-import { PLUGINS, findPlugin, lyricFor, type PluginManifest } from './registry.js';
+import { loadPluginManifests, lyricFor, seedPluginStore, type PluginManifest } from './registry.js';
 
 export interface PluginState extends PluginManifest {
   active: boolean;
@@ -16,14 +18,17 @@ export interface PluginListResult {
 
 export interface PluginServiceOptions {
   prisma: DatabaseClient;
-  /** Injected in tests so activation can be exercised without shipping plugins. */
+  /** Writable plugin store (outside release directories). */
+  pluginDir: string;
+  /** Bundled packages copied into an empty store once. */
+  seedDir: string;
+  /** Injected registry used by focused tests; skips the on-disk store. */
   plugins?: readonly PluginManifest[];
-  /** Minute-resolution clock so the rotating lyric is deterministic in tests. */
   now?: () => Date;
+  logger?: (message: string, meta?: Record<string, unknown>) => void;
 }
 
 const ACTIVE_PLUGINS_KEY = 'active_plugins';
-const DELETED_PLUGINS_KEY = 'deleted_plugins';
 const AUTO_UPDATES_KEY = 'plugin_auto_updates';
 
 async function readOption<T>(prisma: DatabaseClient, key: string, fallback: T): Promise<T> {
@@ -46,40 +51,40 @@ async function writeOption(prisma: DatabaseClient, key: string, value: unknown):
 
 export function createPluginService({
   prisma,
-  plugins = PLUGINS,
+  pluginDir,
+  seedDir,
+  plugins: injected,
   now = () => new Date(),
+  logger,
 }: PluginServiceOptions) {
-  async function deletedIds(): Promise<string[]> {
-    const stored = await readOption<string[]>(prisma, DELETED_PLUGINS_KEY, []);
-    const known = new Set(plugins.map((plugin) => plugin.id));
+  /** The installed packages, read from the authoritative store on each call. */
+  async function installedManifests(): Promise<readonly PluginManifest[]> {
+    if (injected) return injected;
+    await seedPluginStore({ storeDir: pluginDir, seedDir, ...(logger ? { logger } : {}) });
+    return loadPluginManifests(pluginDir, logger);
+  }
+
+  async function activeIds(installed?: readonly PluginManifest[]): Promise<string[]> {
+    const [stored, manifests] = await Promise.all([
+      readOption<string[]>(prisma, ACTIVE_PLUGINS_KEY, []),
+      installed ? Promise.resolve(installed) : installedManifests(),
+    ]);
+    const known = new Set(manifests.map((plugin) => plugin.id));
     return Array.isArray(stored) ? stored.filter((id) => known.has(id)) : [];
   }
 
-  async function activeIds(): Promise<string[]> {
-    const [stored, deleted] = await Promise.all([
-      readOption<string[]>(prisma, ACTIVE_PLUGINS_KEY, []),
-      deletedIds(),
-    ]);
-    const known = new Set(plugins.map((plugin) => plugin.id));
-    const deletedSet = new Set(deleted);
-    return Array.isArray(stored) ? stored.filter((id) => known.has(id) && !deletedSet.has(id)) : [];
-  }
-
   async function state(): Promise<PluginListResult> {
-    const [active, autoUpdates, deleted] = await Promise.all([
-      activeIds(),
+    const manifests = await installedManifests();
+    const [active, autoUpdates] = await Promise.all([
+      activeIds(manifests),
       readOption<boolean>(prisma, AUTO_UPDATES_KEY, false),
-      deletedIds(),
     ]);
     const activeSet = new Set(active);
-    const deletedSet = new Set(deleted);
-    const list = plugins
-      .filter((plugin) => !deletedSet.has(plugin.id))
-      .map((plugin) => ({
-        ...plugin,
-        active: activeSet.has(plugin.id),
-        autoUpdates,
-      }));
+    const list = manifests.map((plugin) => ({
+      ...plugin,
+      active: activeSet.has(plugin.id),
+      autoUpdates,
+    }));
     return {
       plugins: list,
       counts: {
@@ -97,10 +102,11 @@ export function createPluginService({
 
   async function activate(principal: Principal, id: string): Promise<PluginListResult> {
     requireCapability(principal, 'manage_options');
-    if (!findPluginIn(plugins, id)) {
+    const manifests = await installedManifests();
+    if (!manifests.some((plugin) => plugin.id === id)) {
       throw new ContentError('NOT_FOUND', 'Plugin not found', 404);
     }
-    const active = await activeIds();
+    const active = await activeIds(manifests);
     if (!active.includes(id)) active.push(id);
     await writeOption(prisma, ACTIVE_PLUGINS_KEY, active);
     return state();
@@ -108,29 +114,29 @@ export function createPluginService({
 
   async function deactivate(principal: Principal, id: string): Promise<PluginListResult> {
     requireCapability(principal, 'manage_options');
-    if (!findPluginIn(plugins, id)) {
+    const manifests = await installedManifests();
+    if (!manifests.some((plugin) => plugin.id === id)) {
       throw new ContentError('NOT_FOUND', 'Plugin not found', 404);
     }
-    const active = (await activeIds()).filter((entry) => entry !== id);
+    const active = (await activeIds(manifests)).filter((entry) => entry !== id);
     await writeOption(prisma, ACTIVE_PLUGINS_KEY, active);
     return state();
   }
 
   async function remove(principal: Principal, id: string): Promise<PluginListResult> {
     requireCapability(principal, 'manage_options');
-    if (!findPluginIn(plugins, id)) {
+    const manifests = await installedManifests();
+    if (!manifests.some((plugin) => plugin.id === id)) {
       throw new ContentError('NOT_FOUND', 'Plugin not found', 404);
     }
-    const deleted = await deletedIds();
-    if (deleted.includes(id)) {
-      throw new ContentError('NOT_FOUND', 'Plugin not found', 404);
-    }
-    const active = await activeIds();
+    const active = await activeIds(manifests);
     if (active.includes(id)) {
       throw new ContentError('VALIDATION_ERROR', 'Deactivate the plugin before deleting it.', 409);
     }
-    deleted.push(id);
-    await writeOption(prisma, DELETED_PLUGINS_KEY, deleted);
+    if (!injected) {
+      // Real package removal: the directory (manifest and any assets) is gone.
+      await fs.rm(path.join(pluginDir, id), { recursive: true, force: true });
+    }
     return state();
   }
 
@@ -140,28 +146,30 @@ export function createPluginService({
     return state();
   }
 
+  /** Installed packages for other services (update checks); no capability. */
+  async function installed(): Promise<readonly PluginManifest[]> {
+    return installedManifests();
+  }
+
   /**
    * What the active plugins contribute to the admin toolbar. Empty when no
-   * toolbar plugin is active, so the shell renders nothing.
+   * active plugin provides toolbar lyrics, so the shell renders nothing.
    */
   async function toolbar(principal: Principal): Promise<{ message: string | null }> {
     requireCapability(principal, 'manage_options');
-    const active = await activeIds();
-    if (!active.includes('hello-mernpress')) {
-      return { message: null };
-    }
+    const manifests = await installedManifests();
+    const active = await activeIds(manifests);
     const minute = Math.floor(now().getTime() / 60_000);
-    return { message: lyricFor(minute) };
+    for (const id of active) {
+      const plugin = manifests.find((entry) => entry.id === id);
+      if (plugin?.toolbarLyrics && plugin.toolbarLyrics.length > 0) {
+        return { message: lyricFor(plugin.toolbarLyrics, minute) };
+      }
+    }
+    return { message: null };
   }
 
-  return { list, activate, deactivate, remove, setAutoUpdates, toolbar };
-}
-
-function findPluginIn(plugins: readonly PluginManifest[], id: string): PluginManifest | undefined {
-  if (plugins === PLUGINS) {
-    return findPlugin(id);
-  }
-  return plugins.find((plugin) => plugin.id === id);
+  return { list, activate, deactivate, remove, setAutoUpdates, toolbar, installed };
 }
 
 export type PluginService = ReturnType<typeof createPluginService>;

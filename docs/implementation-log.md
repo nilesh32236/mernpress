@@ -2865,3 +2865,21 @@ re-opened, restored the original → 1000×600 with `editedAt: null`,
 `hasOriginal: false` and "Original image restored."; deleted the media row (204)
 and the upload/backup files were removed. The temporary administrator was
 deleted and production is back to one user and zero media rows.
+
+### 2026-11-05 — Real plugin package removal
+
+- Plugins are now on-disk packages (`plugins/hello-mernpress/plugin.json`) in a
+  writable store (`PLUGIN_STORAGE_DIR`), seeded once from the release `plugins/`
+  directory and guarded by a `.initialized` marker. After seeding the store is
+  authoritative; `PLUGIN_STORAGE_DIR` is required in production.
+- Delete now recursively removes the package directory (after deactivation) and
+  the plugin vanishes from lists, counts, update checks and the toolbar; a
+  restart or deploy does not re-seed it. The `deleted_plugins` tombstone is gone.
+- List/activation/toolbar/update checks read the store, so the manifest is the
+  single source of truth for name/version/author/description and toolbar lyrics.
+- UI copy now states that Delete permanently removes the package and cannot be
+  undone.
+- Tests seed into an isolated temp store, delete the package, verify its
+  directory is gone and that a fresh service over the same store stays empty.
+- Validation: 646 unit/integration tests (API 411, admin 157, block-system 65,
+  web 13), 23 Playwright E2E tests and six builds pass.

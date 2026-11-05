@@ -70,10 +70,21 @@ describe('loadEnv', () => {
       NODE_ENV: 'production',
       CORS_ORIGINS: 'https://admin.example.com',
       AUTH_HASH_PEPPER: 'a-real-production-pepper-with-enough-length',
+      PLUGIN_STORAGE_DIR: '/opt/mernpress/plugins',
     });
 
     expect(env.CORS_ORIGINS).toEqual(['https://admin.example.com']);
     expect(env.AUTH_HASH_PEPPER).toBe('a-real-production-pepper-with-enough-length');
+    expect(env.PLUGIN_STORAGE_DIR).toBe('/opt/mernpress/plugins');
+
+    expect(() =>
+      loadEnv({
+        ...validEnv,
+        NODE_ENV: 'production',
+        CORS_ORIGINS: 'https://admin.example.com',
+        AUTH_HASH_PEPPER: 'a-real-production-pepper-with-enough-length',
+      }),
+    ).toThrow(/PLUGIN_STORAGE_DIR/);
   });
 
   it('rejects CORS origins with paths and idle timeouts longer than absolute TTL', () => {
