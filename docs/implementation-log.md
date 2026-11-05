@@ -2923,3 +2923,13 @@ with a temporary administrator:
   credentials). The screens state these instead of faking controls.
 - Validation: 646 unit/integration tests (API 411, admin 157, block-system 65,
   web 13), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (Add Plugins/Add Themes/Import audit):** release
+`20261105T064426Z-49a1371` (current). Production verification with a temporary
+administrator confirmed all three screens: Add Plugins has no title count, the
+WordPress description, disabled Featured/Popular/Recommended/Favorites labels
+and "Search Plugins"; Add Themes has the installed-theme count in the filter bar,
+disabled Popular/Latest/Block Themes/Favorites and "Search Themes"; Import lists
+Blogger, Categories and Tags Converter, LiveJournal, Movable Type and TypePad,
+RSS, Tumblr, WordPress in WordPress order with the marketplace boundary note.
+The temporary administrator was deleted afterwards.
