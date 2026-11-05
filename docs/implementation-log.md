@@ -4162,3 +4162,20 @@ administrator on a three-block draft:
   validation; admin button loop with two batches and the combined notice.
 - Validation: 841 unit/integration tests (API 506, admin 224, web 38,
   block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.
+
+**Deployment (bulk media regeneration + feature-gap research):** release
+`20261105T204005Z-0bba020` (current), no migration. Production verification
+with a temporary administrator:
+- Media Library showed the new “Regenerate image sizes” button. Uploading a PNG
+  created the WebP + AVIF derivatives (`300`, `600`, `1200`, plus configured
+  thumbnail/medium/large sizes).
+- The `600` WebP and AVIF files were deleted from `/opt/mernpress/media`; the
+  button then reported “Regenerated 1 image(s).” and both files existed again
+  with unchanged derivative URLs.
+- The temporary media item, its files and the temporary administrator were
+  deleted; production is back to 1 user, 2 posts and an empty media library,
+  with `/`, `/admin/`, `/api/health` and `/posts/testcom` at 200.
+- Development additionally exercised the failure path: stale media rows whose
+  canonical files were missing were counted as failures while the valid image
+  was rebuilt (`Regenerated 1 image(s); 3 failed.`), proving one bad row cannot
+  wedge the batch.
