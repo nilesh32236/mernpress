@@ -180,6 +180,10 @@ model Post {
   revisionCount   Int         @default(0) @map("revision_count")
   /// Featured image (Phase 6 follow-up); SetNull when the media item is deleted.
   featuredMediaId String?     @map("featured_media_id") @db.Uuid
+  /// Per-post comment status (WordPress Discussion): open or closed.
+  commentStatus   String      @default("open") @map("comment_status") @db.VarChar(20)
+  /// WordPress "Make this post sticky": pinned above normal posts on the blog.
+  sticky          Boolean     @default(false)
 
   author        User?             @relation(fields: [authorId], references: [id], onDelete: SetNull)
   terms         PostTerm[]

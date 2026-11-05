@@ -30,7 +30,7 @@ owner decision.
 | --- | --- | --- |
 | Login | D/P | WordPress login layout, error copy, Remember Me, Lost Password form, reset-token screen |
 | Dashboard + widgets | D/P | Welcome, Site Health, At a Glance, Activity, Quick Draft, Events and News |
-| Posts list / editor / Quick Edit / revisions / preview | D/P | Row actions, Bulk edit/Move to Trash, WordPress sidebar order, Options actions; Quick Edit is status/title/slug only (deeper fields remain) |
+| Posts list / editor / Quick Edit / revisions / preview | D/P | Row actions, Bulk edit/Move to Trash, WordPress sidebar order, Options actions; Quick Edit has date/author/terms/comments/sticky; Bulk Edit has terms/author/comments/sticky/status |
 | Categories / Tags | D/P | Add/edit/delete, hierarchy, counts |
 | Media library / grid / list / details | D/P | Upload, derivatives, alt text, grid/list toggle, Edit Image (rotate/flip/crop/scale/undo/redo/restore) |
 | Pages list / editor | D/P | Same editor chrome as posts |
@@ -120,7 +120,8 @@ missing screens. They are the next audit targets.
 
 | Area | Current state | WordPress also has |
 | --- | --- | --- |
-| Posts/Pages Quick Edit | Title, slug and status. | Date, author, password/private, categories, tags, comments and sticky. |
-| Bulk Edit | Status only. | Author, categories, tags, comments and sticky (posts). |
+| Quick Edit | Title, slug, date, author, categories, tags, comments, status, sticky. | Password, Private, Allow Pings. |
+| Bulk Edit | Categories, tags, author, comments, sticky, status. | Pings and Format. |
 | Editor Options menu | Settings, Switch to draft, Move to trash. | Code editor, keyboard shortcuts, welcome guide, copy all content, preferences, plugins. |
 | Post sidebar extras | Preview token, SEO and revisions are MERNPress additions shown after the WordPress panels. | No equivalent panels; WordPress revisions live in the editor's document overview. |
+

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdminPost, AuthUser, Paged } from './api.js';
 import { ContentList } from './ContentList.js';
@@ -37,6 +37,8 @@ function makePost(overrides: Partial<AdminPost> = {}): AdminPost {
     ogTitle: null,
     ogDescription: null,
     publishedAt: null,
+    commentStatus: 'open',
+    sticky: false,
     trashedAt: null,
     previousStatus: null,
     version: 1,
@@ -375,5 +377,173 @@ describe('content lists', () => {
     fireEvent.change(select, { target: { value: 'delete' } });
     fireEvent.click(screen.getAllByRole('button', { name: 'Apply' })[0]!);
     expect(confirmSpy).toHaveBeenCalled();
+  });
+  it('quick edit saves date, author, terms, comments and sticky', async () => {
+    const post = makePost({ id: 'post-q', title: 'Quick target', authorId: 'a1', version: 4 });
+    const requests: Array<{ url: string; method: string; body: unknown }> = [];
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input, init) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+      if (url.includes('/api/admin/terms')) {
+        const taxonomy = new URL(url, 'http://x').searchParams.get('taxonomy');
+        return response({
+          items:
+            taxonomy === 'category'
+              ? [{ id: 'cat-1', name: 'News', slug: 'news', taxonomy: 'category' }]
+              : [{ id: 'tag-1', name: 'Demo', slug: 'demo', taxonomy: 'tag' }],
+          pagination: { page: 1, perPage: 100, total: 1, totalPages: 1 },
+        });
+      }
+      if (url.includes('/api/users')) {
+        return response({
+          items: [
+            {
+              id: 'a1',
+              username: 'admin',
+              email: null,
+              displayName: null,
+              role: 'administrator',
+              status: 'active',
+              postCount: 1,
+              createdAt: '2026-10-01T00:00:00.000Z',
+            },
+            {
+              id: 'a2',
+              username: 'author-b',
+              email: null,
+              displayName: null,
+              role: 'author',
+              status: 'active',
+              postCount: 0,
+              createdAt: '2026-10-01T00:00:00.000Z',
+            },
+          ],
+          pagination: { page: 1, perPage: 100, total: 2, totalPages: 1 },
+        });
+      }
+      if (/perPage=1(&|$)/.test(url)) return response(paged([], 0));
+      if (method !== 'GET') {
+        requests.push({ url, method, body: init?.body ? JSON.parse(String(init.body)) : null });
+        return response(makePost({ id: 'post-q', title: 'Quick target', version: 5 }));
+      }
+      return response(paged([post]));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<ContentList user={admin} type="post" />);
+    await screen.findByRole('link', { name: 'Quick target' });
+    fireEvent.click(screen.getByRole('button', { name: 'Quick Edit' }));
+
+    const region = await screen.findByRole('region', { name: 'Quick edit Quick target' });
+    fireEvent.change(within(region).getByLabelText('Date'), {
+      target: { value: '2026-11-05T09:30' },
+    });
+    fireEvent.change(within(region).getByLabelText('Author'), { target: { value: 'a2' } });
+    fireEvent.click(within(region).getByLabelText('News'));
+    fireEvent.click(within(region).getByLabelText('Demo'));
+    fireEvent.click(within(region).getByLabelText('Allow Comments'));
+    fireEvent.click(within(region).getByLabelText('Make this post sticky'));
+    fireEvent.change(within(region).getByLabelText('Status'), {
+      target: { value: 'PUBLISHED' },
+    });
+    fireEvent.click(within(region).getByRole('button', { name: 'Update' }));
+
+    await waitFor(() => expect(requests).toHaveLength(3));
+    const patch = requests.find((request) => request.method === 'PATCH');
+    expect(patch?.body).toMatchObject({
+      baseVersion: 4,
+      authorId: 'a2',
+      commentStatus: 'closed',
+      sticky: true,
+    });
+    expect((patch?.body as { publishedAt?: string }).publishedAt).toContain('2026-11-05');
+    const terms = requests.find((request) => request.url.includes('/terms'));
+    expect(terms?.body).toEqual({
+      baseVersion: 5,
+      categoryIds: ['cat-1'],
+      tagIds: ['tag-1'],
+    });
+    const transition = requests.find((request) => request.url.includes('/publish'));
+    expect(transition?.method).toBe('POST');
+  });
+
+  it('bulk edit applies author, terms, comments, sticky and status', async () => {
+    const first = makePost({ id: 'post-1', title: 'First post', authorId: 'a1', version: 2 });
+    const second = makePost({ id: 'post-2', title: 'Second post', authorId: 'a1', version: 3 });
+    const requests: Array<{ url: string; method: string; body: unknown }> = [];
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input, init) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+      if (url.includes('/api/admin/terms')) {
+        const taxonomy = new URL(url, 'http://x').searchParams.get('taxonomy');
+        return response({
+          items:
+            taxonomy === 'category'
+              ? [{ id: 'cat-1', name: 'News', slug: 'news', taxonomy: 'category' }]
+              : [{ id: 'tag-1', name: 'Demo', slug: 'demo', taxonomy: 'tag' }],
+          pagination: { page: 1, perPage: 100, total: 1, totalPages: 1 },
+        });
+      }
+      if (url.includes('/api/users')) {
+        return response({
+          items: [
+            {
+              id: 'a2',
+              username: 'author-b',
+              email: null,
+              displayName: null,
+              role: 'author',
+              status: 'active',
+              postCount: 0,
+              createdAt: '2026-10-01T00:00:00.000Z',
+            },
+          ],
+          pagination: { page: 1, perPage: 100, total: 1, totalPages: 1 },
+        });
+      }
+      if (/perPage=1(&|$)/.test(url)) return response(paged([], 0));
+      if (method !== 'GET') {
+        requests.push({ url, method, body: init?.body ? JSON.parse(String(init.body)) : null });
+        return response(makePost({ id: 'post-1', title: 'First post', version: 4 }));
+      }
+      return response(paged([first, second]));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<ContentList user={admin} type="post" />);
+    await screen.findByRole('link', { name: 'First post' });
+    fireEvent.click(screen.getByLabelText('Select First post'));
+    fireEvent.click(screen.getByLabelText('Select Second post'));
+    fireEvent.change(screen.getAllByLabelText('Bulk actions')[0]!, {
+      target: { value: 'edit' },
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Apply' })[0]!);
+
+    const panel = await screen.findByText('Bulk Edit');
+    const region = panel.closest('.bulk-edit-panel') as HTMLElement;
+    fireEvent.click(within(region).getByLabelText('News'));
+    fireEvent.click(within(region).getByLabelText('Demo'));
+    fireEvent.change(within(region).getByLabelText('Author'), { target: { value: 'a2' } });
+    fireEvent.change(within(region).getByLabelText('Comments'), {
+      target: { value: 'closed' },
+    });
+    fireEvent.change(within(region).getByLabelText('Sticky'), { target: { value: 'sticky' } });
+    fireEvent.click(within(region).getByRole('button', { name: 'Update' }));
+
+    await waitFor(() => expect(requests.filter((r) => r.method === 'PATCH')).toHaveLength(2));
+    const patches = requests.filter((request) => request.method === 'PATCH');
+    expect(patches[0]?.body).toMatchObject({
+      baseVersion: 2,
+      authorId: 'a2',
+      commentStatus: 'closed',
+      sticky: true,
+    });
+    const termCalls = requests.filter((request) => request.url.includes('/terms'));
+    expect(termCalls).toHaveLength(2);
+    expect(termCalls[0]?.body).toEqual({
+      baseVersion: 4,
+      categoryIds: ['cat-1'],
+      tagIds: ['tag-1'],
+    });
   });
 });

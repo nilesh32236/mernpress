@@ -43,6 +43,10 @@ export const updatePostSchema = z
     ogTitle: seoTitle.optional(),
     ogDescription: seoDescription.optional(),
     featuredMediaId: z.string().uuid().nullable().optional(),
+    publishedAt: z.string().datetime({ offset: true }).nullable().optional(),
+    authorId: uuid.nullable().optional(),
+    commentStatus: z.enum(['open', 'closed']).optional(),
+    sticky: z.boolean().optional(),
   })
   .strict();
 

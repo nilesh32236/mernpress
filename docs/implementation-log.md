@@ -2965,3 +2965,30 @@ showed bulk actions `Bulk edit | Move to Trash` and row actions
 top-bar Options menu contained `Settings | Switch to draft | Move to trash`.
 Screenshots: `prod12-posts-list.png`, `prod12-editor.png`,
 `prod12-editor-options.png`. The temporary administrator was deleted.
+
+### 2026-11-05 — Quick Edit and Bulk Edit field parity
+
+- Quick Edit now exposes the WordPress fields that this content model supports:
+  Title, Slug, Date (`datetime-local`), Author (administrators), Categories and
+  Tags checkboxes (posts), Allow Comments, Status and "Make this post sticky"
+  (posts). Saving chains PATCH (date/author/comments/sticky) → term assignment →
+  status transition, so version numbers stay consistent.
+- Bulk Edit now matches WordPress: Categories and Tags (added to each selected
+  post), Author (— No Change —), Comments (— No Change — / Allow / Do not
+  allow), Sticky (— No Change — / Sticky / Not sticky, posts) and Status
+  (— No Change — / Draft / Published). Per-item failures are collected and
+  reported instead of aborting the batch.
+- Backend: `posts.comment_status` (open/closed) and `posts.sticky` with
+  migration `20261105070833_add_post_sticky_comment_status`; `updatePost`
+  accepts `publishedAt`, `authorId` (edit-any only), `commentStatus` and
+  `sticky`; public list pins sticky posts first; per-post closed status rejects
+  new comments with 403.
+- Password, Private, Pings and Format remain unmodelled; they stay documented
+  gaps rather than fake controls.
+- Verified in the browser: Quick Edit showed Title/Slug/Date/Author/Categories/
+  Tags/Status/Allow Comments/Make sticky; saving set sticky=true,
+  commentStatus=closed and added the News category; Bulk Edit showed
+  Categories/Tags/Author/Comments/Sticky/Status with the WordPress "— No Change —"
+  defaults.
+- Validation: 653 unit/integration tests (API 416, admin 159, block-system 65,
+  web 13), 23 Playwright E2E tests and six builds pass.

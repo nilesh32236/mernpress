@@ -92,6 +92,7 @@ export function createCommentService({ prisma, mail }: CommentServiceOptions) {
         publishedAt: true,
         title: true,
         slug: true,
+        commentStatus: true,
         author: { select: { email: true } },
       },
     });
@@ -119,7 +120,7 @@ export function createCommentService({ prisma, mail }: CommentServiceOptions) {
       setting<string>('moderation_keys', ''),
       setting<string>('disallowed_keys', ''),
     ]);
-    if (defaultStatus === 'closed') {
+    if (defaultStatus === 'closed' || post.commentStatus === 'closed') {
       throw new ContentError('FORBIDDEN', 'Comments are closed.', 403);
     }
     if (

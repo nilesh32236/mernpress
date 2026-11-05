@@ -276,6 +276,8 @@ function toAdmin(row: PostWithTerms, options: { includePreviewToken?: boolean } 
     ogTitle: row.ogTitle,
     ogDescription: row.ogDescription,
     publishedAt: row.publishedAt?.toISOString() ?? null,
+    commentStatus: row.commentStatus === 'closed' ? 'closed' : 'open',
+    sticky: row.sticky,
     trashedAt: row.trashedAt?.toISOString() ?? null,
     previousStatus: row.previousStatus,
     version: row.version,
@@ -348,6 +350,8 @@ function toPublic(row: PostWithTerms, logger?: ContentServiceOptions['logger']):
     ogTitle: row.ogTitle,
     ogDescription: row.ogDescription,
     publishedAt: row.publishedAt?.toISOString() ?? null,
+    commentStatus: row.commentStatus === 'closed' ? 'closed' : 'open',
+    sticky: row.sticky,
     updatedAt: row.updatedAt.toISOString(),
     author: row.author ? { id: row.author.id, username: row.author.username } : null,
     terms: splitTerms(row),
@@ -532,6 +536,43 @@ export function createContentService(options: ContentServiceOptions): ContentSer
       }
       canEditPost(principal, existing.authorId, existing.status);
 
+      let publishedAtUpdate: Date | null | undefined;
+      if (input.publishedAt !== undefined) {
+        if (input.publishedAt === null) {
+          publishedAtUpdate = null;
+        } else {
+          const parsed = new Date(input.publishedAt);
+          if (Number.isNaN(parsed.getTime())) {
+            throw new ContentError('VALIDATION_ERROR', 'Invalid publish date', 400);
+          }
+          publishedAtUpdate = parsed;
+        }
+      }
+
+      let authorIdUpdate: string | null | undefined;
+      if (input.authorId !== undefined) {
+        if (input.authorId !== null && input.authorId !== existing.authorId) {
+          if (!roleHasCapability(principal.role, 'content.edit.any')) {
+            throw new ContentError('FORBIDDEN', 'Forbidden', 403);
+          }
+          const author = await tx.user.findUnique({
+            where: { id: input.authorId },
+            select: { id: true, status: true },
+          });
+          if (!author || author.status !== 'active') {
+            throw new ContentError('VALIDATION_ERROR', 'Invalid author', 400);
+          }
+        }
+        authorIdUpdate = input.authorId;
+      }
+
+      const commentStatus =
+        input.commentStatus === undefined ? existing.commentStatus : input.commentStatus;
+      if (commentStatus !== 'open' && commentStatus !== 'closed') {
+        throw new ContentError('VALIDATION_ERROR', 'Invalid comment status', 400);
+      }
+      const sticky = input.sticky === undefined ? existing.sticky : input.sticky;
+
       const requestedSlug = input.slug === undefined ? existing.slug : normalizeSlug(input.slug);
 
       const draft = await applyFilter('content.post.update', {
@@ -618,6 +659,10 @@ export function createContentService(options: ContentServiceOptions): ContentSer
             ...(featuredMediaIdUpdate === undefined
               ? {}
               : { featuredMediaId: featuredMediaIdUpdate }),
+            ...(publishedAtUpdate === undefined ? {} : { publishedAt: publishedAtUpdate }),
+            ...(authorIdUpdate === undefined ? {} : { authorId: authorIdUpdate }),
+            commentStatus,
+            sticky,
           },
         });
       } catch (error) {
@@ -1165,7 +1210,10 @@ export function createContentService(options: ContentServiceOptions): ContentSer
       prisma.post.findMany({
         where,
         include: WITH_TERMS,
-        orderBy: [{ publishedAt: 'desc' }, { id: 'desc' }],
+        orderBy:
+          query.type === 'page'
+            ? [{ publishedAt: 'desc' }, { id: 'desc' }]
+            : [{ sticky: 'desc' }, { publishedAt: 'desc' }, { id: 'desc' }],
         skip: (query.page - 1) * query.perPage,
         take: query.perPage,
       }),

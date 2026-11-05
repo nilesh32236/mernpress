@@ -1721,7 +1721,9 @@ export function ContentEditor({
                         <div className="publish-field">
                           <span className="publish-label">Discussion</span>
                           <div className="publish-value">
-                            <span className="editor-link-value">Closed</span>
+                            <span className="editor-link-value">
+                              {post.commentStatus === 'closed' ? 'Closed' : 'Open'}
+                            </span>
                           </div>
                         </div>
                         <div className="publish-field">
@@ -1807,7 +1809,7 @@ export function ContentEditor({
                         <div className="publish-field">
                           <span className="publish-label">Discussion</span>
                           <div className="publish-value">
-                            <span className="editor-link-value">Closed</span>
+                            <span className="editor-link-value">Open</span>
                           </div>
                         </div>
                         <div className="publish-field">

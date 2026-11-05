@@ -1,15 +1,18 @@
 import { Fragment, useEffect, useState, type FormEvent } from 'react';
 import {
   actionErrorMessage,
+  assignTerms,
   bulkPosts,
   fetchCommentCountsByPost,
   fetchPosts,
   fetchTerms,
+  fetchUsers,
   rotatePreviewToken,
   transitionPost,
   updatePost,
   type AdminPost,
   type AdminTerm,
+  type AdminUser,
   type AuthUser,
   type BulkAction,
   type ContentType,
@@ -27,7 +30,13 @@ import {
   type NoticeMessage,
   Pagination,
 } from './components.js';
-import { availableTransitions, canCreateContent, canEditPost, canReadContent } from './roles.js';
+import {
+  availableTransitions,
+  canAssignTerms,
+  canCreateContent,
+  canEditPost,
+  canReadContent,
+} from './roles.js';
 import {
   editContentPath,
   listPath,
@@ -109,7 +118,12 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<BulkAction | 'edit' | ''>('');
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
-  const [bulkEditStatus, setBulkEditStatus] = useState<'DRAFT' | 'PUBLISHED'>('DRAFT');
+  const [bulkEditStatus, setBulkEditStatus] = useState<'' | 'DRAFT' | 'PUBLISHED'>('');
+  const [bulkEditAuthorId, setBulkEditAuthorId] = useState('');
+  const [bulkEditCommentStatus, setBulkEditCommentStatus] = useState<'' | 'open' | 'closed'>('');
+  const [bulkEditSticky, setBulkEditSticky] = useState<'' | 'sticky' | 'not-sticky'>('');
+  const [bulkEditCategoryIds, setBulkEditCategoryIds] = useState<string[]>([]);
+  const [bulkEditTagIds, setBulkEditTagIds] = useState<string[]>([]);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [previewBusyId, setPreviewBusyId] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
@@ -152,6 +166,12 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
   const [quickTitle, setQuickTitle] = useState('');
   const [quickSlug, setQuickSlug] = useState('');
   const [quickStatus, setQuickStatus] = useState<'DRAFT' | 'PUBLISHED'>('DRAFT');
+  const [quickDate, setQuickDate] = useState('');
+  const [quickAuthorId, setQuickAuthorId] = useState('');
+  const [quickCommentStatus, setQuickCommentStatus] = useState<'open' | 'closed'>('open');
+  const [quickSticky, setQuickSticky] = useState(false);
+  const [quickCategoryIds, setQuickCategoryIds] = useState<string[]>([]);
+  const [quickTagIds, setQuickTagIds] = useState<string[]>([]);
   const [quickBusy, setQuickBusy] = useState(false);
   const [quickError, setQuickError] = useState<string | null>(null);
   const [perPage, setPerPage] = useState(() =>
@@ -163,6 +183,8 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
   const [mine, setMine] = useState(false);
   const [mineCount, setMineCount] = useState(0);
   const [categories, setCategories] = useState<AdminTerm[]>([]);
+  const [tags, setTags] = useState<AdminTerm[]>([]);
+  const [authors, setAuthors] = useState<AdminUser[]>([]);
   const [reloadKey, setReloadKey] = useState(0);
   const [counts, setCounts] = useState<Record<PostStatus | '', number>>({
     '': 0,
@@ -283,10 +305,40 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
       .catch(() => {
         // Filters are optional; failure must not block the list.
       });
+    fetchTerms({ taxonomy: 'tag', page: 1, perPage: 100 })
+      .then((result) => {
+        if (active) setTags(result.items);
+      })
+      .catch(() => {
+        // Quick Edit can still save without tag options.
+      });
     return () => {
       active = false;
     };
   }, [allowed, type]);
+
+  // Author choices (WordPress shows users who can author content). Only
+  // administrators can list the user directory through the API.
+  useEffect(() => {
+    if (!allowed || user.role !== 'administrator') return;
+    let active = true;
+    fetchUsers({ perPage: 100 })
+      .then((result) => {
+        if (active) {
+          setAuthors(
+            result.items.filter((entry) =>
+              ['administrator', 'editor', 'author'].includes(entry.role),
+            ),
+          );
+        }
+      })
+      .catch(() => {
+        // The author select simply stays unavailable.
+      });
+    return () => {
+      active = false;
+    };
+  }, [allowed, user.role]);
 
   // Real server-computed status counts for the current type + search term.
   useEffect(() => {
@@ -363,11 +415,31 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
     applyFilters(status, searchInput.trim(), 1);
   }
 
+  function toLocalDateTimeInput(value: string | null): string {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const pad = (part: number) => String(part).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
+      date.getHours(),
+    )}:${pad(date.getMinutes())}`;
+  }
+
+  function toggleQuickTerm(current: string[], id: string): string[] {
+    return current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id];
+  }
+
   function startQuickEdit(post: AdminPost): void {
     setQuickId(post.id);
     setQuickTitle(post.title);
     setQuickSlug(post.slug);
     setQuickStatus(post.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT');
+    setQuickDate(toLocalDateTimeInput(post.publishedAt ?? post.updatedAt));
+    setQuickAuthorId(post.authorId ?? '');
+    setQuickCommentStatus(post.commentStatus);
+    setQuickSticky(post.sticky);
+    setQuickCategoryIds(post.terms.categories.map((term) => term.id));
+    setQuickTagIds(post.terms.tags.map((term) => term.id));
     setQuickError(null);
   }
 
@@ -378,17 +450,43 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
       setQuickError('Title is required.');
       return;
     }
+    const nextDate = quickDate ? new Date(quickDate) : null;
+    if (nextDate && Number.isNaN(nextDate.getTime())) {
+      setQuickError('Enter a valid date.');
+      return;
+    }
     setQuickBusy(true);
     setQuickError(null);
     try {
       let updated = post;
-      if (title !== post.title || quickSlug.trim() !== post.slug) {
-        updated = await updatePost(post.id, {
-          baseVersion: post.version,
-          title,
-          ...(quickSlug.trim() ? { slug: quickSlug.trim() } : {}),
-        });
+      const publishedAt = nextDate ? nextDate.toISOString() : null;
+      const authorId = quickAuthorId || null;
+      const patch: Parameters<typeof updatePost>[1] = { baseVersion: post.version };
+      if (title !== post.title) patch.title = title;
+      if (quickSlug.trim() && quickSlug.trim() !== post.slug) patch.slug = quickSlug.trim();
+      if (publishedAt !== post.publishedAt) patch.publishedAt = publishedAt;
+      if (user.role === 'administrator' && authorId !== post.authorId) patch.authorId = authorId;
+      if (quickCommentStatus !== post.commentStatus) {
+        patch.commentStatus = quickCommentStatus;
       }
+      if (type === 'post' && quickSticky !== post.sticky) patch.sticky = quickSticky;
+      if (Object.keys(patch).length > 1) {
+        updated = await updatePost(post.id, patch);
+      }
+
+      if (type === 'post' && canAssignTerms(user)) {
+        const currentCategories = post.terms.categories.map((term) => term.id).sort();
+        const currentTags = post.terms.tags.map((term) => term.id).sort();
+        const nextCategories = [...quickCategoryIds].sort();
+        const nextTags = [...quickTagIds].sort();
+        if (
+          currentCategories.join(',') !== nextCategories.join(',') ||
+          currentTags.join(',') !== nextTags.join(',')
+        ) {
+          updated = await assignTerms(updated.id, quickCategoryIds, quickTagIds, updated.version);
+        }
+      }
+
       if (quickStatus !== updated.status) {
         updated = await transitionPost(
           updated.id,
@@ -545,27 +643,67 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
     if (targets.length === 0) return;
     setBulkBusy(true);
     setNotice(null);
-    try {
-      let updated = 0;
-      for (const post of targets) {
-        if (post.status === bulkEditStatus) continue;
-        await transitionPost(
-          post.id,
-          bulkEditStatus === 'PUBLISHED' ? 'publish' : 'unpublish',
-          post.version,
-        );
+    let updated = 0;
+    const failures: string[] = [];
+    for (const post of targets) {
+      try {
+        let current = post;
+        const patch: Parameters<typeof updatePost>[1] = { baseVersion: current.version };
+        if (user.role === 'administrator' && bulkEditAuthorId) {
+          patch.authorId = bulkEditAuthorId;
+        }
+        if (bulkEditCommentStatus && bulkEditCommentStatus !== current.commentStatus) {
+          patch.commentStatus = bulkEditCommentStatus;
+        }
+        if (type === 'post' && bulkEditSticky) {
+          const sticky = bulkEditSticky === 'sticky';
+          if (sticky !== current.sticky) patch.sticky = sticky;
+        }
+        if (Object.keys(patch).length > 1) {
+          current = await updatePost(current.id, patch);
+        }
+        if (
+          type === 'post' &&
+          canAssignTerms(user) &&
+          (bulkEditCategoryIds.length > 0 || bulkEditTagIds.length > 0)
+        ) {
+          const categoryIds = [
+            ...new Set([
+              ...current.terms.categories.map((term) => term.id),
+              ...bulkEditCategoryIds,
+            ]),
+          ];
+          const tagIds = [
+            ...new Set([...current.terms.tags.map((term) => term.id), ...bulkEditTagIds]),
+          ];
+          current = await assignTerms(current.id, categoryIds, tagIds, current.version);
+        }
+        if (bulkEditStatus && current.status !== bulkEditStatus) {
+          current = await transitionPost(
+            current.id,
+            bulkEditStatus === 'PUBLISHED' ? 'publish' : 'unpublish',
+            current.version,
+          );
+        }
         updated += 1;
+      } catch (caught) {
+        failures.push(`${post.title}: ${actionErrorMessage(caught)}`);
       }
-      setNotice({ tone: 'success', text: `${updated} item(s) updated.` });
-      setSelected(new Set());
-      setBulkEditOpen(false);
-      setBulkAction('');
-      setReloadKey((value) => value + 1);
-    } catch (caught) {
-      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
-    } finally {
-      setBulkBusy(false);
     }
+    setNotice({
+      tone: failures.length === 0 ? 'success' : 'error',
+      text:
+        failures.length === 0
+          ? `${updated} item(s) updated.`
+          : `${updated} item(s) updated; ${failures.length} failed: ${failures.join('; ')}`,
+    });
+    setSelected(new Set());
+    setBulkEditOpen(false);
+    setBulkEditCategoryIds([]);
+    setBulkEditTagIds([]);
+    setBulkAction('');
+    setBulkBusy(false);
+    setReloadKey((value) => value + 1);
   }
 
   if (!allowed) {
@@ -887,15 +1025,107 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
             <div className="bulk-edit-panel">
               <h2>Bulk Edit</h2>
               <p className="bulk-edit-summary">{selected.size} item(s) selected</p>
+              {type === 'post' ? (
+                <fieldset className="bulk-edit-taxonomy">
+                  <legend>Categories</legend>
+                  {categories.length === 0 ? (
+                    <p className="field-help">No categories.</p>
+                  ) : (
+                    categories.map((term) => (
+                      <label key={term.id} className="checkbox-row">
+                        <input
+                          type="checkbox"
+                          checked={bulkEditCategoryIds.includes(term.id)}
+                          onChange={() =>
+                            setBulkEditCategoryIds((current) => toggleQuickTerm(current, term.id))
+                          }
+                          disabled={bulkBusy}
+                        />
+                        <span>{term.name}</span>
+                      </label>
+                    ))
+                  )}
+                </fieldset>
+              ) : null}
+              {type === 'post' ? (
+                <fieldset className="bulk-edit-taxonomy">
+                  <legend>Tags</legend>
+                  {tags.length === 0 ? (
+                    <p className="field-help">No tags.</p>
+                  ) : (
+                    tags.map((term) => (
+                      <label key={term.id} className="checkbox-row">
+                        <input
+                          type="checkbox"
+                          checked={bulkEditTagIds.includes(term.id)}
+                          onChange={() =>
+                            setBulkEditTagIds((current) => toggleQuickTerm(current, term.id))
+                          }
+                          disabled={bulkBusy}
+                        />
+                        <span>{term.name}</span>
+                      </label>
+                    ))
+                  )}
+                </fieldset>
+              ) : null}
+              {user.role === 'administrator' && authors.length > 0 ? (
+                <label className="bulk-edit-field">
+                  <span>Author</span>
+                  <select
+                    value={bulkEditAuthorId}
+                    onChange={(event) => setBulkEditAuthorId(event.target.value)}
+                    disabled={bulkBusy}
+                  >
+                    <option value="">— No Change —</option>
+                    {authors.map((author) => (
+                      <option key={author.id} value={author.id}>
+                        {author.username}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              <label className="bulk-edit-field">
+                <span>Comments</span>
+                <select
+                  value={bulkEditCommentStatus}
+                  onChange={(event) =>
+                    setBulkEditCommentStatus(event.target.value as '' | 'open' | 'closed')
+                  }
+                  disabled={bulkBusy}
+                >
+                  <option value="">— No Change —</option>
+                  <option value="open">Allow</option>
+                  <option value="closed">Do not allow</option>
+                </select>
+              </label>
+              {type === 'post' ? (
+                <label className="bulk-edit-field">
+                  <span>Sticky</span>
+                  <select
+                    value={bulkEditSticky}
+                    onChange={(event) =>
+                      setBulkEditSticky(event.target.value as '' | 'sticky' | 'not-sticky')
+                    }
+                    disabled={bulkBusy}
+                  >
+                    <option value="">— No Change —</option>
+                    <option value="sticky">Sticky</option>
+                    <option value="not-sticky">Not sticky</option>
+                  </select>
+                </label>
+              ) : null}
               <label className="bulk-edit-field">
                 <span>Status</span>
                 <select
                   value={bulkEditStatus}
                   onChange={(event) =>
-                    setBulkEditStatus(event.target.value as 'DRAFT' | 'PUBLISHED')
+                    setBulkEditStatus(event.target.value as '' | 'DRAFT' | 'PUBLISHED')
                   }
                   disabled={bulkBusy}
                 >
+                  <option value="">— No Change —</option>
                   <option value="DRAFT">Draft</option>
                   <option value="PUBLISHED">Published</option>
                 </select>
@@ -1201,6 +1431,84 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                                       />
                                     </span>
                                   </label>
+                                  <label>
+                                    <span className="title">Date</span>
+                                    <span className="input-text-wrap">
+                                      <input
+                                        type="datetime-local"
+                                        value={quickDate}
+                                        onChange={(event) => setQuickDate(event.target.value)}
+                                        disabled={quickBusy}
+                                      />
+                                    </span>
+                                  </label>
+                                  {user.role === 'administrator' && authors.length > 0 ? (
+                                    <label>
+                                      <span className="title">Author</span>
+                                      <span className="input-text-wrap">
+                                        <select
+                                          value={quickAuthorId}
+                                          onChange={(event) => setQuickAuthorId(event.target.value)}
+                                          disabled={quickBusy}
+                                        >
+                                          <option value="">—</option>
+                                          {authors.map((author) => (
+                                            <option key={author.id} value={author.id}>
+                                              {author.username}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </span>
+                                    </label>
+                                  ) : null}
+                                  {type === 'post' ? (
+                                    <fieldset className="inline-edit-taxonomy">
+                                      <legend>Categories</legend>
+                                      {categories.length === 0 ? (
+                                        <p className="field-help">No categories.</p>
+                                      ) : (
+                                        categories.map((term) => (
+                                          <label key={term.id} className="checkbox-row">
+                                            <input
+                                              type="checkbox"
+                                              checked={quickCategoryIds.includes(term.id)}
+                                              onChange={() =>
+                                                setQuickCategoryIds((current) =>
+                                                  toggleQuickTerm(current, term.id),
+                                                )
+                                              }
+                                              disabled={quickBusy}
+                                            />
+                                            <span>{term.name}</span>
+                                          </label>
+                                        ))
+                                      )}
+                                    </fieldset>
+                                  ) : null}
+                                  {type === 'post' ? (
+                                    <fieldset className="inline-edit-taxonomy">
+                                      <legend>Tags</legend>
+                                      {tags.length === 0 ? (
+                                        <p className="field-help">No tags.</p>
+                                      ) : (
+                                        tags.map((term) => (
+                                          <label key={term.id} className="checkbox-row">
+                                            <input
+                                              type="checkbox"
+                                              checked={quickTagIds.includes(term.id)}
+                                              onChange={() =>
+                                                setQuickTagIds((current) =>
+                                                  toggleQuickTerm(current, term.id),
+                                                )
+                                              }
+                                              disabled={quickBusy}
+                                            />
+                                            <span>{term.name}</span>
+                                          </label>
+                                        ))
+                                      )}
+                                    </fieldset>
+                                  ) : null}
                                 </div>
                               </fieldset>
                               <fieldset className="inline-edit-col-right">
@@ -1228,6 +1536,30 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                                       </select>
                                     </span>
                                   </label>
+                                  <label className="checkbox-row">
+                                    <input
+                                      type="checkbox"
+                                      checked={quickCommentStatus === 'open'}
+                                      onChange={(event) =>
+                                        setQuickCommentStatus(
+                                          event.target.checked ? 'open' : 'closed',
+                                        )
+                                      }
+                                      disabled={quickBusy}
+                                    />
+                                    <span>Allow Comments</span>
+                                  </label>
+                                  {type === 'post' ? (
+                                    <label className="checkbox-row">
+                                      <input
+                                        type="checkbox"
+                                        checked={quickSticky}
+                                        onChange={(event) => setQuickSticky(event.target.checked)}
+                                        disabled={quickBusy}
+                                      />
+                                      <span>Make this post sticky</span>
+                                    </label>
+                                  ) : null}
                                 </div>
                               </fieldset>
                               <div className="inline-edit-save submit">

@@ -72,6 +72,10 @@ export interface AdminPost {
   ogTitle: string | null;
   ogDescription: string | null;
   publishedAt: string | null;
+  /** Per-post comment status: open or closed. */
+  commentStatus: 'open' | 'closed';
+  /** WordPress "Make this post sticky". */
+  sticky: boolean;
   trashedAt: string | null;
   previousStatus: PostStatus | null;
   version: number;
@@ -154,6 +158,10 @@ export interface PublicPost {
   ogTitle: string | null;
   ogDescription: string | null;
   publishedAt: string | null;
+  /** Per-post comment status: open or closed. */
+  commentStatus: 'open' | 'closed';
+  /** WordPress "Make this post sticky". */
+  sticky: boolean;
   updatedAt: string;
   author: { id: string; username: string } | null;
   terms: { categories: AdminTermSummary[]; tags: AdminTermSummary[] };
@@ -193,6 +201,10 @@ export interface UpdatePostInput {
   ogTitle?: string | null | undefined;
   ogDescription?: string | null | undefined;
   featuredMediaId?: string | null | undefined;
+  publishedAt?: string | null | undefined;
+  authorId?: string | null | undefined;
+  commentStatus?: 'open' | 'closed' | undefined;
+  sticky?: boolean | undefined;
 }
 
 export type AdminPostSort = 'updatedAt' | 'createdAt' | 'publishedAt' | 'title';

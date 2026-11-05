@@ -11956,3 +11956,35 @@ a.glance-chip:hover {
 .editor-options-panel button.is-danger {
   color: var(--wp-danger);
 }
+
+/* Quick Edit / Bulk Edit taxonomy checkboxes (WordPress inline edit). */
+.inline-edit-taxonomy,
+.bulk-edit-taxonomy {
+  margin: 8px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.inline-edit-taxonomy legend,
+.bulk-edit-taxonomy legend {
+  margin: 0 0 4px;
+  color: #1d2327;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.inline-edit-taxonomy .checkbox-row,
+.bulk-edit-taxonomy .checkbox-row {
+  margin: 0 0 2px;
+  font-size: 13px;
+}
+
+.bulk-edit-taxonomy {
+  max-width: 640px;
+  margin-bottom: 12px;
+}
+
+.bulk-edit-taxonomy .checkbox-row {
+  display: inline-flex;
+  margin-right: 14px;
+}

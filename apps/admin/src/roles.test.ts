@@ -37,6 +37,8 @@ const post = (authorId: string, status: AdminPost['status'] = 'DRAFT'): AdminPos
   ogTitle: null,
   ogDescription: null,
   publishedAt: null,
+  commentStatus: 'open',
+  sticky: false,
   trashedAt: null,
   previousStatus: null,
   version: 1,

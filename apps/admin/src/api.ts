@@ -44,6 +44,8 @@ export interface AdminPost {
   ogTitle: string | null;
   ogDescription: string | null;
   publishedAt: string | null;
+  commentStatus: 'open' | 'closed';
+  sticky: boolean;
   trashedAt: string | null;
   previousStatus: PostStatus | null;
   version: number;
@@ -285,6 +287,10 @@ export interface UpdatePostPayload {
   ogTitle?: string | null;
   ogDescription?: string | null;
   featuredMediaId?: string | null;
+  publishedAt?: string | null;
+  authorId?: string | null;
+  commentStatus?: 'open' | 'closed';
+  sticky?: boolean;
 }
 
 interface ErrorBody {
