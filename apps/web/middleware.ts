@@ -97,6 +97,26 @@ async function resolvePost(query: string): Promise<ResolvedPost | null> {
   }
 }
 
+/**
+ * Rewrites stay internal: cloning `nextUrl` avoids asking Next to proxy to the
+ * incoming host (which, behind Caddy, carries https while Next listens on
+ * plain HTTP and would fail with a TLS handshake error).
+ */
+function rewriteTo(request: NextRequest, pathname: string) {
+  const url = request.nextUrl.clone();
+  url.pathname = pathname;
+  url.search = '';
+  return NextResponse.rewrite(url);
+}
+
+function redirectTo(request: NextRequest, pathname: string) {
+  const site = process.env.MERNPRESS_SITE_URL;
+  return NextResponse.redirect(
+    new URL(pathname, site && /^https?:\/\//.test(site) ? site : request.url),
+    301,
+  );
+}
+
 function withPathHeader(request: NextRequest, path: string) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-mn-path', path);
@@ -138,9 +158,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     if (id) {
       const resolved = await resolvePost(`p=${encodeURIComponent(id)}`);
       if (resolved) {
-        return NextResponse.rewrite(
-          new URL(`/posts/${encodeURIComponent(resolved.slug)}`, request.url),
-        );
+        return rewriteTo(request, `/posts/${encodeURIComponent(resolved.slug)}`);
       }
     }
     return withPathHeader(request, path);
@@ -151,16 +169,14 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     const prefix = `/${settings.categoryBase}/`;
     if (path.startsWith(prefix) && path.slice(prefix.length).split('/').length === 1) {
       const slug = path.slice(prefix.length);
-      if (slug)
-        return NextResponse.rewrite(new URL(`/category/${encodeURIComponent(slug)}`, request.url));
+      if (slug) return rewriteTo(request, `/category/${encodeURIComponent(slug)}`);
     }
   }
   if (settings.tagBase !== 'tag') {
     const prefix = `/${settings.tagBase}/`;
     if (path.startsWith(prefix) && path.slice(prefix.length).split('/').length === 1) {
       const slug = path.slice(prefix.length);
-      if (slug)
-        return NextResponse.rewrite(new URL(`/tag/${encodeURIComponent(slug)}`, request.url));
+      if (slug) return rewriteTo(request, `/tag/${encodeURIComponent(slug)}`);
     }
   }
 
@@ -186,9 +202,9 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
 
   const canonical = resolved.canonicalPath === '/' ? '/' : normalize(resolved.canonicalPath);
   if (canonical !== path) {
-    return NextResponse.redirect(new URL(canonical, request.url), 301);
+    return redirectTo(request, canonical);
   }
-  return NextResponse.rewrite(new URL(`/posts/${encodeURIComponent(resolved.slug)}`, request.url));
+  return rewriteTo(request, `/posts/${encodeURIComponent(resolved.slug)}`);
 }
 
 export const config = {
