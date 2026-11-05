@@ -3774,3 +3774,14 @@ scheme, and `/`, `/admin/`, `/api/health` and `/posts/testcom` return 200.
   and confirmed persistence, then reopened (1 open, Reply returned).
 - Validation: 791 unit/integration tests (API 484, admin 198, web 38,
   block-system 65, contracts 6), 23 Playwright E2E tests and seven builds pass.
+
+**Deployment (editor notes):** release `20261105T164728Z-4bb0f8e`
+(current), migration `20261105163351_add_post_notes` applied (`post_notes` with
+cascade/set-null foreign keys). Production verification with a temporary
+administrator on the published post: the editor showed the Notes tab and an
+**All notes** header button; adding a note produced “1 open / 2 total” after a
+reply with the count bubble at 1; Resolve showed “Resolved by Verify Temp
+Admin” and cleared the bubble; reloading the editor restored the thread, its
+reply and the resolved badge. The production test notes and the temporary
+administrator were deleted; production is back to 1 user, 2 posts, 0 notes and
+0 comments, with `/`, `/admin/`, `/api/health` and `/posts/testcom` at 200.
