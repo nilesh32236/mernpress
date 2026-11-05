@@ -3180,3 +3180,19 @@ and `/api/health` return 200.
   until verification.
 - Validation: 676 unit/integration tests (API 424, admin 161, web 26,
   block-system 65), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (privacy/password/format + preferences):** release
+`20261105T084717Z-dfc22d4` (current), migration
+`20261105082816_add_post_password_private_format` applied (`password_hash`,
+`is_private`, `format` verified). Production verification with a temporary
+administrator:
+- Password: setting one returned `passwordProtected: true`; the public page
+  rendered the password form; a wrong password returned 403; the correct one
+  returned 200 with the rendered body; the password was then removed.
+- Private: setting a page private made its public URL return 404; it was
+  reverted to public.
+- Format: `quote` round-tripped through the API and was reset to `standard`.
+- Post detail is now no-store, so privacy changes take effect immediately instead
+  of waiting for a cache window.
+The temporary administrator was deleted; production is back to 1 user, zero
+password-protected and zero private posts.
