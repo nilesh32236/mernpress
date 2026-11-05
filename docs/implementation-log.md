@@ -3538,9 +3538,9 @@ content, with `/`, `/admin/` and `/api/health` at 200.
 - `GET /api/public/resolve` resolves structured paths (and Plain `?p=`, plus
   slug lookups); it only returns published, non-private posts, validates date
   parts and `%category%`, and lets a published page shadow a root-level post
-  name. The edge middleware rewrites matches to `/posts/<slug>`, 301s
-  non-canonical date/category variants and rewrites custom category/tag bases.
-  Settings are cached 10 s, resolutions 30 s.
+  name. The edge middleware rewrites matches to `/posts/<slug>` and rewrites
+  custom category/tag bases; a different canonical path would 301, while wrong
+  date shapes 404. Settings are cached 10 s, resolutions 30 s.
 - Settings → Permalinks is a dedicated screen with the six radio choices,
   pattern previews, custom pattern validation, category/tag bases and a live
   sample URL; changing the structure warns that old URLs are not redirected.
@@ -3554,3 +3554,17 @@ content, with `/`, `/admin/` and `/api/health` at 200.
   legacy `/posts/<slug>` restored at the end.
 - Validation: 754 unit/integration tests (API 468, admin 181, web 35,
   block-system 65, contracts 5), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (permalink structures):** release `20261105T151323Z-af1c29f`
+(current after the reverse-proxy fix). Production verification with a temporary
+administrator: Settings → Permalinks listed all six presets with the live
+preview; switching to Month and name made
+`/2026/10/testcom` render with canonical
+`https://mernpress.duckdns.org/2026/10/testcom`, while `/posts/testcom` still
+rendered with the canonical structured URL and a wrong month returned 404.
+Switching to Plain made `/?p=<postId>` render with that canonical and the pretty
+URL 404. The structure was restored to the legacy custom
+`/posts/%postname%/` and `/posts/testcom` returned 200 with its canonical; the
+temporary administrator was deleted. The first production attempt exposed a
+reverse-proxy issue (Next rewrote to the https incoming origin and failed with
+EPROTO); middleware now rewrites to the internal HTTP origin.

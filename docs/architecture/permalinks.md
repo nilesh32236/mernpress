@@ -32,7 +32,8 @@ TypeScript.
    - `GET /api/public/resolve?path=…` (or `?p=…` for Plain, `?slug=…`) returns
      `{ slug, canonicalPath }` for published posts only.
    - a matching path is rewritten to `/posts/<slug>`;
-   - a non-canonical date/category path is 301-redirected to the canonical one.
+   - if the resolver reports a different canonical path it is 301-redirected;
+     a path that does not match the structure (e.g. a wrong date shape) is a 404.
 6. Custom category/tag bases rewrite to `/category/<slug>` / `/tag/<slug>`.
 
 ## Adding a token
