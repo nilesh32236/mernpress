@@ -3428,3 +3428,12 @@ administrator on a canonical two-block post:
   empty fields, the post-vs-page difference, and the API public contract.
 - Validation: 724 unit/integration tests (API 451, admin 174, web 34,
   block-system 65), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (author box):** release `20261105T133532Z-33ea7c4` (current).
+Production verification with a temporary administrator whose profile had a
+display name, bio and website: the public post rendered the author box with
+"A Prod Author" initials, the bio, the external website link
+(`target="_blank" rel="me noopener noreferrer"`) and the `/author/<username>`
+archive link; the public API returned `displayName`/`bio`/`website` and no email
+leak. The test post and temporary administrator were deleted; production is back
+to 1 user and its normal content, with `/`, `/admin/` and `/api/health` at 200.
