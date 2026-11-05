@@ -4124,3 +4124,19 @@ administrator on a draft created with `notesNotify: false`:
   `prepareAnchor` flow, API persistence and invalid-id rejection.
 - Validation: 837 unit/integration tests (API 503, admin 223, web 38,
   block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.
+
+**Deployment (stable block anchors):** release `20261105T201345Z-e4a7337`
+(current), migration `20261105194501_add_note_block_anchor_id` applied
+(`post_notes.block_anchor_id`). Production verification with a temporary
+administrator on a three-block draft:
+- Selecting “Production target paragraph” and adding a note stored
+  `{name:"core/paragraph", path:"2", anchorId:"12a2bcfa5d9c02ad", …}` and showed
+  the exact badge. Save draft persisted
+  `metadata.anchorId = 12a2bcfa5d9c02ad` with the post, matching the note.
+- Moving the block to the top through the code editor kept the badge exact at the
+  new path (“Paragraph · block 0”); rewriting all of its text also stayed exact
+  (the stable id wins over the content heuristic). Stripping the attribute falls
+  back to “(block changed)” as covered by the unit/dev checks.
+- The temporary post (and its notes) and administrator were deleted; production
+  is back to 1 user and 2 posts with `/`, `/admin/`, `/api/health` and
+  `/posts/testcom` at 200.
