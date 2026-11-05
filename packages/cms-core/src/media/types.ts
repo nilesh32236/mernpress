@@ -100,6 +100,22 @@ export interface UpdateMediaInput {
   description?: string | undefined;
 }
 
+/** Cursor-based bulk derivative regeneration (Media Library action). */
+export interface RegenerateMediaInput {
+  /** Last id from the previous batch; omit to start from the beginning. */
+  after?: string | undefined;
+  /** 1-50; defaults to 20. */
+  limit?: number | undefined;
+}
+
+export interface RegenerateMediaResult {
+  processed: number;
+  failed: number;
+  remaining: number;
+  /** Cursor for the next batch, or null when the library is exhausted. */
+  nextAfter: string | null;
+}
+
 /** A resolved, confinement-checked file ready to be streamed by the route. */
 export interface MediaFile {
   absolutePath: string;
@@ -118,6 +134,11 @@ export interface MediaService {
   restoreOriginal(principal: Principal, id: string): Promise<MediaDto>;
   /** Deletes the row (authoritative) and its files best-effort. */
   remove(principal: Principal, id: string): Promise<void>;
+  /** Rebuild derivatives for every image, in bounded batches. */
+  regenerateDerivatives(
+    principal: Principal,
+    input?: RegenerateMediaInput,
+  ): Promise<RegenerateMediaResult>;
   /** Public, unauthenticated file resolution with path confinement. */
   resolvePublicFile(id: string, name: string): Promise<MediaFile>;
 }

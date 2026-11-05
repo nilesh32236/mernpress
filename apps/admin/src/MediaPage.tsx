@@ -9,6 +9,7 @@ import {
   actionErrorMessage,
   deleteMedia,
   listMedia,
+  regenerateMediaDerivatives,
   updateMedia,
   uploadMedia,
   type AuthUser,
@@ -454,6 +455,40 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
     return () => window.removeEventListener(INFINITE_SCROLL_EVENT, sync);
   }, []);
 
+  /** Rebuild WebP/AVIF derivatives for the whole library, in bounded batches. */
+  async function regenerateImageSizes(): Promise<void> {
+    if (regenerating) return;
+    setRegenerating(true);
+    setNotice(null);
+    setRegenProgress('Starting…');
+    let after: string | undefined;
+    let processed = 0;
+    let failed = 0;
+    try {
+      for (;;) {
+        const batch = await regenerateMediaDerivatives({
+          ...(after ? { after } : {}),
+          limit: 20,
+        });
+        processed += batch.processed;
+        failed += batch.failed;
+        setRegenProgress(`Regenerated ${processed} image(s)${failed ? `, ${failed} failed` : ''}…`);
+        if (!batch.nextAfter) break;
+        after = batch.nextAfter;
+      }
+      setNotice({
+        tone: failed > 0 ? 'warning' : 'success',
+        text: `Regenerated ${processed} image(s)${failed > 0 ? `; ${failed} failed` : ''}.`,
+      });
+      setReloadKey((value) => value + 1);
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setRegenerating(false);
+      setRegenProgress(null);
+    }
+  }
+
   const showAuthor = !hiddenColumns.has('author');
   const showParent = !hiddenColumns.has('parent');
   const showDate = !hiddenColumns.has('date');
@@ -472,6 +507,8 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [uploads, setUploads] = useState<UploadJob[]>([]);
   const [reloadKey, setReloadKey] = useState(0);
+  const [regenerating, setRegenerating] = useState(false);
+  const [regenProgress, setRegenProgress] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadKey = useRef(0);
@@ -705,6 +742,20 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
         >
           Add Media File
         </button>
+        <button
+          type="button"
+          className="button media-regenerate"
+          onClick={() => void regenerateImageSizes()}
+          disabled={regenerating}
+          title="Rebuild the WebP and AVIF sizes stored for every image"
+        >
+          {regenerating ? 'Regenerating…' : 'Regenerate image sizes'}
+        </button>
+        {regenProgress ? (
+          <span className="media-regenerate-progress" role="status">
+            {regenProgress}
+          </span>
+        ) : null}
         <input
           ref={fileInputRef}
           id="media-upload-input"

@@ -4140,3 +4140,25 @@ administrator on a three-block draft:
 - The temporary post (and its notes) and administrator were deleted; production
   is back to 1 user and 2 posts with `/`, `/admin/`, `/api/health` and
   `/posts/testcom` at 200.
+
+### 2026-11-05 — WordPress feature-gap research + bulk media regeneration
+
+- Added the cited research report `docs/research/wordpress-feature-gaps.md`:
+  what core provides, where it stops, official plugin install evidence
+  (Regenerate Thumbnails 1M+, WP Mail SMTP 4M+, Yoast 10M+, UpdraftPlus 4M+,
+  Wordfence 5M+, FileBird 200k+, Real Media Library 100k+, Polylang 900k+,
+  CookieYes 1M+, Site Kit 5M+, LiteSpeed 7M+), the AVIF conversion gap quoted
+  from the Make/Core announcement, and a P1/P2 roadmap mapped to MERNPress.
+- Implemented the highest-priority actionable item: **bulk media derivative
+  regeneration**. `POST /api/admin/media/regenerate` (cursor batches of ≤50,
+  `content.create`) rebuilds WebP+AVIF derivatives for every image, updates
+  the `derivatives` JSON and reports processed/failed/remaining/nextAfter.
+  Media Library gains “Regenerate image sizes” with progress and a failure
+  count; missing canonical files fail per item without aborting the batch.
+- ADR 0047 and `docs/architecture/media.md` document storage, sizes, the batch
+  contract and the fact that regeneration re-encodes from the canonical file.
+- Tests: API rebuild of a deleted derivative, cursor walk across batches,
+  missing-file failure isolation, anonymous/subscriber denial and body
+  validation; admin button loop with two batches and the combined notice.
+- Validation: 841 unit/integration tests (API 506, admin 224, web 38,
+  block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.

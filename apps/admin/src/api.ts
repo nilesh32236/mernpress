@@ -1930,6 +1930,30 @@ export async function listMedia(params: MediaListParams = {}): Promise<Paged<Med
   return readJson<Paged<MediaItem>>(response);
 }
 
+export interface MediaRegenerateResult {
+  processed: number;
+  failed: number;
+  remaining: number;
+  nextAfter: string | null;
+}
+
+export async function regenerateMediaDerivatives(
+  input: { after?: string; limit?: number } = {},
+): Promise<MediaRegenerateResult> {
+  const response = await fetch('/api/admin/media/regenerate', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify(input),
+  });
+  return readJson<MediaRegenerateResult>(response);
+}
+
 export async function getMedia(id: string): Promise<MediaItem> {
   const response = await fetch(`/api/admin/media/${encodeURIComponent(id)}`, {
     method: 'GET',

@@ -21,6 +21,8 @@ import {
   type MediaFile,
   type MediaListQuery,
   type MediaService,
+  type RegenerateMediaInput,
+  type RegenerateMediaResult,
   type UpdateMediaInput,
   type UploadMediaInput,
 } from './types.js';
@@ -534,6 +536,71 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
     };
   }
 
+  /**
+   * Rebuild every configured derivative from the canonical stored file. This is
+   * the capability WordPress leaves to plugins (Regenerate Thumbnails): media
+   * uploaded before a size/format change, or imported from elsewhere, can be
+   * brought up to date without re-uploading. Batched with an id cursor so a
+   * large library neither times out nor holds one transaction for minutes.
+   */
+  async function regenerateDerivatives(
+    principal: Principal,
+    input: RegenerateMediaInput = {},
+  ): Promise<RegenerateMediaResult> {
+    requireCapability(principal, 'content.create');
+    const limit = Math.min(50, Math.max(1, Math.trunc(input.limit ?? 20)));
+    const rows = await prisma.mediaItem.findMany({
+      where: {
+        mimeType: { startsWith: 'image/' },
+        ...(input.after ? { id: { gt: input.after } } : {}),
+      },
+      orderBy: { id: 'asc' },
+      take: limit,
+      select: { id: true, fileName: true, storagePath: true },
+    });
+
+    let processed = 0;
+    let failed = 0;
+    let lastId: string | null = null;
+    for (const row of rows) {
+      lastId = row.id;
+      try {
+        const mainPath = path.resolve(storageRoot, row.storagePath);
+        if (!mainPath.startsWith(`${storageRoot}${path.sep}`)) {
+          throw new Error('Stored path is outside the media root');
+        }
+        const dir = path.dirname(mainPath);
+        const base = row.fileName.replace(/\.[^.]+$/, '');
+        const relativeDir = path.posix.dirname(row.storagePath);
+        const generated = await writeDerivatives(mainPath, base, dir, relativeDir);
+        await prisma.mediaItem.update({
+          where: { id: row.id },
+          data: { derivatives: generated.derivatives as Prisma.InputJsonValue },
+        });
+        processed += 1;
+      } catch (error) {
+        failed += 1;
+        logger?.warn('media derivative regeneration failed', {
+          id: row.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    const remaining =
+      lastId === null
+        ? 0
+        : await prisma.mediaItem.count({
+            where: { mimeType: { startsWith: 'image/' }, id: { gt: lastId } },
+          });
+    return {
+      processed,
+      failed,
+      remaining,
+      nextAfter: remaining > 0 ? lastId : null,
+    };
+  }
+
   async function get(principal: Principal, id: string): Promise<MediaDto> {
     requireCapability(principal, 'content.read.any');
     const row = await prisma.mediaItem.findUnique({ where: { id } });
@@ -812,5 +879,15 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
     };
   }
 
-  return { upload, list, get, update, editImage, restoreOriginal, remove, resolvePublicFile };
+  return {
+    upload,
+    list,
+    get,
+    update,
+    editImage,
+    restoreOriginal,
+    remove,
+    resolvePublicFile,
+    regenerateDerivatives,
+  };
 }

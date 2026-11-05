@@ -134,6 +134,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-094 | 2026-11-05 | Stable block anchors for editor notes: `BlockCanvas.ensureSelectedBlockAnchor` assigns a random 16-hex id to the selected block's `metadata.anchorId` (written through the controlled block tree because the provider maps client ids) and returns it; the note stores it as `post_notes.block_anchor_id` (migration `add_note_block_anchor_id`). Resolution prefers an id match (exact even after moves/rewrites) and falls back to the hash/text heuristic for legacy notes or a removed attribute. `metadata.anchorId` is excluded from the structure-lock signature; other metadata remains structural. The API validates the id as 16 hex characters and stores it with the anchor. | accepted | [ADR 0045](docs/adr/0045-editor-notes.md) |
 
+| D-095 | 2026-11-05 | Bulk media derivative regeneration: `MediaService.regenerateDerivatives` walks image rows by id cursor in batches (default 20, max 50), rebuilds WebP + AVIF derivatives from the canonical file, updates the `derivatives` JSON and reports processed/failed/remaining/nextAfter. `POST /api/admin/media/regenerate` requires `content.create`; the Media Library button loops the batches with progress and a failure count. Missing files fail per item without aborting. No schema change; canonical files are never modified. Closes the gap identified in `docs/research/wordpress-feature-gaps.md` (core does not convert existing media). | accepted | [ADR 0047](docs/adr/0047-bulk-media-regeneration.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

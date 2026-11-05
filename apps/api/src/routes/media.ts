@@ -55,6 +55,13 @@ const updateMediaSchema = z
   })
   .strict();
 
+const regenerateSchema = z
+  .object({
+    after: uuid.optional(),
+    limit: z.number().int().min(1).max(50).optional(),
+  })
+  .strict();
+
 const uploadFieldSchema = z.object({
   altText: z.string().max(500).optional(),
   caption: z.string().max(2000).optional(),
@@ -218,6 +225,17 @@ export function registerMediaRoutes(app: FastifyInstance, options: MediaRouteOpt
       }
     },
   );
+
+  app.post('/api/admin/media/regenerate', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const body = regenerateSchema.parse(request.body ?? {});
+      return await media.regenerateDerivatives(ctx.principal, body);
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
 
   app.post('/api/admin/media/:id/restore', async (request, reply) => {
     const ctx = await guard(request, reply);

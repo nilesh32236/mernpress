@@ -31,6 +31,7 @@ owner decision.
 | Login | D/P | WordPress login layout, error copy, Remember Me, Lost Password form, reset-token screen |
 | Dashboard + widgets | D/P | Welcome, Site Health, At a Glance, Activity, Quick Draft, Events and News |
 | Screen Options | D/P | Per-user columns, items per page, view mode, dashboard boxes/columns and editor panel visibility; stored on the user and synced across browsers |
+| Media → Bulk regeneration | D/P | “Regenerate image sizes” rebuilds WebP + AVIF derivatives for existing media in bounded batches; WordPress needs the Regenerate Thumbnails plugin |
 | Editor → Notes / All notes | D/P | Per-post threads with author names, timestamps, replies, resolve/reopen and an unresolved count; root notes are anchored to the selected block with a stable metadata id and stay exact when it moves or its text changes (ADR 0045), plus two-stage deletion (trash, restore, purge) with an audit trail and a configurable retention sweep, optional note/reply/deletion mail with a per-post override, and @username mention notifications with an autocomplete picker (ADR 0045) |
 | Posts list / editor / Quick Edit / revisions / preview | D/P | Row actions, Bulk edit/Move to Trash, WordPress sidebar order and Options menu; Quick Edit has date/author/terms/password/private/comments/sticky; Bulk Edit has terms/author/comments/sticky/format/status |
 | Safe client editing | D/P | Per-post block-structure lock enforced by the API (409 on structural edits) while text edits remain allowed; editor banner, panel and canvas guard. WordPress has no core equivalent |

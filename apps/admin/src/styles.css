@@ -13024,3 +13024,10 @@ a.glance-chip:hover {
   color: #646970;
   font-size: 11px;
 }
+
+/* Media Library: bulk derivative regeneration. */
+.media-regenerate-progress {
+  align-self: center;
+  color: #646970;
+  font-size: 12px;
+}

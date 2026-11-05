@@ -5,6 +5,7 @@ import {
   deleteMedia,
   editMediaImage,
   listMedia,
+  regenerateMediaDerivatives,
   restoreMediaOriginal,
   updateMedia,
   uploadMedia,
@@ -19,6 +20,7 @@ vi.mock('./api.js', async (importOriginal) => {
   return {
     ...actual,
     listMedia: vi.fn(),
+    regenerateMediaDerivatives: vi.fn(),
     getMedia: vi.fn(),
     uploadMedia: vi.fn(),
     updateMedia: vi.fn(),
@@ -91,6 +93,12 @@ beforeEach(() => {
   vi.mocked(deleteMedia).mockResolvedValue(undefined);
   vi.mocked(editMediaImage).mockResolvedValue(makeMedia());
   vi.mocked(restoreMediaOriginal).mockResolvedValue(makeMedia());
+  vi.mocked(regenerateMediaDerivatives).mockResolvedValue({
+    processed: 1,
+    failed: 0,
+    remaining: 0,
+    nextAfter: null,
+  });
   // jsdom has no 2D canvas; the editor still renders its controls.
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
 });
@@ -314,5 +322,22 @@ describe('media library page', () => {
 
     fireEvent.click(within(editor).getByRole('button', { name: 'Cancel' }));
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Edit image' })).toBeNull());
+  });
+  it('regenerates image sizes in batches and reports the total', async () => {
+    vi.mocked(regenerateMediaDerivatives)
+      .mockResolvedValueOnce({ processed: 2, failed: 0, remaining: 1, nextAfter: 'm2' })
+      .mockResolvedValueOnce({ processed: 1, failed: 1, remaining: 0, nextAfter: null });
+    render(<MediaPage user={admin} />);
+    await screen.findByRole('button', { name: 'View sunset.png' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Regenerate image sizes' }));
+
+    await waitFor(() => expect(vi.mocked(regenerateMediaDerivatives)).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(regenerateMediaDerivatives)).toHaveBeenNthCalledWith(1, { limit: 20 });
+    expect(vi.mocked(regenerateMediaDerivatives)).toHaveBeenNthCalledWith(2, {
+      after: 'm2',
+      limit: 20,
+    });
+    expect(await screen.findByText('Regenerated 3 image(s); 1 failed.')).toBeDefined();
   });
 });

@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { readdir, readFile } from 'node:fs/promises';
+import { readdir, readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import type { FastifyInstance } from 'fastify';
 import sharp from 'sharp';
@@ -1088,6 +1088,123 @@ describe('admin media library', () => {
       });
       expect(deleted.statusCode).toBe(204);
       await expect(readFile(backupPath)).rejects.toThrow();
+    });
+  });
+  describe('bulk derivative regeneration', () => {
+    async function regenerate(headers: Record<string, string>, body: Record<string, unknown> = {}) {
+      return app.inject({
+        method: 'POST',
+        url: '/api/admin/media/regenerate',
+        headers: { ...headers, 'content-type': 'application/json' },
+        payload: body,
+      });
+    }
+
+    it('rebuilds missing derivative files and reports the batch', async () => {
+      const created = await createMedia({
+        filename: 'regen.png',
+        contentType: 'image/png',
+        data: png,
+      });
+      const derivativeUrl = created.derivatives['600'];
+      expect(derivativeUrl).toBeTruthy();
+      const derivativeName = path.basename(derivativeUrl!);
+      const derivativePath = await findStoredFile(storageRoot, derivativeName);
+      await rm(derivativePath);
+      await expect(readFile(derivativePath)).rejects.toThrow();
+
+      const response = await regenerate(adminHeaders(), { limit: 10 });
+      expect(response.statusCode).toBe(200);
+      const result = response.json() as {
+        processed: number;
+        failed: number;
+        remaining: number;
+        nextAfter: string | null;
+      };
+      expect(result.processed).toBe(1);
+      expect(result.failed).toBe(0);
+      expect(result.remaining).toBe(0);
+      expect(result.nextAfter).toBeNull();
+
+      const rebuilt = await readFile(derivativePath);
+      expect(rebuilt.length).toBeGreaterThan(0);
+      const listed = await app.inject({
+        method: 'GET',
+        url: `/api/admin/media/${created.id}`,
+        headers: { cookie: adminCookie },
+      });
+      expect((listed.json() as MediaShape).derivatives['600']).toBe(derivativeUrl);
+    });
+
+    it('walks the library with a cursor and survives a missing canonical file', async () => {
+      const first = await createMedia({
+        filename: 'regen-a.png',
+        contentType: 'image/png',
+        data: png,
+      });
+      const second = await createMedia({
+        filename: 'regen-b.png',
+        contentType: 'image/png',
+        data: png,
+      });
+      const third = await createMedia({
+        filename: 'regen-c.png',
+        contentType: 'image/png',
+        data: png,
+      });
+
+      const batchOne = await regenerate(adminHeaders(), { limit: 2 });
+      expect(batchOne.statusCode).toBe(200);
+      const one = batchOne.json() as {
+        processed: number;
+        failed: number;
+        remaining: number;
+        nextAfter: string | null;
+      };
+      expect(one.processed).toBe(2);
+      expect(one.remaining).toBe(1);
+      expect(one.nextAfter).toBeTruthy();
+
+      const batchTwo = await regenerate(adminHeaders(), {
+        limit: 2,
+        after: one.nextAfter,
+      });
+      const two = batchTwo.json() as {
+        processed: number;
+        failed: number;
+        remaining: number;
+        nextAfter: string | null;
+      };
+      expect(two.processed).toBe(1);
+      expect(two.remaining).toBe(0);
+      expect(two.nextAfter).toBeNull();
+
+      // Remove a canonical file: the batch reports a failure and keeps going.
+      const thirdPath = await findStoredFile(storageRoot, third.fileName);
+      await rm(thirdPath);
+      const failedBatch = await regenerate(adminHeaders(), {
+        limit: 50,
+        after: [first.id, second.id, third.id].sort()[1],
+      });
+      expect(failedBatch.statusCode).toBe(200);
+      expect((failedBatch.json() as { failed: number }).failed).toBeGreaterThanOrEqual(1);
+    });
+
+    it('rejects anonymous and subscriber callers and validates the body', async () => {
+      const anonymous = await app.inject({
+        method: 'POST',
+        url: '/api/admin/media/regenerate',
+        headers: { origin: ADMIN_ORIGIN, 'content-type': 'application/json' },
+        payload: {},
+      });
+      expect(anonymous.statusCode).toBe(401);
+
+      const subscriber = await createSession('regen-subscriber', 'subscriber');
+      const forbidden = await regenerate(sessionHeaders(subscriber.session));
+      expect(forbidden.statusCode).toBe(403);
+
+      const invalid = await regenerate(adminHeaders(), { limit: 500 });
+      expect(invalid.statusCode).toBe(400);
     });
   });
 });
