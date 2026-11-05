@@ -35,7 +35,7 @@ owner decision.
 | Media library / grid / list / details | D/P | Upload, derivatives, alt text, grid/list toggle, Edit Image (rotate/flip/crop/scale/undo/redo/restore) |
 | Pages list / editor | D/P | Same editor chrome as posts |
 | Comments | D/P | Status tabs, moderation, edit, bulk, dashboard widget, e-mail notifications when mail is configured |
-| Appearance → Themes | D/P | Grid, details dialog, search, Customize |
+| Appearance → Themes | D/P | Store-backed grid, details dialog, search, Customize; two installable theme packages (classic + Journal) with real design switching |
 | Appearance → Editor | D/P | Design sidebar, template list, live canvas |
 | Appearance → Fonts | D/P | Library, weights, samples, unavailable upload/install |
 | Plugins → Installed | D/P | Filters, bulk, active edge, auto-update column, View details, Delete (inactive only, removes the package directory); plugins can ship a real runtime module (Auto Excerpt) |

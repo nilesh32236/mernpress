@@ -41,8 +41,15 @@ describe('appearance themes api', () => {
       themes: Array<{ id: string; active: boolean; name: string; tags: string[] }>;
     };
     expect(body.active).toBe('mernpress');
-    expect(body.themes).toHaveLength(1);
-    expect(body.themes[0]).toMatchObject({ id: 'mernpress', active: true, name: 'MERNPress' });
+    expect(body.themes).toHaveLength(2);
+    expect(body.themes.find((theme) => theme.id === 'mernpress')).toMatchObject({
+      active: true,
+      name: 'MERNPress',
+    });
+    expect(body.themes.find((theme) => theme.id === 'journal')).toMatchObject({
+      active: false,
+      name: 'MERNPress Journal',
+    });
     expect(body.themes[0]!.tags.length).toBeGreaterThan(3);
   });
 
@@ -56,6 +63,26 @@ describe('appearance themes api', () => {
     });
     expect(activated.statusCode).toBe(200);
     expect((activated.json() as { active: string }).active).toBe('mernpress');
+
+    const journal = await app.inject({
+      method: 'POST',
+      url: '/api/admin/themes/journal/activate',
+      headers: noBody,
+    });
+    expect(journal.statusCode).toBe(200);
+    expect((journal.json() as { active: string }).active).toBe('journal');
+
+    // The public settings expose the active theme tokens only.
+    const site = await app.inject({ method: 'GET', url: '/api/public/site' });
+    expect(site.statusCode).toBe(200);
+    const publicTheme = (site.json() as { theme: { id: string; layout: string; tokens: unknown } })
+      .theme;
+    expect(publicTheme).toMatchObject({ id: 'journal', layout: 'journal' });
+    expect(publicTheme.tokens).toMatchObject({
+      background: '#f7f2e8',
+      headingFont: "Georgia, 'Times New Roman', serif",
+      headerAlign: 'center',
+    });
 
     const missing = await app.inject({
       method: 'POST',

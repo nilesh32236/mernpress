@@ -49,6 +49,27 @@ export interface PublicPost {
   terms: { categories: PublicTerm[]; tags: PublicTerm[] };
 }
 
+export interface ThemeTokens {
+  background: string;
+  surface: string;
+  text: string;
+  muted: string;
+  accent: string;
+  headingFont: string;
+  bodyFont: string;
+  contentWidth: string;
+  radius: string;
+  headerAlign: 'left' | 'center';
+}
+
+/** Public theme data: identity, layout variant and design tokens only. */
+export interface PublicTheme {
+  id: string;
+  name: string;
+  layout: 'classic' | 'journal';
+  tokens: ThemeTokens;
+}
+
 export interface SiteSettings {
   siteTitle: string;
   tagline: string;
@@ -57,6 +78,7 @@ export interface SiteSettings {
   rssUseExcerpt: boolean;
   permalinkBase: string;
   showAvatars: boolean;
+  theme?: PublicTheme | null;
 }
 
 export function postPath(slug: string, base = 'posts'): string {
@@ -143,7 +165,9 @@ export async function listPublishedPosts(page = 1, perPage = 10): Promise<PostsP
 
 /** Backwards-compatible alias used by sitemap generation. */
 export async function getSiteSettings(): Promise<SiteSettings> {
-  const res = await apiFetch('/api/public/site');
+  // Site settings include the active theme and reading visibility; a stale
+  // cache would keep serving the previous theme for up to a minute.
+  const res = await fetch(`${apiUrl()}/api/public/site`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`Failed to load site settings: ${res.status}`);
   return (await res.json()) as SiteSettings;
 }

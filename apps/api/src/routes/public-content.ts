@@ -1,4 +1,9 @@
-import { ContentError, type ContentService, type OptionService } from '@mernpress/cms-core';
+import {
+  ContentError,
+  type ContentService,
+  type OptionService,
+  type ThemeService,
+} from '@mernpress/cms-core';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import {
@@ -15,6 +20,7 @@ const termParamSchema = z
 interface PublicRouteOptions {
   content: ContentService;
   options: OptionService;
+  themes: ThemeService;
 }
 
 function validationMessage(issues: Array<{ path: PropertyKey[]; message: string }>): string {
@@ -30,7 +36,7 @@ export function registerPublicContentRoutes(
   app: FastifyInstance,
   options: PublicRouteOptions,
 ): void {
-  const { content, options: optionService } = options;
+  const { content, options: optionService, themes } = options;
 
   async function handle(
     request: FastifyRequest,
@@ -53,7 +59,15 @@ export function registerPublicContentRoutes(
   // Public-safe site settings (site title, tagline, search visibility, feed
   // preferences). No credentials are exposed.
   app.get('/api/public/site', async (request, reply) =>
-    handle(request, reply, async () => optionService.getPublicSettings()),
+    handle(request, reply, async () => {
+      const [settings, theme] = await Promise.all([
+        optionService.getPublicSettings(),
+        themes.active().catch(() => null),
+      ]);
+      // Public theme data only: identity, layout variant and design tokens.
+      // Theme packages never expose storage paths or server code here.
+      return { ...settings, theme };
+    }),
   );
 
   app.get('/api/public/posts', async (request, reply) =>

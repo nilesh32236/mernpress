@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" role="img" aria-label="MERNPress Journal theme preview">
+  <rect width="1200" height="900" fill="#f7f2e8"/>
+  <rect x="0" y="0" width="1200" height="140" fill="#fffdf8"/>
+  <text x="600" y="86" text-anchor="middle" font-family="Georgia, serif" font-size="46" fill="#1f1b16">MERNPress Journal</text>
+  <text x="600" y="260" text-anchor="middle" font-family="Georgia, serif" font-size="64" fill="#1f1b16">Notes on slow software</text>
+  <text x="600" y="310" text-anchor="middle" font-family="Manrope, sans-serif" font-size="24" fill="#6b6157">A calm, editorial theme for long-form writing</text>
+  <rect x="250" y="380" width="700" height="1" fill="#d9cdbb"/>
+  <text x="250" y="450" font-family="Manrope, sans-serif" font-size="22" fill="#6b6157">November 5, 2026 · 4 minute read</text>
+  <rect x="250" y="490" width="700" height="14" rx="4" fill="#e4d9c9"/>
+  <rect x="250" y="524" width="660" height="14" rx="4" fill="#e4d9c9"/>
+  <rect x="250" y="558" width="690" height="14" rx="4" fill="#e4d9c9"/>
+  <rect x="250" y="592" width="420" height="14" rx="4" fill="#e4d9c9"/>
+  <rect x="250" y="660" width="700" height="1" fill="#d9cdbb"/>
+  <text x="250" y="740" font-family="Georgia, serif" font-size="40" fill="#1f1b16">Another field note</text>
+  <text x="250" y="790" font-family="Manrope, sans-serif" font-size="22" fill="#6b6157">Serif headings, a wider measure and a warm surface.</text>
+</svg>

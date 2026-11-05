@@ -10,6 +10,12 @@
   --site-muted: #686868;
   --site-border: #dddddd;
   --site-accent-6: rgba(17, 17, 17, 0.2);
+  --site-bg: #ffffff;
+  --site-surface: #ffffff;
+  --site-accent: #111111;
+  --site-heading-font: var(--font-manrope), Manrope, sans-serif;
+  --site-body-font: var(--font-manrope), Manrope, sans-serif;
+  --site-radius: 0px;
 }
 
 *,
@@ -25,9 +31,9 @@ body {
 }
 
 body {
-  background: #ffffff;
+  background: var(--site-bg);
   color: var(--site-text);
-  font-family: var(--font-manrope), Manrope, sans-serif;
+  font-family: var(--site-body-font), var(--font-manrope), Manrope, sans-serif;
   font-size: 22px;
   font-weight: 300;
   line-height: 1.4;
@@ -113,6 +119,17 @@ a:hover {
   width: 100%;
   max-width: var(--content-width);
   margin: 0 auto;
+}
+
+.site-title,
+.blog-title,
+.entry-title,
+.post-title,
+.entry-content h1,
+.entry-content h2,
+.entry-content h3,
+.entry-content h4 {
+  font-family: var(--site-heading-font);
 }
 
 .blog-title {
@@ -1044,4 +1061,70 @@ html.has-public-admin-bar {
   .comment-list .children {
     margin-left: 24px;
   }
+}
+
+/* ==========================================================================
+   Theme package: MERNPress Journal (layout = "journal").
+   Tokens come from the theme manifest; these rules only define the variant.
+   ========================================================================== */
+
+[data-layout='journal'] .site-header {
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  padding: 34px 24px 22px;
+  border-bottom: 3px double var(--site-border);
+  background: var(--site-surface);
+  text-align: center;
+}
+
+[data-layout='journal'] .site-title {
+  font-size: 30px;
+  letter-spacing: 0.5px;
+}
+
+[data-layout='journal'] .site-nav {
+  gap: 22px;
+  font-size: 16px;
+}
+
+[data-layout='journal'] .site-main {
+  margin-top: 44px;
+}
+
+[data-layout='journal'] .blog-title,
+[data-layout='journal'] .entry-title {
+  font-weight: 400;
+  letter-spacing: -0.5px;
+}
+
+[data-layout='journal'] .post-list {
+  border-top: 1px solid var(--site-border);
+}
+
+[data-layout='journal'] .post-item {
+  padding: 44px 0;
+  border-bottom: 1px solid var(--site-border);
+}
+
+[data-layout='journal'] .post-featured img,
+[data-layout='journal'] .entry-featured img {
+  border-radius: var(--site-radius);
+}
+
+[data-layout='journal'] .entry-content a,
+[data-layout='journal'] .entry-meta a,
+[data-layout='journal'] .entry-tags a {
+  color: var(--site-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+[data-layout='journal'] .site-footer {
+  border-top: 1px solid var(--site-border);
+  background: var(--site-surface);
+}
+
+[data-layout='journal'] .comment-body {
+  border-radius: var(--site-radius);
 }

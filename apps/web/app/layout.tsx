@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
 import { Manrope } from 'next/font/google';
 import { getSiteSettings, listPublicPosts } from '@/lib/api';
@@ -59,9 +59,29 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     pageLinks = [];
   }
   const siteTitle = settings?.siteTitle ?? 'MERNPress';
+  const theme = settings?.theme ?? null;
+  const themeStyle = theme
+    ? ({
+        '--site-bg': theme.tokens.background,
+        '--site-surface': theme.tokens.surface,
+        '--site-text': theme.tokens.text,
+        '--site-muted': theme.tokens.muted,
+        '--site-accent': theme.tokens.accent,
+        '--site-heading-font': theme.tokens.headingFont,
+        '--site-body-font': theme.tokens.bodyFont,
+        '--content-width': theme.tokens.contentWidth,
+        '--site-radius': theme.tokens.radius,
+      } as CSSProperties)
+    : undefined;
 
   return (
-    <html lang="en" className={manrope.variable}>
+    <html
+      lang="en"
+      className={manrope.variable}
+      data-theme={theme?.id}
+      data-layout={theme?.layout}
+      style={themeStyle}
+    >
       <body>
         <JsonLd
           data={siteGraph(siteUrl(), {

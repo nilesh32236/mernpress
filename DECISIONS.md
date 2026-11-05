@@ -93,6 +93,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-067 | 2026-11-05 | Plugins become real trusted local modules: a package may ship `plugin.mjs` exporting `activate(api)`/`deactivate(api)` with a narrow API (typed hooks, plugin-scoped options, logger, identity). Activation loads the module before recording it active (422 `PLUGIN_ACTIVATION_FAILED` on error); deactivation/deletion dispose every registered hook; startup restores active modules and drops failures without taking the API down; shutdown stops all. Plugins remain trusted, unsandboxed server code with no marketplace/upload. The first plugin is Auto Excerpt, which fills an empty excerpt from the post body and never overwrites authored excerpts. Developer guide: `docs/architecture/plugin-runtime.md`. | accepted | [ADR 0027](docs/adr/0027-trusted-plugin-runtime.md) |
 
+| D-068 | 2026-11-05 | Themes become packages on disk (`themes/<id>/theme.json`) in a writable store (`THEME_STORAGE_DIR`, seeded once from the release `themes/` directory). A manifest carries identity, tags, features, fonts, a closed layout variant (`classic`/`journal`) and validated design tokens; the public layout injects tokens as CSS custom properties and `data-theme`/`data-layout`. `MERNPress` (classic) and `MERNPress Journal` (editorial) ship; activation is instant because site settings are fetched with `cache: 'no-store'`. Themes cannot execute code or add templates; update checks read the store. | accepted | [ADR 0028](docs/adr/0028-theme-packages.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

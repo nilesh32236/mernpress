@@ -3081,3 +3081,26 @@ MERNPress; activating Auto Excerpt and creating a body-only post returned a
 generated 124-character excerpt; the plugin was then deactivated, leaving Hello
 MERNPress as the only active plugin. The temporary post and administrator were
 deleted; `/`, `/admin/` and `/api/health` return 200.
+
+### 2026-11-05 — Theme packages and MERNPress Journal
+
+- Themes are now trusted packages on disk (`themes/<id>/theme.json`) in a
+  writable store (`THEME_STORAGE_DIR`), seeded once from the release `themes/`
+  directory behind `.initialized` (ADR 0028). Manifests carry identity,
+  tags/features, fonts, a closed `classic`/`journal` layout and validated design
+  tokens.
+- The public layout injects tokens as CSS custom properties and sets
+  `data-theme`/`data-layout`; `getSiteSettings` is now `cache: 'no-store'`, so
+  switching themes is immediately visible instead of waiting for a 60-second
+  cache.
+- Added **MERNPress Journal**: warm paper palette, centred serif masthead,
+  700 px measure, boxed post rules and accent links. The default MERNPress theme
+  is expressed as tokens (classic layout) so nothing changes when it is active.
+- Appearance → Themes, the update checker and the public settings API read the
+  store. A second screenshot (`theme-journal.svg`) ships in the admin.
+- Verified in the browser: Themes listed 2 with MERNPress active; activating
+  MERNPress Journal showed the new notice and the public page switched to
+  `data-theme="journal"`, background `rgb(247,242,232)`, Georgia headings and a
+  700 px column; switching back restored `data-theme="mernpress"`.
+- Validation: 667 unit/integration tests (API 419, admin 159, web 24,
+  block-system 65), 23 Playwright E2E tests and six builds pass.

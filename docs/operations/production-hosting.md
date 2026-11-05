@@ -383,3 +383,23 @@ start the release `plugins/` directory seeds an empty store once (marker
 `.initialized`); afterwards the store is authoritative. Deleting a plugin
 removes its directory, and a restart does not re-create it. Reinstalling is an
 operator action: copy the package directory back into the store.
+
+## Theme packages
+
+Themes follow the plugin-store model:
+
+```bash
+sudo mkdir -p /opt/mernpress/themes
+sudo chown mernpress:mernpress /opt/mernpress/themes
+```
+
+```bash
+THEME_STORAGE_DIR=/opt/mernpress/themes
+THEME_SEED_DIR=/opt/mernpress/current/themes
+```
+
+The release `themes/` directory seeds an empty store once. Activating a theme in
+Appearance → Themes is immediate: `/api/public/site` is fetched with
+`cache: 'no-store'`, so the public site renders the new tokens on the next
+request. Adding a theme is an operator copy into the store; there is no
+marketplace.

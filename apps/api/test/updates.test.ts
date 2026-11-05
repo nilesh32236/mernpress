@@ -92,6 +92,32 @@ describe('update checking against a manifest', () => {
           details: 'Details.',
         },
       ],
+      installedThemes: async () => [
+        {
+          id: 'mernpress',
+          name: 'MERNPress',
+          version: '0.2.0',
+          author: { name: 'MERNPress', url: null },
+          description: 'Theme.',
+          tags: [],
+          screenshot: '/theme-screenshot.png',
+          features: [],
+          fonts: [],
+          layout: 'classic',
+          tokens: {
+            background: '#fff',
+            surface: '#fff',
+            text: '#111',
+            muted: '#666',
+            accent: '#111',
+            headingFont: 'sans-serif',
+            bodyFont: 'sans-serif',
+            contentWidth: '645px',
+            radius: '0px',
+            headerAlign: 'left',
+          },
+        },
+      ],
       now: () => new Date('2026-11-04T10:00:00.000Z'),
       fetchImpl: async () =>
         new Response(
@@ -134,6 +160,32 @@ describe('update checking against a manifest', () => {
     const service = createUpdateService({
       prisma: app.database,
       manifestUrl: 'https://updates.example/manifest.json',
+      installedThemes: async () => [
+        {
+          id: 'mernpress',
+          name: 'MERNPress',
+          version: '0.2.0',
+          author: { name: 'MERNPress', url: null },
+          description: 'Theme.',
+          tags: [],
+          screenshot: '/theme-screenshot.png',
+          features: [],
+          fonts: [],
+          layout: 'classic',
+          tokens: {
+            background: '#fff',
+            surface: '#fff',
+            text: '#111',
+            muted: '#666',
+            accent: '#111',
+            headingFont: 'sans-serif',
+            bodyFont: 'sans-serif',
+            contentWidth: '645px',
+            radius: '0px',
+            headerAlign: 'left',
+          },
+        },
+      ],
       fetchImpl: async () =>
         new Response(JSON.stringify({ core: '0.1.0', themes: { mernpress: '0.0.9' } }), {
           status: 200,

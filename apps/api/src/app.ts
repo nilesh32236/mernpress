@@ -214,7 +214,12 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const comments = createCommentService({ prisma: database, mail });
   app.decorate('comments', comments);
 
-  const themes = createThemeService({ prisma: database });
+  const themes = createThemeService({
+    prisma: database,
+    themeDir: env.THEME_STORAGE_DIR,
+    seedDir: env.THEME_SEED_DIR,
+    logger: (message, meta) => app.log.warn({ ...meta }, message),
+  });
   app.decorate('themes', themes);
 
   const plugins = createPluginService({
@@ -240,6 +245,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     prisma: database,
     manifestUrl: env.UPDATE_MANIFEST_URL,
     installedPlugins: () => plugins.installed(),
+    installedThemes: () => themes.installed(),
   });
   app.decorate('updates', updates);
 
@@ -312,7 +318,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerMediaRoutes(app, { env, auth, media, storageRoot: env.MEDIA_STORAGE_DIR });
   registerAutosaveRoutes(app, { env, auth, autosave });
   registerAdminHealthRoutes(app, { env, auth, database });
-  registerPublicContentRoutes(app, { content, options: optionService });
+  registerPublicContentRoutes(app, { content, options: optionService, themes });
   registerCommentRoutes(app, { env, auth, comments });
   registerThemeRoutes(app, { env, auth, themes });
   registerPluginRoutes(app, { env, auth, plugins });

@@ -2,7 +2,7 @@ import type { DatabaseClient } from '@mernpress/database';
 import { requireCapability } from '../auth/capabilities.js';
 import { ContentError } from '../content/errors.js';
 import type { Principal } from '../content/types.js';
-import { THEMES } from '../themes/registry.js';
+import type { ThemeManifest } from '../themes/registry.js';
 import type { PluginManifest } from '../plugins/registry.js';
 
 /** Version of the running MERNPress codebase (package.json version). */
@@ -35,6 +35,8 @@ export interface UpdateServiceOptions {
   manifestUrl?: string | undefined;
   /** Installed plugin packages (store); empty when none are installed. */
   installedPlugins?: () => Promise<readonly PluginManifest[]>;
+  /** Installed theme packages (store); empty when none are installed. */
+  installedThemes?: () => Promise<readonly ThemeManifest[]>;
   fetchImpl?: typeof fetch;
   now?: () => Date;
 }
@@ -89,6 +91,7 @@ export function createUpdateService({
   prisma,
   manifestUrl,
   installedPlugins = async () => [],
+  installedThemes = async () => [],
   fetchImpl = fetch,
   now = () => new Date(),
 }: UpdateServiceOptions) {
@@ -121,7 +124,7 @@ export function createUpdateService({
       lastResult && typeof lastResult === 'object' && 'available' in lastResult
         ? (lastResult.available ?? {})
         : ((lastResult ?? {}) as Record<string, string>);
-    const pluginList = await installedPlugins();
+    const [pluginList, themeList] = await Promise.all([installedPlugins(), installedThemes()]);
     const items: UpdateItem[] = [
       {
         id: 'core',
@@ -132,7 +135,7 @@ export function createUpdateService({
         autoUpdates: false,
         status: 'current',
       },
-      ...THEMES.map<UpdateItem>((theme) => ({
+      ...themeList.map<UpdateItem>((theme) => ({
         id: theme.id,
         name: theme.name,
         type: 'theme',

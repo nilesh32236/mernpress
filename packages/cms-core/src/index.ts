@@ -191,7 +191,15 @@ export type {
 // ---- Appearance: installed themes (ADR 0011) ----
 export { createThemeService, type ThemeService } from './themes/service.js';
 export type { ThemeListResult, ThemeState } from './themes/service.js';
-export { THEMES, DEFAULT_THEME_ID, findTheme, type ThemeManifest } from './themes/registry.js';
+export {
+  DEFAULT_THEME_ID,
+  loadThemeManifests,
+  seedThemeStore,
+  validateThemeManifest,
+  type ThemeFont,
+  type ThemeManifest,
+  type ThemeTokens,
+} from './themes/registry.js';
 
 // ---- Plugins (ADR 0012) ----
 export {
