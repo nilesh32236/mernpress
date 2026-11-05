@@ -3239,3 +3239,13 @@ temporary administrator:
   rows.
 - Validation: 689 unit/integration tests (API 432, admin 166, web 26,
   block-system 65), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (mail delivery log):** release `20261105T092601Z-d4457a6`
+(current), migration `20261105091716_add_mail_log` applied
+(`mail_log_entries` verified). Production verification with a temporary
+administrator: Settings → Discussion showed "Transport: Not configured", the
+SMTP-unavailable explanation and "No mail has been sent yet."; the admin log
+endpoint returned 200 with an empty list (anonymous access is 401). No
+notification is attempted while SMTP is absent, so no rows are fabricated. The
+temporary administrator was deleted; production has 1 user, 0 mail log rows and
+0 redirects.
