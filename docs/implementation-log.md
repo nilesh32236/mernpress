@@ -4038,3 +4038,18 @@ root note and one reply:
   server value and PATCH payload.
 - Validation: 831 unit/integration tests (API 500, admin 220, web 38,
   block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.
+
+**Deployment (per-post notes override):** release `20261105T190450Z-2863ab0`
+(current), migration `20261105185127_add_post_notes_notify` applied
+(`posts.notes_notify boolean`). Production verification with a temporary
+administrator on a draft created with `notesNotify: false`:
+- The publish panel showed **Notes email** with exactly “Use Discussion
+  setting”, “Send”, “Do not send”, and the stored `false` rendered as “Do not
+  send”.
+- Choosing “Send” and Save draft returned `notesNotify: true` with “Changes
+  saved.”; choosing “Use Discussion setting” cleared it to `null`; a reload
+  showed the inherit state. The temporary post and administrator were deleted;
+  production is back to 1 user and 2 posts, with `/`, `/admin/`, `/api/health`
+  and `/posts/testcom` at 200. Production mail is unconfigured, so delivery
+  behaviour is covered by the in-memory transport suite (per-post off under
+  global on, per-post on under global off, null inherits, mentions included).
