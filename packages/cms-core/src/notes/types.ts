@@ -15,6 +15,11 @@ export interface NoteBlockAnchor {
   hash: string;
   /** Short plain-text fingerprint, used to tell "changed" from "removed". */
   text: string;
+  /**
+   * Stable id persisted in the block's `metadata.anchorId` attribute. Null for
+   * notes created before stable ids (they resolve by hash/path).
+   */
+  anchorId?: string | null | undefined;
 }
 
 /** A per-post editor note or a reply to a note thread. */

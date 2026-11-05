@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   anchorSummary,
+  blockAnchorId,
   blockHash,
   blockLabel,
   listBlockAnchors,
   resolveBlockAnchor,
+  withAnchorId,
 } from './blockAnchors.js';
 
 const MARKUP =
@@ -85,5 +87,70 @@ describe('block anchors', () => {
         '<!-- wp:paragraph --><p>Unrelated replacement.</p><!-- /wp:paragraph -->',
     );
     expect(resolveBlockAnchor(first, removed)).toEqual({ status: 'missing', anchor: null });
+  });
+  it('reads and writes the stable metadata.anchorId', () => {
+    const markup =
+      '<!-- wp:paragraph {"metadata":{"anchorId":"0123456789abcdef","bindings":{"content":{"source":"core/post-data"}}}} -->' +
+      '<p>Anchored</p><!-- /wp:paragraph -->';
+    const [anchored] = listBlockAnchors(markup);
+    expect(anchored?.anchorId).toBe('0123456789abcdef');
+    expect(blockAnchorId(anchored && { metadata: { anchorId: '0123456789abcdef' } })).toBe(
+      '0123456789abcdef',
+    );
+    expect(blockAnchorId({ metadata: { anchorId: 'not-an-id' } })).toBeNull();
+    expect(blockAnchorId({})).toBeNull();
+
+    const attrs = withAnchorId(
+      { metadata: { bindings: { content: { source: 'core/post-data' } } }, align: 'center' },
+      'fedcba9876543210',
+    );
+    expect(attrs).toEqual({
+      align: 'center',
+      metadata: {
+        bindings: { content: { source: 'core/post-data' } },
+        anchorId: 'fedcba9876543210',
+      },
+    });
+  });
+
+  it('resolves by stable id even when the block moved and its text changed', () => {
+    const saved = {
+      name: 'core/paragraph',
+      path: '1',
+      hash: '0123456789abcdef',
+      text: 'Original text',
+      anchorId: 'aaaabbbbccccdddd',
+    };
+    const anchors = [
+      {
+        name: 'core/heading',
+        path: '0',
+        hash: '1111111111111111',
+        text: 'Heading',
+        anchorId: null,
+        label: 'Heading',
+      },
+      {
+        name: 'core/paragraph',
+        path: '4',
+        hash: '9999999999999999',
+        text: 'Rewritten text',
+        anchorId: 'aaaabbbbccccdddd',
+        label: 'Paragraph',
+      },
+    ];
+    expect(resolveBlockAnchor(saved, anchors)).toMatchObject({
+      status: 'exact',
+      anchor: { path: '4' },
+    });
+
+    // A removed anchor id falls back to the content heuristic (same hash).
+    const withoutId = anchors.map((anchor) =>
+      anchor.anchorId === null ? anchor : { ...anchor, anchorId: null, hash: saved.hash },
+    );
+    expect(resolveBlockAnchor(saved, withoutId)).toMatchObject({
+      status: 'moved',
+      anchor: { path: '4' },
+    });
   });
 });

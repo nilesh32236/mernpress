@@ -481,24 +481,26 @@ model Option {
 /// Editor notes: per-post discussion threads with replies and a resolved flag.
 /// Notes are internal (never public) and require permission to edit the post.
 model PostNote {
-  id           String    @id @default(uuid(7)) @db.Uuid
-  postId       String    @map("post_id") @db.Uuid
-  authorId     String?   @map("author_id") @db.Uuid
-  parentId     String?   @map("parent_id") @db.Uuid
-  content      String    @db.Text
+  id            String    @id @default(uuid(7)) @db.Uuid
+  postId        String    @map("post_id") @db.Uuid
+  authorId      String?   @map("author_id") @db.Uuid
+  parentId      String?   @map("parent_id") @db.Uuid
+  content       String    @db.Text
   /// Optional block anchor (root notes only): block name, path and content hash.
-  blockName    String?   @map("block_name") @db.VarChar(100)
-  blockPath    String?   @map("block_path") @db.VarChar(100)
-  blockHash    String?   @map("block_hash") @db.VarChar(32)
+  blockName     String?   @map("block_name") @db.VarChar(100)
+  blockPath     String?   @map("block_path") @db.VarChar(100)
+  blockHash     String?   @map("block_hash") @db.VarChar(32)
   /// Short plain-text fingerprint used to distinguish "changed" from "removed".
-  blockText    String?   @map("block_text") @db.VarChar(200)
+  blockText     String?   @map("block_text") @db.VarChar(200)
+  /// Stable id stored in the block's metadata.anchorId attribute (root notes).
+  blockAnchorId String?   @map("block_anchor_id") @db.VarChar(32)
   /// Soft delete: set when the note is moved to Trash; cleared on restore.
-  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(6)
-  deletedById  String?   @map("deleted_by_id") @db.Uuid
-  resolvedAt   DateTime? @map("resolved_at") @db.Timestamptz(6)
-  resolvedById String?   @map("resolved_by_id") @db.Uuid
-  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(6)
+  deletedById   String?   @map("deleted_by_id") @db.Uuid
+  resolvedAt    DateTime? @map("resolved_at") @db.Timestamptz(6)
+  resolvedById  String?   @map("resolved_by_id") @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   post       Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
   author     User?      @relation("PostNoteAuthor", fields: [authorId], references: [id], onDelete: SetNull)

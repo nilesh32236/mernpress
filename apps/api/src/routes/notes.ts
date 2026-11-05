@@ -19,6 +19,11 @@ const blockAnchorSchema = z
       .max(100),
     hash: z.string().regex(/^[0-9a-f]{16}$/),
     text: z.string().max(200),
+    anchorId: z
+      .string()
+      .regex(/^[0-9a-f]{16}$/)
+      .nullable()
+      .optional(),
   })
   .strict();
 

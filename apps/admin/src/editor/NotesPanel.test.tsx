@@ -178,6 +178,7 @@ describe('editor notes panel', () => {
         path: '0',
         hash: '0123456789abcdef',
         text: 'First paragraph',
+        anchorId: null,
         label: 'Paragraph',
       },
       {
@@ -185,6 +186,7 @@ describe('editor notes panel', () => {
         path: '3',
         hash: 'fedcba9876543210',
         text: 'Moved paragraph',
+        anchorId: null,
         label: 'Paragraph',
       },
       {
@@ -192,6 +194,7 @@ describe('editor notes panel', () => {
         path: '2',
         hash: 'cccccccccccccccc',
         text: 'Heading text edited',
+        anchorId: null,
         label: 'Heading',
       },
     ];
@@ -302,5 +305,33 @@ describe('editor notes panel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Trash (1)' }));
     expect(screen.queryByRole('button', { name: 'Restore' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Delete permanently' })).toBeNull();
+  });
+  it('assigns a stable anchor id through prepareAnchor before saving', async () => {
+    const notes = state();
+    const selected = {
+      name: 'core/paragraph',
+      path: '1',
+      hash: '0123456789abcdef',
+      text: 'Target paragraph',
+      anchorId: null,
+    };
+    const prepared = { ...selected, anchorId: 'aaaabbbbccccdddd' };
+    const prepareAnchor = vi.fn(async () => prepared);
+    render(
+      <NotesPanel
+        postId="p1"
+        state={notes}
+        selectedAnchor={selected}
+        prepareAnchor={prepareAnchor}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('Add a note'), {
+      target: { value: 'Anchored with a stable id.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add note' }));
+
+    await waitFor(() => expect(prepareAnchor).toHaveBeenCalledWith(selected));
+    expect(notes.add).toHaveBeenCalledWith('Anchored with a stable id.', prepared);
   });
 });

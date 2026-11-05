@@ -4095,3 +4095,32 @@ administrator on a draft created with `notesNotify: false`:
 - The temporary posts and administrator were deleted; production is back to
   1 user and 2 posts with `/`, `/admin/`, `/api/health` and `/posts/testcom` at
   200.
+
+### 2026-11-05 — Stable block anchors for editor notes
+
+- Root notes can store `block_anchor_id` (migration `add_note_block_anchor_id`).
+  The anchor payload gains `anchorId` (16 hex, optional for legacy notes) and
+  the API validates it.
+- `BlockCanvas.ensureSelectedBlockAnchor` assigns a random id to the selected
+  block's `metadata.anchorId` when it has none, writing through the controlled
+  block tree (the provider keeps an external→internal client-id mapping, so a
+  store dispatch by external id silently missed). `NotesPanel` calls it via
+  `prepareAnchor` before saving an anchored note, so the id is saved with the
+  post.
+- Resolution prefers the stable id: a moved or text-rewritten block stays
+  `exact`; legacy notes and removed attributes fall back to hash/path/text
+  (`moved`, `changed`, `missing`).
+- `metadata.anchorId` is excluded from the structure-lock signature in
+  `packages/block-system/src/structure.ts`; other metadata keys (bindings) stay
+  structural, with tests for both.
+- Browser verification: selecting the target paragraph and adding a note stored
+  `anchorId 1330d51bbd8b131c`; Save draft persisted
+  `metadata.anchorId` with the same id. Moving the block to the top kept the
+  badge exact at the new path (block 0), rewriting all of its text kept it exact,
+  and stripping the attribute fell back to “(block changed)”. Temporary posts
+  and notes were deleted.
+- Tests: structure signature ignores only `metadata.anchorId`, anchor
+  read/write helpers, id-first resolution with heuristic fallback, panel
+  `prepareAnchor` flow, API persistence and invalid-id rejection.
+- Validation: 837 unit/integration tests (API 503, admin 223, web 38,
+  block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.

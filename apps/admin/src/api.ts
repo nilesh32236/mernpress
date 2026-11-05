@@ -1087,6 +1087,8 @@ export interface NoteBlockAnchor {
   hash: string;
   /** Short plain-text fingerprint, used to tell changed from removed. */
   text: string;
+  /** Stable id persisted in the block's metadata.anchorId (legacy notes: null). */
+  anchorId?: string | null;
 }
 
 export interface PostNote {

@@ -39,6 +39,7 @@ type NoteRow = {
   blockPath: string | null;
   blockHash: string | null;
   blockText: string | null;
+  blockAnchorId: string | null;
   createdAt: Date;
   resolvedAt: Date | null;
   deletedAt: Date | null;
@@ -56,6 +57,7 @@ function toAuthor(
 const BLOCK_NAME = /^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/;
 const BLOCK_PATH = /^\d+(?:\.\d+){0,9}$/;
 const BLOCK_HASH = /^[0-9a-f]{16}$/;
+const BLOCK_ANCHOR_ID = /^[0-9a-f]{16}$/;
 
 function normalizeBlockAnchor(value: unknown): NoteBlockAnchor {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
@@ -66,6 +68,13 @@ function normalizeBlockAnchor(value: unknown): NoteBlockAnchor {
   const path = typeof block['path'] === 'string' ? block['path'] : '';
   const hash = typeof block['hash'] === 'string' ? block['hash'] : '';
   const text = typeof block['text'] === 'string' ? block['text'] : '';
+  const anchorIdRaw = block['anchorId'];
+  const anchorId =
+    anchorIdRaw === undefined || anchorIdRaw === null
+      ? null
+      : typeof anchorIdRaw === 'string'
+        ? anchorIdRaw
+        : '';
   if (!BLOCK_NAME.test(name) || name.length > 100) {
     throw new ContentError('VALIDATION_ERROR', 'Invalid block name.', 400);
   }
@@ -78,7 +87,10 @@ function normalizeBlockAnchor(value: unknown): NoteBlockAnchor {
   if (text.length > 200) {
     throw new ContentError('VALIDATION_ERROR', 'Invalid block text.', 400);
   }
-  return { name, path, hash, text };
+  if (anchorId !== null && !BLOCK_ANCHOR_ID.test(anchorId)) {
+    throw new ContentError('VALIDATION_ERROR', 'Invalid block anchor id.', 400);
+  }
+  return { name, path, hash, text, anchorId };
 }
 
 function toNote(row: NoteRow): PostNote {
@@ -94,6 +106,7 @@ function toNote(row: NoteRow): PostNote {
             path: row.blockPath,
             hash: row.blockHash,
             text: row.blockText ?? '',
+            anchorId: row.blockAnchorId,
           }
         : null,
     author: toAuthor(row.author),
@@ -232,6 +245,7 @@ export function createNoteService({ prisma, mail }: NoteServiceOptions) {
         blockPath: block?.path ?? null,
         blockHash: block?.hash ?? null,
         blockText: block?.text ?? null,
+        blockAnchorId: block?.anchorId ?? null,
       },
       include: NOTE_INCLUDE,
     });

@@ -10,6 +10,7 @@ import type { NoteBlockAnchor } from '../api.js';
  * the block is gone.
  */
 export interface BlockAnchor extends NoteBlockAnchor {
+  anchorId: string | null;
   label: string;
 }
 
@@ -19,6 +20,29 @@ export interface AnchorResolution {
   status: AnchorStatus;
   /** The current block (null when missing). */
   anchor: BlockAnchor | null;
+}
+
+const ANCHOR_ID = /^[0-9a-f]{16}$/;
+
+/** Read the note anchor id from a parsed block's `metadata` attribute. */
+export function blockAnchorId(attrs: unknown): string | null {
+  if (!attrs || typeof attrs !== 'object' || Array.isArray(attrs)) return null;
+  const metadata = (attrs as Record<string, unknown>)['metadata'];
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return null;
+  const id = (metadata as Record<string, unknown>)['anchorId'];
+  return typeof id === 'string' && ANCHOR_ID.test(id) ? id : null;
+}
+
+/** Return attributes with `metadata.anchorId` set (other metadata preserved). */
+export function withAnchorId(
+  attrs: Record<string, unknown>,
+  anchorId: string,
+): Record<string, unknown> {
+  const metadata =
+    attrs['metadata'] && typeof attrs['metadata'] === 'object' && !Array.isArray(attrs['metadata'])
+      ? (attrs['metadata'] as Record<string, unknown>)
+      : {};
+  return { ...attrs, metadata: { ...metadata, anchorId } };
 }
 
 const BLOCK_LABEL_OVERRIDES: Record<string, string> = {
@@ -121,6 +145,7 @@ export function listBlockAnchors(markup: string): BlockAnchor[] {
         path,
         hash: blockHash(name, block.attrs, block.innerHTML),
         text: blockText(block.innerHTML),
+        anchorId: blockAnchorId(block.attrs),
         label: blockLabel(name),
       });
       walk(block.innerBlocks, path);
@@ -141,6 +166,13 @@ export function resolveBlockAnchor(
   saved: NoteBlockAnchor,
   anchors: BlockAnchor[],
 ): AnchorResolution {
+  // Stable ids win: the block may have moved or been edited, and the note still
+  // points at the same block. Legacy notes (no id) and removed anchors fall
+  // through to the content heuristic.
+  if (saved.anchorId) {
+    const byId = anchors.find((candidate) => candidate.anchorId === saved.anchorId);
+    if (byId) return { status: 'exact', anchor: byId };
+  }
   const exact = anchors.find(
     (candidate) =>
       candidate.path === saved.path &&

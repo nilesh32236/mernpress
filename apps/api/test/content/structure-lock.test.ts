@@ -21,6 +21,12 @@ const ADDED_BLOCK = BASE_CONTENT + '<!-- wp:paragraph --><p>Extra block.</p><!--
 const CHANGED_ATTRS =
   '<!-- wp:heading {"level":3} --><h2>Locked title</h2><!-- /wp:heading -->' +
   '<!-- wp:paragraph --><p>Body text.</p><!-- /wp:paragraph -->';
+const ANCHOR_ID_ADDED =
+  '<!-- wp:heading {"level":2} --><h2>Locked title</h2><!-- /wp:heading -->' +
+  '<!-- wp:paragraph {"metadata":{"anchorId":"0123456789abcdef"}} --><p>Body text.</p><!-- /wp:paragraph -->';
+const OTHER_METADATA_ADDED =
+  '<!-- wp:heading {"level":2} --><h2>Locked title</h2><!-- /wp:heading -->' +
+  '<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-data"}}}} --><p>Body text.</p><!-- /wp:paragraph -->';
 
 interface AdminPostShape {
   id: string;
@@ -34,6 +40,11 @@ describe('block structure signature', () => {
     expect(structureUnchanged(BASE_CONTENT, TEXT_ONLY)).toBe(true);
     expect(structureUnchanged(BASE_CONTENT, CHANGED_ATTRS)).toBe(false);
     expect(structureUnchanged(BASE_CONTENT, ADDED_BLOCK)).toBe(false);
+    // Editor-note anchor ids are annotation metadata, not structure.
+    expect(structureUnchanged(BASE_CONTENT, ANCHOR_ID_ADDED)).toBe(true);
+    expect(structureUnchanged(ANCHOR_ID_ADDED, BASE_CONTENT)).toBe(true);
+    // Other metadata (block bindings) remains structural.
+    expect(structureUnchanged(BASE_CONTENT, OTHER_METADATA_ADDED)).toBe(false);
     expect(structureSignature(BASE_CONTENT)).toBe(structureSignature(TEXT_ONLY));
   });
 });

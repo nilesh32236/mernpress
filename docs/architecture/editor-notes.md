@@ -11,7 +11,7 @@
 | `author_id` | User; `ON DELETE SET NULL` (the note survives) |
 | `parent_id` | Null for a thread root, the root id for a reply |
 | `content` | 1–2,000 characters, trimmed |
-| `block_name`, `block_path`, `block_hash`, `block_text` | Optional root anchor (name, dot path, 16-hex hash, 200-char text fingerprint) |
+| `block_name`, `block_path`, `block_hash`, `block_text`, `block_anchor_id` | Optional root anchor (name, dot path, 16-hex hash, 200-char text fingerprint, stable id) |
 | `resolved_at`, `resolved_by_id` | Set on the root by Resolve |
 | `created_at`, `updated_at` | UTC instants |
 
@@ -44,10 +44,23 @@ edit returns 403 even when it exists.
 
 The editor passes the selected block's anchor through `onSelectionAnchor`.
 `blockAnchors.ts` computes the hash from the block name, sorted attributes and
-its own HTML (children excluded) and a plain-text fingerprint. Notes store the
-anchor; the panel resolves it against `listBlockAnchors(form.content)` and shows
-`exact`, `moved`, `changed` or `missing`. Hiding/moving/removing a block never
-deletes the note.
+its own HTML (children excluded), a plain-text fingerprint and the block's
+stable `metadata.anchorId` (if present).
+
+When a note is anchored, `NotesPanel` calls `prepareAnchor` →
+`BlockCanvas.ensureSelectedBlockAnchor`. That method assigns a random 16-hex id
+to the selected block when missing (writing it through the controlled block tree,
+because the provider maps external to internal client ids), returns the anchor
+with the id, and the post content is saved with the note. Resolution prefers an
+id match (`exact` regardless of path or text), then falls back to the heuristic
+(`exact` path+hash, `moved`, `changed`, `missing`) for legacy notes or when the
+attribute was removed. Hiding/moving/editing/removing a block never deletes the
+note.
+
+`metadata.anchorId` is excluded from the structure-lock signature in
+`packages/block-system/src/structure.ts`; anchor ids are annotation metadata and
+must be writable on a locked post. Other metadata keys (for example block
+bindings) remain structural.
 
 ## Trash, restore and purge
 
@@ -113,9 +126,11 @@ replies whose parent is active, writing `content.note.deleted` with
   per-user mention preference beyond the global/per-post switch.
 - Mentions are plain text (`@username`); there is no autocomplete picker.
 - Notes never appear in public routes, feeds, the sitemap or search.
-- Anchors are resolved by content, not persistent block ids; identical blocks
+- New notes carry stable ids and stay exact across moves/edits. Legacy notes
+  (no `block_anchor_id`) still use the content heuristic, so identical blocks
   can make "moved" ambiguous and a same-type replacement with similar text can
-  read as "changed". Replies cannot be anchored separately.
+  read as "changed". Replies cannot be anchored separately. The anchor id is
+  persisted with the post content, not by the note request itself.
 
 ## Adding notifications
 

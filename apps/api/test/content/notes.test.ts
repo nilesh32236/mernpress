@@ -162,6 +162,7 @@ describe('editor notes', () => {
       path: '1.0',
       hash: '0123456789abcdef',
       text: 'Anchored note',
+      anchorId: 'aaaabbbbccccdddd',
     };
 
     const created = await app.inject({
@@ -190,6 +191,13 @@ describe('editor notes', () => {
       { name: 'not a block', path: '0', hash: '0123456789abcdef' },
       { name: 'core/paragraph', path: 'x.y', hash: '0123456789abcdef' },
       { name: 'core/paragraph', path: '0', hash: 'XYZ' },
+      {
+        name: 'core/paragraph',
+        path: '0',
+        hash: '0123456789abcdef',
+        text: 'x',
+        anchorId: 'not-an-id',
+      },
     ]) {
       const response = await app.inject({
         method: 'POST',

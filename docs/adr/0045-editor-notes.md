@@ -17,13 +17,18 @@ never leak to the public site.
    replies are rejected. The root carries `resolved_at`/`resolved_by`;
    resolving a thread is a single record. A root may also carry a block anchor:
    the registered block name, its 0-based dot path, an FNV-1a hash of the
-   block's name/attributes/own HTML and a short plain-text fingerprint. The
-   editor attaches the currently selected block automatically when a note is
-   created (the composer can make it a general note instead). The canvas has no
-   persistent block ids, so the anchor is resolved against the current document:
-   exact path+hash, same hash at another path (moved), similar text with a
-   changed hash (changed), or none of those (missing). Replies inherit the
-   thread and are never anchored separately.
+   block's name/attributes/own HTML, a short plain-text fingerprint and a stable
+   `anchorId`. The editor attaches the currently selected block automatically
+   when a note is created (the composer can make it a general note instead) and
+   writes that id into the block's `metadata.anchorId` attribute, saving it with
+   the post. Resolution prefers the stable id — the block can move or its text be
+   rewritten and the note still points at it (exact) — and falls back to the
+   content heuristic for legacy notes or when the anchor was removed: same
+   path+hash (exact), same hash elsewhere (moved), similar text with a changed
+   hash (changed), otherwise missing. `metadata.anchorId` is excluded from the
+   structure-lock signature (it is annotation, not structure); other metadata
+   keys remain structural. Replies inherit the thread and are never anchored
+   separately.
 2. **Same permission as editing.** List, create, reply and resolve all call the
    existing `canEditPost` policy (othered by role: administrators/editors any
    post, authors/contributors their own). Read-only users and anonymous callers
@@ -96,10 +101,12 @@ never leak to the public site.
   public site, sitemap or feeds.
 - One extra request per editor load; a failed fetch shows an inline error and
   does not block editing.
-- Anchor resolution is heuristic: a block replaced by a same-type block with
-  similar text can read as "changed" rather than "missing", and identical
-  blocks can make "moved" ambiguous. The badge states the state, and the note
-  itself is never lost.
+- A note created before stable ids (or whose anchor attribute was stripped)
+  still resolves heuristically: a same-type replacement with similar text can
+  read as "changed", and identical blocks can make "moved" ambiguous. New notes
+  store `metadata.anchorId` and stay exact across moves/edit; the note itself is
+  never lost. The id is saved with the post, so discarding the content changes
+  after adding a note degrades that note to the heuristic.
 - Mention eligibility is checked at send time; a user who loses post access
   will not receive later mentions. There is no per-user mention digest or
   preference yet beyond the global `notes_notify` toggle.

@@ -69,6 +69,7 @@ export function NotesPanel({
   anchors = [],
   currentUserId = null,
   canDeleteAny = false,
+  prepareAnchor,
 }: {
   postId: string | null;
   state: PostNotesState;
@@ -80,6 +81,10 @@ export function NotesPanel({
   currentUserId?: string | null;
   /** Administrators/editors may delete any note on a post they can edit. */
   canDeleteAny?: boolean;
+  /** Assign a stable block id before saving an anchored note. */
+  prepareAnchor?: (
+    anchor: NoteBlockAnchor,
+  ) => Promise<NoteBlockAnchor | null> | NoteBlockAnchor | null;
 }) {
   const [draft, setDraft] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
@@ -147,7 +152,9 @@ export function NotesPanel({
     const content = draft.trim();
     if (!content) return;
     setLocalError(null);
-    const saved = await state.add(content, attach ? selectedAnchor : null);
+    const prepared =
+      attach && selectedAnchor ? ((await prepareAnchor?.(selectedAnchor)) ?? selectedAnchor) : null;
+    const saved = await state.add(content, prepared);
     if (saved) setDraft('');
   }
 

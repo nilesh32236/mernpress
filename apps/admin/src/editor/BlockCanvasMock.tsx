@@ -27,6 +27,7 @@ export const BlockCanvasMock = forwardRef<MockCanvasHandle, MockCanvasProps>(
         return value;
       },
       getSelectedBlockInfo: () => null,
+      ensureSelectedBlockAnchor: () => null,
     }));
 
     return (

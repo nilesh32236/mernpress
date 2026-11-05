@@ -2621,6 +2621,9 @@ export function ContentEditor({
                     postId={notesPostId}
                     state={postNotes}
                     selectedAnchor={selectedBlockAnchor}
+                    prepareAnchor={(anchor) =>
+                      canvasRef.current?.ensureSelectedBlockAnchor() ?? anchor
+                    }
                     anchors={blockAnchors}
                     currentUserId={user.id}
                     canDeleteAny={canDeleteAnyNote(user)}

@@ -32,7 +32,7 @@ import type { Block } from '@wordpress/blocks';
 import { editorSettings, ensureEditorBootstrap } from './blocks.js';
 import { structureUnchanged } from '@mernpress/block-system/structure';
 import { blocksFromContent, historySeed, serializeBlocks } from './content.js';
-import { blockHash, blockText } from './blockAnchors.js';
+import { blockAnchorId, blockHash, blockText, withAnchorId } from './blockAnchors.js';
 import { parseBlockMarkup } from '@mernpress/block-system/parser';
 
 import '@wordpress/components/build-style/style.css';
@@ -70,6 +70,7 @@ export interface SelectedBlockInfo {
   path: string;
   hash: string;
   text: string;
+  anchorId: string | null;
 }
 
 export interface BlockCanvasHandle {
@@ -79,6 +80,12 @@ export interface BlockCanvasHandle {
   openInspector: () => void;
   /** Anchor for the selected block (null when nothing is selected). */
   getSelectedBlockInfo: () => SelectedBlockInfo | null;
+  /**
+   * Assign a stable `metadata.anchorId` to the selected block when it has none,
+   * and return the anchor. Used when creating a note so the note can follow the
+   * block when it moves or its text changes.
+   */
+  ensureSelectedBlockAnchor: () => SelectedBlockInfo | null;
 }
 
 export interface BlockCanvasProps {
@@ -132,6 +139,26 @@ function findBlockByClientId(
   return null;
 }
 
+function updateBlockAtPath(
+  blocks: Array<Block<Record<string, unknown>>>,
+  path: string,
+  attributes: Record<string, unknown>,
+): Array<Block<Record<string, unknown>>> {
+  const [head, ...rest] = path.split('.').map(Number);
+  return blocks.map((block, index) => {
+    if (index !== head) return block;
+    if (rest.length === 0) return { ...block, attributes };
+    return {
+      ...block,
+      innerBlocks: updateBlockAtPath(
+        (block.innerBlocks ?? []) as Array<Block<Record<string, unknown>>>,
+        rest.join('.'),
+        attributes,
+      ),
+    };
+  });
+}
+
 function anchorForBlock(
   block: Block<Record<string, unknown>>,
   path: string,
@@ -139,15 +166,24 @@ function anchorForBlock(
   try {
     const [parsed] = parseBlockMarkup(serializeBlocks([block]));
     const name = parsed?.blockName ?? block.name;
+    const attrs = parsed?.attrs ?? block.attributes ?? {};
     return {
       name,
       path,
-      hash: blockHash(name, parsed?.attrs ?? block.attributes ?? {}, parsed?.innerHTML ?? ''),
+      hash: blockHash(name, attrs, parsed?.innerHTML ?? ''),
       text: blockText(parsed?.innerHTML ?? ''),
+      anchorId: blockAnchorId(attrs),
     };
   } catch {
     return null;
   }
+}
+
+/** 16 lowercase hex characters, matching the API's anchor-id contract. */
+function newAnchorId(): string {
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
 export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(function BlockCanvas(
@@ -403,8 +439,31 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
         const found = findBlockByClientId(blocksRef.current, clientId);
         return found ? anchorForBlock(found.block, found.path) : null;
       },
+      ensureSelectedBlockAnchor: () => {
+        const clientId = selectedClientIdRef.current;
+        if (!clientId) return null;
+        const found = findBlockByClientId(blocksRef.current, clientId);
+        if (!found) return null;
+        const existing = blockAnchorId(found.block.attributes);
+        if (existing) {
+          const anchor = anchorForBlock(found.block, found.path);
+          return anchor ? { ...anchor, anchorId: existing } : null;
+        }
+        const anchorId = newAnchorId();
+        // The provider keeps its own client-id mapping, so write through the
+        // controlled block tree (value) instead of dispatching by clientId.
+        handleChange(
+          updateBlockAtPath(
+            blocksRef.current,
+            found.path,
+            withAnchorId(found.block.attributes ?? {}, anchorId),
+          ),
+        );
+        const anchor = anchorForBlock(found.block, found.path);
+        return anchor ? { ...anchor, anchorId } : null;
+      },
     }),
-    [clearTimer, emit],
+    [clearTimer, emit, handleChange],
   );
 
   // Built once per canvas. `settings.mediaUpload` is the real media-API
