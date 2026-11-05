@@ -3318,3 +3318,14 @@ user, 0 redirects, 0 mail log rows.
   retention, deletion, traversal rejection and anonymous/editor denial.
 - Validation: 701 unit/integration tests (API 437, admin 168, web 31,
   block-system 65), 23 Playwright E2E tests and six builds pass.
+
+**Deployment (backups):** release `20261105T100210Z-6e6c352` (current).
+Added `BACKUP_STORAGE_DIR=/opt/mernpress/backups`, `BACKUP_RETENTION=5` and
+`ReadWritePaths=/opt/mernpress/backups` (env/unit backups kept); the directory is
+`0700` owned by `mernpress`. Production verification with a temporary
+administrator: Tools → Backups created `mernpress-backup-20261105T100410Z.tar.gz`
+(16 KB), downloading it produced a gzip archive containing `database.sql`,
+`media.tar.gz` and `MANIFEST.txt` (manifest named `mernpress_prod`); the SQL
+contains `DROP TABLE IF EXISTS`/`CREATE TABLE` for users, posts, redirects and
+mail log; the test archive was deleted afterwards. Production is back to 1 user
+and zero stored backups.
