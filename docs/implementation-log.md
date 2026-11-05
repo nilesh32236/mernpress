@@ -4218,3 +4218,24 @@ temporary administrator:
 - The temporary folder, media item and administrator were deleted; production
   is back to 1 user, 2 posts, 0 media and 0 folders, with `/`, `/admin/`,
   `/api/health` and `/posts/testcom` at 200.
+
+### 2026-11-05 — Privacy-first local analytics
+
+- Added `analytics_daily` (migration `add_analytics_daily`): one incrementing
+  row per UTC day + path + referrer host; no cookies, visitor ids, user agents
+  or IP addresses.
+- `POST /api/public/views` normalises paths (query/hash stripped, duplicate and
+  trailing slashes collapsed), extracts only the referrer hostname, ignores
+  `/api`, `/admin`, `/_next` and static files, skips obvious bots and never
+  surfaces beacon errors. `ViewTracker` posts on pathname changes with
+  `keepalive` and honours Do-Not-Track.
+- `GET /api/admin/analytics?days=` (1–365, requires `content.read.any`) returns
+  totals, a zero-filled daily series, top 10 paths and top 10 referrers.
+  Dashboard → Analytics renders cards (views, pages, daily average), a bar list
+  and two tables with a 7/30-day selector and an explicit privacy note.
+- Tests: API aggregation/normalisation/referrer host/bot and path exclusions,
+  window validation, anonymous/subscriber denial, malformed beacons; admin page
+  cards/tables/empty/failure, period switch, router and breadcrumb; web helper
+  for Do-Not-Track and admin/API exclusion.
+- Validation: 855 unit/integration tests (API 512, admin 230, web 40,
+  block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.

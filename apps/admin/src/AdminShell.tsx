@@ -40,6 +40,8 @@ function screenKey(route: Route): string {
       return route.type === 'post' ? 'posts' : 'pages';
     case 'dashboard':
       return 'dashboard';
+    case 'analytics':
+      return 'analytics';
     case 'media':
       return 'media';
     case 'comments':
@@ -409,6 +411,27 @@ function screenHelp(route: Route): {
           {
             label: 'Documentation on Your Profile',
             href: 'https://wordpress.org/documentation/article/users-your-profile-screen/',
+          },
+          support,
+        ],
+      };
+    case 'analytics':
+      return {
+        title: 'Analytics',
+        sections: [
+          {
+            heading: 'Overview',
+            body: 'Aggregate page views for this site only. No cookies, visitor IDs or IP addresses are stored; API, admin and static-file requests are excluded.',
+          },
+          {
+            heading: 'Reading the numbers',
+            body: 'The public beacon increments one row per UTC day, path and referrer host. Bots and Do-Not-Track visitors are skipped best-effort, so treat the totals as directional.',
+          },
+        ],
+        links: [
+          {
+            label: 'Documentation on site statistics',
+            href: 'https://wordpress.org/documentation/article/dashboard-screen/',
           },
           support,
         ],
@@ -828,6 +851,9 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       icon: <span className="dashicons dashicons-dashboard" />,
       subs: [
         { label: 'Home', to: '/', active: route.name === 'dashboard' },
+        ...(canReadContent(user)
+          ? [{ label: 'Analytics', to: '/analytics', active: route.name === 'analytics' }]
+          : []),
         ...(isAdmin
           ? [{ label: 'Updates', to: '/updates', active: route.name === 'updates' }]
           : []),
@@ -1669,6 +1695,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
                   <p className="command-heading">Quick navigation</p>
                   {[
                     { label: 'Dashboard', to: '/admin' },
+                    { label: 'Analytics', to: '/analytics' },
                     { label: 'All Posts', to: '/posts' },
                     { label: 'Add New Post', to: '/posts/new' },
                     { label: 'Media Library', to: '/media' },

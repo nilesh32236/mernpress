@@ -408,3 +408,15 @@ export {
 
 // ---- Editor-note mentions ----
 export { extractMentions, MAX_NOTE_MENTIONS } from './notes/mentions.js';
+
+// ---- Privacy-first aggregate analytics ----
+export {
+  createAnalyticsService,
+  normalizeAnalyticsPath,
+  referrerHost,
+  utcDay,
+  type AnalyticsService,
+  type AnalyticsServiceOptions,
+  type AnalyticsSummary,
+  type RecordViewInput,
+} from './analytics/service.js';

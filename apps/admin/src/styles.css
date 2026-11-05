@@ -13074,3 +13074,139 @@ a.glance-chip:hover {
 .button-link.is-danger {
   color: var(--wp-danger, #b32d2e);
 }
+
+/* Dashboard → Analytics: own-site aggregate views. */
+.analytics-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.analytics-privacy {
+  margin: 0 0 16px;
+  max-width: 820px;
+  color: #646970;
+  font-size: 12px;
+}
+
+.analytics-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.analytics-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid #c3c4c7;
+  background: #ffffff;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.analytics-card-label {
+  color: #646970;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.analytics-card strong {
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.analytics-card-help {
+  color: #646970;
+  font-size: 11px;
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.analytics-panel {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid #c3c4c7;
+  background: #ffffff;
+}
+
+.analytics-panel h2 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.analytics-bars {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.analytics-bars li {
+  display: grid;
+  grid-template-columns: 34px 1fr 40px;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+  font-size: 11px;
+  color: #50575e;
+}
+
+.analytics-bar-track {
+  height: 10px;
+  background: #f0f0f1;
+}
+
+.analytics-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--wp-blue, #2271b1);
+}
+
+.analytics-bar-value {
+  text-align: right;
+}
+
+.analytics-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.analytics-table th,
+.analytics-table td {
+  padding: 5px 6px;
+  border-bottom: 1px solid #f0f0f1;
+  text-align: left;
+}
+
+.analytics-table th {
+  color: #646970;
+  font-weight: 600;
+}
+
+.analytics-table td:first-child {
+  overflow: hidden;
+  max-width: 320px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.analytics-table td:last-child,
+.analytics-table th:last-child {
+  text-align: right;
+}
+
+@media (max-width: 782px) {
+  .analytics-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

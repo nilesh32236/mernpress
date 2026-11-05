@@ -5,6 +5,7 @@ const ADMIN_BASE = '/admin';
 
 export type Route =
   | { name: 'dashboard' }
+  | { name: 'analytics' }
   | { name: 'list'; type: ContentType }
   | { name: 'new'; type: ContentType }
   | { name: 'edit'; type: ContentType; id: string }
@@ -64,6 +65,9 @@ export function parseRoute(pathname: string): Route {
     return { name: 'dashboard' };
   }
   const [typeSegment, second, third] = parts;
+  if (typeSegment === 'analytics' && parts.length === 1) {
+    return { name: 'analytics' };
+  }
   if (typeSegment === 'terms' && parts.length === 1) {
     return { name: 'terms' };
   }
@@ -201,6 +205,8 @@ export function breadcrumbs(route: Route): Array<{ label: string; to?: string }>
   switch (route.name) {
     case 'dashboard':
       return [{ label: 'Dashboard' }];
+    case 'analytics':
+      return [{ label: 'Dashboard', to: '/' }, { label: 'Analytics' }];
     case 'list':
       return [
         { label: 'Dashboard', to: '/' },

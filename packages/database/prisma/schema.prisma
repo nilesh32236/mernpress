@@ -441,6 +441,22 @@ model MediaFolder {
   @@map("media_folders")
 }
 
+/// Privacy-first aggregate analytics (own site only). No cookies, no IPs, no
+/// per-visitor rows: one row per UTC day + path + referrer host.
+model AnalyticsDaily {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  day          DateTime @db.Date
+  path         String   @db.VarChar(2048)
+  referrerHost String   @default("") @map("referrer_host") @db.VarChar(255)
+  views        Int      @default(0)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([day, path, referrerHost])
+  @@index([day])
+  @@map("analytics_daily")
+}
+
 model PostSlugHistory {
   id        String   @id @default(uuid(7)) @db.Uuid
   postId    String   @map("post_id") @db.Uuid

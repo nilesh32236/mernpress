@@ -22,6 +22,7 @@ import { ContentList } from './ContentList.js';
 import { TermsPage } from './TermsPage.js';
 import { MediaPage } from './MediaPage.js';
 import { Dashboard } from './Dashboard.js';
+import { AnalyticsPage } from './AnalyticsPage.js';
 import { LoginForm } from './LoginForm.js';
 import { ResetPasswordForm } from './ResetPasswordForm.js';
 import { UsersPage } from './UsersPage.js';
@@ -188,6 +189,8 @@ function pageTitle(route: Route): string {
   switch (route.name) {
     case 'dashboard':
       return 'MERNPress admin · Dashboard';
+    case 'analytics':
+      return 'MERNPress admin · Analytics';
     case 'list':
       return `MERNPress admin · ${route.type === 'post' ? 'Posts' : 'Pages'}`;
     case 'new':
@@ -262,6 +265,8 @@ function RouteView({
   switch (route.name) {
     case 'dashboard':
       return <Dashboard user={user} />;
+    case 'analytics':
+      return <AnalyticsPage />;
     case 'list':
       return <ContentList user={user} type={route.type} />;
     case 'new':

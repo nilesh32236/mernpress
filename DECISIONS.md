@@ -138,6 +138,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-096 | 2026-11-05 | Virtual media folders: `media_folders` (name, timestamps) + nullable `media_items.folder_id` with `ON DELETE SET NULL`; files never move and URLs stay stable. Flat folders, one per item, case-insensitive unique names (trimmed 1–100; `409 FOLDER_EXISTS`). `GET/POST /api/admin/media/folders`, `PATCH/DELETE /api/admin/media/folders/:id`, `folderId` on media PATCH, and `?folder=<uuid|none>` on the media list. Reads need `content.read.any`, mutations `content.create`. Media Library gains a Folder bar (filter with counts, create, rename, delete) and a drawer Folder select. No nesting, bulk move or drag-and-drop. | accepted | [ADR 0048](docs/adr/0048-media-virtual-folders.md) |
 
+| D-097 | 2026-11-05 | Privacy-first local analytics: `analytics_daily` stores one incrementing row per (UTC day, path, referrer host); no cookies, visitor ids, user agents or IPs. Public `POST /api/public/views` normalises the path, keeps only the referrer hostname, ignores API/admin/static paths and obvious bots, and never surfaces errors. `ViewTracker` posts on pathname changes with keepalive and honours Do-Not-Track. `GET /api/admin/analytics?days=` (1–365) requires `content.read.any` and returns totals, a zero-filled daily series, top 10 paths and top 10 referrers; Dashboard → Analytics renders cards, bars and tables with a 7/30-day switch. No unique visitors, sessions, campaigns, real-time data or retention sweep yet. | accepted | [ADR 0049](docs/adr/0049-privacy-first-analytics.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

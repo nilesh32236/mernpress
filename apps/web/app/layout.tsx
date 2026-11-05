@@ -6,6 +6,7 @@ import { getSiteSettings, listPublicPosts } from '@/lib/api';
 import './globals.css';
 import PublicAdminBar from '@/components/PublicAdminBar';
 import JsonLd from '@/components/JsonLd';
+import { ViewTracker } from '@/components/ViewTracker';
 import { siteGraph } from '@/lib/seo';
 import { siteUrl } from '@/lib/api';
 
@@ -93,6 +94,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       style={themeStyle}
     >
       <body>
+        <ViewTracker />
         {settings?.customCss ? (
           <style id="customizer-css" dangerouslySetInnerHTML={{ __html: settings.customCss }} />
         ) : null}

@@ -24,6 +24,15 @@ describe('admin router', () => {
     expect(parseRoute('/posts/abc/edit')).toEqual({ name: 'edit', type: 'post', id: 'abc' });
   });
 
+  it('maps the analytics route with breadcrumbs', () => {
+    expect(parseRoute('/admin/analytics')).toEqual({ name: 'analytics' });
+    expect(parseRoute('/analytics')).toEqual({ name: 'analytics' });
+    expect(breadcrumbs({ name: 'analytics' })).toEqual([
+      { label: 'Dashboard', to: '/' },
+      { label: 'Analytics' },
+    ]);
+  });
+
   it('maps the users, profile and settings routes', () => {
     expect(parseRoute('/admin/users')).toEqual({ name: 'users' });
     expect(parseRoute('/admin/profile')).toEqual({ name: 'profile' });

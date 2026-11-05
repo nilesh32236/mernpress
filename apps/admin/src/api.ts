@@ -979,6 +979,25 @@ export interface ApplicationPassword {
 
 export type OptionValues = Record<string, unknown>;
 
+// ---- Privacy-first analytics ----
+export interface AnalyticsSummary {
+  days: number;
+  totalViews: number;
+  uniquePaths: number;
+  daily: Array<{ day: string; views: number }>;
+  topPaths: Array<{ path: string; views: number }>;
+  topReferrers: Array<{ host: string; views: number }>;
+}
+
+export async function fetchAnalytics(days = 7): Promise<AnalyticsSummary> {
+  const response = await fetch(`/api/admin/analytics?days=${days}`, {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<AnalyticsSummary>(response);
+}
+
 // ---- Settings → Connectors → Spam protection ----
 export interface SpamGuardSettings {
   enabled: boolean;

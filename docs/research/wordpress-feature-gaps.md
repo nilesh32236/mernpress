@@ -76,7 +76,7 @@ project does not claim to know the whole market.
 | P1 | Media library virtual folders/collections | Largest unimplemented media demand (390k+ installs across three plugins) | **Implemented now** (ADR 0048): flat virtual folders, one per item, filter/create/rename/delete + drawer assignment |
 | P2 | Cookie consent manager | 1M+ installs; privacy tooling already exists | Proposed |
 | P2 | Multilingual content model | 900k+ installs; Gutenberg phase 4 | Proposed; needs an ADR before code |
-| P2 | Privacy-first analytics | 5M+ analytics installs; self-hosted counters avoid third-party embeds | Proposed |
+| P2 | Privacy-first analytics | 5M+ analytics installs; self-hosted counters avoid third-party embeds | **Implemented now** (ADR 0049): local aggregate beacon + Dashboard → Analytics |
 | P2 | Page/object cache integration | 7M+ cache plugin installs; operational rather than editorial | Deferred to deployment docs |
 | — | Forms, e-commerce, CRM, marketplaces | Explicitly out of scope in AGENTS §12 | Not built |
 | — | SMTP credentials | Owner-only secret | Blocked on the owner |
