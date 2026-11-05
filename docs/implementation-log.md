@@ -3901,3 +3901,24 @@ configured in production (no SMTP credentials), so notification behaviour was
 verified against the in-memory transport in the API suite: post-author mail on
 notes/replies, note-author mail on deletion, and suppression when
 `notes_notify` is off.
+
+### 2026-11-05 — Editor-note @mentions
+
+- Added `extractMentions` (`packages/cms-core/src/notes/mentions.ts`): parses
+  `@username` with the account policy, ignores email addresses, deduplicates and
+  caps at ten per message.
+- On note/reply creation, `NoteService` looks mentioned users up and notifies
+  only active accounts with an email that can edit the post (`canEditPost`),
+  skipping the actor and the post author (who already receives the note mail).
+  `MailService.notifyNoteMention` shares the `notes_notify` option and is best
+  effort.
+- The notes panel shows a hint: “Type @username to notify a teammate. Only
+  people who can edit this post receive mention emails.”
+- Verified in development with the in-memory transport: creating a note with
+  `@mention-dev` produced a mail-log entry to `dev-mention@example.com` with the
+  subject `[MERNPress] admin mentioned you in a note on "Mention note check"`.
+  The temp post, user and mail log were cleaned up.
+- Tests: mention parsing (emails excluded, dedupe, cap) and mail delivery to an
+  eligible editor only, once, including `notes_notify` off; panel hint.
+- Validation: 815 unit/integration tests (API 493, admin 211, web 38,
+  block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.

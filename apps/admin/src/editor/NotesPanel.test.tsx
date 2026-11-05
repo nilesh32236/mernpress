@@ -78,6 +78,7 @@ describe('editor notes panel', () => {
     render(<NotesPanel postId="p1" state={notes} />);
 
     expect(screen.getByText('1 open / 3 total')).toBeDefined();
+    expect(screen.getByText(/Only people who can edit this post/)).toBeDefined();
     expect(screen.getByText('Please tighten this paragraph.')).toBeDefined();
     expect(screen.getByText('Done in the next revision.')).toBeDefined();
     expect(screen.getByText('Editor Name')).toBeDefined();

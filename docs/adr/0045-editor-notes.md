@@ -54,6 +54,15 @@ never leak to the public site.
    else's note emails the note author. Delivery is best effort and never fails
    the note operation. Messages contain the post title/link, actor and a note
    excerpt — never tokens or credentials.
+8. **@username mentions.** Mentions are parsed server-side with the account
+   username policy (3–32 characters, lowercase letters/digits/dots/underscores/
+   hyphens; email addresses are not mentions), deduplicated and capped at ten
+   per message. A mentioned user is emailed only when the account is active,
+   has an email, is not the note author and is **eligible to edit the post**
+   (`canEditPost`); the post author is skipped because they already receive the
+   note/reply mail. The mention mail (`notifyNoteMention`) is controlled by the
+   same `notes_notify` option and is best effort. The panel states that only
+   people who can edit the post receive mention emails.
 
 ## Consequences
 
@@ -69,6 +78,7 @@ never leak to the public site.
   similar text can read as "changed" rather than "missing", and identical
   blocks can make "moved" ambiguous. The badge states the state, and the note
   itself is never lost.
-- Mention notifications are not implemented; adding a mention should reuse the
-  note mail path rather than sending a second kind of message.
+- Mention eligibility is checked at send time; a user who loses post access
+  will not receive later mentions. There is no per-user mention digest or
+  preference yet beyond the global `notes_notify` toggle.
 - The `notes_notify` toggle is global, not per post.

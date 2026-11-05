@@ -389,4 +389,54 @@ describe('comment and new-user mail notifications', () => {
     await addNote({ content: 'This one should not be mailed.' });
     expect(app.mail.outbox).toHaveLength(3);
   });
+
+  it('emails only eligible mentioned editors, once, respecting notes_notify', async () => {
+    const post = await publishedPost('Mention target');
+    const createUser = async (username: string, role: string, email: string) => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/users',
+        headers: headers(),
+        payload: {
+          username,
+          password: 'Mention-pass-2026!',
+          role,
+          email,
+          sendNotification: false,
+        },
+      });
+      expect(response.statusCode).toBe(201);
+    };
+    await createUser('mention-editor', 'editor', 'mention@example.com');
+    await createUser('mention-outsider', 'author', 'outsider@example.com');
+
+    const addNote = async (content: string, parentId?: string) => {
+      const response = await app.inject({
+        method: 'POST',
+        url: `/api/admin/posts/${post.id}/notes`,
+        headers: headers(),
+        payload: { content, ...(parentId ? { parentId } : {}) },
+      });
+      expect(response.statusCode).toBe(201);
+      return response.json() as { id: string };
+    };
+
+    const root = await addNote(
+      'Hi @mention-editor, @mention-editor and @mention-outsider, plus @admin and me@example.com.',
+    );
+    // Only the editor who can edit the post is notified; the author without
+    // post access, the actor and the plain email address are not.
+    expect(app.mail.outbox).toHaveLength(1);
+    expect(app.mail.outbox[0]!.to).toBe('mention@example.com');
+    expect(app.mail.outbox[0]!.subject).toContain('mentioned you in a note');
+    expect(app.mail.outbox[0]!.text).toContain('Hi @mention-editor');
+
+    await addNote('A reply that mentions @mention-editor.', root.id);
+    expect(app.mail.outbox).toHaveLength(2);
+    expect(app.mail.outbox[1]!.subject).toContain('mentioned you in a note');
+
+    await setDiscussion({ notes_notify: false });
+    await addNote('@mention-editor this one must not be mailed.');
+    expect(app.mail.outbox).toHaveLength(2);
+  });
 });

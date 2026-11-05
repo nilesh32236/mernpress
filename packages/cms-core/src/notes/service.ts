@@ -3,6 +3,7 @@ import { ContentError } from '../content/errors.js';
 import type { Principal } from '../content/types.js';
 import { canEditPost } from '../content/service.js';
 import { roleHasCapability } from '../auth/capabilities.js';
+import { extractMentions } from './mentions.js';
 import type { MailService } from '../mail/service.js';
 import type { CreatePostNoteInput, NoteAuthor, NoteBlockAnchor, PostNote } from './types.js';
 
@@ -208,6 +209,48 @@ export function createNoteService({ prisma, mail }: NoteServiceOptions) {
         // Delivery is best effort.
       }
     }
+    // Mention notifications: only people who can edit this post are eligible.
+    // The post author already receives the note/reply mail above, and nobody
+    // needs a mail about their own mention.
+    if (mail?.status().configured) {
+      const actorUsername = (row.author?.username ?? '').toLowerCase();
+      const names = extractMentions(content).filter((name) => name !== actorUsername);
+      if (names.length > 0) {
+        const mentioned = await prisma.user.findMany({
+          where: { username: { in: names }, status: 'active' },
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            email: true,
+            role: true,
+          },
+        });
+        for (const user of mentioned) {
+          if (user.id === principal.userId || user.id === post.authorId) continue;
+          if (!user.email) continue;
+          try {
+            canEditPost({ userId: user.id, role: user.role }, post.authorId, post.status);
+          } catch {
+            // The mentioned account cannot access this post; do not notify it.
+            continue;
+          }
+          try {
+            await mail.notifyNoteMention({
+              postTitle: post.title,
+              postSlug: post.slug,
+              actorName: row.author?.displayName?.trim() || row.author?.username || 'An editor',
+              mentionedName: user.displayName?.trim() || user.username,
+              content,
+              recipientEmail: user.email,
+            });
+          } catch {
+            // Delivery is best effort.
+          }
+        }
+      }
+    }
+
     return toNote(row);
   }
 

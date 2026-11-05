@@ -215,6 +215,11 @@ export function NotesPanel({
         </div>
       </form>
 
+      <p className="field-help note-mention-hint">
+        Type <code>@username</code> to notify a teammate. Only people who can edit this post receive
+        mention emails. Mentions never appear on the public site.
+      </p>
+
       {state.loading ? (
         <p className="field-help">Loading notes…</p>
       ) : threads.length === 0 ? (

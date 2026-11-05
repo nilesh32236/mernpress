@@ -405,3 +405,6 @@ export {
   type ScreenOptionsService,
   type ScreenOptionsServiceOptions,
 } from './preferences/screen-options.js';
+
+// ---- Editor-note mentions ----
+export { extractMentions, MAX_NOTE_MENTIONS } from './notes/mentions.js';

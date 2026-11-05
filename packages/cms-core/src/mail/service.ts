@@ -90,6 +90,16 @@ export interface NoteMailInput {
   recipientEmail: string | null;
 }
 
+/** A mention inside an editor note. */
+export interface NoteMentionMailInput {
+  postTitle: string;
+  postSlug: string;
+  actorName: string;
+  mentionedName: string;
+  content: string;
+  recipientEmail: string;
+}
+
 export interface NewUserMailInput {
   username: string;
   email: string;
@@ -389,6 +399,33 @@ export function createMailService({
     });
   }
 
+  async function notifyNoteMention(input: NoteMentionMailInput): Promise<MailResult> {
+    const enabled = await option<boolean>('notes_notify', true);
+    if (!enabled) return { sent: false, reason: 'disabled' };
+    const recipient =
+      input.recipientEmail && EMAIL_PATTERN.test(input.recipientEmail)
+        ? input.recipientEmail
+        : null;
+    return deliver(recipient, async () => {
+      const context = await siteContext();
+      const permalink = postUrl(context.siteUrl, context.permalinkBase, input.postSlug);
+      return {
+        subject: `[${context.siteTitle}] ${singleLine(input.actorName)} mentioned you in a note on "${singleLine(input.postTitle)}"`,
+        text: [
+          `${singleLine(input.actorName)} mentioned you in an editor note on "${singleLine(input.postTitle)}".`,
+          '',
+          `Post: ${singleLine(input.postTitle)}`,
+          permalink,
+          '',
+          `Hi ${singleLine(input.mentionedName)},`,
+          excerpt(input.content),
+          '',
+          `Open the editor: ${adminLink(context.siteUrl, '/posts')}`,
+        ].join('\n'),
+      };
+    });
+  }
+
   async function notifyPasswordReset(input: PasswordResetMailInput): Promise<MailResult> {
     return deliver(input.to, async () => {
       const context = await siteContext();
@@ -471,6 +508,7 @@ export function createMailService({
     notifyModeration,
     notifyComment,
     notifyNote,
+    notifyNoteMention,
     notifyNewUser,
     notifyPasswordReset,
     log,

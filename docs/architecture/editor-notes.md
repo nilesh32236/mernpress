@@ -62,13 +62,25 @@ post author or note author, falling back to the administration address when the
 recipient has no email. It is controlled by the `notes_notify` Discussion option
 (default true), logs only metadata, and is always best effort.
 
+## Mentions
+
+`packages/cms-core/src/notes/mentions.ts` extracts `@username` tokens with the
+account policy, ignores email addresses, deduplicates and caps at ten. On note
+or reply creation, `NoteService` looks the users up, skips disabled accounts,
+the actor, the post author (already notified) and anyone failing
+`canEditPost`, then calls `MailService.notifyNoteMention`. Mention mail shares
+the `notes_notify` switch and the mail log; it is best effort. The panel shows a
+hint above the thread list.
+
 ## Rules and limits
 
 - One reply level; replying to a reply is 400.
 - Replying to a resolved thread is 400 until Reopen.
 - Resolve applies to the root only; resolving a reply is 400.
 - Deleting a note is permanent and writes an audit event; there is no trash.
-- Mention notifications are not implemented.
+- Mentions only notify accounts that can edit the post at send time; there is no
+  per-user mention preference beyond `notes_notify`.
+- Mentions are plain text (`@username`); there is no autocomplete picker.
 - Notes never appear in public routes, feeds, the sitemap or search.
 - Anchors are resolved by content, not persistent block ids; identical blocks
   can make "moved" ambiguous and a same-type replacement with similar text can
