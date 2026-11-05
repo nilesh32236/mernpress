@@ -12529,3 +12529,77 @@ a.glance-chip:hover {
   color: #646970;
   font-size: 12px;
 }
+
+/* Settings → Connectors: bundled spam guard card. */
+.spam-guard-card {
+  margin: 0 0 22px;
+  padding: 18px 20px;
+  border: 1px solid #c3c4c7;
+  background: #ffffff;
+  max-width: 760px;
+}
+
+.spam-guard-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.spam-guard-head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.spam-guard-badge {
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: #f0f0f1;
+  color: #646970;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.spam-guard-badge.is-active {
+  background: #edfaef;
+  color: #1e7b34;
+}
+
+.spam-guard-thresholds {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 18px;
+  margin: 12px 0 8px;
+  max-width: 520px;
+}
+
+.spam-guard-thresholds label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.spam-guard-stats {
+  margin: 12px 0 8px;
+  color: #50575e;
+  font-size: 12px;
+}
+
+.spam-guard-akismet {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 10px;
+  border-top: 1px solid #f0f0f1;
+  color: #646970;
+  font-size: 12px;
+}
+
+.spam-guard-akismet strong {
+  color: #1d2327;
+  font-size: 13px;
+}

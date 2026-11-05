@@ -3,6 +3,7 @@ import { requireCapability, FULL_VISIBILITY_ROLES } from '../auth/capabilities.j
 import { ContentError } from '../content/errors.js';
 import type { Principal } from '../content/types.js';
 import type { MailService } from '../mail/service.js';
+import { assessComment, spamVerdict } from './spam.js';
 import type {
   AdminComment,
   CommentCounts,
@@ -109,6 +110,9 @@ export function createCommentService({ prisma, mail }: CommentServiceOptions) {
       maxLinks,
       moderationKeys,
       disallowedKeys,
+      guardEnabled,
+      spamThreshold,
+      moderationThreshold,
     ] = await Promise.all([
       setting<'open' | 'closed'>('default_comment_status', 'open'),
       setting<boolean>('comment_registration', false),
@@ -119,6 +123,9 @@ export function createCommentService({ prisma, mail }: CommentServiceOptions) {
       setting<number>('comment_max_links', 2),
       setting<string>('moderation_keys', ''),
       setting<string>('disallowed_keys', ''),
+      setting<boolean>('spam_guard_enabled', true),
+      setting<number>('spam_guard_spam_threshold', 6),
+      setting<number>('spam_guard_moderation_threshold', 3),
     ]);
     if (defaultStatus === 'closed' || post.commentStatus === 'closed') {
       throw new ContentError('FORBIDDEN', 'Comments are closed.', 403);
@@ -185,10 +192,38 @@ export function createCommentService({ prisma, mail }: CommentServiceOptions) {
       .map((value) => value.trim().toLowerCase())
       .filter(Boolean)
       .some((word) => normalized.includes(word));
+    // Bundled spam guard: a local heuristic score. It can only worsen a
+    // comment's fate (spam or held), never auto-approve one that the settings
+    // would have held.
+    let guardVerdict: ReturnType<typeof spamVerdict> = 'ham';
+    if (guardEnabled) {
+      const duplicateCount = await prisma.comment.count({
+        where: {
+          authorEmail,
+          content,
+          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        },
+      });
+      const assessment = assessComment({
+        content,
+        authorName,
+        authorUrl,
+        authorEmail,
+        duplicateCount,
+        linkCount,
+      });
+      guardVerdict = spamVerdict(assessment.score, {
+        spam: spamThreshold,
+        moderation: moderationThreshold,
+      });
+    }
+
     let status: CommentStatus = 'APPROVED';
-    if (disallowed || (maxLinks > 0 && linkCount > maxLinks)) {
-      status = disallowed ? 'SPAM' : 'PENDING';
-    } else if (moderationOn || needsModeration) {
+    if (disallowed || guardVerdict === 'spam') {
+      status = 'SPAM';
+    } else if (maxLinks > 0 && linkCount > maxLinks) {
+      status = 'PENDING';
+    } else if (guardVerdict === 'moderate' || moderationOn || needsModeration) {
       status = 'PENDING';
     } else if (previouslyApproved) {
       const approvedBefore = await prisma.comment.count({

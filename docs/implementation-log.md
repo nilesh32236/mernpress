@@ -3624,3 +3624,38 @@ real UI:
   and temporary administrator were deleted, and `/`, `/admin/`, `/api/health`,
   `/posts/testcom` and `/test` return 200. Production is back to 1 user, 2 posts
   and the default blog front page.
+
+### 2026-11-05 — Bundled local spam guard (Connectors)
+
+- Added `assessComment` (`packages/cms-core/src/comments/spam.ts`): an
+  explainable heuristic score for links, three-plus links, short comments with a
+  link, a website field with a very short comment, spam phrases, shouting,
+  repeated punctuation, money terms with a link, BBCode, a URL in the author
+  name, disposable email domains, very long tokens and exact duplicates within
+  24 h. `spamVerdict` maps the score onto two thresholds and clamps an inverted
+  pair.
+- Options: `spam_guard_enabled` (default true),
+  `spam_guard_spam_threshold` (6) and `spam_guard_moderation_threshold` (3) in
+  the `discussion` group. The guard runs on public comment submissions; a spam
+  verdict stores the comment as Spam, a moderate verdict holds it as Pending, and
+  a ham verdict falls through to the unchanged Discussion logic. It never
+  auto-approves.
+- `GET/PUT /api/admin/connectors/spam` (administrators) returns settings, counts
+  (in Spam, awaiting moderation, spam in the last 7 days), the engine description
+  and the Akismet limitation; PUT validates 1–20 and moderation ≤ spam.
+- The Connectors screen now has a Spam protection card: active/off badge, the
+  enable toggle, both thresholds, Save, live counts and an Akismet row explaining
+  that it needs an external account, API key and per-comment data transfer.
+- Verified in the browser: the card showed Active with thresholds 3/6 and the
+  existing pending count; saving 4/8 persisted. A public submission of
+  `CHEAP VIAGRA … two links !!!` was stored as SPAM, a single-spam-phrase comment
+  as PENDING, and a clean comment followed the existing first-comment PENDING
+  rule. Comments tabs showed Spam (1) / Pending (3) and the stats matched.
+  Turning the guard off made the same spam text PENDING; settings were restored
+  and the test comments deleted.
+- Tests: scorer unit cases (clean, links/phrases/shouting, disposable/BBCode/URL
+  name, duplicates, inverted thresholds) and API cases (spam vs borderline vs
+  clean statuses, public visibility, stats, raised thresholds, disabled guard,
+  validation, anonymous/editor denial).
+- Validation: 776 unit/integration tests (API 480, admin 188, web 38,
+  block-system 65, contracts 5), 23 Playwright E2E tests and seven builds pass.

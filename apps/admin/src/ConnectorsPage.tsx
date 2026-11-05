@@ -3,8 +3,11 @@ import {
   actionErrorMessage,
   disconnectConnector,
   fetchConnectors,
+  fetchSpamGuard,
   setConnectorKey,
+  updateSpamGuard,
   type ConnectorState,
+  type SpamGuardState,
 } from './api.js';
 import { Notice, PageHeader, Skeleton, type NoticeMessage } from './components.js';
 import { navigate } from './router.js';
@@ -19,6 +22,11 @@ import { navigate } from './router.js';
  */
 export function ConnectorsPage() {
   const [connectors, setConnectors] = useState<ConnectorState[] | null>(null);
+  const [spam, setSpam] = useState<SpamGuardState | null>(null);
+  const [spamEnabled, setSpamEnabled] = useState(true);
+  const [spamThreshold, setSpamThreshold] = useState(6);
+  const [moderationThreshold, setModerationThreshold] = useState(3);
+  const [spamBusy, setSpamBusy] = useState(false);
   const [keys, setKeys] = useState<Record<string, string>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
@@ -26,9 +34,16 @@ export function ConnectorsPage() {
 
   useEffect(() => {
     let active = true;
-    fetchConnectors()
-      .then((items) => {
-        if (active) setConnectors(items);
+    Promise.all([fetchConnectors(), fetchSpamGuard().catch(() => null)])
+      .then(([items, guard]) => {
+        if (!active) return;
+        setConnectors(items);
+        if (guard) {
+          setSpam(guard);
+          setSpamEnabled(guard.settings.enabled);
+          setSpamThreshold(guard.settings.spamThreshold);
+          setModerationThreshold(guard.settings.moderationThreshold);
+        }
       })
       .catch((caught) => {
         if (active) setError(actionErrorMessage(caught));
@@ -55,6 +70,34 @@ export function ConnectorsPage() {
       setError(actionErrorMessage(caught));
     } finally {
       setBusyId(null);
+    }
+  }
+
+  async function saveSpam(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (spamBusy) return;
+    if (moderationThreshold > spamThreshold) {
+      setError('The moderation threshold cannot be higher than the spam threshold.');
+      return;
+    }
+    setSpamBusy(true);
+    setNotice(null);
+    setError(null);
+    try {
+      const next = await updateSpamGuard({
+        enabled: spamEnabled,
+        spamThreshold,
+        moderationThreshold,
+      });
+      setSpam(next);
+      setSpamEnabled(next.settings.enabled);
+      setSpamThreshold(next.settings.spamThreshold);
+      setModerationThreshold(next.settings.moderationThreshold);
+      setNotice({ tone: 'success', text: 'Spam protection settings saved.' });
+    } catch (caught) {
+      setError(actionErrorMessage(caught));
+    } finally {
+      setSpamBusy(false);
     }
   }
 
@@ -88,6 +131,81 @@ export function ConnectorsPage() {
           All of your API keys and credentials are stored here and shared across features. Configure
           once and use everywhere.
         </p>
+
+        <section className="spam-guard-card" aria-labelledby="spam-guard-heading">
+          <div className="spam-guard-head">
+            <h2 id="spam-guard-heading">Spam protection</h2>
+            {spam ? (
+              <span className={`spam-guard-badge${spam.settings.enabled ? ' is-active' : ''}`}>
+                {spam.settings.enabled ? 'Active' : 'Off'}
+              </span>
+            ) : null}
+          </div>
+          <p className="field-help">
+            {spam?.engine.description ??
+              'Scores comments locally; no comment data leaves this server.'}
+          </p>
+          {spam ? (
+            <>
+              <form onSubmit={(event) => void saveSpam(event)} aria-label="Spam protection">
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={spamEnabled}
+                    onChange={(event) => setSpamEnabled(event.target.checked)}
+                    disabled={spamBusy}
+                  />
+                  <span>Filter new comments with the bundled spam guard</span>
+                </label>
+                <div className="spam-guard-thresholds">
+                  <label>
+                    <span>Hold for moderation at score</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={moderationThreshold}
+                      onChange={(event) => setModerationThreshold(Number(event.target.value) || 1)}
+                      disabled={spamBusy || !spamEnabled}
+                    />
+                  </label>
+                  <label>
+                    <span>Mark as spam at score</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={spamThreshold}
+                      onChange={(event) => setSpamThreshold(Number(event.target.value) || 1)}
+                      disabled={spamBusy || !spamEnabled}
+                    />
+                  </label>
+                </div>
+                <p className="field-help">
+                  Scores count links, spam phrases, disposable email domains, shouting and
+                  duplicates. The spam threshold must be at least the moderation threshold. A
+                  flagged comment still appears in Comments → Spam/Pending for a moderator.
+                </p>
+                <button type="submit" className="button primary-button" disabled={spamBusy}>
+                  {spamBusy ? 'Saving…' : 'Save protection settings'}
+                </button>
+              </form>
+              <p className="spam-guard-stats">
+                {spam.stats.spam} in Spam · {spam.stats.pending} awaiting moderation ·{' '}
+                {spam.stats.spamLast7Days} caught in the last 7 days
+              </p>
+              <div className="spam-guard-akismet">
+                <strong>Akismet</strong>
+                <span>{spam.akismet.reason}</span>
+              </div>
+            </>
+          ) : (
+            <p className="field-help">
+              Spam protection settings are unavailable right now. Comments still use the previous
+              behaviour.
+            </p>
+          )}
+        </section>
 
         <div className="connectors-banner">
           <div>

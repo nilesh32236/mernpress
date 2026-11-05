@@ -79,7 +79,7 @@ controls MERNPress implements.
 | Settings → Media | “Media Settings”: Image sizes, Uploading Files | Same | match |
 | Settings → Permalinks | “Permalink Settings”: structure presets, category base, tag base | “Permalink Settings”: the same six presets, a validated custom pattern, category/tag bases and a live preview | match (numeric ids are UUIDs; see ADR 0040) |
 | Settings → Privacy | `<h1>Privacy</h1>`, “Privacy Settings”, policy page picker, Create/Use This Page helpers | `<h1>Privacy</h1>`, “Privacy Settings”, policy page picker, **Create a new Privacy Policy page**, Edit/View links and **Use This Page** | match (follow-up slice; see ADR 0039) |
-| Settings → Connectors | “Connectors”: Akismet, Anthropic, Google, OpenAI cards | “Connectors”: OpenAI / Google / Anthropic key cards | narrower: AI providers only (no spam service) |
+| Settings → Connectors | “Connectors”: Akismet, Anthropic, Google, OpenAI cards | “Connectors”: Spam protection card (bundled heuristic guard with thresholds, stats) + OpenAI / Google / Anthropic key cards; Akismet row marked unavailable with its external-service reason | match in purpose (local guard instead of Akismet; ADR 0042) |
 | Dashboard → Updates | “WordPress Updates”: core, Plugins, Themes, re-install | “MERNPress Updates”: MERNPress, Plugins, Themes, Check again | match adapted to the product name |
 
 The only code change from this pass was the Privacy page title/heading split

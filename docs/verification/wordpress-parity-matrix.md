@@ -17,7 +17,7 @@ screens exist, where they were verified and what is still outstanding.
 | Plugins | Installed Plugins, Add Plugin | Match (Add Plugin states no marketplace) |
 | Users | All Users, Add User, Profile | Match |
 | Tools | Available Tools, Import, Export, Site Health, Export Personal Data, Erase Personal Data, Theme File Editor, Plugin File Editor | Match except the two File Editors (excluded, see below) |
-| Settings | General, Connectors, Writing, Reading, Discussion, Media, Permalinks, Privacy | Match |
+| Settings | General, Connectors (AI keys + bundled spam guard), Writing, Reading, Discussion, Media, Permalinks, Privacy | Match except Akismet (external credentials; see below) |
 
 ## Screen status
 

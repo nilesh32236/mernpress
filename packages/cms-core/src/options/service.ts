@@ -582,6 +582,34 @@ const SPECS: Record<string, OptionSpec> = {
       return value;
     },
   },
+  spam_guard_enabled: {
+    group: 'discussion',
+    defaultValue: true,
+    validate: (value) => {
+      if (typeof value !== 'boolean') throwValidation('spam_guard_enabled must be a boolean.');
+      return value;
+    },
+  },
+  spam_guard_spam_threshold: {
+    group: 'discussion',
+    defaultValue: 6,
+    validate: (value) => {
+      if (typeof value !== 'number' || !Number.isInteger(value) || value < 1 || value > 20) {
+        throwValidation('spam_guard_spam_threshold must be 1-20.');
+      }
+      return value;
+    },
+  },
+  spam_guard_moderation_threshold: {
+    group: 'discussion',
+    defaultValue: 3,
+    validate: (value) => {
+      if (typeof value !== 'number' || !Number.isInteger(value) || value < 1 || value > 20) {
+        throwValidation('spam_guard_moderation_threshold must be 1-20.');
+      }
+      return value;
+    },
+  },
   comments_notify: {
     group: 'discussion',
     defaultValue: true,

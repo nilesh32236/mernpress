@@ -971,6 +971,44 @@ export interface ApplicationPassword {
 
 export type OptionValues = Record<string, unknown>;
 
+// ---- Settings → Connectors → Spam protection ----
+export interface SpamGuardSettings {
+  enabled: boolean;
+  spamThreshold: number;
+  moderationThreshold: number;
+}
+
+export interface SpamGuardState {
+  settings: SpamGuardSettings;
+  stats: { spam: number; pending: number; spamLast7Days: number };
+  engine: { id: 'local-heuristic'; name: string; description: string };
+  akismet: { available: false; reason: string };
+}
+
+export async function fetchSpamGuard(): Promise<SpamGuardState> {
+  const response = await fetch('/api/admin/connectors/spam', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<SpamGuardState>(response);
+}
+
+export async function updateSpamGuard(settings: SpamGuardSettings): Promise<SpamGuardState> {
+  const response = await fetch('/api/admin/connectors/spam', {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify(settings),
+  });
+  return readJson<SpamGuardState>(response);
+}
+
 // ---- Appearance → Customize ----
 export interface CustomizerColors {
   background?: string;

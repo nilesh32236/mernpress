@@ -375,3 +375,22 @@ export {
   type CustomizerSettings,
   type CustomMenuItem,
 } from './customizer/validation.js';
+
+// ---- Local comment spam guard ----
+export {
+  assessComment,
+  spamVerdict,
+  type SpamAssessment,
+  type SpamSignals,
+  type SpamThresholds,
+  type SpamVerdict,
+} from './comments/spam.js';
+
+// ---- Spam guard settings and stats (Settings → Connectors) ----
+export {
+  createSpamGuardService,
+  type SpamGuardService,
+  type SpamGuardServiceOptions,
+  type SpamGuardSettings,
+  type SpamGuardState,
+} from './comments/spam-service.js';
