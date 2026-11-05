@@ -4078,3 +4078,20 @@ administrator on a draft created with `notesNotify: false`:
   and the Settings → Discussion field/value.
 - Validation: 834 unit/integration tests (API 503, admin 220, web 38,
   block-system 65, contracts 8), 23 Playwright E2E tests and seven builds pass.
+
+**Deployment (note-trash retention):** release `20261105T193454Z-2462675`
+(current); no schema change (Discussion option only). Production verification:
+- Settings → Discussion rendered `notes_trash_retention_days` with the default
+  value 30.
+- A temporary draft with a trashed root and reply, backdated 40 days, was purged
+  by the operator CLI from the release
+  (`node apps/api/dist/cli/purge-notes-trash.js`): “Purged 1 note(s) trashed
+  longer than 30 day(s).”, 0 rows left, audit
+  `{permanent: true, automatic: true, replies: 1}`.
+- A second backdated thread (45 days) was purged automatically by the API
+  scheduler after a service restart (boot catch-up): the log shows
+  `{"purged":1,"msg":"expired note trash purged"}`, 0 rows left and the same
+  automatic audit payload — proving the scheduled path, not just the CLI.
+- The temporary posts and administrator were deleted; production is back to
+  1 user and 2 posts with `/`, `/admin/`, `/api/health` and `/posts/testcom` at
+  200.
