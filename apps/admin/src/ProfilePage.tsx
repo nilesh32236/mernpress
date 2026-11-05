@@ -96,6 +96,9 @@ export function ProfilePage({
         setWebsite(result.website ?? '');
         setSyntaxHighlighting(result.syntaxHighlighting !== false);
         setLocale(result.locale ?? 'en_US');
+        // Server preference wins over the localStorage cache.
+        setAdminColor(result.adminColor);
+        applyColorScheme(result.adminColor);
         setLoading(false);
       })
       .catch((caught) => {
@@ -201,7 +204,8 @@ export function ProfilePage({
       nextBio === (profile.bio ?? '') &&
       nextWebsite === (profile.website ?? '') &&
       syntaxHighlighting === (profile.syntaxHighlighting !== false) &&
-      locale === (profile.locale ?? 'en_US')
+      locale === (profile.locale ?? 'en_US') &&
+      adminColor === profile.adminColor
     ) {
       setAccountError(null);
       setNotice({ tone: 'info', text: 'No changes to save.' });
@@ -222,6 +226,7 @@ export function ProfilePage({
         website: nextWebsite ? nextWebsite : null,
         syntaxHighlighting,
         locale,
+        adminColor,
       });
       setProfile(updated);
       setUsername(updated.username);
@@ -234,6 +239,8 @@ export function ProfilePage({
       setWebsite(updated.website ?? '');
       setSyntaxHighlighting(updated.syntaxHighlighting !== false);
       setLocale(updated.locale ?? 'en_US');
+      setAdminColor(updated.adminColor);
+      applyColorScheme(updated.adminColor);
       setNotice({ tone: 'success', text: 'Profile updated.' });
       onProfileUpdated?.({ username: updated.username });
     } catch (caught) {

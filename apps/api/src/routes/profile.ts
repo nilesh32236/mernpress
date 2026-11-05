@@ -5,6 +5,7 @@ import type {
   UserAdminService,
 } from '@mernpress/cms-core';
 import { AVAILABLE_LOCALES } from '@mernpress/cms-core';
+import { isAdminColorScheme, type AdminColorScheme } from '@mernpress/contracts';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { requireAdmin } from '../auth/require-admin.js';
@@ -23,6 +24,7 @@ export const updateProfileSchema = z
     website: z.string().max(2048).nullable().optional(),
     syntaxHighlighting: z.boolean().optional(),
     locale: z.string().max(20).optional(),
+    adminColor: z.custom<AdminColorScheme>(isAdminColorScheme, 'Unknown colour scheme').optional(),
   })
   .strict();
 

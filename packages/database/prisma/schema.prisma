@@ -41,6 +41,8 @@ model User {
   syntaxHighlighting   Boolean    @default(true) @map("syntax_highlighting")
   /// WordPress profile language (per user). Only en_US ships in this build.
   locale               String     @default("en_US") @db.VarChar(20)
+  /// WordPress administration colour scheme (modern, fresh, light, blue, …).
+  adminColor           String     @default("fresh") @map("admin_color") @db.VarChar(20)
   /// AES-256-GCM sealed TOTP secret; null when 2FA is not configured.
   twoFactorSecret      String?    @map("two_factor_secret") @db.Text
   twoFactorEnabled     Boolean    @default(false) @map("two_factor_enabled")

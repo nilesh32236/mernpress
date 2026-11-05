@@ -42,6 +42,7 @@ owner decision.
 | Plugins → Installed | D/P | Filters, bulk, active edge, auto-update column, View details, Delete (inactive only, removes the package directory); plugins can ship a real runtime module (Auto Excerpt) |
 | Plugins → Add Plugin | D/P | WordPress description + filter bar/search; directory tabs disabled and explained; installed packages listed |
 | Profile → Two-Factor / Login challenge | D/P | TOTP enrollment, recovery codes, password+code disable, admin reset, two-step login; WordPress needs a plugin |
+| Profile → Administration Color Scheme | D/P | The nine WordPress schemes (Default, Light, Modern, Blue, Coffee, Ectoplasm, Midnight, Ocean, Sunrise), stored per user and applied on login |
 | Users / Add User / Profile | D/P | Roles, display name select, colour schemes, syntax highlighting, language, application passwords, password, Send password reset (row + bulk); Send User Notification enabled when mail is configured and includes a reset link |
 | Public post template | D/P | Reading time, related posts by category with newest fallback, author box with local initials avatar, prev/next, comments; WordPress themes/plugins need code for this |
 | SEO / metadata | D/P | Per-post SEO fields, JSON-LD (BlogPosting/WebPage/Breadcrumb/Collection/Profile), Twitter cards, image sitemap, /llms.txt; WordPress needs plugins for all of this |

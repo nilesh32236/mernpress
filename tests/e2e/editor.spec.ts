@@ -141,12 +141,13 @@ test('creates content with paragraph, heading and list blocks and reloads it', a
   await expect(page.locator('.block-canvas-sheet h2')).toHaveText('A section heading');
 
   // The admin still keeps no auth or token state in browser storage, even
-  // after loading the WordPress packages.
+  // after loading the WordPress packages. The colour scheme is the only cached
+  // preference (a cosmetic cache; the server value remains authoritative).
   const storage = await page.evaluate(() => ({
     local: Object.keys(localStorage),
     session: Object.keys(sessionStorage),
   }));
-  expect(storage).toEqual({ local: [], session: [] });
+  expect(storage).toEqual({ local: ['mernpress.colorScheme'], session: [] });
 
   expect(errors).toEqual([]);
 });

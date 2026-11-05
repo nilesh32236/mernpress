@@ -1,3 +1,8 @@
+import {
+  DEFAULT_ADMIN_COLOR_SCHEME,
+  isAdminColorScheme,
+  type AdminColorScheme,
+} from '@mernpress/contracts';
 import type { DatabaseClient, Prisma, UserRole, UserStatus } from '@mernpress/database';
 import { requireCapability } from './capabilities.js';
 import { hashPassword, passwordPolicyError, verifyPassword } from './password.js';
@@ -31,6 +36,7 @@ export type UserAdminErrorCode =
   | 'INVALID_WEBSITE'
   | 'INVALID_NAME'
   | 'INVALID_LOCALE'
+  | 'INVALID_ADMIN_COLOR'
   | 'MAIL_NOT_CONFIGURED'
   | 'MAIL_SEND_FAILED';
 
@@ -84,6 +90,8 @@ export interface UserProfile {
   syntaxHighlighting: boolean;
   /** WordPress profile language; only en_US ships in this build. */
   locale: string;
+  /** WordPress administration colour scheme. */
+  adminColor: AdminColorScheme;
   role: UserRole;
   /** ISO-8601 UTC instant. */
   createdAt: string;
@@ -127,6 +135,8 @@ export interface UpdateProfileInput {
   syntaxHighlighting?: boolean | undefined;
   /** WordPress profile language; only en_US ships in this build. */
   locale?: string | undefined;
+  /** WordPress administration colour scheme. */
+  adminColor?: AdminColorScheme | undefined;
 }
 
 export interface ChangeOwnPasswordInput {
@@ -204,6 +214,7 @@ const PROFILE_SELECT = {
   website: true,
   syntaxHighlighting: true,
   locale: true,
+  adminColor: true,
   role: true,
   createdAt: true,
 } as const;
@@ -233,6 +244,7 @@ type ProfileRow = {
   website: string | null;
   syntaxHighlighting: boolean;
   locale: string;
+  adminColor: string;
   role: UserRole;
   createdAt: Date;
 };
@@ -318,6 +330,7 @@ function toProfile(row: ProfileRow): UserProfile {
     website: row.website,
     syntaxHighlighting: row.syntaxHighlighting,
     locale: row.locale,
+    adminColor: isAdminColorScheme(row.adminColor) ? row.adminColor : DEFAULT_ADMIN_COLOR_SCHEME,
     role: row.role,
     createdAt: row.createdAt.toISOString(),
   };
@@ -331,6 +344,12 @@ export const AVAILABLE_LOCALES: ReadonlyArray<{ value: string; label: string }> 
 function normalizeLocale(value: string): string {
   if (!AVAILABLE_LOCALES.some((locale) => locale.value === value)) {
     throw new UserAdminError('INVALID_LOCALE', 'That language is not installed.', 400);
+  }
+  return value;
+}
+function normalizeAdminColor(value: string): AdminColorScheme {
+  if (!isAdminColorScheme(value)) {
+    throw new UserAdminError('INVALID_ADMIN_COLOR', 'That colour scheme is not available.', 400);
   }
   return value;
 }
@@ -904,6 +923,8 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
         ? current.syntaxHighlighting
         : input.syntaxHighlighting;
     const locale = input.locale === undefined ? current.locale : normalizeLocale(input.locale);
+    const adminColor =
+      input.adminColor === undefined ? current.adminColor : normalizeAdminColor(input.adminColor);
 
     if (
       username === current.username &&
@@ -915,7 +936,8 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
       bio === current.bio &&
       website === current.website &&
       syntaxHighlighting === current.syntaxHighlighting &&
-      locale === current.locale
+      locale === current.locale &&
+      adminColor === current.adminColor
     ) {
       return toProfile(current);
     }
@@ -954,6 +976,7 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
             website,
             syntaxHighlighting,
             locale,
+            adminColor,
           },
           select: PROFILE_SELECT,
         });

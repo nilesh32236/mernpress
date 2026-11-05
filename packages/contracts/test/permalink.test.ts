@@ -88,3 +88,26 @@ describe('permalink structures', () => {
     expect(previewPostPath('/%year%/%monthnum%/%postname%/')).toBe('/2026/01/sample-post');
   });
 });
+
+describe('admin colour schemes', () => {
+  it('lists the nine WordPress choices and validates ids', async () => {
+    const { ADMIN_COLOR_SCHEMES, DEFAULT_ADMIN_COLOR_SCHEME, isAdminColorScheme } =
+      await import('../src/admin-colors.js');
+    expect(ADMIN_COLOR_SCHEMES).toHaveLength(9);
+    expect(ADMIN_COLOR_SCHEMES.map((scheme) => scheme.id)).toEqual([
+      'fresh',
+      'light',
+      'modern',
+      'blue',
+      'coffee',
+      'ectoplasm',
+      'midnight',
+      'ocean',
+      'sunrise',
+    ]);
+    expect(DEFAULT_ADMIN_COLOR_SCHEME).toBe('fresh');
+    expect(isAdminColorScheme('midnight')).toBe(true);
+    expect(isAdminColorScheme('default')).toBe(false);
+    expect(isAdminColorScheme(null)).toBe(false);
+  });
+});

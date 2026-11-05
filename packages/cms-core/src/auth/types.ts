@@ -1,3 +1,5 @@
+import type { AdminColorScheme } from '@mernpress/contracts';
+
 export type AuthErrorCode =
   | 'ADMIN_ALREADY_EXISTS'
   | 'USERNAME_TAKEN'
@@ -45,6 +47,8 @@ export interface PublicUser {
   username: string;
   role: UserRole;
   status: UserStatus;
+  /** Per-user WordPress administration colour scheme. */
+  adminColor: AdminColorScheme;
 }
 
 export interface AuthConfig {

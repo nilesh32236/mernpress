@@ -1,3 +1,4 @@
+import { DEFAULT_ADMIN_COLOR_SCHEME, isAdminColorScheme } from '@mernpress/contracts';
 import type { DatabaseClient } from '@mernpress/database';
 import { createAuthAudit, type LoginFailureReason } from './audit.js';
 import { createIdentifierHasher } from './identifiers.js';
@@ -76,6 +77,7 @@ export function createAuthService(options: {
     username: string;
     role: string;
     status: string;
+    adminColor: string;
   }): PublicUser {
     // Fail closed on an unknown role/status rather than silently authorizing.
     if (!VALID_ROLES.has(user.role) || (user.status !== 'active' && user.status !== 'disabled')) {
@@ -87,6 +89,9 @@ export function createAuthService(options: {
       username: user.username,
       role: user.role as PublicUser['role'],
       status: user.status,
+      adminColor: isAdminColorScheme(user.adminColor)
+        ? user.adminColor
+        : DEFAULT_ADMIN_COLOR_SCHEME,
     };
   }
 
@@ -214,6 +219,7 @@ export function createAuthService(options: {
       username: string;
       role: string;
       status: string;
+      adminColor: string;
     },
     remember: boolean,
     ip: string,

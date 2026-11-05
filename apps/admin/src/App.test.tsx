@@ -27,13 +27,16 @@ function countPage(total = 0): Response {
   });
 }
 
-function authenticatedFetch(role = 'administrator'): ReturnType<typeof vi.fn<typeof fetch>> {
+function authenticatedFetch(
+  role = 'administrator',
+  adminColor = 'fresh',
+): ReturnType<typeof vi.fn<typeof fetch>> {
   // URL-aware so adding a dashboard request cannot shift the mock queue.
   const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input) => {
     const url = String(input);
     if (url === '/api/auth/session') {
       return response({
-        user: { id: 'u1', username: 'admin', role, status: 'active' },
+        user: { id: 'u1', username: 'admin', role, status: 'active', adminColor },
       }) as Response;
     }
     if (url === '/api/auth/logout') {
@@ -177,5 +180,16 @@ describe('session expiry', () => {
 
     expect(await screen.findByLabelText('Username or Email Address')).toBeDefined();
     expect(screen.getByRole('alert').textContent).toContain('Your session expired');
+  });
+
+  it('applies the per-user colour scheme from the session', async () => {
+    window.localStorage.clear();
+    vi.stubGlobal('fetch', authenticatedFetch('administrator', 'midnight'));
+
+    render(<App />);
+
+    expect(await screen.findByRole('link', { name: 'Dashboard' })).toBeDefined();
+    expect(document.documentElement.dataset['colorScheme']).toBe('midnight');
+    expect(window.localStorage.getItem('mernpress.colorScheme')).toBe('midnight');
   });
 });

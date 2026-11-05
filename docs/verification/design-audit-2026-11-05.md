@@ -39,7 +39,7 @@ MERNPress development admin at `http://127.0.0.1:5173/admin/`.
 | Users | Users | Users | All / Administrator (+ role tabs); **Add User** | Same columns and row actions, including Send password reset and Reset 2FA |
 | Tools | Tools | Tools | Cards | MERNPress adds Redirects and Backups, which WordPress needs plugins for |
 | Settings → General | General Settings | General Settings | **Save Changes** | Same field groups and labels |
-| Profile | Profile | Profile | **Update Profile** | MERNPress uses sections instead of WordPress's five tables; it adds Two-Factor Authentication and Application Passwords |
+| Profile | Profile | Profile | **Update Profile** | MERNPress uses sections instead of WordPress's five tables; it adds Two-Factor Authentication and Application Passwords. The nine colour schemes now match WordPress's names and persist per user |
 | Single post (public) | n/a | — | — | Reading time, related posts and the author box verified in the browser and in production |
 
 Screenshots from this pass (development, git-ignored):

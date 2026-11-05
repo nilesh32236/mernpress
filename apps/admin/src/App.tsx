@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchSession, setUnauthorizedHandler, type AuthUser } from './api.js';
+import { applyColorScheme } from './colorScheme.js';
 import { ContentEditor } from './ContentEditor.js';
 import { ToolsPage } from './ToolsPage.js';
 import { RedirectsPage } from './RedirectsPage.js';
@@ -41,9 +42,12 @@ export function App() {
 
     fetchSession()
       .then((sessionUser) => {
-        if (active) {
-          setUser(sessionUser);
+        if (!active) return;
+        if (sessionUser?.adminColor) {
+          // The server is authoritative; replace the localStorage cache.
+          applyColorScheme(sessionUser.adminColor);
         }
+        setUser(sessionUser);
       })
       .catch(() => {
         if (active) {

@@ -38,6 +38,7 @@ describe('POST /api/auth/login', () => {
       username: ADMIN_USERNAME,
       role: 'administrator',
       status: 'active',
+      adminColor: 'fresh',
     });
     expect(body.user).not.toHaveProperty('passwordHash');
     expect(body.csrfToken).toEqual(expect.any(String));

@@ -451,6 +451,71 @@ describe('users administration + profile', () => {
       expect((invalid.json() as ErrorEnvelope).error.code).toBe('INVALID_USERNAME');
     });
 
+    it('stores the administration colour scheme per user', async () => {
+      const initial = await app.inject({
+        method: 'GET',
+        url: '/api/profile',
+        headers: { cookie: adminCookie },
+      });
+      expect((initial.json() as ProfileShape & { adminColor: string }).adminColor).toBe('fresh');
+
+      const saved = await app.inject({
+        method: 'PUT',
+        url: '/api/profile',
+        headers: adminHeaders(),
+        payload: { adminColor: 'midnight' },
+      });
+      expect(saved.statusCode).toBe(200);
+      expect((saved.json() as { adminColor: string }).adminColor).toBe('midnight');
+
+      const reread = await app.inject({
+        method: 'GET',
+        url: '/api/profile',
+        headers: { cookie: adminCookie },
+      });
+      expect((reread.json() as { adminColor: string }).adminColor).toBe('midnight');
+      const session = await getSession(app, adminCookie);
+      expect((session.json() as { user: { adminColor: string } }).user.adminColor).toBe('midnight');
+
+      const invalid = await app.inject({
+        method: 'PUT',
+        url: '/api/profile',
+        headers: adminHeaders(),
+        payload: { adminColor: 'neon' },
+      });
+      expect(invalid.statusCode).toBe(400);
+      expect((invalid.json() as ErrorEnvelope).error.code).toBe('VALIDATION_ERROR');
+
+      // Another account keeps its own scheme.
+      await seedUser(app, {
+        username: 'scheme-editor',
+        password: 'Scheme password 123',
+        role: 'editor',
+      });
+      const editor = await loginEditor('scheme-editor', 'Scheme password 123');
+      const editorHeaders = headers(editor.cookieHeader, editor.csrfToken);
+      const editorProfile = await app.inject({
+        method: 'GET',
+        url: '/api/profile',
+        headers: { cookie: editor.cookieHeader },
+      });
+      expect((editorProfile.json() as { adminColor: string }).adminColor).toBe('fresh');
+      const editorSaved = await app.inject({
+        method: 'PUT',
+        url: '/api/profile',
+        headers: editorHeaders,
+        payload: { adminColor: 'ocean' },
+      });
+      expect((editorSaved.json() as { adminColor: string }).adminColor).toBe('ocean');
+
+      const adminAgain = await app.inject({
+        method: 'GET',
+        url: '/api/profile',
+        headers: { cookie: adminCookie },
+      });
+      expect((adminAgain.json() as { adminColor: string }).adminColor).toBe('midnight');
+    });
+
     it('changes the own password: wrong current is 400 and the new password works', async () => {
       await seedUser(app, {
         username: 'change-pass',

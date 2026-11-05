@@ -1,3 +1,4 @@
+import type { AdminColorScheme } from '@mernpress/contracts';
 export type UserRole = 'administrator' | 'editor' | 'author' | 'contributor' | 'subscriber';
 export type ContentType = 'post' | 'page';
 export type PostFormat =
@@ -21,6 +22,8 @@ export interface AuthUser {
   username: string;
   role: UserRole;
   status: 'active' | 'disabled';
+  /** Per-user WordPress administration colour scheme (session response). */
+  adminColor?: AdminColorScheme;
 }
 
 export interface AdminTermSummary {
@@ -952,6 +955,7 @@ export interface UserProfile {
   website: string | null;
   syntaxHighlighting: boolean;
   locale: string;
+  adminColor: AdminColorScheme;
   role: UserRole;
   createdAt: string;
 }
@@ -1455,6 +1459,7 @@ export async function updateProfile(payload: {
   website?: string | null;
   syntaxHighlighting?: boolean;
   locale?: string;
+  adminColor?: AdminColorScheme;
 }): Promise<UserProfile> {
   const response = await fetch('/api/profile', {
     method: 'PUT',

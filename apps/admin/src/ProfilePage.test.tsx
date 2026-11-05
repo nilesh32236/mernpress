@@ -45,6 +45,7 @@ function makeProfile(overrides: Partial<UserProfile> = {}): UserProfile {
     website: null,
     syntaxHighlighting: true,
     locale: 'en_US',
+    adminColor: 'fresh',
     role: 'administrator',
     createdAt: '2026-10-01T09:00:00.000Z',
     ...overrides,
@@ -104,6 +105,7 @@ describe('profile page', () => {
         website: null,
         syntaxHighlighting: true,
         locale: 'en_US',
+        adminColor: 'fresh',
       }),
     );
     expect(await screen.findByText('Profile updated.')).toBeDefined();
@@ -249,5 +251,26 @@ describe('profile page', () => {
 
     await waitFor(() => expect(vi.mocked(revokeApplicationPassword)).toHaveBeenCalledWith('ap1'));
     expect(await screen.findByText('Application password revoked: CI deploy.')).toBeDefined();
+  });
+
+  it('applies the server colour scheme and persists a new choice', async () => {
+    window.localStorage.clear();
+    vi.mocked(fetchProfile).mockResolvedValue(makeProfile({ adminColor: 'sunrise' }));
+
+    render(<ProfilePage user={admin} />);
+    await screen.findByLabelText('Username');
+    expect(document.documentElement.dataset['colorScheme']).toBe('sunrise');
+    expect((screen.getByLabelText('Sunrise') as HTMLInputElement).checked).toBe(true);
+
+    fireEvent.click(screen.getByLabelText('Midnight'));
+    expect(document.documentElement.dataset['colorScheme']).toBe('midnight');
+    fireEvent.click(screen.getByRole('button', { name: 'Update Profile' }));
+
+    await waitFor(() =>
+      expect(vi.mocked(updateProfile)).toHaveBeenCalledWith(
+        expect.objectContaining({ adminColor: 'midnight' }),
+      ),
+    );
+    expect(await screen.findByText('Profile updated.')).toBeDefined();
   });
 });

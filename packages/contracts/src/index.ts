@@ -6,3 +6,4 @@
  * Next.js edge middleware and the Fastify process evaluate this module.
  */
 export * from './permalink.js';
+export * from './admin-colors.js';

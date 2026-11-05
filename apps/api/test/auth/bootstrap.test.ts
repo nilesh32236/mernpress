@@ -22,6 +22,7 @@ describe('administrator bootstrap', () => {
       username: 'admin.user',
       role: 'administrator',
       status: 'active',
+      adminColor: 'fresh',
     });
     expect(user).not.toHaveProperty('passwordHash');
 
