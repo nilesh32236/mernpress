@@ -4580,3 +4580,25 @@ administrator:
   groups, `x-default`, deduplication, single-language entries and image data.
 - Validation: 888 unit/integration tests (API 521, admin 240, web 49, contracts
   13, block-system 65), 24 Playwright E2E tests and seven builds pass.
+
+**Deployment (sitemap alternates):** releases `20261106T122236Z-3f95d5a`
+(initial) and `20261106T122814Z-0bb3de6` (cache fix, current). No schema change.
+Production verification with a temporary administrator:
+- Two posts plus translations were published in English/Hindi. The sitemap now
+  emits `xmlns:xhtml` and, for each variant, three `xhtml:link` alternates
+  (`en`, `hi`, `x-default`) pointing at the correct language-prefixed URLs.
+- The first production check exposed two real caching defects: the route's
+  `revalidate = 3600` served a build-time sitemap, and even after
+  `force-dynamic`, the per-language list came from Next's 60-second data cache
+  (the English variant was missing while the uncached Hindi one appeared). Fixes:
+  `force-dynamic` on the route and `listPublished(..., noStore)` with a direct
+  `cache: 'no-store'` fetch.
+- After the fix a second English/Hindi pair was published and the sitemap
+  fetched immediately (no wait): both URLs were present, each with `en`, `hi`
+  and `x-default` alternates. After cleanup the removed URLs disappeared on the
+  next request, confirming the route is no longer cached.
+- Cleanup removed the verification posts, the `site_languages` option (back to
+  default English only), verification analytics rows, recent audit events and
+  the temporary administrator; production is back to 1 user, 2 posts and 0
+  analytics rows, with `/`, `/admin/`, `/api/health`, `/posts/testcom` and
+  `/sitemap.xml` at 200.
