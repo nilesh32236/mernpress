@@ -4868,3 +4868,16 @@ in production with a temporary administrator:
   remain.
 - Validation: 905 unit/integration tests (API 527, admin 250, web 50, contracts
   13, block-system 65), 24 Playwright E2E tests and seven builds pass.
+
+**Deployment (media drag-and-drop, release `20261106T143754Z-7e50936`):**
+verified in production with a temporary administrator:
+- Created “Drag Target”, uploaded `audit-image.png`, switched to grid view and
+  dragged the card onto the Drag Target tree row. The API returned the item
+  under that folder with count 1 and the notice read “Moved 1 media item(s) to
+  “Drag Target”.”.
+- Switched to list view and dragged the row onto the **Uncategorized** tree
+  row; `folderId` became null and the notice read “Moved 1 media item(s) to
+  “Uncategorized”.”.
+- Cleanup removed the media item/files, folder, temporary administrator and
+  sessions, recent audit events and analytics rows: production is back to 1
+  user, 2 posts, 0 media, 0 folders, 0 analytics rows.
