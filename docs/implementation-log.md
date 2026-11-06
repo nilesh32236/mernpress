@@ -4368,3 +4368,26 @@ schema change. Production verification with a temporary administrator:
   router/breadcrumb and the editor language save + translation create flow.
 - Validation: 874 unit/integration tests (API 519, admin 238, web 40, contracts
   12, block-system 65), 24 Playwright E2E tests and seven builds pass.
+
+**Deployment (multilingual):** release `20261106T105032Z-456361a` (current),
+migration `20261106100644_add_post_languages` applied (`posts.language` default
+`en`, `posts.translation_group` uuid default `gen_random_uuid()`, unique
+group+language, language/status index). Production verification with a temporary
+administrator:
+- Settings → Languages showed English (default) and saved Hindi (hi):
+  `{default:'en',enabled:['en','hi']}`.
+- An English post and its Hindi translation were created and published. The
+  English page at `/posts/production-multilingual` returned 200 with canonical
+  under that path and hreflang alternates `en`, `hi`, `x-default`; the Hindi page
+  at `/hi/posts/production-multilingual-hi` returned 200 with the Hindi title,
+  canonical under `/hi/` and the same three alternates. Both pages rendered the
+  language switcher (Hindi ↔ English).
+- The sitemap listed both `/posts/production-multilingual` and
+  `/hi/posts/production-multilingual-hi`.
+- The editor showed the Language select (English/Hindi) and the Translations
+  panel with both variants marked PUBLISHED.
+- Cleanup removed both posts, the `site_languages` option (back to the default
+  `en` only), verification analytics rows, recent audit events and the temporary
+  administrator; production is back to 1 user, 2 posts, 0 analytics rows and the
+  default single language, with `/`, `/admin/`,
+  `/admin/settings/languages`, `/api/health` and `/posts/testcom` at 200.
