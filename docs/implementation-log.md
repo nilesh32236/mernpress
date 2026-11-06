@@ -4624,3 +4624,24 @@ Production verification with a temporary administrator:
   flow.
 - Validation: 890 unit/integration tests (API 522, admin 241, web 49, contracts
   13, block-system 65), 24 Playwright E2E tests and seven builds pass.
+
+**Deployment (nested media folders):** release `20261106T124409Z-2686691`
+(current), migration `20261106123206_add_media_folder_parent` applied
+(`media_folders.parent_id`, index and self FK with `ON DELETE SET NULL`).
+Production verification with a temporary administrator:
+- Created `Prod Root` → `Prod Child` → `Prod Grandchild` through the Media
+  Library (parent select + create). The filter showed the indented tree:
+  `Prod Root (0)`, `— Prod Child (1)`, `— — Prod Grandchild (0)`.
+- Uploaded an image and assigned it to `Prod Child`; `?folder=<child>` returned
+  one item and the child count became 1.
+- Moving `Prod Grandchild` to the root and back through the “Move to” control
+  updated `parentId` both times.
+- `PUT /folders/<root>/move {parentId:<grandchild>}` returned
+  `400 FOLDER_CYCLE` (“A folder cannot be moved inside one of its own
+  descendants.”).
+- Deleting `Prod Child` moved `Prod Grandchild` under `Prod Root` and set the
+  image's `folderId` to null, with the notice “Folder deleted; child folders
+  moved up and media items are now Uncategorized.”
+- Cleanup deleted the upload, all folders and the temporary administrator;
+  production is back to 1 user, 2 posts, 0 media and 0 folders, with `/`,
+  `/admin/`, `/admin/media`, `/api/health` and `/posts/testcom` at 200.
