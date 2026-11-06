@@ -103,6 +103,8 @@ export interface UploadMediaInput {
   altText?: string | undefined;
   caption?: string | undefined;
   description?: string | undefined;
+  /** Optional folder to upload into; null/undefined = Uncategorized. */
+  folderId?: string | null | undefined;
 }
 
 export interface EditMediaInput {

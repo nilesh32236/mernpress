@@ -397,6 +397,18 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
       throw new ContentError('CONTENT_TOO_LARGE', 'File too large', 413);
     }
 
+    let folderId: string | null = null;
+    if (input.folderId !== undefined && input.folderId !== null) {
+      const folder = await prisma.mediaFolder.findUnique({
+        where: { id: input.folderId },
+        select: { id: true },
+      });
+      if (!folder) {
+        throw new ContentError('VALIDATION_ERROR', 'That folder no longer exists.', 400);
+      }
+      folderId = input.folderId;
+    }
+
     const altText = input.altText ?? '';
     const caption = input.caption ?? '';
     const description = input.description ?? '';
@@ -479,6 +491,7 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
           storagePath: `${year}/${month}/${fileName}`,
           derivatives,
           uploadedById: principal.userId,
+          folderId,
         },
       });
       return toMediaDto(row);

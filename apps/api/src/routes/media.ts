@@ -76,9 +76,10 @@ const uploadFieldSchema = z.object({
   altText: z.string().max(500).optional(),
   caption: z.string().max(2000).optional(),
   description: z.string().max(10_000).optional(),
+  folderId: uuid.optional(),
 });
 
-const UPLOAD_FIELDS = new Set(['altText', 'caption', 'description']);
+const UPLOAD_FIELDS = new Set(['altText', 'caption', 'description', 'folderId']);
 
 const MULTIPART_LIMITS = {
   /** Enforced by the parser and re-checked by the service. */
@@ -192,6 +193,7 @@ export function registerMediaRoutes(app: FastifyInstance, options: MediaRouteOpt
           altText: meta.altText ?? '',
           caption: meta.caption ?? '',
           description: meta.description ?? '',
+          folderId: meta.folderId ?? null,
         });
         return reply.code(201).send(created);
       } catch (error) {

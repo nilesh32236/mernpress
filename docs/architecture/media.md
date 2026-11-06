@@ -58,9 +58,13 @@ Reads require `content.read.any`; folder mutations require `content.create`
 and the drawer's Folder select in sync with the list.
 
 The admin renders a depth-first indented tree in the filter, create-parent, move
-and attachment-drawer selects. Limits: one folder per item, globally unique
-names, the folder filter and counts show direct items only, no bulk move and no
-drag-and-drop.
+and attachment-drawer selects, plus a **Manage folders** panel with per-folder
+New subfolder / Rename / Move / Delete actions (wrapping on mobile). Uploads
+accept an optional `folderId` multipart field and go into the browsed folder;
+the grid inserts them locally only when they match the current filters. Filter
+changes clear the bulk selection, and list-view Apply requires selecting an
+action. Limits: one folder per item, globally unique names, the folder filter
+and counts show direct items only, no bulk move and no drag-and-drop.
 
 ## Bulk regeneration
 

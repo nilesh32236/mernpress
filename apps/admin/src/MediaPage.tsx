@@ -32,62 +32,12 @@ import {
   Pagination,
 } from './components.js';
 import { formatDateTime } from './format.js';
+import { folderDescendants, folderTree, indentedFolder } from './mediaFolders.js';
+import { MediaFolderTree } from './MediaFolderTree.js';
 import { MediaImageEditor } from './MediaImageEditor.js';
 import { INFINITE_SCROLL_EVENT, infiniteScrollEnabled } from './preferences.js';
 
 const DEFAULT_PER_PAGE = 24;
-
-/** Depth-first folder rows (children after their parent) for indented selects. */
-function folderTree(folders: MediaFolder[]): Array<{ folder: MediaFolder; depth: number }> {
-  const byParent = new Map<string | null, MediaFolder[]>();
-  for (const folder of folders) {
-    const list = byParent.get(folder.parentId) ?? [];
-    list.push(folder);
-    byParent.set(folder.parentId, list);
-  }
-  for (const list of byParent.values()) list.sort((a, b) => a.name.localeCompare(b.name));
-  const rows: Array<{ folder: MediaFolder; depth: number }> = [];
-  const seen = new Set<string>();
-  const visit = (parentId: string | null, depth: number): void => {
-    for (const folder of byParent.get(parentId) ?? []) {
-      if (seen.has(folder.id)) continue;
-      seen.add(folder.id);
-      rows.push({ folder, depth });
-      visit(folder.id, depth + 1);
-    }
-  };
-  visit(null, 0);
-  // Defensive: a corrupt cycle or orphan row still appears at the top level.
-  for (const folder of folders) {
-    if (!seen.has(folder.id)) rows.push({ folder, depth: 0 });
-  }
-  return rows;
-}
-
-/** All folder ids below `id`, used to filter the move target list. */
-function folderDescendants(folders: MediaFolder[], id: string): Set<string> {
-  const byParent = new Map<string, string[]>();
-  for (const folder of folders) {
-    if (!folder.parentId) continue;
-    const list = byParent.get(folder.parentId) ?? [];
-    list.push(folder.id);
-    byParent.set(folder.parentId, list);
-  }
-  const result = new Set<string>();
-  const walk = (parentId: string): void => {
-    for (const childId of byParent.get(parentId) ?? []) {
-      if (result.has(childId)) continue;
-      result.add(childId);
-      walk(childId);
-    }
-  };
-  walk(id);
-  return result;
-}
-
-function indentedFolder(name: string, depth: number): string {
-  return `${'— '.repeat(depth)}${name}`;
-}
 
 /** Mirrors the server-side allow list (JPEG, PNG, WebP, GIF). */
 const UPLOAD_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif';
@@ -568,21 +518,45 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
     void refreshFolders();
   }, []);
 
-  async function addFolder(event: FormEvent<HTMLFormElement>): Promise<void> {
-    event.preventDefault();
-    if (folderBusy) return;
-    const name = folderName.trim();
-    if (name.length === 0) return;
+  async function createFolderAt(parentId: string | null, name: string): Promise<boolean> {
+    if (folderBusy) return false;
     setFolderBusy(true);
     setNotice(null);
     try {
-      const created = await createMediaFolder(name, folderParent === '' ? null : folderParent);
+      const created = await createMediaFolder(name, parentId);
       setFolderName('');
       await refreshFolders();
       setFolderFilter(created.id);
       setNotice({ tone: 'success', text: `Folder “${created.name}” created.` });
+      return true;
     } catch (caught) {
       setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+      return false;
+    } finally {
+      setFolderBusy(false);
+    }
+  }
+
+  async function addFolder(event: FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+    const name = folderName.trim();
+    if (name.length === 0) return;
+    await createFolderAt(folderParent === '' ? null : folderParent, name);
+  }
+
+  async function renameFolderById(id: string, name: string): Promise<boolean> {
+    if (folderBusy) return false;
+    setFolderBusy(true);
+    setNotice(null);
+    try {
+      await renameMediaFolder(id, name);
+      setRenaming(false);
+      await refreshFolders();
+      setNotice({ tone: 'success', text: 'Folder renamed.' });
+      return true;
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+      return false;
     } finally {
       setFolderBusy(false);
     }
@@ -590,63 +564,73 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
 
   async function saveFolderRename(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    if (!selectedFolder || folderBusy) return;
+    if (!selectedFolder) return;
     const name = renameValue.trim();
     if (name.length === 0) return;
+    await renameFolderById(selectedFolder.id, name);
+  }
+
+  async function deleteFolderById(folder: MediaFolder): Promise<boolean> {
+    if (folderBusy) return false;
+    const descendants = folderDescendants(folders, folder.id);
+    const itemCount =
+      folder.itemCount +
+      [...descendants].reduce(
+        (total, id) => total + (folders.find((entry) => entry.id === id)?.itemCount ?? 0),
+        0,
+      );
+    if (
+      typeof window !== 'undefined' &&
+      !window.confirm(
+        `Delete the folder “${folder.name}”? It contains ${descendants.size} subfolder(s) and ${itemCount} direct media item(s); child folders move up and its media becomes Uncategorized. This cannot be undone.`,
+      )
+    ) {
+      return false;
+    }
     setFolderBusy(true);
     setNotice(null);
     try {
-      await renameMediaFolder(selectedFolder.id, name);
-      setRenaming(false);
+      await deleteMediaFolder(folder.id);
+      if (folderFilter === folder.id) setFolderFilter('');
       await refreshFolders();
-      setNotice({ tone: 'success', text: 'Folder renamed.' });
+      setNotice({
+        tone: 'success',
+        text: 'Folder deleted; child folders moved up and media items are now Uncategorized.',
+      });
+      return true;
     } catch (caught) {
       setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+      return false;
     } finally {
       setFolderBusy(false);
     }
   }
 
   async function removeFolder(): Promise<void> {
-    if (!selectedFolder || folderBusy) return;
-    if (
-      typeof window !== 'undefined' &&
-      !window.confirm(
-        `Delete the folder “${selectedFolder.name}”? Its child folders move to its parent and its media items become Uncategorized.`,
-      )
-    ) {
-      return;
-    }
+    if (!selectedFolder) return;
+    await deleteFolderById(selectedFolder);
+  }
+
+  async function moveFolderTo(id: string, parentId: string | null): Promise<boolean> {
+    if (folderBusy) return false;
     setFolderBusy(true);
     setNotice(null);
     try {
-      await deleteMediaFolder(selectedFolder.id);
-      setFolderFilter('');
+      await moveMediaFolder(id, parentId);
       await refreshFolders();
-      setNotice({
-        tone: 'success',
-        text: 'Folder deleted; child folders moved up and media items are now Uncategorized.',
-      });
+      setNotice({ tone: 'success', text: 'Folder moved.' });
+      return true;
     } catch (caught) {
       setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+      return false;
     } finally {
       setFolderBusy(false);
     }
   }
 
   async function moveSelectedFolder(): Promise<void> {
-    if (!selectedFolder || folderBusy) return;
-    setFolderBusy(true);
-    setNotice(null);
-    try {
-      await moveMediaFolder(selectedFolder.id, moveTarget === '' ? null : moveTarget);
-      await refreshFolders();
-      setNotice({ tone: 'success', text: 'Folder moved.' });
-    } catch (caught) {
-      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
-    } finally {
-      setFolderBusy(false);
-    }
+    if (!selectedFolder) return;
+    await moveFolderTo(selectedFolder.id, moveTarget === '' ? null : moveTarget);
   }
 
   /** Rebuild WebP/AVIF derivatives for the whole library, in bounded batches. */
@@ -697,6 +681,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
   const showParent = !hiddenColumns.has('parent');
   const showDate = !hiddenColumns.has('date');
   const [bulkSelect, setBulkSelect] = useState(false);
+  const [bulkAction, setBulkAction] = useState('');
   const [bulkBusy, setBulkBusy] = useState(false);
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
   // Media → Add New deep link opens the file picker once on mount.
@@ -789,6 +774,12 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
     };
   }, [page, search, monthFilter, folderFilter, order, perPage, reloadKey]);
 
+  // A selection from another folder/search must not survive a filter change.
+  useEffect(() => {
+    setSelectedIds(new Set());
+    setBulkSelect(false);
+  }, [folderFilter, search, monthFilter]);
+
   // WordPress Media Library grid view scrolls into the next page.
   useEffect(() => {
     if (view !== 'grid' || !infiniteScroll || loading || !data) return;
@@ -865,15 +856,24 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
       { key, name: file.name, progress: 0, status: 'uploading' },
     ]);
 
+    // Upload into the folder currently being browsed; "All folders" and
+    // "Uncategorized" leave the item Uncategorized.
+    const uploadFolder = folderFilter !== '' && folderFilter !== 'none' ? folderFilter : undefined;
     try {
       const item = await uploadMedia(file, {
         onProgress: (percent) => patchUpload(key, { progress: percent }),
+        ...(uploadFolder ? { folderId: uploadFolder } : {}),
       });
       patchUpload(key, { progress: 100, status: 'done' });
       void refreshFolders();
-      // Insert locally so the grid updates immediately; if the first page is
-      // still loading there is nothing to insert into, so refetch instead.
-      if (dataRef.current) {
+      // Insert locally only when the new item belongs to the visible result set;
+      // otherwise the grid would show a row that disappears on reload.
+      const matchesView =
+        !search &&
+        !monthFilter &&
+        (folderFilter === '' ||
+          (folderFilter === 'none' ? item.folderId === null : item.folderId === folderFilter));
+      if (dataRef.current && matchesView) {
         insertMedia(item);
       } else {
         setReloadKey((value) => value + 1);
@@ -1097,6 +1097,22 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
             </button>
           </form>
         </div>
+
+        <MediaFolderTree
+          folders={folders}
+          selectedId={folderFilter}
+          busy={folderBusy}
+          onSelect={(id) => {
+            setFolderFilter(id);
+            setRenaming(false);
+            setPage(1);
+          }}
+          onCreate={createFolderAt}
+          onRename={renameFolderById}
+          onMove={moveFolderTo}
+          onDelete={deleteFolderById}
+        />
+
         <input
           ref={fileInputRef}
           id="media-upload-input"
@@ -1321,13 +1337,23 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
         <Skeleton label="Loading media…" lines={4} />
       ) : !data || data.items.length === 0 ? (
         <EmptyState
-          title={search ? 'No matching media' : 'No media yet'}
+          title={
+            search
+              ? 'No matching media'
+              : folderFilter !== ''
+                ? 'No media in this folder'
+                : 'No media yet'
+          }
           message={
-            search ? 'Try a different search term.' : 'Upload your first image to get started.'
+            search
+              ? 'Try a different search term.'
+              : folderFilter !== ''
+                ? 'Upload an image into this folder to get started.'
+                : 'Upload your first image to get started.'
           }
           action={
             <button type="button" className="button primary-button" onClick={openPicker}>
-              Upload Your First Image
+              {folderFilter !== '' ? 'Upload into this folder' : 'Upload Your First Image'}
             </button>
           }
         />
@@ -1395,15 +1421,22 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
                   <label htmlFor="media-bulk-action" className="screen-reader-text">
                     Bulk actions
                   </label>
-                  <select id="media-bulk-action" className="bulk-select" defaultValue="">
+                  <select
+                    id="media-bulk-action"
+                    className="bulk-select"
+                    value={bulkAction}
+                    onChange={(event) => setBulkAction(event.target.value)}
+                  >
                     <option value="">Bulk actions</option>
                     <option value="delete">Delete permanently</option>
                   </select>
                   <button
                     type="button"
                     className="button secondary-button bulk-apply"
-                    disabled={bulkBusy}
-                    onClick={() => void deleteSelected()}
+                    disabled={bulkBusy || bulkAction === ''}
+                    onClick={() => {
+                      if (bulkAction === 'delete') void deleteSelected();
+                    }}
                   >
                     {bulkBusy ? 'Applying…' : 'Apply'}
                   </button>

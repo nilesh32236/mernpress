@@ -4728,3 +4728,24 @@ administrator:
   production is back to 1 user, 2 posts, 0 media, 0 folders, 0 analytics rows,
   with `/`, `/admin/`, `/admin/analytics`, `/admin/media`, `/api/health`,
   `/posts/testcom` and `/sitemap.xml` at 200.
+
+### 2026-11-06 — Media “Manage folders” tree and folder-aware uploads
+
+- Added a visible **Manage folders** panel (`MediaFolderTree`) with the
+  depth-first tree and per-folder New subfolder, Rename, Move and Delete
+  actions; rows wrap for narrow screens and the existing filter/create bar,
+  drawer tree and select sizing remain.
+- Uploads accept `folderId` on the multipart endpoint (`uploadFieldSchema`,
+  `UPLOAD_FIELDS`, `MediaService.upload`); the Media Library sends the browsed
+  folder, so an upload no longer lands in Uncategorized while a folder filter is
+  active. The grid inserts an upload locally only when it matches the active
+  folder/search/month filters; otherwise it refetches.
+- Filter changes now clear the bulk selection, and list-view Apply is disabled
+  until an action is chosen (previously it deleted selected rows with “Bulk
+  actions” still selected). Delete confirmation from the tree includes subtree
+  folder/item counts.
+- Tests: API upload into a folder, folder filter result and missing-folder 400;
+  admin tree panel rename/move/create/delete flow, folder-aware upload payload,
+  and the existing nested/cycle/move coverage.
+- Validation: 899 unit/integration tests (API 527, admin 244, web 50, contracts
+  13, block-system 65), 24 Playwright E2E tests and seven builds pass.

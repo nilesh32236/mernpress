@@ -13505,3 +13505,100 @@ button.button-link.is-danger {
   background: transparent;
   color: var(--wp-button);
 }
+
+/* Media Library: visible folder manager tree. */
+.folder-manager {
+  margin: 0 0 12px;
+  border: 1px solid #dcdcde;
+  background: #ffffff;
+}
+
+.folder-manager summary {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.folder-manager-body {
+  padding: 8px 10px 10px;
+}
+
+.folder-tree {
+  margin: 10px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.folder-tree-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-height: 28px;
+  padding: 2px 0;
+  border-bottom: 1px solid #f0f0f1;
+}
+
+.folder-tree-name {
+  font-weight: 500;
+}
+
+.folder-tree-name[aria-current='true'] {
+  color: #1d2327;
+  text-decoration: underline;
+}
+
+.folder-tree-count {
+  color: #646970;
+  font-size: 12px;
+}
+
+.folder-tree-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-left: auto;
+}
+
+.folder-tree-editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 6px 0 10px 16px;
+}
+
+.folder-tree-editor label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+
+.folder-tree-editor input,
+.folder-tree-editor select {
+  height: 28px;
+  min-height: 28px;
+  padding: 0 8px;
+  border: 1px solid #949494;
+  border-radius: 2px;
+  font-size: 13px;
+}
+
+.folder-tree-editor select {
+  padding-right: 24px;
+}
+
+@media (max-width: 782px) {
+  .folder-tree-actions {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .folder-tree-editor {
+    padding-left: 0;
+  }
+}

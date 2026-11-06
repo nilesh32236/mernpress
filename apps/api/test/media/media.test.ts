@@ -1502,5 +1502,30 @@ describe('admin media library', () => {
       expect(after.items.find((folder) => folder.id === child.id)?.parentId).toBeNull();
       expect(after.items.find((folder) => folder.id === grandchild.id)?.parentId).toBe(child.id);
     });
+
+    it('uploads into a selected folder and rejects a missing folder', async () => {
+      const folder = (await createFolder('Upload Target')).json() as { id: string };
+      const created = await uploadAsAdmin(
+        { filename: 'nested-upload.png', contentType: 'image/png', data: png },
+        { folderId: folder.id },
+      );
+      expect(created.statusCode).toBe(201);
+      expect((created.json() as MediaShape).folderId).toBe(folder.id);
+
+      const inFolder = await app.inject({
+        method: 'GET',
+        url: `/api/admin/media?folder=${folder.id}`,
+        headers: { cookie: adminCookie },
+      });
+      expect((inFolder.json() as MediaListShape).items.map((item) => item.id)).toEqual([
+        (created.json() as MediaShape).id,
+      ]);
+
+      const missing = await uploadAsAdmin(
+        { filename: 'missing-folder.png', contentType: 'image/png', data: png },
+        { folderId: '00000000-0000-7000-8000-000000000000' },
+      );
+      expect(missing.statusCode).toBe(400);
+    });
   });
 });

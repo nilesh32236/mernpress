@@ -506,4 +506,100 @@ describe('media library page', () => {
     await waitFor(() => expect(vi.mocked(moveMediaFolder)).toHaveBeenCalledWith('child', null));
     expect(await screen.findByText('Folder moved.')).toBeDefined();
   });
+  it('manages folders from the visible tree panel', async () => {
+    const root = {
+      id: 'root',
+      name: 'Root',
+      parentId: null,
+      itemCount: 2,
+      createdAt: '2026-11-06T10:00:00.000Z',
+      updatedAt: '2026-11-06T10:00:00.000Z',
+    };
+    const child = {
+      id: 'child',
+      name: 'Child',
+      parentId: 'root',
+      itemCount: 1,
+      createdAt: '2026-11-06T10:00:00.000Z',
+      updatedAt: '2026-11-06T10:00:00.000Z',
+    };
+    vi.mocked(listMediaFolders).mockResolvedValue([root, child]);
+    vi.mocked(renameMediaFolder).mockResolvedValue({ ...child, name: 'Renamed' });
+    vi.mocked(moveMediaFolder).mockResolvedValue({ ...child, parentId: null });
+    vi.mocked(createMediaFolder).mockResolvedValue({
+      ...child,
+      id: 'new',
+      name: 'Nested',
+      parentId: 'root',
+    });
+    vi.mocked(deleteMediaFolder).mockResolvedValue(undefined);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    render(<MediaPage user={admin} />);
+    await screen.findByRole('button', { name: 'View sunset.png' });
+    const tree = await screen.findByLabelText('Folder tree');
+    expect(screen.getByText('Manage folders (2)')).toBeDefined();
+
+    const childRow = within(tree).getByText('Child').closest('li')!;
+    fireEvent.click(within(childRow).getByRole('button', { name: 'Rename' }));
+    fireEvent.change(within(childRow).getByLabelText('New folder name'), {
+      target: { value: 'Renamed' },
+    });
+    fireEvent.click(within(childRow).getByRole('button', { name: 'Save' }));
+    await waitFor(() =>
+      expect(vi.mocked(renameMediaFolder)).toHaveBeenCalledWith('child', 'Renamed'),
+    );
+
+    fireEvent.click(within(childRow).getByRole('button', { name: 'Move' }));
+    fireEvent.change(screen.getByLabelText('Move folder to'), { target: { value: '' } });
+    const moveForm = childRow.querySelector('form')!;
+    fireEvent.click(within(moveForm).getByRole('button', { name: 'Move' }));
+    await waitFor(() => expect(vi.mocked(moveMediaFolder)).toHaveBeenCalledWith('child', null));
+
+    const rootRow = within(tree).getByText('Root').closest('li')!;
+    fireEvent.click(within(rootRow).getByRole('button', { name: 'New subfolder' }));
+    fireEvent.change(screen.getByLabelText('New subfolder name'), {
+      target: { value: 'Nested' },
+    });
+    fireEvent.click(within(rootRow).getByRole('button', { name: 'Create folder' }));
+    await waitFor(() =>
+      expect(vi.mocked(createMediaFolder)).toHaveBeenCalledWith('Nested', 'root'),
+    );
+
+    fireEvent.click(within(rootRow).getByRole('button', { name: 'Delete' }));
+    await waitFor(() => expect(vi.mocked(deleteMediaFolder)).toHaveBeenCalledWith('root'));
+  });
+
+  it('uploads into the folder currently being browsed', async () => {
+    const folder = {
+      id: 'f1',
+      name: 'Travel',
+      parentId: null,
+      itemCount: 0,
+      createdAt: '2026-11-06T10:00:00.000Z',
+      updatedAt: '2026-11-06T10:00:00.000Z',
+    };
+    vi.mocked(listMediaFolders).mockResolvedValue([folder]);
+    render(<MediaPage user={admin} />);
+    await screen.findByRole('button', { name: 'View sunset.png' });
+    await waitFor(() => expect(vi.mocked(listMediaFolders)).toHaveBeenCalled());
+    fireEvent.change(screen.getByLabelText('Filter by folder'), {
+      target: { value: 'f1' },
+    });
+    await waitFor(() =>
+      expect(vi.mocked(listMedia)).toHaveBeenLastCalledWith(
+        expect.objectContaining({ folder: 'f1' }),
+      ),
+    );
+
+    chooseFiles(screen.getByLabelText('Upload media files'), [
+      new File(['x'], 'inside.png', { type: 'image/png' }),
+    ]);
+    await waitFor(() =>
+      expect(vi.mocked(uploadMedia)).toHaveBeenCalledWith(
+        expect.any(File),
+        expect.objectContaining({ folderId: 'f1' }),
+      ),
+    );
+  });
 });

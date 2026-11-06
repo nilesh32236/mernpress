@@ -2109,6 +2109,8 @@ export interface UploadMediaOptions {
   onProgress?: (percent: number) => void;
   /** Abort an in-flight upload (used by the editor's mediaUpload cleanup). */
   signal?: AbortSignal;
+  /** Upload straight into a folder (Media Library folder filter). */
+  folderId?: string;
 }
 
 export async function listMedia(params: MediaListParams = {}): Promise<Paged<MediaItem>> {
@@ -2266,6 +2268,9 @@ export function uploadMedia(file: File, options: UploadMediaOptions = {}): Promi
     }
     if (options.caption !== undefined) {
       form.append('caption', options.caption);
+    }
+    if (options.folderId) {
+      form.append('folderId', options.folderId);
     }
 
     const xhr = new XMLHttpRequest();

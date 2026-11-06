@@ -164,6 +164,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-109 | 2026-11-06 | Multilingual correctness pass after review: prefixed archive/search/feed URLs 301 to their default-language URL; public `?lang=` duplicates redirect to the prefixed canonical (`/posts/<slug>` via resolve, pages by prefix; archives drop the query) and `x-mn-language` is trusted only on the marked internal hop; disabled-language siblings are excluded from switchers/hreflang and detail/resolve calls 404 instead of falling back; sitemap excludes password/noindex/off-site-canonical documents, paginates all pages, and omits alternates for single-language groups; `x-default` falls back to the home page in both head and sitemap; JSON-LD uses the document language and the feed the default language; `posts/author/category/tag/llms` are reserved slugs; theme-string PUT allows empty values to clear a key. | accepted | [ADR 0051](docs/adr/0051-multilingual-content-model.md) |
 
+| D-110 | 2026-11-06 | Media folder management UI: a visible **Manage folders** panel renders the nested tree with per-folder New subfolder/Rename/Move/Delete actions (wrapping on mobile), alongside the compact filter/create bar and drawer tree. Uploads accept `folderId` (multipart) and target the browsed folder; the grid inserts locally only when the item matches the active folder/search/month filters. Filter changes clear the bulk selection, and list-view Apply requires an action (`delete`) before running. Delete confirmation includes subtree folder/item counts. | accepted | [ADR 0048](docs/adr/0048-media-virtual-folders.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

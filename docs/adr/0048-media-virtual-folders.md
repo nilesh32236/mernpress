@@ -48,9 +48,16 @@ existing URLs, the derivative paths and the immutable-cache headers.
 5. **UI.** The Media Library gains a Folder bar: filter (All / Uncategorized /
    the indented tree with direct item counts), create (with a parent select),
    rename, move and delete (with confirmation), plus the same indented tree in
-   the attachment drawer's Folder select. Selecting a folder filters the
-   grid/list to that folder's direct items (not its descendants) and resets
-   pagination.
+   the attachment drawer's Folder select. A **Manage folders** panel shows the
+   whole nested tree with per-row New subfolder / Rename / Move / Delete
+   actions, so management is not hidden behind the filter select; the panel and
+   rows wrap on narrow screens. Selecting a folder filters the grid/list to that
+   folder's direct items (not its descendants) and resets pagination.
+   Uploads while a folder is selected go **into that folder** (`folderId` on
+   the multipart upload); the grid only inserts the new item locally when it
+   matches the active folder/search/month filters, otherwise it refetches.
+   Changing the folder/search/month filter clears the bulk selection, and the
+   list-view Apply button requires choosing an action before it runs.
 6. **Counts are derived.** `itemCount` comes from a Prisma `_count` on the
    relation, so it cannot drift from the rows.
 
