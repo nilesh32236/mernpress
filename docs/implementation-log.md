@@ -5171,3 +5171,17 @@ verified in production with a temporary administrator:
 - Docs: ADR 0048, media architecture, D-118, parity matrix, implementation log.
 - Validation: 924 unit/integration tests (API 539, admin 255, web 52, contracts
   13, block-system 65), 28 Playwright E2E tests and seven builds pass.
+
+**Deployment (OS file-drop uploads, release `20261106T172042Z-68b8c7e`):**
+verified in production with a temporary administrator:
+- Created “OS Drop Target” from the folder manager, then dispatched a real
+  `DataTransfer` drop containing a generated `os-drop-verify.png` File on its
+  tree row. The upload list showed `Uploaded`, the notice read
+  `Uploaded “os-drop-verify.png”.`, and the grid rendered the item.
+- The folder filter showed `OS Drop Target (1)`; the API returned the item with
+  that folder's `folderId`, and the media filter listed exactly that item.
+- Cleanup deleted the media item (204) and folder, then removed analytics rows,
+  the temporary administrator/sessions and recent audit events. Production is
+  back to 1 user, 2 posts, 0 media, 0 folders, 0 analytics rows (scheduler jobs
+  remain); `/`, `/admin/`, `/admin/media`, `/api/health` and `/posts/testcom`
+  return 200.
