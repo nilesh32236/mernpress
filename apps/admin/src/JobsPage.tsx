@@ -169,16 +169,28 @@ export function JobsPage() {
       ) : data ? (
         <>
           <div className="table-scroll">
-            <table className="content-table widefat fixed striped jobs-table">
+            <table className="content-table widefat fixed striped jobs-table jobs">
               <caption className="screen-reader-text">Background jobs</caption>
               <thead>
                 <tr>
-                  <th scope="col">Hook</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Attempts</th>
-                  <th scope="col">Scheduled</th>
-                  <th scope="col">Last error</th>
-                  <th scope="col">Actions</th>
+                  <th scope="col" className="column-hook">
+                    Hook
+                  </th>
+                  <th scope="col" className="column-status">
+                    Status
+                  </th>
+                  <th scope="col" className="column-attempts">
+                    Attempts
+                  </th>
+                  <th scope="col" className="column-scheduled">
+                    Scheduled
+                  </th>
+                  <th scope="col" className="column-error">
+                    Last error
+                  </th>
+                  <th scope="col" className="column-actions">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -189,23 +201,23 @@ export function JobsPage() {
                 ) : (
                   data.items.map((job) => (
                     <tr key={job.id}>
-                      <td>
+                      <td className="column-hook">
                         <code>{job.type}</code>
                       </td>
-                      <td>
+                      <td className="column-status">
                         <span className={`job-status ${STATUS_CLASS[job.status]}`}>
                           {job.status.toLowerCase()}
                         </span>
                       </td>
-                      <td>
+                      <td className="column-attempts">
                         {job.attempts}/{job.maxAttempts}
                       </td>
-                      <td>{formatDateTime(job.scheduledAt)}</td>
-                      <td className="jobs-error" title={job.lastError ?? undefined}>
+                      <td className="column-scheduled">{formatDateTime(job.scheduledAt)}</td>
+                      <td className="column-error jobs-error" title={job.lastError ?? undefined}>
                         {job.lastError ?? '—'}
                       </td>
-                      <td>
-                        <div className="row-actions">
+                      <td className="column-actions">
+                        <div className="job-actions">
                           <button
                             type="button"
                             className="button-link"

@@ -129,3 +129,44 @@ contract so it cannot silently regress.
 Screenshots from this pass (development, git-ignored):
 `.playwright-mcp/audit-wp-posts.png`, `.playwright-mcp/audit-mn-posts-final.png`,
 `.playwright-mcp/audit-mn-posts-refined.png`, `.playwright-mcp/dev-analytics2.png`.
+
+## Remaining-screens measured pass (2026-11-06)
+
+The reference screenshots from 2026-11-05 were re-used together with the current
+WordPress `wp-admin` CSS (`wordpress-develop/trunk`: `common.css`,
+`list-tables.css`, `forms.css`, `wp-includes/css/buttons.css`) so the rules are
+compared to source, not memory. The MERNPress measurements were taken in
+Chromium at 1440×1000 on the development admin.
+
+| Screen | Metric | WordPress 7.1.4 | MERNPress before | MERNPress after |
+| --- | --- | --- | --- | --- |
+| Posts | h1 | 23px / 400 | 23px / 400 | match |
+| Posts | content origin / no overflow | x=160 | x=160, scrollWidth 1440 | match |
+| Posts | list search | 199×32, #949494, radius 2 | 199×32, #949494, radius 2 | match |
+| Posts | table header / rows | th 14px; td 13px, line-height 1.5, padding 8/10 | same | match |
+| Posts | row actions | off-screen left, reveal on hover/focus | left −129987px, reveal on hover/focus | match |
+| Settings → General | text input | 350×40, #949494, radius 2, 14px | same | match |
+| Settings → General | h1 / content x | 23px/400, x=182 | 23px/400, x=182 | match |
+| Plugins | row cell padding | 10px 9px | 12px 10px | **10px 9px** |
+| Tools | cards | 520px wide at x=182 | 520px at x=182 | match |
+| Users | h1, tabs, table | All/Administrator…, 8/10 cells, 14px header | same structure | match |
+| Scheduled Actions | search field | list control 32px, padding 0 12, #949494, radius 2, 14px | native 13.33px, 1px 2px padding, radius 0, #767676 | **32px / 0 12 / #949494 / 2px / 14px** |
+| Scheduled Actions | actions | row actions appear on hover in list tables | dedicated Actions column was left empty (row actions off-screen) and touch users could not see it | **always-visible `Run now` / `Cancel` in the column** |
+| Scheduled Actions | mobile table | WordPress stacks the primary column and keeps actions visible | generic list rule hid every cell (0 visible cells, 0px rows) and the toolbar | **hook/status/actions visible, toolbar visible, rows 75px, no horizontal overflow** |
+
+Fixes made in this pass:
+
+- `apps/admin/src/JobsPage.tsx`: column classes, a dedicated `job-actions`
+  container and a `jobs` table class so the responsive rules can target it.
+- `apps/admin/src/styles.css`: 32px styled search field, always-visible job
+  actions, mobile column widths/toolbar, and the WordPress plugin-row padding.
+- `tests/e2e/admin-parity.spec.ts`: new DOM regression test covering nine
+  screens (h1 style, no horizontal overflow), the settings input contract, the
+  plugin row padding, and the Scheduled Actions desktop/mobile table, controls
+  and actions. Desktop/mobile screenshots are attached to the Playwright report.
+
+Not changed: the WordPress 7.1 standard button is 40px in
+`wp-includes/css/buttons.css` (the 32px size is `button-compact` and
+`page-title-action`); the settings Save button at 40px and list-page actions at
+32px are therefore correct. The Customizer/menu, Akismet, pings and file-editor
+deviations recorded above remain deliberate.

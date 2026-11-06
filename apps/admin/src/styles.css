@@ -10367,8 +10367,8 @@ a.glance-chip:hover {
 
 .plugins-screen .content-table.plugins tbody td,
 .plugins-screen .content-table.plugins tbody th {
-  padding-top: 12px;
-  padding-bottom: 12px;
+  /* WordPress plugin rows use 10px 9px; the generic table uses 8px 10px. */
+  padding: 10px 9px;
   vertical-align: top;
 }
 
@@ -13671,6 +13671,21 @@ button.button-link.is-danger {
 .jobs-toolbar input[type='search'] {
   min-width: 200px;
   margin: 0 6px;
+  padding: 0 12px;
+  border: 1px solid #949494;
+  border-radius: 2px;
+  background: #ffffff;
+  color: #1e1e1e;
+  font-size: 14px;
+  line-height: normal;
+}
+
+.job-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
 }
 
 .jobs-table td {
@@ -13720,4 +13735,75 @@ button.button-link.is-danger {
 .job-status.is-cancelled {
   background: #f0f0f1;
   color: #646970;
+}
+
+/* Scheduled Actions keeps the hook, status and actions visible on phones;
+   the generic list-table rule hides every cell that is not a title column. */
+@media (max-width: 782px) {
+  .wp-list-screen .tablenav.jobs-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    height: auto;
+    margin: 10px 0 6px;
+  }
+
+  .wp-list-screen .tablenav.jobs-toolbar .alignleft {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    width: 100%;
+  }
+
+  .wp-list-screen .tablenav.jobs-toolbar .alignright {
+    display: none;
+  }
+
+  .wp-list-screen .tablenav.jobs-toolbar input[type='search'] {
+    flex: 1 1 160px;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .wp-list-screen .content-table.jobs-table thead th.column-hook,
+  .wp-list-screen .content-table.jobs-table thead th.column-status,
+  .wp-list-screen .content-table.jobs-table thead th.column-actions,
+  .wp-list-screen .content-table.jobs-table tbody td.column-hook,
+  .wp-list-screen .content-table.jobs-table tbody td.column-status,
+  .wp-list-screen .content-table.jobs-table tbody td.column-actions {
+    display: table-cell;
+  }
+
+  .wp-list-screen .content-table.jobs-table thead th.column-attempts,
+  .wp-list-screen .content-table.jobs-table thead th.column-scheduled,
+  .wp-list-screen .content-table.jobs-table thead th.column-error,
+  .wp-list-screen .content-table.jobs-table tbody td.column-attempts,
+  .wp-list-screen .content-table.jobs-table tbody td.column-scheduled,
+  .wp-list-screen .content-table.jobs-table tbody td.column-error {
+    display: none;
+  }
+
+  .wp-list-screen .content-table.jobs-table thead th.column-hook,
+  .wp-list-screen .content-table.jobs-table tbody td.column-hook {
+    width: 44%;
+  }
+
+  .wp-list-screen .content-table.jobs-table thead th.column-status,
+  .wp-list-screen .content-table.jobs-table tbody td.column-status {
+    width: 26%;
+  }
+
+  .wp-list-screen .content-table.jobs-table thead th.column-actions,
+  .wp-list-screen .content-table.jobs-table tbody td.column-actions {
+    width: 30%;
+  }
+
+  .wp-list-screen .content-table.jobs-table tbody td.column-hook code {
+    font-size: 12px;
+    word-break: break-word;
+  }
+
+  .job-actions {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
 }

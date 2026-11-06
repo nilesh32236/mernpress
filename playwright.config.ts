@@ -50,6 +50,7 @@ export default defineConfig({
           process.env['AUTH_HASH_PEPPER'] ?? 'e2e-test-auth-hash-pepper-2026-10-25-0123456789',
         CORS_ORIGINS: e2eOrigins,
         NODE_ENV: 'test',
+        SCHEDULER_ENABLED: 'false',
         LOG_LEVEL: 'warn',
         HOST: '127.0.0.1',
         PORT: String(apiPort),

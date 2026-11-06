@@ -5025,3 +5025,27 @@ All three were `COMPLETED` with `attempts=1`; the log contained
   is back to 1 user, 2 posts, 0 media, 0 folders and 0 analytics rows.
   `/`, `/admin/`, `/admin/tools/jobs`, `/api/health`, `/posts/testcom` and
   `/search?q=test` return 200.
+
+### 2026-11-06 — Remaining admin screens measured against WordPress 7.1.4
+
+- Re-measured Posts, Users, Plugins, Settings → General, Tools, Backups,
+  Analytics and Scheduled Actions against the saved WordPress 7.1.4 screenshots
+  and the current `wp-admin` CSS source. Posts/Users/Settings/Tools geometry,
+  list controls, table padding/typography and page actions already match
+  (including the 40px standard button; 32px is the compact/page-action size).
+- Fixed the Scheduled Actions screen: the dedicated Actions column was empty
+  because it used the hover-only row-action pattern, the search field kept
+  native styling, and the mobile list rule hid every cell and the toolbar.
+  Actions are now always visible, the search is a 32px/14px/2px-radius
+  `#949494` control, and mobile keeps Hook/Status/Actions plus the filter with
+  75px rows and no horizontal overflow.
+- Aligned plugin row padding to WordPress's `10px 9px` (was `12px 10px`).
+- Added `tests/e2e/admin-parity.spec.ts`: h1 style/no-overflow across Posts,
+  Pages, Users, Plugins, Settings, Tools, Backups, Analytics and Scheduled
+  Actions; settings input contract; plugin padding; Scheduled Actions desktop
+  actions/search and mobile visible cells/toolbar/action visibility, with
+  desktop and mobile screenshots attached to the report.
+- `playwright.config.ts` now sets `SCHEDULER_ENABLED=false` for the E2E API so
+  the background worker cannot add jobs mid-test.
+- Validation: 922 unit/integration tests (API 539, admin 253, web 52, contracts
+  13, block-system 65), 25 Playwright E2E tests and seven builds pass.
