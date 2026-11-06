@@ -36,6 +36,13 @@ folder reparents its child folders to the deleted folder's parent in one
 transaction; its media items become Uncategorized. Names remain globally unique
 (case-insensitive) across the tree.
 
+Every folder mutation runs inside a transaction that first takes
+`pg_advisory_xact_lock` (one constant key) and then performs the name/parent
+checks and the write. This closes the check-then-write race: concurrent moves
+cannot create a cycle and concurrent case-variant creates cannot both pass.
+Database `P2002`/`P2003` errors are mapped to `FOLDER_EXISTS` (409) and
+`FOLDER_PARENT_INVALID` (400).
+
 | Route | Behaviour |
 | --- | --- |
 | `GET /api/admin/media/folders` | `{ items: MediaFolderDto[] }` ordered by name, with `itemCount` |
@@ -50,9 +57,10 @@ Reads require `content.read.any`; folder mutations require `content.create`
 (the upload capability). The UI keeps the filter, create/rename/delete controls
 and the drawer's Folder select in sync with the list.
 
-The admin renders a depth-first indented tree (filter, create-parent and move
-selects). Limits: one folder per item, globally unique names, the folder filter
-shows direct items only, no bulk move and no drag-and-drop.
+The admin renders a depth-first indented tree in the filter, create-parent, move
+and attachment-drawer selects. Limits: one folder per item, globally unique
+names, the folder filter and counts show direct items only, no bulk move and no
+drag-and-drop.
 
 ## Bulk regeneration
 

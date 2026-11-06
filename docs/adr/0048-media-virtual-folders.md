@@ -28,6 +28,11 @@ existing URLs, the derivative paths and the immutable-cache headers.
    Deleting a folder moves its **child folders** to the deleted folder's parent
    (one transaction) and its media items to Uncategorized (`ON DELETE SET
    NULL`), so nothing is silently deleted except the folder itself.
+   All folder mutations (create/rename/move/delete) serialize on one
+   transaction-scoped PostgreSQL advisory lock, so concurrent moves cannot
+   create a cycle and duplicate/case-variant names cannot race the uniqueness
+   check. `P2002`/`P2003` from the database are mapped to
+   `409 FOLDER_EXISTS` / `400 FOLDER_PARENT_INVALID` instead of a 500.
    Drag-and-drop and bulk move are not built.
 3. **Case-insensitive unique names.** The service trims the name, requires
    1–100 characters and rejects a duplicate (case-insensitive) with
@@ -42,9 +47,10 @@ existing URLs, the derivative paths and the immutable-cache headers.
    usual.
 5. **UI.** The Media Library gains a Folder bar: filter (All / Uncategorized /
    the indented tree with direct item counts), create (with a parent select),
-   rename, move and delete (with confirmation), plus a Folder select in the
-   attachment drawer to move the item. Selecting a folder filters the grid/list
-   to that folder's direct items (not its descendants) and resets pagination.
+   rename, move and delete (with confirmation), plus the same indented tree in
+   the attachment drawer's Folder select. Selecting a folder filters the
+   grid/list to that folder's direct items (not its descendants) and resets
+   pagination.
 6. **Counts are derived.** `itemCount` comes from a Prisma `_count` on the
    relation, so it cannot drift from the rows.
 

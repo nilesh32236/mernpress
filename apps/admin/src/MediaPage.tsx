@@ -444,15 +444,15 @@ function MediaDrawer({
                   disabled={saving || deleting}
                 >
                   <option value="">Uncategorized</option>
-                  {folders.map((folder) => (
+                  {folderTree(folders).map(({ folder, depth }) => (
                     <option key={folder.id} value={folder.id}>
-                      {folder.name}
+                      {indentedFolder(folder.name, depth)}
                     </option>
                   ))}
                 </select>
                 <p className="field-help">
                   Folders are virtual: files stay in the uploads directory and a media item belongs
-                  to one folder.
+                  to one folder. Counts in the folder bar show direct items only.
                 </p>
               </div>
               <div className="field">

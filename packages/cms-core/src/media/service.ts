@@ -570,8 +570,40 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
     return trimmed;
   }
 
-  async function assertFolderNameFree(name: string, exceptId?: string): Promise<void> {
-    const existing = await prisma.mediaFolder.findFirst({
+  // Folder mutations serialize on one advisory lock: cycle checks, name checks
+  // and writes must be atomic or two concurrent moves can create a cycle and
+  // two case-variant creates can both pass the check.
+  const MEDIA_FOLDER_LOCK_KEY = 778_311_004;
+
+  async function lockFolderTree(tx: Prisma.TransactionClient): Promise<void> {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(CAST(${MEDIA_FOLDER_LOCK_KEY} AS bigint))`;
+  }
+
+  function isPrismaCode(error: unknown, code: string): boolean {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code?: unknown }).code === code
+    );
+  }
+
+  function rethrowFolderError(error: unknown): never {
+    if (isPrismaCode(error, 'P2002')) {
+      throw new ContentError('FOLDER_EXISTS', 'A folder with that name already exists.', 409);
+    }
+    if (isPrismaCode(error, 'P2003')) {
+      throw new ContentError('FOLDER_PARENT_INVALID', 'That parent folder no longer exists.', 400);
+    }
+    throw error;
+  }
+
+  async function assertFolderNameFree(
+    tx: Prisma.TransactionClient,
+    name: string,
+    exceptId?: string,
+  ): Promise<void> {
+    const existing = await tx.mediaFolder.findFirst({
       where: {
         name: { equals: name, mode: 'insensitive' },
         ...(exceptId ? { id: { not: exceptId } } : {}),
@@ -593,9 +625,12 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
   }
 
   /** Validate an optional parent id (null/undefined = top level). */
-  async function resolveFolderParent(parentId: string | null | undefined): Promise<string | null> {
+  async function resolveFolderParent(
+    tx: Prisma.TransactionClient,
+    parentId: string | null | undefined,
+  ): Promise<string | null> {
     if (parentId === undefined || parentId === null) return null;
-    const parent = await prisma.mediaFolder.findUnique({
+    const parent = await tx.mediaFolder.findUnique({
       where: { id: parentId },
       select: { id: true },
     });
@@ -606,12 +641,16 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
   }
 
   /** Reject moving a folder under itself or one of its descendants. */
-  async function assertNoFolderCycle(id: string, parentId: string | null): Promise<void> {
+  async function assertNoFolderCycle(
+    tx: Prisma.TransactionClient,
+    id: string,
+    parentId: string | null,
+  ): Promise<void> {
     if (parentId === null) return;
     if (parentId === id) {
       throw new ContentError('FOLDER_CYCLE', 'A folder cannot be its own parent.', 400);
     }
-    const rows = await prisma.mediaFolder.findMany({
+    const rows = await tx.mediaFolder.findMany({
       select: { id: true, parentId: true },
     });
     const parents = new Map(rows.map((row) => [row.id, row.parentId]));
@@ -638,13 +677,20 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
   ): Promise<MediaFolderDto> {
     requireCapability(principal, 'content.create');
     const normalized = normalizeFolderName(name);
-    await assertFolderNameFree(normalized);
-    const parent = await resolveFolderParent(parentId);
-    const row = await prisma.mediaFolder.create({
-      data: { name: normalized, parentId: parent },
-      include: { _count: { select: { items: true } } },
-    });
-    return toFolderDto(row);
+    try {
+      const row = await prisma.$transaction(async (tx) => {
+        await lockFolderTree(tx);
+        await assertFolderNameFree(tx, normalized);
+        const parent = await resolveFolderParent(tx, parentId);
+        return tx.mediaFolder.create({
+          data: { name: normalized, parentId: parent },
+          include: { _count: { select: { items: true } } },
+        });
+      });
+      return toFolderDto(row);
+    } catch (error) {
+      rethrowFolderError(error);
+    }
   }
 
   async function renameFolder(
@@ -653,18 +699,28 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
     name: string,
   ): Promise<MediaFolderDto> {
     requireCapability(principal, 'content.create');
-    const existing = await prisma.mediaFolder.findUnique({ where: { id }, select: { id: true } });
-    if (!existing) {
-      throw notFound();
-    }
     const normalized = normalizeFolderName(name);
-    await assertFolderNameFree(normalized, id);
-    const row = await prisma.mediaFolder.update({
-      where: { id },
-      data: { name: normalized },
-      include: { _count: { select: { items: true } } },
-    });
-    return toFolderDto(row);
+    try {
+      const row = await prisma.$transaction(async (tx) => {
+        await lockFolderTree(tx);
+        const existing = await tx.mediaFolder.findUnique({
+          where: { id },
+          select: { id: true },
+        });
+        if (!existing) {
+          throw notFound();
+        }
+        await assertFolderNameFree(tx, normalized, id);
+        return tx.mediaFolder.update({
+          where: { id },
+          data: { name: normalized },
+          include: { _count: { select: { items: true } } },
+        });
+      });
+      return toFolderDto(row);
+    } catch (error) {
+      rethrowFolderError(error);
+    }
   }
 
   async function moveFolder(
@@ -673,41 +729,54 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
     parentId: string | null,
   ): Promise<MediaFolderDto> {
     requireCapability(principal, 'content.create');
-    const existing = await prisma.mediaFolder.findUnique({
-      where: { id },
-      select: { id: true },
-    });
-    if (!existing) {
-      throw notFound();
+    try {
+      const row = await prisma.$transaction(async (tx) => {
+        await lockFolderTree(tx);
+        const existing = await tx.mediaFolder.findUnique({
+          where: { id },
+          select: { id: true },
+        });
+        if (!existing) {
+          throw notFound();
+        }
+        const parent = await resolveFolderParent(tx, parentId);
+        await assertNoFolderCycle(tx, id, parent);
+        return tx.mediaFolder.update({
+          where: { id },
+          data: { parentId: parent },
+          include: { _count: { select: { items: true } } },
+        });
+      });
+      return toFolderDto(row);
+    } catch (error) {
+      rethrowFolderError(error);
     }
-    const parent = await resolveFolderParent(parentId);
-    await assertNoFolderCycle(id, parent);
-    const row = await prisma.mediaFolder.update({
-      where: { id },
-      data: { parentId: parent },
-      include: { _count: { select: { items: true } } },
-    });
-    return toFolderDto(row);
   }
 
   async function deleteFolder(principal: Principal, id: string): Promise<void> {
     requireCapability(principal, 'content.create');
-    const existing = await prisma.mediaFolder.findUnique({
-      where: { id },
-      select: { id: true, parentId: true },
-    });
-    if (!existing) {
-      throw notFound();
-    }
     // Child folders take the deleted folder's place; media items become
-    // Uncategorized through the existing ON DELETE SET NULL foreign key.
-    await prisma.$transaction(async (tx) => {
-      await tx.mediaFolder.updateMany({
-        where: { parentId: id },
-        data: { parentId: existing.parentId },
+    // Uncategorized through the existing ON DELETE SET NULL foreign key. The
+    // lock covers the parent read and the reparent/delete writes.
+    try {
+      await prisma.$transaction(async (tx) => {
+        await lockFolderTree(tx);
+        const existing = await tx.mediaFolder.findUnique({
+          where: { id },
+          select: { id: true, parentId: true },
+        });
+        if (!existing) {
+          throw notFound();
+        }
+        await tx.mediaFolder.updateMany({
+          where: { parentId: id },
+          data: { parentId: existing.parentId },
+        });
+        await tx.mediaFolder.delete({ where: { id } });
       });
-      await tx.mediaFolder.delete({ where: { id } });
-    });
+    } catch (error) {
+      rethrowFolderError(error);
+    }
   }
 
   /**

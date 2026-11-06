@@ -1459,5 +1459,48 @@ describe('admin media library', () => {
       });
       expect(forbiddenMove.statusCode).toBe(403);
     });
+
+    it('keeps names globally unique and promotes children when a root is deleted', async () => {
+      const root = (await createFolder('Unique Root')).json() as { id: string };
+      const child = (
+        await app.inject({
+          method: 'POST',
+          url: '/api/admin/media/folders',
+          headers: adminHeaders(),
+          payload: { name: 'Unique Child', parentId: root.id },
+        })
+      ).json() as { id: string; parentId: string };
+      const grandchild = (
+        await app.inject({
+          method: 'POST',
+          url: '/api/admin/media/folders',
+          headers: adminHeaders(),
+          payload: { name: 'Unique Grandchild', parentId: child.id },
+        })
+      ).json() as { id: string; parentId: string };
+
+      // Names are globally unique across the tree, not just among siblings.
+      const duplicate = await app.inject({
+        method: 'POST',
+        url: '/api/admin/media/folders',
+        headers: adminHeaders(),
+        payload: { name: 'unique root', parentId: child.id },
+      });
+      expect(duplicate.statusCode).toBe(409);
+      expect((duplicate.json() as ErrorEnvelope).error.code).toBe('FOLDER_EXISTS');
+
+      // Deleting a top-level folder promotes its children to the top level.
+      const deleted = await app.inject({
+        method: 'DELETE',
+        url: `/api/admin/media/folders/${root.id}`,
+        headers: adminHeaders(),
+      });
+      expect(deleted.statusCode).toBe(204);
+      const after = (await folders()).json() as {
+        items: Array<{ id: string; parentId: string | null }>;
+      };
+      expect(after.items.find((folder) => folder.id === child.id)?.parentId).toBeNull();
+      expect(after.items.find((folder) => folder.id === grandchild.id)?.parentId).toBe(child.id);
+    });
   });
 });

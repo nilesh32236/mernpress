@@ -479,6 +479,15 @@ describe('media library page', () => {
       ]),
     );
 
+    // The attachment drawer uses the same indented tree as the folder bar.
+    fireEvent.click(screen.getByRole('button', { name: 'View sunset.png' }));
+    await screen.findByRole('heading', { name: 'Attachment details' });
+    const drawerOptions = [...(screen.getByLabelText('Folder') as HTMLSelectElement).options].map(
+      (option) => option.textContent?.trim(),
+    );
+    expect(drawerOptions).toEqual(['Uncategorized', 'Root', '— Child']);
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
     fireEvent.change(screen.getByLabelText('Parent folder'), { target: { value: 'root' } });
     fireEvent.change(screen.getByLabelText('New folder name'), {
       target: { value: 'Grandchild' },
