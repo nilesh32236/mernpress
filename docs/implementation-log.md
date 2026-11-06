@@ -4421,3 +4421,23 @@ administrator:
   URL and public payloads; admin Languages page string save and menu save.
 - Validation: 879 unit/integration tests (API 521, admin 240, web 40, contracts
   13, block-system 65), 24 Playwright E2E tests and seven builds pass.
+
+**Deployment (per-language chrome):** release `20261106T111415Z-f016a2d`
+(current), no schema change (option store only). Production verification with a
+temporary administrator:
+- Saved Hindi theme strings (skip link, search, blog, home, feed, primary/footer
+  labels) and a Hindi menu (`/hi`, `/hi/posts`).
+- `/hi/posts/production-chrome-test-hi` returned 200 with `<html lang="hi">`,
+  the Hindi skip link, header aria label `मुख्य`, menu links `होम` (`/hi`) and
+  `ब्लॉग` (`/hi/posts`), and footer labels `ब्लॉग/होम/खोज/फ़ीड` with aria
+  `फुटर`.
+- `/posts/production-chrome-test` kept `<html lang="en">`, “Skip to content”,
+  English footer labels and the default published-page menu (`Test`), proving
+  the non-default chrome does not leak into the default language.
+- Settings → Languages showed both editors with the saved values (`सामग्री पर
+  जाएँ`, `फुटर`, menu rows `होम`/`/hi`, `ब्लॉग`/`/hi/posts`).
+- Cleanup removed both posts, the `site_languages`, `theme_strings` and
+  `customizer_menus` options, verification analytics rows, recent audit events
+  and the temporary administrator; production is back to 1 user, 2 posts, 0
+  analytics rows and default English-only chrome, with `/`, `/admin/`,
+  `/admin/settings/languages`, `/api/health` and `/posts/testcom` at 200.
