@@ -4796,3 +4796,25 @@ verified in production with a temporary administrator:
   switch with `?days=30`, URL-provided period and the shared empty state.
 - Validation: 902 unit/integration tests (API 527, admin 247, web 50, contracts
   13, block-system 65), 24 Playwright E2E tests and seven builds pass.
+
+**Deployment (languages grouping + analytics polish, release
+`20261106T142022Z-10b02de`):** verified in production with a temporary
+administrator:
+- `/admin/analytics?days=30` restored the 30-day period (select value `30`,
+  cards said “in the last 30 days”), drew 30 daily bars, placed the toolbar
+  below the heading, made the daily panel exactly as wide as the grid, rendered
+  captioned tables and 32 px period control. With seeded rows, `/` and
+  `/posts/testcom` linked internally and `example.com` linked to
+  `https://example.com` with `target="_blank"`.
+- Settings → Languages rendered the five string groups with the full 52 inputs
+  (10/10/19/10/3); filtering by `404` reduced the page to the **Not found**
+  group and its three keys.
+- With a temporary Hindi menu (`होम`, `ब्लॉग`), the two rows exposed keyboard
+  Move up/Move down buttons with item-labelled names and correct end-state
+  disabling; moving the second row up and saving persisted `[ब्लॉग, होम]` and
+  showed “Language menu saved.”.
+- Cleanup removed the seeded analytics rows and the temporary language/menu
+  options, the administrator, sessions and recent audit events: production is
+  back to 1 user, 2 posts, 0 media, 0 folders, 0 analytics rows and no
+  language/menu overrides; all public and admin routes (including the languages
+  screen and sitemap) return 200.
