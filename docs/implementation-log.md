@@ -4503,3 +4503,17 @@ administrator:
   `dateLocale: "not a locale"` and accepts `hi-IN`.
 - Validation: 884 unit/integration tests (API 521, admin 240, web 45, contracts
   13, block-system 65), 24 Playwright E2E tests and seven builds pass.
+
+**Deployment (date locale):** release `20261106T114512Z-ed8c298` (current), no
+schema change. Production verification with a temporary administrator:
+- Saved Hindi strings with `dateLocale: "hi-IN"`, then published an English post
+  and its Hindi translation.
+- `/hi/posts/prod-date-locale-hi` rendered the related-post date as
+  `29 अक्टूबर 2026`; `/posts/prod-date-locale` rendered `October 29, 2026`,
+  proving the locale is per language (UTC date, long format).
+- Settings → Languages showed 49 string inputs with `dateLocale` = `hi-IN`.
+- Cleanup removed both posts, the `site_languages`, `theme_strings` and
+  `customizer_menus` options, verification analytics rows, recent audit events
+  and the temporary administrator; production is back to 1 user, 2 posts, 0
+  analytics rows and default English-only chrome, with `/`, `/admin/`,
+  `/admin/settings/languages`, `/api/health` and `/posts/testcom` at 200.
