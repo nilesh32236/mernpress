@@ -91,7 +91,7 @@ export default async function PageBySlug({
             <PostList posts={items} strings={strings} />
           ) : (
             <p role="status" className="status">
-              {strings.noResults}
+              {pageNumber === 1 ? strings.noPosts : strings.noResults}
             </p>
           )}
         </div>

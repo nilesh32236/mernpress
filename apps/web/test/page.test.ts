@@ -62,7 +62,7 @@ describe('home page', () => {
       }),
     );
     const html = renderToStaticMarkup(await HomePage({ searchParams: Promise.resolve({}) }));
-    expect(html).toContain('Sorry, but nothing was found');
+    expect(html).toContain('No posts published yet. Nothing to read yet.');
   });
 
   it('renders friendly message when API is down', async () => {
@@ -120,6 +120,6 @@ describe('home page', () => {
     const html = renderToStaticMarkup(await HomePage({ searchParams: Promise.resolve({}) }));
     expect(html).toContain('Welcome home');
     expect(html).toContain('HomePage body');
-    expect(html).not.toContain('Sorry, but nothing was found');
+    expect(html).not.toContain('No posts published yet.');
   });
 });

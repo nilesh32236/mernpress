@@ -135,6 +135,12 @@ export const THEME_STRING_KEYS = [
     max: 200,
   },
   {
+    key: 'noPosts',
+    label: 'Empty blog text',
+    fallback: 'No posts published yet. Nothing to read yet.',
+    max: 200,
+  },
+  {
     key: 'searchResultsFor',
     label: 'Search results heading',
     fallback: 'Search results for',
@@ -174,7 +180,7 @@ export const THEME_STRING_KEYS = [
 export type ThemeStringKey = (typeof THEME_STRING_KEYS)[number]['key'];
 
 /**
- * Presentation groups for the 61 theme strings. Kept next to the keys so the
+ * Presentation groups for the 62 theme strings. Kept next to the keys so the
  * admin and any future editor share one grouping instead of maintaining a
  * second hand-written list.
  */
@@ -249,6 +255,7 @@ export const THEME_STRING_GROUPS = [
       'nextPage',
       'paginationLabel',
       'noResults',
+      'noPosts',
       'searchResultsFor',
       'searchHint',
       'searchError',

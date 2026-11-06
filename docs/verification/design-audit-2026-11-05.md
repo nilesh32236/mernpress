@@ -285,3 +285,37 @@ block, no overflow), the 404 status, RSS/XML content types and sitemap post
 links, and attaches desktop plus selected mobile screenshots. The Playwright web
 server now points `MERNPRESS_API_URL` at the isolated E2E API instead of the
 default localhost:4000.
+
+## Screenshot regression baselines (2026-11-06)
+
+`tests/e2e/visual.spec.ts` now stores pixel baselines under
+`tests/e2e/visual.spec.ts-snapshots/` (`*-chromium-linux.png`), using
+Playwright's `toHaveScreenshot` with `maxDiffPixelRatio: 0.01`, animations
+disabled, the caret hidden, fonts awaited and images settled first.
+
+| Group | Baselines |
+| --- | --- |
+| Public | `about-desktop`, `about-mobile`, `404-desktop`, `404-mobile` |
+| Admin desktop | Themes, Add Plugins, Add User, Connectors, Mail delivery |
+| Admin mobile | Themes, Add Plugins, Add User |
+
+Why these screens: they are the ones this audit changed or that carry the most
+layout risk (card footers, the Installed package table, the password row, the
+760px connector stack, the mail panel). The baselines sit next to the measured
+DOM assertions in `admin-parity.spec.ts` / `public-design.spec.ts`, so a
+spacing or typography change now fails twice: once on the numeric contract and
+once on the pixels.
+
+The visual spec seeds and publishes `welcome-to-mernpress`/`about`, bootstraps
+its own `visual_admin` account, and takes the screenshots only after a fixed
+settle step, so the baselines are deterministic in the isolated E2E database.
+
+### Empty-blog copy
+
+The empty home page used the search copy
+(`Sorry, but nothing was found…`). It now uses a dedicated
+`noPosts` theme string (“No posts published yet. Nothing to read yet.”) on
+page 1 of the home, `/posts` and a page assigned as the posts index;
+`noResults` still covers search, category/tag/author archives and pages beyond
+the last page. This matches WordPress, where an empty blog and an empty search
+are different states, and it is editable per language in Settings → Languages.

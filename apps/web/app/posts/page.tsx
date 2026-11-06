@@ -55,7 +55,7 @@ export default async function PostsPage({
           </p>
         ) : items.length === 0 ? (
           <p role="status" className="status">
-            {strings.noResults}
+            {page === 1 ? strings.noPosts : strings.noResults}
           </p>
         ) : (
           <PostList posts={items} strings={strings} />

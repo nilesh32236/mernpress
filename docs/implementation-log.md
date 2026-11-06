@@ -5366,3 +5366,23 @@ verified against production public routes at 1440 and 375:
   contains `/posts/testcom`.
 - Analytics rows created by the audit visits were removed; no temporary admin
   was needed. Production remains 1 user, 2 posts, 0 analytics rows.
+
+### 2026-11-06 — Screenshot baselines and empty-blog copy
+
+- Added `tests/e2e/visual.spec.ts` with Playwright screenshot baselines
+  (`tests/e2e/visual.spec.ts-snapshots/`, 11 PNGs): public About/404 at 1440 and
+  375, admin Themes/Add Plugins/Add User/Connectors/Mail delivery at 1440, and
+  Themes/Add Plugins/Add User at 375. `toHaveScreenshot` runs with
+  `maxDiffPixelRatio: 0.01`, animations disabled, caret hidden, fonts and images
+  settled; the spec seeds/publishes fixtures and bootstraps its own
+  `visual_admin`.
+- Fixed the empty-blog copy: home, `/posts` and a page assigned as the posts
+  index now use a new `noPosts` theme string (“No posts published yet. Nothing
+  to read yet.”) on page 1; `noResults` remains for search/archives and for
+  pages past the last one. Contracts now expose 62 strings (grouped under
+  Archives, search and pagination) and ADR 0052 records the split.
+- Tests: web home empty-state assertion updated; existing archive/search empty
+  states unchanged; visual suite passes twice in a row against the committed
+  baselines.
+- Validation: 933 unit/integration tests (API 546, admin 257, web 52, contracts
+  13, block-system 65), 34 Playwright E2E tests and seven builds pass.
