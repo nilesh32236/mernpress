@@ -281,5 +281,18 @@ describe('theme strings contract', () => {
     expect(merged.search).toBe(DEFAULT_THEME_STRINGS.search);
     // Unknown/null maps fall back to the built-ins.
     expect(themeStringsFor(null, 'hi', 'en')).toEqual(DEFAULT_THEME_STRINGS);
+    // 404 copy is part of the same contract and falls back to English.
+    expect(DEFAULT_THEME_STRINGS.notFoundTitle).toBe('Page not found');
+    expect(
+      normalizeThemeStringOverrides({
+        notFoundTitle: '  पृष्ठ नहीं मिला  ',
+        notFoundText: 'यह पृष्ठ मौजूद नहीं है।',
+        notFoundImageAlt: 'पेड़',
+      }),
+    ).toEqual({
+      notFoundTitle: 'पृष्ठ नहीं मिला',
+      notFoundText: 'यह पृष्ठ मौजूद नहीं है।',
+      notFoundImageAlt: 'पेड़',
+    });
   });
 });

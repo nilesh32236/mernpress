@@ -101,6 +101,20 @@ export const THEME_STRING_KEYS = [
   { key: 'categoryArchive', label: 'Category archive prefix', fallback: 'Category', max: 40 },
   { key: 'tagArchive', label: 'Tag archive prefix', fallback: 'Tag', max: 40 },
   { key: 'authorArchive', label: 'Author archive prefix', fallback: 'Author', max: 40 },
+  { key: 'notFoundTitle', label: '404 title', fallback: 'Page not found', max: 120 },
+  {
+    key: 'notFoundText',
+    label: '404 description',
+    fallback:
+      'The page you are looking for doesn’t exist, or it has been moved. Please try searching using the form below.',
+    max: 300,
+  },
+  {
+    key: 'notFoundImageAlt',
+    label: '404 image alt text',
+    fallback: 'Small totara tree on ridge above Long Point',
+    max: 160,
+  },
 ] as const;
 
 export type ThemeStringKey = (typeof THEME_STRING_KEYS)[number]['key'];

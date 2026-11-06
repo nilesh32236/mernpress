@@ -4517,3 +4517,22 @@ schema change. Production verification with a temporary administrator:
   and the temporary administrator; production is back to 1 user, 2 posts, 0
   analytics rows and default English-only chrome, with `/`, `/admin/`,
   `/admin/settings/languages`, `/api/health` and `/posts/testcom` at 200.
+
+### 2026-11-06 — Per-language 404 copy
+
+- Added `notFoundTitle`, `notFoundText` and `notFoundImageAlt` to the
+  `theme_strings` contract (English fallbacks, 120/300/160 characters).
+- `app/not-found.tsx` renders them through `requestThemeStrings()`; the search
+  form already uses the same map. The middleware preserves `x-mn-language` on
+  the internal not-found hop, so `/hi/<missing>` keeps the Hindi layout and
+  copy.
+- Fixed a validation defect found while verifying: `PUT /api/admin/theme-strings`
+  capped every value at 80 characters, but the 404 description allows 300. The
+  body schema now derives the maximum from `THEME_STRING_KEYS`, so longer copy
+  is saveable; a 200-character value is covered by a regression test.
+- Tests: contract normalization/defaults for the three keys; web
+  `not-found.test.tsx` renders the page with Hindi strings and asserts the
+  title, description and image alt with no English fallbacks; API theme-string
+  test saves/returns the 404 keys and accepts a 200-character description.
+- Validation: 885 unit/integration tests (API 521, admin 240, web 46, contracts
+  13, block-system 65), 24 Playwright E2E tests and seven builds pass.

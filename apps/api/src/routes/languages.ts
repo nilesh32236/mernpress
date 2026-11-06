@@ -25,10 +25,13 @@ const translationBodySchema = z.object({ language: languageCode }).strict();
 const languagesBodySchema = z
   .object({ default: languageCode, enabled: z.array(languageCode).min(1).max(30) })
   .strict();
+// The longest key limit comes from the shared contract; deriving it here keeps
+// longer copy (for example the 300-character 404 description) saveable.
+const MAX_THEME_STRING = Math.max(...THEME_STRING_KEYS.map((entry) => entry.max));
 const themeStringsBodySchema = z
   .object({
     language: languageCode,
-    strings: z.record(z.string().max(40), z.string().max(80)),
+    strings: z.record(z.string().max(40), z.string().max(MAX_THEME_STRING)),
   })
   .strict();
 const languageMenuBodySchema = z

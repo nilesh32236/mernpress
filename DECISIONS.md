@@ -152,6 +152,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-103 | 2026-11-06 | Locale-aware public dates: new `theme_strings.dateLocale` key (default `en-US`, BCP 47 shape, max 35). The contract normalizer rejects malformed tags; `apps/web/lib/date.ts` (`safeDateLocale`, `formatPublicDate`) renders UTC long dates in that locale with an `en-US` fallback, used by PostList, RelatedPosts, MorePosts and Comments. Invalid/unsupported locales never throw during render. | accepted | [ADR 0052](docs/adr/0052-per-language-menus-and-theme-strings.md) |
 
+| D-104 | 2026-11-06 | Per-language 404 copy: `theme_strings` gains `notFoundTitle` (120), `notFoundText` (300) and `notFoundImageAlt` (160) with English fallbacks. `app/not-found.tsx` renders them through `requestThemeStrings()`, so `/hi/<missing>` keeps the Hindi chrome and 404 copy (middleware preserves `x-mn-language`). | accepted | [ADR 0052](docs/adr/0052-per-language-menus-and-theme-strings.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

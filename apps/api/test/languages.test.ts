@@ -316,6 +316,43 @@ describe('multilingual content', () => {
       (goodLocale.json() as { strings: Record<string, Record<string, string>> }).strings.hi,
     ).toMatchObject({ dateLocale: 'hi-IN' });
 
+    const notFound = await app.inject({
+      method: 'PUT',
+      url: '/api/admin/theme-strings',
+      headers: adminHeaders,
+      payload: {
+        language: 'hi',
+        strings: {
+          notFoundTitle: 'पृष्ठ नहीं मिला',
+          notFoundText: 'यह पृष्ठ मौजूद नहीं है।',
+          notFoundImageAlt: 'पहाड़ी पर छोटा पेड़',
+        },
+      },
+    });
+    expect(notFound.statusCode).toBe(200);
+    expect(
+      (notFound.json() as { strings: Record<string, Record<string, string>> }).strings.hi,
+    ).toEqual({
+      notFoundTitle: 'पृष्ठ नहीं मिला',
+      notFoundText: 'यह पृष्ठ मौजूद नहीं है।',
+      notFoundImageAlt: 'पहाड़ी पर छोटा पेड़',
+    });
+
+    // Keys have different limits; the body schema must accept the longest
+    // (the 404 description is 300 characters).
+    const longText = 'क'.repeat(200);
+    const longCopy = await app.inject({
+      method: 'PUT',
+      url: '/api/admin/theme-strings',
+      headers: adminHeaders,
+      payload: { language: 'hi', strings: { notFoundText: longText } },
+    });
+    expect(longCopy.statusCode).toBe(200);
+    expect(
+      (longCopy.json() as { strings: Record<string, Record<string, string>> }).strings.hi
+        ?.notFoundText,
+    ).toBe(longText);
+
     const unknownKey = await app.inject({
       method: 'PUT',
       url: '/api/admin/theme-strings',

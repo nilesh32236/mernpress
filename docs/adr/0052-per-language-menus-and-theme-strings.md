@@ -63,6 +63,9 @@ or adding a translation-file pipeline.
    `PostView`, `PostList`, `Pagination`, `SearchForm`, `MorePosts` and
    `LanguageLinks`. Components default to `DEFAULT_THEME_STRINGS` so they remain
    usable in isolation and their unit tests do not need a request context.
+   The 404 page copy (`notFoundTitle`, `notFoundText`,
+   `notFoundImageAlt`) is part of the same contract and is rendered by
+   `app/not-found.tsx`, so a missing translated URL stays in its language.
    The `dateLocale` key (default `en-US`, BCP 47 shape) drives
    `formatPublicDate()` in `apps/web/lib/date.ts`, used by post lists, related/
    more posts and comments; malformed locales fall back to `en-US`.
@@ -74,8 +77,8 @@ or adding a translation-file pipeline.
 - Menu URLs are literal: a Hindi menu must use `/hi/...` paths. Automatic
   prefixing would break external links and the default language menu.
 - Layout chrome, post meta, author box, related/more-posts headings, comments,
-  pagination aria labels, the search form and date formatting are translated.
-  Remaining English: the 404 page copy and API error messages (server-provided,
+  pagination aria labels, the search form, date formatting and the 404 page
+  copy are translated. Remaining English: API error messages (server-provided,
   not theme strings).
 - No per-language widgets, sidebars or theme template overrides.
 - Changing the enabled languages leaves orphaned `theme_strings`/menu entries
