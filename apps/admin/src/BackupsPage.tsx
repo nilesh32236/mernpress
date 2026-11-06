@@ -74,12 +74,16 @@ export function BackupsPage() {
   useEffect(() => {
     if (!jobId || (jobStatus !== 'PENDING' && jobStatus !== 'RUNNING')) return;
     let cancelled = false;
+    let inFlight = false;
     const timer = window.setInterval(() => {
+      if (inFlight) return;
+      inFlight = true;
       fetchJob(jobId)
         .then(async (next) => {
           if (cancelled) return;
-          setJob(next);
           if (next.status === 'COMPLETED') {
+            // Refresh before updating the job, otherwise the status change
+            // cancels this effect and the success notice is lost.
             const result = await fetchBackups();
             if (cancelled) return;
             setData(result);
@@ -87,12 +91,19 @@ export function BackupsPage() {
               tone: 'success',
               text: `Backup created: ${result.backups[0]?.fileName ?? 'download ready'}.`,
             });
-          } else if (next.status === 'FAILED') {
+            setJob(next);
+            return;
+          }
+          if (next.status === 'FAILED') {
             setNotice({ tone: 'error', text: next.lastError ?? 'Backup failed.' });
           }
+          setJob(next);
         })
         .catch((caught) => {
           if (!cancelled) setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+        })
+        .finally(() => {
+          inFlight = false;
         });
     }, JOB_POLL_MS);
     return () => {
