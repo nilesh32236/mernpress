@@ -1,6 +1,7 @@
 import type {
   AnalyticsService,
   ApplicationPasswordService,
+  ConsentService,
   AuthService,
   AutosaveService,
   ExportService,
@@ -41,5 +42,6 @@ declare module 'fastify' {
     backups: BackupService;
     autosave: AutosaveService;
     analytics: AnalyticsService;
+    consent: ConsentService;
   }
 }

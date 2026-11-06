@@ -25,6 +25,7 @@ import {
   createSpamGuardService,
   createNoteService,
   createAnalyticsService,
+  createConsentService,
   createScreenOptionsService,
   createImportService,
   createConnectorService,
@@ -73,6 +74,7 @@ import { registerSpamGuardRoutes } from './routes/spam-guard.js';
 import { registerNoteRoutes } from './routes/notes.js';
 import { registerNoteMentionRoutes } from './routes/note-mentions.js';
 import { registerAnalyticsRoutes } from './routes/analytics.js';
+import { registerConsentRoutes } from './routes/consent.js';
 import { registerBackupRoutes } from './routes/backups.js';
 import { registerRedirectRoutes, registerPublicRedirectRoutes } from './routes/redirects.js';
 import { registerAdminHealthRoutes } from './routes/admin-health.js';
@@ -318,6 +320,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   app.decorate('notes', notes);
   const analytics = createAnalyticsService({ prisma: database });
   app.decorate('analytics', analytics);
+  const consent = createConsentService({ prisma: database });
+  app.decorate('consent', consent);
   const screenOptions = createScreenOptionsService({ prisma: database });
   app.decorate('imports', imports);
   app.decorate('privacy', privacy);
@@ -420,6 +424,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerNoteRoutes(app, { env, auth, notes });
   registerNoteMentionRoutes(app, { env, auth, notes });
   registerAnalyticsRoutes(app, { env, auth, analytics });
+  registerConsentRoutes(app, { env, auth, consent });
   registerRedirectRoutes(app, { env, auth, redirects });
   registerBackupRoutes(app, { env, auth, backups });
   registerPublicRedirectRoutes(app, { redirects });

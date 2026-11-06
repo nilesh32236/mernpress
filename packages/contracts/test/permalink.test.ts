@@ -146,3 +146,44 @@ describe('screen options', () => {
     expect(normalizeScreenOptions({ perPage: { posts: 3.5 } }).perPage).toEqual({});
   });
 });
+
+describe('consent contract', () => {
+  it('normalizes config and validates stored choices', async () => {
+    const {
+      DEFAULT_CONSENT,
+      normalizeConsentConfig,
+      parseConsentChoice,
+      consentChoiceIsCurrent,
+      consentAllows,
+    } = await import('../src/consent.js');
+
+    expect(normalizeConsentConfig(null)).toEqual(DEFAULT_CONSENT);
+    const config = normalizeConsentConfig({
+      enabled: true,
+      version: 3,
+      title: '  Cookies  ',
+      analyticsEnabled: false,
+      marketingEnabled: true,
+      analyticsRequired: true,
+    });
+    expect(config).toMatchObject({
+      enabled: true,
+      version: 3,
+      title: 'Cookies',
+      analyticsEnabled: false,
+      analyticsRequired: true,
+    });
+
+    const choice = parseConsentChoice(
+      JSON.stringify({ version: 3, analytics: true, marketing: false, decidedAt: 'x' }),
+    );
+    expect(choice).toMatchObject({ version: 3, analytics: true, marketing: false });
+    expect(parseConsentChoice('nope')).toBeNull();
+    expect(consentChoiceIsCurrent(config, choice)).toBe(true);
+    expect(consentChoiceIsCurrent(config, { ...choice!, version: 2 })).toBe(false);
+    // Analytics is disabled in this config, so a stored grant does not count.
+    expect(consentAllows(config, choice, 'analytics')).toBe(false);
+    expect(consentAllows(config, choice, 'marketing')).toBe(false);
+    expect(consentAllows({ ...config, enabled: false }, null, 'marketing')).toBe(true);
+  });
+});

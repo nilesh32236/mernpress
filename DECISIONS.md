@@ -142,6 +142,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-098 | 2026-11-05 | Admin chrome control pass from a second measured comparison with WordPress 7.1.4: form borders `#949494`, 2 px control radius, normal input line-height, WordPress-style SVG chevron with `appearance:none` and 24 px right padding, 32 px standard buttons (0 10 padding, 30 px line-height), list-select line-height 30, sidebar nav top padding removed so the first item sits at y=44, and row actions moved off-screen (`left:-9999em`) instead of `visibility:hidden` so they stay keyboard focusable and reveal on hover/focus. The E2E content spec asserts these metrics. No behavioural change. | accepted | [Design audit](docs/verification/design-audit-2026-11-05.md) |
 
+| D-099 | 2026-11-05 | Privacy-first cookie consent: `consent_config` option (enabled, version, title/message/labels, analytics/marketing categories, `analyticsRequired`) with shared contracts and `GET/PUT /api/admin/consent` (`manage_options`). The public site receives the config in `/api/public/site`; choices live only in `localStorage["mernpress.consent"]` keyed by version (no server log, IP or visitor id). `ConsentBanner` offers Accept all / Reject non-essential / Preferences with checkboxes; `ConsentSettingsButton` reopens it. `ConsentGate` is the documented blocking contract for optional third-party content; no arbitrary scripts are stored or injected. The cookieless analytics beacon is gated only when `analyticsRequired` is on. No schema change. | accepted | [ADR 0050](docs/adr/0050-cookie-consent-manager.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

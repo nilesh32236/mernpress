@@ -7,6 +7,8 @@ import './globals.css';
 import PublicAdminBar from '@/components/PublicAdminBar';
 import JsonLd from '@/components/JsonLd';
 import { ViewTracker } from '@/components/ViewTracker';
+import { ConsentBanner, ConsentSettingsButton } from '@/components/ConsentBanner';
+import { DEFAULT_CONSENT } from '@mernpress/contracts';
 import { siteGraph } from '@/lib/seo';
 import { siteUrl } from '@/lib/api';
 
@@ -61,6 +63,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   }
   const siteTitle = settings?.siteTitle ?? 'MERNPress';
   const theme = settings?.theme ?? null;
+  const consent = settings?.consent ?? DEFAULT_CONSENT;
   const customColors = settings?.customColors ?? null;
   const customMenu = settings?.customMenu ?? null;
   const style: Record<string, string> = {};
@@ -94,7 +97,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       style={themeStyle}
     >
       <body>
-        <ViewTracker />
+        <ViewTracker consent={consent} />
         {settings?.customCss ? (
           <style id="customizer-css" dangerouslySetInnerHTML={{ __html: settings.customCss }} />
         ) : null}
@@ -173,6 +176,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             <span className="site-footer-credit">Designed with MERNPress</span>
           </div>
         </footer>
+        <ConsentBanner config={consent} />
+        <ConsentSettingsButton config={consent} />
       </body>
     </html>
   );

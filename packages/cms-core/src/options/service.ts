@@ -3,6 +3,7 @@ import { validateColors, validateCustomCss, validateMenu } from '../customizer/v
 import type { DatabaseClient, Prisma } from '@mernpress/database';
 import { ContentError } from '../content/errors.js';
 import { requireCapability } from '../auth/capabilities.js';
+import { DEFAULT_CONSENT, normalizeConsentConfig } from '@mernpress/contracts';
 import type { Principal } from '../content/types.js';
 import type { OptionGroup, SiteSettings, UpdateOptionsInput } from './types.js';
 
@@ -769,6 +770,16 @@ const SPECS: Record<string, OptionSpec> = {
       }
     },
   },
+  consent_config: {
+    group: 'consent',
+    defaultValue: DEFAULT_CONSENT,
+    validate: (value) => {
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+        throwValidation('consent_config must be an object.');
+      }
+      return normalizeConsentConfig(value);
+    },
+  },
   customizer_colors: {
     group: 'appearance',
     defaultValue: null,
@@ -964,6 +975,7 @@ export function createOptionService(options: OptionServiceOptions) {
       'show_on_front',
       'page_on_front',
       'page_for_posts',
+      'consent_config',
     ]);
     const pageIds = [values.page_on_front, values.page_for_posts].filter(
       (value): value is string => typeof value === 'string',
@@ -983,6 +995,14 @@ export function createOptionService(options: OptionServiceOptions) {
       typeof values.page_for_posts === 'string'
         ? (pages.find((page) => page.id === values.page_for_posts) ?? null)
         : null;
+
+    const consent = (() => {
+      const stored = values.consent_config;
+      if (stored && typeof stored === 'object') {
+        return normalizeConsentConfig(stored);
+      }
+      return normalizeConsentConfig(null);
+    })();
 
     return {
       siteTitle: typeof values.site_title === 'string' ? values.site_title : 'MERNPress',
@@ -1039,6 +1059,7 @@ export function createOptionService(options: OptionServiceOptions) {
       showOnFront: values.show_on_front === 'page' && frontPage ? 'page' : 'posts',
       pageOnFrontSlug: frontPage?.slug ?? null,
       pageForPostsSlug: postsPage?.slug ?? null,
+      consent,
     };
   }
 

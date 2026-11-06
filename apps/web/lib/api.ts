@@ -1,3 +1,5 @@
+import type { ConsentConfig } from '@mernpress/contracts';
+
 export type ContentType = 'post' | 'page';
 
 export interface PublicTerm {
@@ -148,6 +150,7 @@ export interface SiteSettings {
   showOnFront: 'posts' | 'page';
   pageOnFrontSlug: string | null;
   pageForPostsSlug: string | null;
+  consent?: ConsentConfig;
   theme?: PublicTheme | null;
 }
 

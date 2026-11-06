@@ -1,4 +1,4 @@
-import type { AdminColorScheme, ScreenOptionsState } from '@mernpress/contracts';
+import type { AdminColorScheme, ConsentConfig, ScreenOptionsState } from '@mernpress/contracts';
 export type UserRole = 'administrator' | 'editor' | 'author' | 'contributor' | 'subscriber';
 export type ContentType = 'post' | 'page';
 export type PostFormat =
@@ -978,6 +978,31 @@ export interface ApplicationPassword {
 }
 
 export type OptionValues = Record<string, unknown>;
+
+// ---- Settings → Consent ----
+export async function fetchConsent(): Promise<ConsentConfig> {
+  const response = await fetch('/api/admin/consent', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<ConsentConfig>(response);
+}
+
+export async function updateConsent(config: ConsentConfig): Promise<ConsentConfig> {
+  const response = await fetch('/api/admin/consent', {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify(config),
+  });
+  return readJson<ConsentConfig>(response);
+}
 
 // ---- Privacy-first analytics ----
 export interface AnalyticsSummary {

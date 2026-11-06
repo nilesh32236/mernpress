@@ -1,3 +1,4 @@
+import type { ConsentConfig } from '@mernpress/contracts';
 import type { Principal } from '../content/types.js';
 import type { CustomColors, CustomMenuItem } from '../customizer/validation.js';
 
@@ -9,6 +10,7 @@ export type OptionGroup =
   | 'media'
   | 'permalinks'
   | 'privacy'
+  | 'consent'
   | 'appearance';
 
 export interface GetOptionsInput {
@@ -45,6 +47,8 @@ export interface SiteSettings {
   /** Slugs of the configured static front page and posts page. */
   pageOnFrontSlug: string | null;
   pageForPostsSlug: string | null;
+  /** Cookie-consent banner configuration (public-safe). */
+  consent: ConsentConfig;
 }
 
 export interface OptionService {

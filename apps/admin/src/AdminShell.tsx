@@ -61,6 +61,8 @@ function screenKey(route: Route): string {
       return 'personal-data';
     case 'connectors':
       return 'connectors';
+    case 'consent':
+      return 'consent';
     case 'plugins':
     case 'pluginInstall':
       return 'plugins';
@@ -273,6 +275,27 @@ function screenHelp(route: Route): {
           {
             label: 'Documentation on Personal Data',
             href: 'https://wordpress.org/documentation/article/tools-export-personal-data-screen/',
+          },
+          support,
+        ],
+      };
+    case 'consent':
+      return {
+        title: 'Consent',
+        sections: [
+          {
+            heading: 'Overview',
+            body: 'Configure the public cookie banner: title, message, button labels and which optional categories are offered. The visitor choice is stored only in their browser.',
+          },
+          {
+            heading: 'Versioning',
+            body: 'Increase the consent version after changing wording or categories so previously stored choices no longer count and the banner appears again.',
+          },
+        ],
+        links: [
+          {
+            label: 'Documentation on privacy',
+            href: 'https://wordpress.org/documentation/article/settings-privacy-screen/',
           },
           support,
         ],
@@ -1039,7 +1062,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
     {
       to: '/settings',
       label: 'Settings',
-      active: route.name === 'settings' || route.name === 'connectors',
+      active: route.name === 'settings' || route.name === 'connectors' || route.name === 'consent',
       show: isAdmin,
       icon: <span className="dashicons dashicons-admin-settings" />,
       subs: [
@@ -1082,6 +1105,11 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
           label: 'Privacy',
           to: '/settings#privacy',
           active: route.name === 'settings' && hash === '#privacy',
+        },
+        {
+          label: 'Consent',
+          to: '/settings/consent',
+          active: route.name === 'consent',
         },
       ],
     },

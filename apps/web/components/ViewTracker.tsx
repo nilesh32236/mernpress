@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
+import { CONSENT_EVENT, type ConsentConfig } from '@mernpress/contracts';
+import { hasConsent } from '../lib/consent';
 
 /**
  * Privacy-first page-view beacon.
@@ -18,11 +20,17 @@ export function shouldTrackView(pathname: string, doNotTrack: string | null | un
   return true;
 }
 
-export function ViewTracker() {
+export function ViewTracker({ consent }: { consent?: ConsentConfig }) {
   const pathname = usePathname();
+  const sent = useRef<Set<string>>(new Set());
 
-  useEffect(() => {
+  const send = useCallback(() => {
     if (!shouldTrackView(pathname, navigator.doNotTrack)) return;
+    if (consent?.enabled && consent.analyticsRequired && !hasConsent(consent, 'analytics')) {
+      return;
+    }
+    if (sent.current.has(pathname)) return;
+    sent.current.add(pathname);
     const body = JSON.stringify({
       path: pathname,
       referrer: typeof document !== 'undefined' && document.referrer ? document.referrer : null,
@@ -36,7 +44,17 @@ export function ViewTracker() {
     }).catch(() => {
       // A blocked beacon must never affect the page.
     });
-  }, [pathname]);
+  }, [pathname, consent]);
+
+  useEffect(() => {
+    send();
+  }, [send]);
+
+  useEffect(() => {
+    const onConsent = () => send();
+    window.addEventListener(CONSENT_EVENT, onConsent);
+    return () => window.removeEventListener(CONSENT_EVENT, onConsent);
+  }, [send]);
 
   return null;
 }

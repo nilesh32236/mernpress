@@ -4289,3 +4289,28 @@ verification:
   normal line-height; select `appearance:none` with `0 24px 0 12px` padding.
 - The temporary administrator was deleted; production is back to 1 user and
   2 posts, with `/`, `/admin/`, `/api/health` and `/posts/testcom` at 200.
+
+### 2026-11-05 — Privacy-first cookie consent manager
+
+- Added the shared consent contract (`packages/contracts/src/consent.ts`):
+  config defaults/normalization, storage parsing, version checks and category
+  grants.
+- `consent_config` lives in the option store; `GET/PUT /api/admin/consent`
+  requires `manage_options`. `GET /api/public/site` now includes the public
+  config. No schema change.
+- Settings → Consent edits the banner (enabled, version, title/message, button
+  labels, analytics/marketing categories, analytics gating) with a preview and
+  explains that bumping the version re-asks visitors.
+- Public site: `ConsentBanner` (Accept all / Reject non-essential /
+  Preferences) stores `{version, analytics, marketing, decidedAt}` in
+  `localStorage["mernpress.consent"]`; `ConsentSettingsButton` reopens it.
+  Choices never leave the browser. `ConsentGate` renders optional third-party
+  content only after a grant; no arbitrary scripts are accepted.
+- `ViewTracker` respects `analyticsRequired`: it waits for an analytics grant
+  and re-sends on the consent event, or keeps counting cookielessly when off.
+- Tests: contracts normalization/choices/versions/grants; API defaults, save,
+  public payload, strict validation (unknown keys, bad types/ranges/lengths),
+  anonymous/editor denial; admin load/preview/save, client validation and server
+  error display.
+- Validation: 862 unit/integration tests (API 515, admin 233, contracts 9,
+  web 40, block-system 65), 24 Playwright E2E tests and seven builds pass.

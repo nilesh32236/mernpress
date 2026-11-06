@@ -21,6 +21,7 @@ export type Route =
   | { name: 'exportPersonalData' }
   | { name: 'erasePersonalData' }
   | { name: 'connectors' }
+  | { name: 'consent' }
   | { name: 'plugins' }
   | { name: 'pluginInstall' }
   | { name: 'users' }
@@ -109,6 +110,9 @@ export function parseRoute(pathname: string): Route {
   }
   if (typeSegment === 'settings' && parts.length === 2 && second === 'connectors') {
     return { name: 'connectors' };
+  }
+  if (typeSegment === 'settings' && parts.length === 2 && second === 'consent') {
+    return { name: 'consent' };
   }
   if (typeSegment === 'tools' && parts.length === 1) {
     return { name: 'tools' };
@@ -207,6 +211,12 @@ export function breadcrumbs(route: Route): Array<{ label: string; to?: string }>
       return [{ label: 'Dashboard' }];
     case 'analytics':
       return [{ label: 'Dashboard', to: '/' }, { label: 'Analytics' }];
+    case 'consent':
+      return [
+        { label: 'Dashboard', to: '/' },
+        { label: 'Settings', to: '/settings' },
+        { label: 'Consent' },
+      ];
     case 'list':
       return [
         { label: 'Dashboard', to: '/' },

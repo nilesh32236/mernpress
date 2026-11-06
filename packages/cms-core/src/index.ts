@@ -420,3 +420,10 @@ export {
   type AnalyticsSummary,
   type RecordViewInput,
 } from './analytics/service.js';
+
+// ---- Cookie-consent configuration ----
+export {
+  createConsentService,
+  type ConsentService,
+  type ConsentServiceOptions,
+} from './consent/service.js';

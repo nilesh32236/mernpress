@@ -18,6 +18,7 @@ import { FontsPage } from './FontsPage.js';
 import { ImportPage } from './ImportPage.js';
 import { PersonalDataPage } from './PersonalDataPage.js';
 import { ConnectorsPage } from './ConnectorsPage.js';
+import { ConsentPage } from './ConsentPage.js';
 import { ContentList } from './ContentList.js';
 import { TermsPage } from './TermsPage.js';
 import { MediaPage } from './MediaPage.js';
@@ -221,6 +222,8 @@ function pageTitle(route: Route): string {
       return 'MERNPress admin · Erase Personal Data';
     case 'connectors':
       return 'MERNPress admin · Connectors';
+    case 'consent':
+      return 'MERNPress admin · Consent';
     case 'plugins':
       return 'MERNPress admin · Plugins';
     case 'pluginInstall':
@@ -297,6 +300,8 @@ function RouteView({
       return user.role === 'administrator' ? <PersonalDataPage type="ERASE" /> : <Forbidden />;
     case 'connectors':
       return user.role === 'administrator' ? <ConnectorsPage /> : <Forbidden />;
+    case 'consent':
+      return user.role === 'administrator' ? <ConsentPage /> : <Forbidden />;
     case 'plugins':
       return user.role === 'administrator' ? <PluginsPage user={user} /> : <Forbidden />;
     case 'pluginInstall':

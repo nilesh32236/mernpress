@@ -13240,3 +13240,72 @@ select:not([multiple]):not([size]) {
 .bulk-actions select {
   line-height: 30px;
 }
+
+/* Settings → Consent. */
+.consent-intro {
+  margin: 0 0 16px;
+  max-width: 820px;
+  color: #646970;
+  font-size: 12px;
+}
+
+.consent-labels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.consent-categories {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid #dcdcde;
+  background: #ffffff;
+}
+
+.consent-categories legend {
+  padding: 0 4px;
+  font-weight: 600;
+}
+
+.consent-version input {
+  width: 100px;
+}
+
+.consent-preview {
+  margin: 10px 0 16px;
+}
+
+.consent-preview h2 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.consent-preview-card {
+  max-width: 720px;
+  padding: 16px 18px;
+  border: 1px solid #c3c4c7;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.consent-preview-card p {
+  margin: 6px 0 12px;
+  color: #50575e;
+  font-size: 13px;
+}
+
+.consent-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.consent-preview-actions .button {
+  pointer-events: none;
+}
+
+@media (max-width: 782px) {
+  .consent-labels {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
