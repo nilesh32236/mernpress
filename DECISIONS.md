@@ -190,6 +190,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-122 | 2026-11-06 | Public cache revalidation: every cacheable public list/term read is tagged `public-content`; the API calls a private, secret-protected `POST /api/revalidate` (SHA-256 + `timingSafeEqual`, tag allowlist, `revalidateTag(tag, { expire: 0 })`) after content/taxonomy actions, so publishes are visible on the next request and the 60 s window is only a safety net. Unconfigured deployments keep the window; E2E SQL seeding flushes the tag explicitly. | accepted | [ADR 0056](docs/adr/0056-public-cache-revalidation.md) |
 
+| D-123 | 2026-11-06 | Field Core Web Vitals: `web_vitals_daily(day, metric, bucket, count)` histogram + unique key; contracts own the five metrics, web.dev thresholds, buckets, p75 and formatting; `POST /api/public/vitals` validates/ignores DNT+bots and always 204s; `WebVitals` observes LCP/INP(p98)/CLS/FCP/TTFB in memory and sends once per metric at pagehide/visibilitychange, gated by DNT + analytics consent; Dashboard → Analytics shows p75/rating/samples; the analytics retention sweep prunes vitals too (`vitalsPruned`). No path/device breakdown, no third-party RUM. | accepted | [ADR 0057](docs/adr/0057-field-core-web-vitals.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

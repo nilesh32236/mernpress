@@ -96,7 +96,7 @@ async function main(): Promise<void> {
     const analytics = createAnalyticsService({ prisma });
     const result = await analytics.prune(days);
     console.log(
-      `Pruned ${result.pruned} analytics row(s); keeping ${result.retentionDays} day(s) including today (from ${result.cutoffDay}).`,
+      `Pruned ${result.pruned} analytics row(s) and ${result.vitalsPruned} web-vitals row(s); keeping ${result.retentionDays} day(s) including today (from ${result.cutoffDay}).`,
     );
   } finally {
     await prisma.$disconnect();

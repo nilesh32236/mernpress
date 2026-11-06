@@ -64,3 +64,36 @@ deletes older rows with a single `deleteMany`, returning
 - Retention deletes whole days at a time (no partial-day sampling); sessions,
   unique visitors and campaigns remain deliberately absent.
 - Query strings are deliberately discarded, so UTM reporting is not available.
+
+## Field Core Web Vitals (ADR 0057)
+
+`POST /api/public/vitals { metric, value }` records one of `lcp`, `inp`, `cls`,
+`fcp`, `ttfb`. Validation mirrors the page-view beacon: unknown metrics,
+non-finite/negative/oversized values, bot user agents and the `DNT: 1` header
+are ignored, and the route always answers 204 so a blocked beacon cannot affect
+the page.
+
+`packages/contracts/src/web-vitals.ts` owns the metric table:
+
+| Metric | Stored unit | Good | Poor | Buckets |
+| --- | --- | --- | --- | --- |
+| LCP | ms | ≤ 2500 | > 4000 | 100 … 60000 |
+| INP | ms | ≤ 200 | > 500 | 50 … 10000 |
+| CLS | score ×1000 | ≤ 100 | > 250 | 10 … 5000 |
+| FCP | ms | ≤ 1800 | > 3000 | 100 … 60000 |
+| TTFB | ms | ≤ 800 | > 1800 | 100 … 60000 |
+
+Storage is `web_vitals_daily (day, metric, bucket, count)` with a unique
+`(day, metric, bucket)` key. `histogramP75` reports the smallest bucket whose
+cumulative count reaches 75 % of samples; the p75 therefore has the bucket's
+resolution, which is dense around the rating boundaries.
+
+The client `WebVitals` component keeps measurements in memory and sends each
+metric once at `pagehide`/`visibilitychange`. Do-Not-Track and a required
+analytics consent category block the send, exactly like `ViewTracker`.
+
+`GET /api/admin/analytics` includes `vitals: [{ metric, label, p75, rating,
+samples }]`. The same `analytics_retention_days` sweep removes old web-vital
+rows together with page views; `AnalyticsPruneResult` reports `vitalsPruned`.
+The public data has no path, referrer, cookie, user agent or IP, so there is
+nothing else to erase.

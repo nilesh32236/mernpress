@@ -1077,6 +1077,15 @@ export async function updateConsent(config: ConsentConfig): Promise<ConsentConfi
 }
 
 // ---- Privacy-first analytics ----
+export interface AnalyticsVitalEntry {
+  metric: 'lcp' | 'inp' | 'cls' | 'fcp' | 'ttfb';
+  label: string;
+  /** p75 in stored units (ms, or CLS ×1000); null with no samples. */
+  p75: number | null;
+  rating: 'good' | 'needs-improvement' | 'poor' | null;
+  samples: number;
+}
+
 export interface AnalyticsSummary {
   days: number;
   totalViews: number;
@@ -1084,6 +1093,7 @@ export interface AnalyticsSummary {
   daily: Array<{ day: string; views: number }>;
   topPaths: Array<{ path: string; views: number }>;
   topReferrers: Array<{ host: string; views: number }>;
+  vitals: AnalyticsVitalEntry[];
 }
 
 export async function fetchAnalytics(days = 7): Promise<AnalyticsSummary> {

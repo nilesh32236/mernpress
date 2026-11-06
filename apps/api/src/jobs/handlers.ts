@@ -143,6 +143,7 @@ export function createJobHandlers(options: HandlerOptions): Record<string, JobHa
         logger?.info(
           {
             pruned: result.pruned,
+            vitalsPruned: result.vitalsPruned,
             retentionDays: result.retentionDays,
             cutoffDay: result.cutoffDay,
           },

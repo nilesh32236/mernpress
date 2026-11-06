@@ -26,6 +26,25 @@ const summary: AnalyticsSummary = {
     { path: '/about', views: 12 },
   ],
   topReferrers: [{ host: 'example.com', views: 5 }],
+  vitals: [
+    { metric: 'lcp', label: 'Largest Contentful Paint', p75: 2000, rating: 'good', samples: 12 },
+    {
+      metric: 'inp',
+      label: 'Interaction to Next Paint',
+      p75: 400,
+      rating: 'needs-improvement',
+      samples: 9,
+    },
+    {
+      metric: 'cls',
+      label: 'Cumulative Layout Shift',
+      p75: 120,
+      rating: 'needs-improvement',
+      samples: 12,
+    },
+    { metric: 'fcp', label: 'First Contentful Paint', p75: 1200, rating: 'good', samples: 12 },
+    { metric: 'ttfb', label: 'Time to First Byte', p75: 2400, rating: 'poor', samples: 12 },
+  ],
 };
 
 beforeEach(() => {
@@ -47,6 +66,14 @@ describe('analytics page', () => {
     expect(screen.getByLabelText('Daily average').textContent).toContain('6');
     expect(screen.getByText('/hello')).toBeDefined();
     expect(screen.getByText('example.com')).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Core Web Vitals (field data)' })).toBeDefined();
+    expect(screen.getByText('2 s')).toBeDefined();
+    expect(screen.getByText('400 ms')).toBeDefined();
+    expect(screen.getByText('0.12')).toBeDefined();
+    expect(screen.getByText('2.4 s')).toBeDefined();
+    expect(screen.getAllByText('needs improvement').length).toBe(2);
+    expect(screen.getByText('poor')).toBeDefined();
+    expect(screen.getAllByText('12 samples').length).toBeGreaterThan(0);
     expect(screen.getAllByRole('listitem').length).toBeGreaterThanOrEqual(7);
     expect(screen.getByText(/no cookies, no visitor identifiers/i)).toBeDefined();
     expect(vi.mocked(fetchAnalytics)).toHaveBeenCalledWith(7);
@@ -78,10 +105,12 @@ describe('analytics page', () => {
       daily: summary.daily.map((entry) => ({ ...entry, views: 0 })),
       topPaths: [],
       topReferrers: [],
+      vitals: summary.vitals.map((entry) => ({ ...entry, p75: null, rating: null, samples: 0 })),
     });
     render(<AnalyticsPage />);
     expect((await screen.findAllByText('No page views in this period.')).length).toBeGreaterThan(0);
     expect(screen.getByText('No external referrers in this period.')).toBeDefined();
+    expect(screen.getByText(/No field samples in this period/)).toBeDefined();
   });
 
   it('shows an empty state and a retry on failure', async () => {

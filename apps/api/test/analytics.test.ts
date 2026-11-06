@@ -18,6 +18,13 @@ interface SummaryShape {
   daily: Array<{ day: string; views: number }>;
   topPaths: Array<{ path: string; views: number }>;
   topReferrers: Array<{ host: string; views: number }>;
+  vitals: Array<{
+    metric: string;
+    label: string;
+    p75: number | null;
+    rating: string | null;
+    samples: number;
+  }>;
 }
 
 describe('privacy-first analytics', () => {
@@ -136,7 +143,7 @@ describe('privacy-first analytics', () => {
     });
 
     const seven = await app.analytics.prune(7);
-    expect(seven).toMatchObject({ pruned: 1, retentionDays: 7 });
+    expect(seven).toMatchObject({ pruned: 1, vitalsPruned: 0, retentionDays: 7 });
     expect(seven.cutoffDay).toEqual(expect.any(String));
     let rows = await app.database.analyticsDaily.findMany({ orderBy: { path: 'asc' } });
     expect(rows.map((row) => row.path)).toEqual(['/five', '/today']);
@@ -198,10 +205,100 @@ describe('privacy-first analytics', () => {
     const result = await analytics.prune(7);
     expect(result).toEqual({
       pruned: 1,
+      vitalsPruned: 0,
       retentionDays: 7,
       cutoffDay: '2026-10-31',
     });
     const rows = await app.database.analyticsDaily.findMany({ orderBy: { path: 'asc' } });
     expect(rows.map((row) => row.path)).toEqual(['/boundary-kept', '/today']);
+  });
+
+  function vitalBeacon(payload: Record<string, unknown>, headers: Record<string, string> = {}) {
+    return app.inject({
+      method: 'POST',
+      url: '/api/public/vitals',
+      headers: {
+        origin: ADMIN_ORIGIN,
+        'content-type': 'application/json',
+        'user-agent': 'Mozilla/5.0 Test',
+        ...headers,
+      },
+      payload,
+    });
+  }
+
+  it('aggregates field vitals into daily buckets and reports p75 with ratings', async () => {
+    for (const value of [1200, 1800, 2000, 2600]) {
+      expect((await vitalBeacon({ metric: 'lcp', value })).statusCode).toBe(204);
+    }
+    // CLS arrives as a unitless score and is stored as milli-score; three small
+    // shifts plus one large one still put p75 in the good bucket.
+    for (const value of [0.05, 0.05, 0.05, 0.32]) {
+      await vitalBeacon({ metric: 'cls', value });
+    }
+
+    // Malformed, unknown and out-of-range samples are ignored.
+    expect((await vitalBeacon({ metric: 'fid', value: 100 })).statusCode).toBe(204);
+    expect((await vitalBeacon({ metric: 'lcp', value: -1 })).statusCode).toBe(204);
+    expect((await vitalBeacon({ metric: 'lcp', value: 999999 })).statusCode).toBe(204);
+    expect((await vitalBeacon({ metric: 'lcp' })).statusCode).toBe(204);
+    // DNT and bots are never stored.
+    expect((await vitalBeacon({ metric: 'lcp', value: 1500 }, { dnt: '1' })).statusCode).toBe(204);
+    await app.inject({
+      method: 'POST',
+      url: '/api/public/vitals',
+      headers: {
+        origin: ADMIN_ORIGIN,
+        'content-type': 'application/json',
+        'user-agent': 'Googlebot/2.1',
+      },
+      payload: { metric: 'lcp', value: 900 },
+    });
+
+    const data = (await summary()).json() as SummaryShape;
+    const lcp = data.vitals.find((entry) => entry.metric === 'lcp');
+    expect(lcp).toMatchObject({
+      label: 'Largest Contentful Paint',
+      p75: 2000,
+      rating: 'good',
+      samples: 4,
+    });
+    const cls = data.vitals.find((entry) => entry.metric === 'cls');
+    expect(cls).toMatchObject({ p75: 50, rating: 'good', samples: 4 });
+    expect(data.vitals.map((entry) => entry.metric)).toEqual(['lcp', 'inp', 'cls', 'fcp', 'ttfb']);
+    expect(data.vitals.find((entry) => entry.metric === 'inp')).toMatchObject({
+      p75: null,
+      rating: null,
+      samples: 0,
+    });
+
+    // p75 crosses the good boundary but stays under the poor one.
+    for (const value of [3200, 3500, 3800, 4000]) {
+      await vitalBeacon({ metric: 'lcp', value });
+    }
+    const after = (await summary()).json() as SummaryShape;
+    expect(after.vitals.find((entry) => entry.metric === 'lcp')).toMatchObject({
+      p75: 4000,
+      rating: 'needs-improvement',
+      samples: 8,
+    });
+  });
+
+  it('prunes web-vital buckets with the same retention window', async () => {
+    const day = (offset: number) => {
+      const now = new Date();
+      return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - offset));
+    };
+    await app.database.webVitalDaily.createMany({
+      data: [
+        { day: day(0), metric: 'lcp', bucket: 2000, count: 3 },
+        { day: day(9), metric: 'lcp', bucket: 3000, count: 2 },
+      ],
+    });
+    const result = await app.analytics.prune(7);
+    expect(result).toMatchObject({ pruned: 0, vitalsPruned: 1, retentionDays: 7 });
+    const remaining = await app.database.webVitalDaily.findMany();
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0]?.bucket).toBe(2000);
   });
 });

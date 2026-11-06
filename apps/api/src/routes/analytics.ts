@@ -12,6 +12,13 @@ const recordSchema = z
   })
   .strict();
 
+const vitalSchema = z
+  .object({
+    metric: z.enum(['lcp', 'inp', 'cls', 'fcp', 'ttfb']),
+    value: z.number().finite().min(0).max(600000),
+  })
+  .strict();
+
 const summaryQuerySchema = z
   .object({ days: z.coerce.number().int().min(1).max(365).optional() })
   .strict();
@@ -41,6 +48,23 @@ export function registerAnalyticsRoutes(
         referrer: body.referrer ?? null,
         userAgent: request.headers['user-agent'] ?? null,
       });
+    } catch {
+      // Malformed beacons are ignored rather than surfaced to the visitor.
+    }
+    return reply.code(204).send();
+  });
+
+  app.post('/api/public/vitals', async (request, reply) => {
+    try {
+      // Honour the DNT header server-side as well as in the beacon component.
+      if (request.headers.dnt !== '1') {
+        const body = vitalSchema.parse(request.body);
+        await analytics.recordVital({
+          metric: body.metric,
+          value: body.value,
+          userAgent: request.headers['user-agent'] ?? null,
+        });
+      }
     } catch {
       // Malformed beacons are ignored rather than surfaced to the visitor.
     }

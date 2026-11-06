@@ -8,6 +8,7 @@ import './globals.css';
 import PublicAdminBar from '@/components/PublicAdminBar';
 import JsonLd from '@/components/JsonLd';
 import { ViewTracker } from '@/components/ViewTracker';
+import { WebVitals } from '@/components/WebVitals';
 import { ConsentBanner, ConsentSettingsButton } from '@/components/ConsentBanner';
 import { DEFAULT_CONSENT, themeStringsFor } from '@mernpress/contracts';
 import { siteGraph } from '@/lib/seo';
@@ -116,6 +117,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     >
       <body>
         <ViewTracker consent={consent} />
+        <WebVitals consent={consent} />
         {settings?.customCss ? (
           <style id="customizer-css" dangerouslySetInnerHTML={{ __html: settings.customCss }} />
         ) : null}

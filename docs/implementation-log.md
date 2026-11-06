@@ -5473,3 +5473,29 @@ administrator and public routes:
   the private route (200). Production is back to 1 user, 2 posts, 0 media, 0
   analytics rows; `/`, `/admin/`, `/api/health`, `/posts/testcom` and `/test`
   return 200 and the probe title is gone.
+
+### 2026-11-06 — Field Core Web Vitals panel
+
+- Migration `20261106210000_add_web_vitals_daily` adds a daily histogram table
+  `(day, metric, bucket, count)` with a unique key; no path, referrer, user
+  agent, cookie or IP is stored.
+- `packages/contracts/src/web-vitals.ts` owns LCP/INP/CLS/FCP/TTFB labels,
+  web.dev good/poor thresholds, bucket upper bounds (CLS stored ×1000),
+  `webVitalBucket`, `webVitalRating`, `histogramP75` and display formatting.
+- `POST /api/public/vitals` validates the metric/value, ignores DNT:1 and bot
+  user agents, and always answers 204. `WebVitals` in the root layout observes
+  the five metrics (INP = p98 of interaction durations), keeps them in memory
+  and sends once per metric at `pagehide`/`visibilitychange`; the flush re-checks
+  Do-Not-Track and a required analytics consent category.
+- `AnalyticsService.summary` returns `vitals[]` (p75, rating, samples in display
+  order); `prune` deletes web-vital rows with page views in one transaction and
+  reports `vitalsPruned` (logged by the job, printed by the CLI).
+- Dashboard → Analytics gains a full-width “Core Web Vitals (field data)” panel
+  with p75 values, rating badges, sample counts and an explicit empty state;
+  responsive rows at ≤782px.
+- Tests: contracts bucket/rating/p75/format; API beacon validation/DNT/bot,
+  p75+bucket aggregation, CLS milli-score, rating boundary, retention prune;
+  web helper percentile/DNT/consent; admin panel values, ratings and empty
+  state.
+- Validation: 949 unit/integration tests (API 551, admin 257, web 59, contracts
+  17, block-system 65), 34 Playwright E2E tests and seven builds pass.

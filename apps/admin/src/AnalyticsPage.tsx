@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { formatWebVital } from '@mernpress/contracts';
 import { actionErrorMessage, fetchAnalytics, type AnalyticsSummary } from './api.js';
 import { ErrorState, PageHeader, Skeleton } from './components.js';
 
@@ -203,6 +204,53 @@ export function AnalyticsPage() {
                     ))}
                   </tbody>
                 </table>
+              )}
+            </section>
+
+            <section
+              className="analytics-panel analytics-panel-wide"
+              aria-labelledby="analytics-vitals-heading"
+            >
+              <h2 id="analytics-vitals-heading">Core Web Vitals (field data)</h2>
+              {data.vitals.every((entry) => entry.samples === 0) ? (
+                <p className="field-help">
+                  No field samples in this period. Real visitors report LCP, INP, CLS, FCP and TTFB
+                  from their own browsers; nothing is sent when Do-Not-Track is on or when analytics
+                  consent is required and not granted.
+                </p>
+              ) : (
+                <>
+                  <p className="field-help">
+                    p75 over {data.days} days. Ratings use the web.dev thresholds: LCP 2.5 s / 4 s,
+                    INP 200 ms / 500 ms, CLS 0.1 / 0.25, FCP 1.8 s / 3 s, TTFB 800 ms / 1.8 s.
+                  </p>
+                  <ul className="vitals-list">
+                    {data.vitals.map((entry) => (
+                      <li key={entry.metric} className="vitals-row">
+                        <span className="vitals-label">
+                          <strong>{entry.label}</strong>
+                          <code>{entry.metric.toUpperCase()}</code>
+                        </span>
+                        <span className="vitals-value">
+                          {entry.p75 === null ? '—' : formatWebVital(entry.metric, entry.p75)}
+                        </span>
+                        <span
+                          className={`vitals-rating${entry.rating ? ` is-${entry.rating}` : ''}`}
+                        >
+                          {entry.rating === null
+                            ? 'no samples'
+                            : entry.rating === 'needs-improvement'
+                              ? 'needs improvement'
+                              : entry.rating}
+                        </span>
+                        <span className="vitals-samples">
+                          {entry.samples.toLocaleString()}{' '}
+                          {entry.samples === 1 ? 'sample' : 'samples'}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
               )}
             </section>
 

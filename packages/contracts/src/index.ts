@@ -12,3 +12,16 @@ export * from './consent.js';
 export * from './languages.js';
 export * from './theme-strings.js';
 export * from './retention.js';
+
+export {
+  WEB_VITALS,
+  WEB_VITAL_METRICS,
+  WEB_VITAL_ORDER,
+  formatWebVital,
+  histogramP75,
+  webVitalBucket,
+  webVitalRating,
+  type WebVitalDefinition,
+  type WebVitalMetric,
+  type WebVitalRating,
+} from './web-vitals.js';
