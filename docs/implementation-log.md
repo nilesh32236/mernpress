@@ -5088,3 +5088,22 @@ verified in production with a temporary administrator:
   targets. Eight desktop/mobile screenshots attach to the report.
 - Validation: 922 unit/integration tests (API 539, admin 253, web 52, contracts
   13, block-system 65), 26 Playwright E2E tests and seven builds pass.
+
+**Deployment (custom-screen design contract, release
+`20261106T164149Z-7166748`):** verified in production with a temporary
+administrator and a temporary `Audit Root`/`Audit Child` folder tree:
+- Analytics period select: 32px, 14px, `#949494`, radius 2, padding `0 24 0 8`.
+- Languages “Theme strings” and “Language menu” h2: 16.9px/600 with a 16.9px
+  margin, replacing the 14px headings.
+- Backups “Create a backup” / “Stored backups (0)”: 16.9px/600, 16.9px margin;
+  the compact primary action measured 32px, `0 10` padding.
+- Media folder bar: select and New folder input both 32px/14px/`#949494`/radius
+  2, input padding `0 12`; 3 tree rows (Uncategorized + Audit Root/Child),
+  actions `flex-wrap: wrap`; desktop scrollWidth = innerWidth = 1440.
+- At 375px: the same 3 rows, select/input 32px, actions wrapped,
+  scrollWidth = innerWidth = 375 (no horizontal overflow).
+- Cleanup removed the temporary folders, analytics rows, administrator/sessions
+  and recent audit events. Production is back to 1 user, 2 posts, 0 media,
+  0 folders, 0 analytics rows (scheduler jobs remain); `/`, `/admin/`,
+  `/admin/analytics`, `/admin/settings/languages`, `/admin/tools/backups`,
+  `/admin/media`, `/api/health` and `/posts/testcom` return 200.
