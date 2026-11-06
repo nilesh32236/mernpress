@@ -5353,3 +5353,16 @@ verified in production with a temporary administrator:
 - Docs: public design-audit section.
 - Validation: 933 unit/integration tests (API 546, admin 257, web 52, contracts
   13, block-system 65), 32 Playwright E2E tests and seven builds pass.
+
+**Deployment (public design pass, release `20261106T190108Z-34248bf`):**
+verified against production public routes at 1440 and 375:
+- Home/blog: H1 `Blog` at x=398, 645px wide, 48px/400; content column 398/645;
+  search page H1 + 645×61 search form; no horizontal overflow.
+- Single `/posts/testcom`, page `/test`, search `/search?q=test` and 404
+  `/public-prod-audit-missing`: 48px desktop, **36px mobile**, 375 = 375.
+  The page route confirms the `.entry.page .entry-title` mobile fix.
+- 404 returned HTTP 404 with the centered image/title/search layout.
+- Feed returned `application/rss+xml`; sitemap returned `application/xml` and
+  contains `/posts/testcom`.
+- Analytics rows created by the audit visits were removed; no temporary admin
+  was needed. Production remains 1 user, 2 posts, 0 analytics rows.
