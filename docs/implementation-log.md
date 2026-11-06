@@ -4905,3 +4905,20 @@ verified in production with a temporary administrator:
   fallback.
 - Validation: 907 unit/integration tests (API 527, admin 250, web 52, contracts
   13, block-system 65), 24 Playwright E2E tests and seven builds pass.
+
+**Deployment (localized comment errors, release `20261106T145851Z-796254a`):**
+verified in production with a temporary administrator:
+- Closed comments and set the English `commentsClosed` override to “Comments
+  are paused for now.”, then submitted the public comment form on
+  `/posts/testcom`. The form showed exactly “Comments are paused for now.”;
+  the English API text (“Comments are closed.”) did not appear anywhere.
+- A direct API request against the post id returned `403 FORBIDDEN` with
+  `message: "Comments are closed."` and
+  `details: { "reason": "comments_closed" }`, confirming the stable reason code
+  the public site maps to theme strings.
+- Reset discussion settings to `open`, cleared the theme-string override,
+  removed the temporary administrator/sessions, recent audit events and
+  analytics rows, and deleted the leftover empty `theme_strings` option row.
+  Production is back to 1 user, 2 posts, 0 comments, 0 analytics rows and no
+  language/menu/theme-string overrides; `/`, `/admin/`, `/api/health`,
+  `/posts/testcom` and `/sitemap.xml` return 200.
