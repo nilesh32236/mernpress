@@ -5249,3 +5249,23 @@ verified in production with a temporary administrator:
 - Docs: ADR 0047 amendment, D-120, parity matrix.
 - Validation: 929 unit/integration tests (API 542, admin 257, web 52, contracts
   13, block-system 65), 29 Playwright E2E tests and seven builds pass.
+
+**Deployment (durable media regeneration, release
+`20261106T180754Z-412c2b7`):** verified in production with a temporary
+administrator:
+- Created “Regen Target”, uploaded `audit-image.png` into it, then deleted the
+  stored `…-300.webp` derivative from disk. Selecting the folder and clicking
+  **Regenerate image sizes** showed “Derivative regeneration queued for “Regen
+  Target”. Track it in Scheduled Actions.” and the “View in Scheduled Actions”
+  link.
+- The queued job carried `payload.folderId` = the folder id and stayed
+  `PENDING` until the worker picked it up; it completed with attempts `1/2`, no
+  error, in under two seconds. Scheduled Actions showed
+  `media.regenerate | completed | 1/2`.
+- The deleted `6b9a43df638ceaa3-300.webp` derivative was recreated (6,198
+  bytes), proving the worker rebuilt it from the canonical file.
+- Cleanup deleted the media item and folder, analytics rows, the temporary
+  administrator/sessions and recent audit events. Production is back to 1 user,
+  2 posts, 0 media, 0 folders, 0 analytics rows (queue history remains);
+  `/`, `/admin/`, `/admin/media`, `/admin/tools/jobs`, `/api/health` and
+  `/posts/testcom` return 200.
