@@ -1345,5 +1345,119 @@ describe('admin media library', () => {
       const forbidden = await createFolder('Nope', sessionHeaders(subscriber.session));
       expect(forbidden.statusCode).toBe(403);
     });
+
+    it('nests folders, rejects cycles and reparents children on delete', async () => {
+      const root = (await createFolder('Root')).json() as { id: string; parentId: null };
+      const childResponse = await app.inject({
+        method: 'POST',
+        url: '/api/admin/media/folders',
+        headers: adminHeaders(),
+        payload: { name: 'Child', parentId: root.id },
+      });
+      expect(childResponse.statusCode).toBe(201);
+      const child = childResponse.json() as { id: string; parentId: string };
+      expect(child.parentId).toBe(root.id);
+
+      const grandchildResponse = await app.inject({
+        method: 'POST',
+        url: '/api/admin/media/folders',
+        headers: adminHeaders(),
+        payload: { name: 'Grandchild', parentId: child.id },
+      });
+      const grandchild = grandchildResponse.json() as { id: string; parentId: string };
+      expect(grandchild.parentId).toBe(child.id);
+
+      const listed = (await folders()).json() as {
+        items: Array<{ id: string; parentId: string | null }>;
+      };
+      expect(listed.items.map((folder) => [folder.id, folder.parentId])).toEqual(
+        expect.arrayContaining([
+          [root.id, null],
+          [child.id, root.id],
+          [grandchild.id, child.id],
+        ]),
+      );
+
+      // A folder cannot become its own parent or move under a descendant.
+      const self = await app.inject({
+        method: 'PUT',
+        url: `/api/admin/media/folders/${root.id}/move`,
+        headers: adminHeaders(),
+        payload: { parentId: root.id },
+      });
+      expect(self.statusCode).toBe(400);
+      expect((self.json() as ErrorEnvelope).error.code).toBe('FOLDER_CYCLE');
+
+      const cycle = await app.inject({
+        method: 'PUT',
+        url: `/api/admin/media/folders/${root.id}/move`,
+        headers: adminHeaders(),
+        payload: { parentId: grandchild.id },
+      });
+      expect(cycle.statusCode).toBe(400);
+      expect((cycle.json() as ErrorEnvelope).error.code).toBe('FOLDER_CYCLE');
+
+      const missingParent = await app.inject({
+        method: 'POST',
+        url: '/api/admin/media/folders',
+        headers: adminHeaders(),
+        payload: { name: 'Orphan', parentId: '00000000-0000-7000-8000-000000000000' },
+      });
+      expect(missingParent.statusCode).toBe(400);
+      expect((missingParent.json() as ErrorEnvelope).error.code).toBe('FOLDER_PARENT_INVALID');
+
+      // Moving a subtree is allowed when the target is not a descendant.
+      const movedGrandchild = await app.inject({
+        method: 'PUT',
+        url: `/api/admin/media/folders/${grandchild.id}/move`,
+        headers: adminHeaders(),
+        payload: { parentId: root.id },
+      });
+      expect(movedGrandchild.statusCode).toBe(200);
+      expect((movedGrandchild.json() as { parentId: string }).parentId).toBe(root.id);
+
+      // Deleting a folder moves its children up and unassigns its media.
+      const media = await createMedia({
+        filename: 'nested.png',
+        contentType: 'image/png',
+        data: png,
+      });
+      await app.inject({
+        method: 'PATCH',
+        url: `/api/admin/media/${media.id}`,
+        headers: adminHeaders(),
+        payload: { folderId: child.id },
+      });
+      const deleted = await app.inject({
+        method: 'DELETE',
+        url: `/api/admin/media/folders/${child.id}`,
+        headers: adminHeaders(),
+      });
+      expect(deleted.statusCode).toBe(204);
+      const after = (await folders()).json() as {
+        items: Array<{ id: string; parentId: string | null }>;
+      };
+      const survivor = after.items.find((folder) => folder.id === grandchild.id);
+      expect(survivor?.parentId).toBe(root.id);
+      const mediaAfter = await app.inject({
+        method: 'GET',
+        url: `/api/admin/media/${media.id}`,
+        headers: { cookie: adminCookie },
+      });
+      expect((mediaAfter.json() as MediaShape).folderId).toBeNull();
+
+      // Moving requires the upload capability.
+      const subscriber = await createSession('folder-mover-subscriber', 'subscriber');
+      const forbiddenMove = await app.inject({
+        method: 'PUT',
+        url: `/api/admin/media/folders/${root.id}/move`,
+        headers: {
+          ...sessionHeaders(subscriber.session),
+          'content-type': 'application/json',
+        },
+        payload: { parentId: null },
+      });
+      expect(forbiddenMove.statusCode).toBe(403);
+    });
   });
 });

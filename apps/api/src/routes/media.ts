@@ -60,6 +60,10 @@ const updateMediaSchema = z
 const folderNameSchema = z.string().trim().min(1).max(100);
 const folderIdParamSchema = z.object({ id: uuid }).strict();
 const folderBodySchema = z.object({ name: folderNameSchema }).strict();
+const folderCreateSchema = z
+  .object({ name: folderNameSchema, parentId: uuid.nullable().optional() })
+  .strict();
+const folderMoveSchema = z.object({ parentId: uuid.nullable() }).strict();
 
 const regenerateSchema = z
   .object({
@@ -246,8 +250,8 @@ export function registerMediaRoutes(app: FastifyInstance, options: MediaRouteOpt
     const ctx = await guard(request, reply);
     if (!ctx) return;
     try {
-      const body = folderBodySchema.parse(request.body);
-      const folder = await media.createFolder(ctx.principal, body.name);
+      const body = folderCreateSchema.parse(request.body);
+      const folder = await media.createFolder(ctx.principal, body.name, body.parentId ?? null);
       return reply.code(201).send(folder);
     } catch (error) {
       return sendRouteError(reply, request, error);
@@ -261,6 +265,18 @@ export function registerMediaRoutes(app: FastifyInstance, options: MediaRouteOpt
       const { id } = folderIdParamSchema.parse(request.params);
       const body = folderBodySchema.parse(request.body);
       return await media.renameFolder(ctx.principal, id, body.name);
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
+  app.put('/api/admin/media/folders/:id/move', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const { id } = folderIdParamSchema.parse(request.params);
+      const body = folderMoveSchema.parse(request.body);
+      return await media.moveFolder(ctx.principal, id, body.parentId);
     } catch (error) {
       return sendRouteError(reply, request, error);
     }

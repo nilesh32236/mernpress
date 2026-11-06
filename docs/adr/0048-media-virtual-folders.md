@@ -17,13 +17,23 @@ existing URLs, the derivative paths and the immutable-cache headers.
 1. **Folders are metadata, not directories.** A new `media_folders` table holds
    `id`, `name`, timestamps; `media_items.folder_id` is a nullable FK with
    `ON DELETE SET NULL`. Files never move on disk and every URL stays stable.
-2. **Flat folders, one per item.** No nesting and no many-to-many in this slice.
-   A media item belongs to zero or one folder; deleting a folder moves its items
-   to Uncategorized instead of deleting them. Nesting/drag-and-drop would need a
-   separate model decision.
+2. **Nested folders, one parent and one folder per item.**
+   `media_folders.parent_id` is a self-referencing nullable FK (`ON DELETE SET
+   NULL`), so folders form a tree. A media item still belongs to zero or one
+   folder (no many-to-many). `PUT /folders/:id/move` reparents a folder and is
+   cycle-safe: a folder cannot be its own parent or move under one of its
+   descendants (`400 FOLDER_CYCLE`); a missing parent is
+   `400 FOLDER_PARENT_INVALID`. The admin build a depth-first indented tree for
+   the filter/create/move selects.
+   Deleting a folder moves its **child folders** to the deleted folder's parent
+   (one transaction) and its media items to Uncategorized (`ON DELETE SET
+   NULL`), so nothing is silently deleted except the folder itself.
+   Drag-and-drop and bulk move are not built.
 3. **Case-insensitive unique names.** The service trims the name, requires
    1–100 characters and rejects a duplicate (case-insensitive) with
-   `409 FOLDER_EXISTS`. The database unique index is a final guard.
+   `409 FOLDER_EXISTS`. The database unique index is a final guard. Names are
+   globally unique across the tree (not just among siblings), so a folder can be
+   identified unambiguously in the flat list; this is a deliberate limitation.
 4. **API.** `GET/POST /api/admin/media/folders`,
    `PATCH/DELETE /api/admin/media/folders/:id`, plus `folderId` on
    `PATCH /api/admin/media/:id` and a `folder` filter on the media list
@@ -31,9 +41,10 @@ existing URLs, the derivative paths and the immutable-cache headers.
    `content.create` (the upload capability). CSRF and admin session apply as
    usual.
 5. **UI.** The Media Library gains a Folder bar: filter (All / Uncategorized /
-   named folders with counts), create, rename and delete (with confirmation),
-   and a Folder select in the attachment drawer to move the item. Selecting a
-   folder filters the grid/list and resets pagination.
+   the indented tree with direct item counts), create (with a parent select),
+   rename, move and delete (with confirmation), plus a Folder select in the
+   attachment drawer to move the item. Selecting a folder filters the grid/list
+   to that folder's direct items (not its descendants) and resets pagination.
 6. **Counts are derived.** `itemCount` comes from a Prisma `_count` on the
    relation, so it cannot drift from the rows.
 
@@ -46,3 +57,5 @@ existing URLs, the derivative paths and the immutable-cache headers.
   would need pagination or a tree, which is not built.
 - Bulk assignment is not implemented; items are moved one at a time from the
   drawer.
+- Folder names are globally unique, children inherit nothing from a parent, and
+  the folder filter shows direct items only. Drag-and-drop is not implemented.

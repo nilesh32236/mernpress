@@ -26,14 +26,22 @@ files fall back to the canonical image at request time.
 ## Virtual folders
 
 Folders are metadata only (`media_folders` + `media_items.folder_id`); files stay
-flat on disk and URLs never change. A media item belongs to zero or one folder;
-deleting a folder moves its items to Uncategorized (`ON DELETE SET NULL`).
+flat on disk and URLs never change. A media item belongs to zero or one folder.
+
+Folders form a tree via `media_folders.parent_id` (nullable self FK,
+`ON DELETE SET NULL`). A folder cannot be its own parent or move under one of
+its descendants; the service walks the parent chain and rejects cycles with
+`400 FOLDER_CYCLE`. A missing parent is `400 FOLDER_PARENT_INVALID`. Deleting a
+folder reparents its child folders to the deleted folder's parent in one
+transaction; its media items become Uncategorized. Names remain globally unique
+(case-insensitive) across the tree.
 
 | Route | Behaviour |
 | --- | --- |
 | `GET /api/admin/media/folders` | `{ items: MediaFolderDto[] }` ordered by name, with `itemCount` |
 | `POST /api/admin/media/folders` | `{ name }` → 201 folder; names are trimmed, 1–100 chars, case-insensitively unique (`409 FOLDER_EXISTS`) |
 | `PATCH /api/admin/media/folders/:id` | `{ name }` → renamed folder |
+| `PUT /api/admin/media/folders/:id/move` | `{ parentId: uuid \| null }` → reparented folder (cycle-safe) |
 | `DELETE /api/admin/media/folders/:id` | 204; assigned items become Uncategorized |
 | `PATCH /api/admin/media/:id` | accepts `folderId: uuid \| null` |
 | `GET /api/admin/media?folder=` | `uuid` for one folder, `none` for Uncategorized, omitted for all |
@@ -42,7 +50,9 @@ Reads require `content.read.any`; folder mutations require `content.create`
 (the upload capability). The UI keeps the filter, create/rename/delete controls
 and the drawer's Folder select in sync with the list.
 
-Limits: flat (no nesting), one folder per item, no bulk move, no drag-and-drop.
+The admin renders a depth-first indented tree (filter, create-parent and move
+selects). Limits: one folder per item, globally unique names, the folder filter
+shows direct items only, no bulk move and no drag-and-drop.
 
 ## Bulk regeneration
 

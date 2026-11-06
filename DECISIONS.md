@@ -156,6 +156,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-105 | 2026-11-06 | Sitemap translation alternates: `PublicPost` exposes the opaque `translationGroup`; `apps/web/lib/sitemap.ts` groups collected variants and adds `alternates.languages` (every published language + `x-default`, falling back to the home page when the default variant is unpublished) to each entry. Documents with one language get no alternates block. `app/sitemap.ts` collects posts/pages per enabled language, deduplicates and emits the grouped entries after the static home/blog URLs. No schema/API-route change. | accepted | [ADR 0051](docs/adr/0051-multilingual-content-model.md) |
 
+| D-106 | 2026-11-06 | Nested media folders: `media_folders.parent_id` self FK (`ON DELETE SET NULL`) with a depth-first tree in the Media Library (indented filter/create-parent/move selects). `PUT /api/admin/media/folders/:id/move` reparents with cycle checks (`400 FOLDER_CYCLE` for self/descendant, `400 FOLDER_PARENT_INVALID` for a missing parent). `POST` accepts `parentId`; delete moves child folders to the deleted folder's parent and uncategorizes its items. Names stay globally unique (case-insensitive); the folder filter shows direct items only; no drag-and-drop or bulk move. | accepted | [ADR 0048](docs/adr/0048-media-virtual-folders.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

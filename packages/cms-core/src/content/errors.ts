@@ -29,7 +29,9 @@ export type ContentErrorCode =
   | 'BACKUP_FAILED'
   | 'FOLDER_EXISTS'
   | 'LANGUAGE_NOT_ENABLED'
-  | 'TRANSLATION_EXISTS';
+  | 'TRANSLATION_EXISTS'
+  | 'FOLDER_PARENT_INVALID'
+  | 'FOLDER_CYCLE';
 
 /**
  * Typed domain error for content/taxonomy. Routes map `statusCode` + `code` to

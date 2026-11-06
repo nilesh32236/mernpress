@@ -4602,3 +4602,25 @@ Production verification with a temporary administrator:
   the temporary administrator; production is back to 1 user, 2 posts and 0
   analytics rows, with `/`, `/admin/`, `/api/health`, `/posts/testcom` and
   `/sitemap.xml` at 200.
+
+### 2026-11-06 — Nested media folders
+
+- `media_folders.parent_id` (nullable self FK, `ON DELETE SET NULL`, indexed;
+  migration `add_media_folder_parent`) turns the flat list into a tree.
+- Service: `createFolder` accepts an optional parent, `moveFolder` reparents a
+  folder (or sends it to the top level) with cycle checks, and `deleteFolder`
+  reparents child folders to the deleted folder's parent in one transaction
+  while media items become Uncategorized. Errors: `FOLDER_CYCLE`,
+  `FOLDER_PARENT_INVALID`.
+- API: `POST /folders` accepts `parentId`; new
+  `PUT /api/admin/media/folders/:id/move`; DTOs expose `parentId`.
+- Media Library: depth-first indented tree in the filter select, a parent select
+  on create, and a “Move to” select excluding the folder and its descendants.
+  Delete confirmation explains child folders move up and items become
+  Uncategorized. Global case-insensitive name uniqueness is retained.
+- Tests: API nesting/parent ids, self/descendant cycle rejection, missing
+  parent, moving a subtree, delete reparenting plus media unassignment, and
+  subscriber denial; admin tree indentation, nested create payload and move
+  flow.
+- Validation: 890 unit/integration tests (API 522, admin 241, web 49, contracts
+  13, block-system 65), 24 Playwright E2E tests and seven builds pass.

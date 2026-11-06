@@ -2088,6 +2088,7 @@ export interface MediaListParams {
 export interface MediaFolder {
   id: string;
   name: string;
+  parentId: string | null;
   itemCount: number;
   createdAt: string;
   updatedAt: string;
@@ -2142,7 +2143,10 @@ export async function listMediaFolders(): Promise<MediaFolder[]> {
   return body.items;
 }
 
-export async function createMediaFolder(name: string): Promise<MediaFolder> {
+export async function createMediaFolder(
+  name: string,
+  parentId: string | null = null,
+): Promise<MediaFolder> {
   const response = await fetch('/api/admin/media/folders', {
     method: 'POST',
     credentials: 'include',
@@ -2152,7 +2156,22 @@ export async function createMediaFolder(name: string): Promise<MediaFolder> {
       'content-type': 'application/json',
       ...csrfHeader(),
     },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, parentId }),
+  });
+  return readJson<MediaFolder>(response);
+}
+
+export async function moveMediaFolder(id: string, parentId: string | null): Promise<MediaFolder> {
+  const response = await fetch(`/api/admin/media/folders/${encodeURIComponent(id)}/move`, {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ parentId }),
   });
   return readJson<MediaFolder>(response);
 }

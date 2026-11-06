@@ -12,6 +12,7 @@ import {
   deleteMediaFolder,
   listMedia,
   listMediaFolders,
+  moveMediaFolder,
   regenerateMediaDerivatives,
   renameMediaFolder,
   updateMedia,
@@ -35,6 +36,58 @@ import { MediaImageEditor } from './MediaImageEditor.js';
 import { INFINITE_SCROLL_EVENT, infiniteScrollEnabled } from './preferences.js';
 
 const DEFAULT_PER_PAGE = 24;
+
+/** Depth-first folder rows (children after their parent) for indented selects. */
+function folderTree(folders: MediaFolder[]): Array<{ folder: MediaFolder; depth: number }> {
+  const byParent = new Map<string | null, MediaFolder[]>();
+  for (const folder of folders) {
+    const list = byParent.get(folder.parentId) ?? [];
+    list.push(folder);
+    byParent.set(folder.parentId, list);
+  }
+  for (const list of byParent.values()) list.sort((a, b) => a.name.localeCompare(b.name));
+  const rows: Array<{ folder: MediaFolder; depth: number }> = [];
+  const seen = new Set<string>();
+  const visit = (parentId: string | null, depth: number): void => {
+    for (const folder of byParent.get(parentId) ?? []) {
+      if (seen.has(folder.id)) continue;
+      seen.add(folder.id);
+      rows.push({ folder, depth });
+      visit(folder.id, depth + 1);
+    }
+  };
+  visit(null, 0);
+  // Defensive: a corrupt cycle or orphan row still appears at the top level.
+  for (const folder of folders) {
+    if (!seen.has(folder.id)) rows.push({ folder, depth: 0 });
+  }
+  return rows;
+}
+
+/** All folder ids below `id`, used to filter the move target list. */
+function folderDescendants(folders: MediaFolder[], id: string): Set<string> {
+  const byParent = new Map<string, string[]>();
+  for (const folder of folders) {
+    if (!folder.parentId) continue;
+    const list = byParent.get(folder.parentId) ?? [];
+    list.push(folder.id);
+    byParent.set(folder.parentId, list);
+  }
+  const result = new Set<string>();
+  const walk = (parentId: string): void => {
+    for (const childId of byParent.get(parentId) ?? []) {
+      if (result.has(childId)) continue;
+      result.add(childId);
+      walk(childId);
+    }
+  };
+  walk(id);
+  return result;
+}
+
+function indentedFolder(name: string, depth: number): string {
+  return `${'— '.repeat(depth)}${name}`;
+}
 
 /** Mirrors the server-side allow list (JPEG, PNG, WebP, GIF). */
 const UPLOAD_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif';
@@ -485,6 +538,8 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
   const [folders, setFolders] = useState<MediaFolder[]>([]);
   const [folderFilter, setFolderFilter] = useState('');
   const [folderName, setFolderName] = useState('');
+  const [folderParent, setFolderParent] = useState('');
+  const [moveTarget, setMoveTarget] = useState('');
   const [folderBusy, setFolderBusy] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState('');
@@ -521,7 +576,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
     setFolderBusy(true);
     setNotice(null);
     try {
-      const created = await createMediaFolder(name);
+      const created = await createMediaFolder(name, folderParent === '' ? null : folderParent);
       setFolderName('');
       await refreshFolders();
       setFolderFilter(created.id);
@@ -557,7 +612,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
     if (
       typeof window !== 'undefined' &&
       !window.confirm(
-        `Delete the folder “${selectedFolder.name}”? Its media items move to Uncategorized.`,
+        `Delete the folder “${selectedFolder.name}”? Its child folders move to its parent and its media items become Uncategorized.`,
       )
     ) {
       return;
@@ -570,8 +625,23 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
       await refreshFolders();
       setNotice({
         tone: 'success',
-        text: 'Folder deleted; its media items are now Uncategorized.',
+        text: 'Folder deleted; child folders moved up and media items are now Uncategorized.',
       });
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setFolderBusy(false);
+    }
+  }
+
+  async function moveSelectedFolder(): Promise<void> {
+    if (!selectedFolder || folderBusy) return;
+    setFolderBusy(true);
+    setNotice(null);
+    try {
+      await moveMediaFolder(selectedFolder.id, moveTarget === '' ? null : moveTarget);
+      await refreshFolders();
+      setNotice({ tone: 'success', text: 'Folder moved.' });
     } catch (caught) {
       setNotice({ tone: 'error', text: actionErrorMessage(caught) });
     } finally {
@@ -614,6 +684,15 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
   }
 
   const selectedFolder = folders.find((folder) => folder.id === folderFilter) ?? null;
+  const tree = folderTree(folders);
+  const descendants = selectedFolder
+    ? folderDescendants(folders, selectedFolder.id)
+    : new Set<string>();
+
+  useEffect(() => {
+    setMoveTarget(selectedFolder?.parentId ?? '');
+  }, [selectedFolder?.id, selectedFolder?.parentId]);
+
   const showAuthor = !hiddenColumns.has('author');
   const showParent = !hiddenColumns.has('parent');
   const showDate = !hiddenColumns.has('date');
@@ -900,9 +979,9 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
             >
               <option value="">All folders</option>
               <option value="none">Uncategorized</option>
-              {folders.map((folder) => (
+              {tree.map(({ folder, depth }) => (
                 <option key={folder.id} value={folder.id}>
-                  {folder.name} ({folder.itemCount})
+                  {indentedFolder(folder.name, depth)} ({folder.itemCount})
                 </option>
               ))}
             </select>
@@ -935,6 +1014,35 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
               </form>
             ) : (
               <>
+                <label className="media-folder-move">
+                  <span>Move to</span>
+                  <select
+                    aria-label="Move folder to"
+                    value={moveTarget}
+                    onChange={(event) => setMoveTarget(event.target.value)}
+                    disabled={folderBusy}
+                  >
+                    <option value="">Top level</option>
+                    {tree
+                      .filter(
+                        ({ folder }) =>
+                          folder.id !== selectedFolder.id && !descendants.has(folder.id),
+                      )
+                      .map(({ folder, depth }) => (
+                        <option key={folder.id} value={folder.id}>
+                          {indentedFolder(folder.name, depth)}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  className="button secondary-button"
+                  onClick={() => void moveSelectedFolder()}
+                  disabled={folderBusy || moveTarget === (selectedFolder.parentId ?? '')}
+                >
+                  Move folder
+                </button>
                 <button
                   type="button"
                   className="button-link"
@@ -959,6 +1067,19 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
           ) : null}
 
           <form className="media-folder-inline" onSubmit={(event) => void addFolder(event)}>
+            <select
+              aria-label="Parent folder"
+              value={folderParent}
+              onChange={(event) => setFolderParent(event.target.value)}
+              disabled={folderBusy}
+            >
+              <option value="">Top level</option>
+              {tree.map(({ folder, depth }) => (
+                <option key={folder.id} value={folder.id}>
+                  {indentedFolder(folder.name, depth)}
+                </option>
+              ))}
+            </select>
             <input
               aria-label="New folder name"
               placeholder="New folder"

@@ -10,6 +10,7 @@ import {
   listMediaFolders,
   regenerateMediaDerivatives,
   renameMediaFolder,
+  moveMediaFolder,
   restoreMediaOriginal,
   updateMedia,
   uploadMedia,
@@ -27,6 +28,7 @@ vi.mock('./api.js', async (importOriginal) => {
     listMediaFolders: vi.fn(),
     createMediaFolder: vi.fn(),
     renameMediaFolder: vi.fn(),
+    moveMediaFolder: vi.fn(),
     deleteMediaFolder: vi.fn(),
     regenerateMediaDerivatives: vi.fn(),
     getMedia: vi.fn(),
@@ -355,6 +357,7 @@ describe('media library page', () => {
     const travel = {
       id: 'f1',
       name: 'Travel',
+      parentId: null,
       itemCount: 2,
       createdAt: '2026-11-05T10:00:00.000Z',
       updatedAt: '2026-11-05T10:00:00.000Z',
@@ -371,7 +374,7 @@ describe('media library page', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Create folder' }));
 
-    await waitFor(() => expect(vi.mocked(createMediaFolder)).toHaveBeenCalledWith('Travel'));
+    await waitFor(() => expect(vi.mocked(createMediaFolder)).toHaveBeenCalledWith('Travel', null));
     expect(await screen.findByText('Folder “Travel” created.')).toBeDefined();
     const filter = (await screen.findByLabelText('Filter by folder')) as HTMLSelectElement;
     await waitFor(() => expect(filter.value).toBe('f1'));
@@ -394,6 +397,7 @@ describe('media library page', () => {
     const travel = {
       id: 'f1',
       name: 'Travel',
+      parentId: null,
       itemCount: 1,
       createdAt: '2026-11-05T10:00:00.000Z',
       updatedAt: '2026-11-05T10:00:00.000Z',
@@ -431,7 +435,66 @@ describe('media library page', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Delete folder' }));
     await waitFor(() => expect(vi.mocked(deleteMediaFolder)).toHaveBeenCalledWith('f1'));
     expect(
-      await screen.findByText('Folder deleted; its media items are now Uncategorized.'),
+      await screen.findByText(
+        'Folder deleted; child folders moved up and media items are now Uncategorized.',
+      ),
     ).toBeDefined();
+  });
+  it('creates nested folders, indents the tree and moves a folder safely', async () => {
+    const root = {
+      id: 'root',
+      name: 'Root',
+      parentId: null,
+      itemCount: 0,
+      createdAt: '2026-11-06T10:00:00.000Z',
+      updatedAt: '2026-11-06T10:00:00.000Z',
+    };
+    const child = {
+      id: 'child',
+      name: 'Child',
+      parentId: 'root',
+      itemCount: 0,
+      createdAt: '2026-11-06T10:00:00.000Z',
+      updatedAt: '2026-11-06T10:00:00.000Z',
+    };
+    vi.mocked(listMediaFolders).mockResolvedValue([root, child]);
+    vi.mocked(createMediaFolder).mockResolvedValue({
+      ...child,
+      id: 'grandchild',
+      name: 'Grandchild',
+    });
+    vi.mocked(moveMediaFolder).mockResolvedValue({ ...child, parentId: null });
+
+    render(<MediaPage user={admin} />);
+    await screen.findByRole('button', { name: 'View sunset.png' });
+    await waitFor(() => expect(vi.mocked(listMediaFolders)).toHaveBeenCalled());
+
+    const filter = (await screen.findByLabelText('Filter by folder')) as HTMLSelectElement;
+    await waitFor(() =>
+      expect([...filter.options].map((option) => option.textContent?.trim())).toEqual([
+        'All folders',
+        'Uncategorized',
+        'Root (0)',
+        '— Child (0)',
+      ]),
+    );
+
+    fireEvent.change(screen.getByLabelText('Parent folder'), { target: { value: 'root' } });
+    fireEvent.change(screen.getByLabelText('New folder name'), {
+      target: { value: 'Grandchild' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create folder' }));
+    await waitFor(() =>
+      expect(vi.mocked(createMediaFolder)).toHaveBeenCalledWith('Grandchild', 'root'),
+    );
+
+    // Selecting the child shows the move control; its own subtree is excluded.
+    fireEvent.change(filter, { target: { value: 'child' } });
+    const moveSelect = (await screen.findByLabelText('Move folder to')) as HTMLSelectElement;
+    expect([...moveSelect.options].map((option) => option.value)).toEqual(['', 'root']);
+    fireEvent.change(moveSelect, { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Move folder' }));
+    await waitFor(() => expect(vi.mocked(moveMediaFolder)).toHaveBeenCalledWith('child', null));
+    expect(await screen.findByText('Folder moved.')).toBeDefined();
   });
 });

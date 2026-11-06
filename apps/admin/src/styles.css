@@ -13417,3 +13417,15 @@ select:not([multiple]):not([size]) {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Media Library: nested folders. */
+.media-folder-move {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.media-folder-move select {
+  max-width: 200px;
+}

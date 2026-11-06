@@ -87,6 +87,8 @@ export interface MediaListQuery {
 export interface MediaFolderDto {
   id: string;
   name: string;
+  /** Parent folder id; null for a top-level folder. */
+  parentId: string | null;
   /** Number of media items assigned to the folder. */
   itemCount: number;
   createdAt: string;
@@ -151,9 +153,15 @@ export interface MediaService {
   /** Deletes the row (authoritative) and its files best-effort. */
   remove(principal: Principal, id: string): Promise<void>;
   listFolders(principal: Principal): Promise<MediaFolderDto[]>;
-  createFolder(principal: Principal, name: string): Promise<MediaFolderDto>;
+  createFolder(
+    principal: Principal,
+    name: string,
+    parentId?: string | null,
+  ): Promise<MediaFolderDto>;
   renameFolder(principal: Principal, id: string, name: string): Promise<MediaFolderDto>;
-  /** Deletes the folder; assigned items become Uncategorized. */
+  /** Moves a folder under another folder (or to the top level); cycle-safe. */
+  moveFolder(principal: Principal, id: string, parentId: string | null): Promise<MediaFolderDto>;
+  /** Deletes the folder; child folders move to its parent and items become Uncategorized. */
   deleteFolder(principal: Principal, id: string): Promise<void>;
   /** Rebuild derivatives for every image, in bounded batches. */
   regenerateDerivatives(
