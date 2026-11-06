@@ -255,3 +255,33 @@ disabled directory tabs (no marketplace/remote install).
 `tests/e2e/admin-parity.spec.ts` now has a sixth test covering all 13 routes at
 both viewports, asserting no horizontal overflow, with desktop screenshots for
 every route and mobile screenshots for the two fixed screens.
+
+## Public screens measured pass (2026-11-06)
+
+Measured home, blog, single post, page, category, tag, author, search, 404,
+feed and sitemap against the saved Twenty Twenty-Five geometry from the
+2026-11-05 reference pass, at 1440×1000 and 375×812.
+
+| Screen | WordPress geometry | MERNPress |
+| --- | --- | --- |
+| Home/blog/search H1 | x=398, 645×54, 48px/400 | match (`Blog` / archive title; search block 645×61) |
+| Content column | x=398, 645px | match on every route |
+| Header | full width, 71px | match |
+| Single/page article | 645px content column, 48px title | match; page mobile title was 48px and is now **36px** |
+| Archives (category/tag/author) | 645px column, 48px archive title | match |
+| Search | H1 + 645×61 search form | match |
+| 404 | centered image/title/search, status 404 | match (48px desktop / 36px mobile) |
+| Feed/sitemap | RSS/XML content types, canonical links | match (feed `application/rss+xml`, sitemap includes post URLs) |
+| Mobile | 36px titles, no horizontal overflow | all routes 375 = 375 after the page-title fix |
+
+The only fix in this pass: `.entry.page .entry-title` kept its desktop 48px on
+phones because it outranks the mobile `.entry-title` rule; a mobile
+`.entry.page .entry-title { font-size: 36px; }` now matches every other public
+heading.
+
+`tests/e2e/public-design.spec.ts` seeds/publishes the demo post and page,
+verifies all nine HTML routes at both viewports (H1 geometry/font/weight, search
+block, no overflow), the 404 status, RSS/XML content types and sitemap post
+links, and attaches desktop plus selected mobile screenshots. The Playwright web
+server now points `MERNPRESS_API_URL` at the isolated E2E API instead of the
+default localhost:4000.

@@ -5336,3 +5336,20 @@ verified in production with a temporary administrator:
 - Cleanup removed analytics rows, the temporary administrator/sessions and
   recent audit events; production is back to 1 user, 2 posts, 0 media, 0
   analytics rows and sampled routes return 200.
+
+### 2026-11-06 — Public Twenty Twenty-Five design measurements
+
+- Measured home/blog/single/page/category/tag/author/search/404/feed/sitemap at
+  1440 and 375 against the saved reference geometry: H1 x=398/645×54/48px,
+  645px content column, 71px header, 645×61 search form.
+- Fixed the one discrepancy: page titles kept the desktop 48px on phones
+  because `.entry.page .entry-title` outranked the mobile `.entry-title` rule;
+  page headings now use 36px at ≤782px like every other public title.
+- Added `tests/e2e/public-design.spec.ts`: seeds and publishes demo content,
+  asserts nine HTML routes at both viewports (geometry/font/weight, search,
+  no overflow), 404 status, RSS/XML content types and sitemap post links, with
+  desktop and selected mobile screenshots. The Playwright web server now points
+  `MERNPRESS_API_URL` at the isolated E2E API.
+- Docs: public design-audit section.
+- Validation: 933 unit/integration tests (API 546, admin 257, web 52, contracts
+  13, block-system 65), 32 Playwright E2E tests and seven builds pass.

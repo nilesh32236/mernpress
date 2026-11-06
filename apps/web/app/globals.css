@@ -486,6 +486,12 @@ a:hover {
     font-size: 36px;
   }
 
+  /* Page titles use .entry-title; the desktop `.entry.page .entry-title`
+     specificity would otherwise keep 48px on phones. */
+  .entry.page .entry-title {
+    font-size: 36px;
+  }
+
   .post-title {
     font-size: 28px;
   }
