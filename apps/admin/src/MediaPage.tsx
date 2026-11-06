@@ -595,7 +595,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
       await refreshFolders();
       setNotice({
         tone: 'success',
-        text: 'Folder deleted; child folders moved up and media items are now Uncategorized.',
+        text: 'Folder deleted; child folders moved up. Media items directly in it are now Uncategorized.',
       });
       return true;
     } catch (caught) {

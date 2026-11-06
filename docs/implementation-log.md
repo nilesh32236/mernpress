@@ -4749,3 +4749,25 @@ administrator:
   and the existing nested/cycle/move coverage.
 - Validation: 899 unit/integration tests (API 527, admin 244, web 50, contracts
   13, block-system 65), 24 Playwright E2E tests and seven builds pass.
+
+**Deployment (media folder manager, release `20261106T140044Z-1fa39e3`):**
+verified in production with a temporary administrator:
+- The Media Library rendered the open **Manage folders (2)** panel; the tree
+  listed `Tree Root` then its indented `Tree Child`.
+- Renaming the child from its own row form saved `Tree Child Renamed`; the
+  filter select then showed `— Tree Child Renamed (1)`.
+- Browsing that folder and uploading `audit-image.png` produced a media item
+  whose `folderId` was the child folder, the folder-filtered list returned it,
+  and the grid showed one item (no stray Uncategorized insert).
+- At 375 px the document `scrollWidth` equalled `innerWidth` (375), the row
+  actions used `flex-wrap: wrap`, and the row grew to 57 px instead of
+  overflowing.
+- Deleting the root promoted the child to the top level (`parentId: null`) and
+  left the image assigned to the child; the success notice appeared. (Its copy
+  was tightened afterwards to say only items *directly* in the deleted folder
+  become Uncategorized.)
+- Cleanup removed the uploaded media and its files, the remaining folder, the
+  temporary administrator and its sessions, recent audit events and analytics
+  rows: production is back to 1 user, 2 posts, 0 media, 0 folders and 0
+  analytics rows; `/`, `/admin/`, `/admin/media`, `/api/health` and
+  `/posts/testcom` return 200.
