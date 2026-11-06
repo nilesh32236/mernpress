@@ -5452,3 +5452,24 @@ administrator and public routes:
   cache an empty home page and hide SQL-seeded fixtures for 60 seconds.
 - Validation: 940 unit/integration tests (API 549, admin 257, web 57, contracts
   13, block-system 65), 34 Playwright E2E tests and seven builds pass.
+
+**Deployment (public cache revalidation, release `20261106T200855Z-4fd8a13`):**
+- Added `WEB_REVALIDATE_URL=http://127.0.0.1:3100/api/revalidate` and a fresh
+  64-hex `WEB_REVALIDATE_SECRET` to `/etc/mernpress/mernpress.env` (API) and the
+  same secret to the web unit through
+  `/etc/systemd/system/mernpress-web.service.d/10-revalidate.conf`. Backups:
+  `/opt/mernpress/backups/mernpress.env.bak-*`; rollback removes the drop-in,
+  the two env lines and restarts both services.
+- Security matrix on the private route: valid secret `200`, wrong secret `403`,
+  unknown tag `400`, no secret `403`; a public
+  `POST https://…/api/revalidate` never reaches the route (Fastify returns
+  `ORIGIN_NOT_ALLOWED`/`NOT_FOUND`).
+- Instant publish verified with a temporary administrator: creating and
+  publishing `Revalidate Probe 1793995879298` returned `PUBLISHED` in 30 ms, and
+  a `cache: 'no-store'` home request 82 ms later already contained the title
+  (4 occurrences) — no 60-second wait. The rendered page also showed it.
+- Cleanup deleted the probe post (SQL), analytics rows, the temporary
+  administrator/sessions and recent audit events, then flushed the tag through
+  the private route (200). Production is back to 1 user, 2 posts, 0 media, 0
+  analytics rows; `/`, `/admin/`, `/api/health`, `/posts/testcom` and `/test`
+  return 200 and the probe title is gone.
