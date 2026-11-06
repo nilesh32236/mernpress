@@ -4314,3 +4314,21 @@ verification:
   error display.
 - Validation: 862 unit/integration tests (API 515, admin 233, contracts 9,
   web 40, block-system 65), 24 Playwright E2E tests and seven builds pass.
+
+**Deployment (cookie consent):** release `20261106T085014Z-536d286` (current), no
+schema change. Production verification with a temporary administrator:
+- Settings → Consent loaded disabled, then saved `enabled:true`, version 5, a
+  custom title and `analyticsRequired:true` (“Consent settings saved.”).
+- The public site rendered the banner (“Production cookies”) with Reject
+  non-essential / Preferences / Accept all. Preferences listed Necessary
+  (always checked), Analytics and Marketing (both unchecked).
+- Saving preferences stored `{version:5, analytics:false, marketing:false,
+  decidedAt}` in localStorage, hid the banner and showed “Cookie settings”;
+  after a reload the banner stayed hidden and the launcher remained.
+- With consent rejected, /posts/testcom and /about produced **no analytics
+  rows** (gating works). Clicking Cookie settings → Accept all stored an
+  analytics grant and the consent event recorded exactly one `/about` view.
+- Cleanup removed the consent option (defaults to disabled), analytics rows and
+  the temporary administrator; production is back to 1 user, 2 posts, 0
+  analytics rows and 0 consent config, with `/`, `/admin/`, `/api/health` and
+  `/posts/testcom` at 200.
