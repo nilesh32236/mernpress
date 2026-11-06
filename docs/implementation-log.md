@@ -4933,8 +4933,9 @@ verified in production with a temporary administrator:
   search requests: `search_vector @@ websearch_to_tsquery` **or** LIKE-escaped
   title/excerpt/content substring, composable type/status/language/
   category/tag/author/month/public/role-visibility filters, `ts_rank_cd`
-  first ordering (public then sticky + published; admin then the whitelisted
-  column), and a `count(*)::int` total. The service loads ids in order with
+  first ordering, title/excerpt/body substring tiebreakers (so partial title
+  hits beat partial body hits) and then public sticky + published or the admin
+  whitelisted column, and a `count(*)::int` total. The service loads ids in order with
   Prisma so relations and DTO mapping are unchanged; non-search lists keep the
   Prisma query builder.
 - Public and admin search now rank title matches above body-only matches,

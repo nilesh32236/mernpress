@@ -46,11 +46,13 @@ new infrastructure.
    the fallback preserves the previous behaviour for partial words and CJK-like
    text where tokenization is thin.
 
-4. **Rank first.** Public search orders by `ts_rank_cd` DESC, then sticky,
-   then `published_at` DESC, then `id`. Admin search orders by rank DESC and
-   then the selected column/direction (whitelist: `updated_at`, `created_at`,
-   `published_at`, `title`), then `id`. Only search requests use the raw SQL
-   path; every other list keeps the existing Prisma query builder.
+4. **Rank first.** Orders start with `ts_rank_cd` DESC, then whether the term
+   appears in the title, excerpt and body (so a partial title hit beats a
+   partial body hit when both rank 0). Public search then applies sticky,
+   `published_at` DESC and `id`. Admin search then applies the selected
+   column/direction (whitelist: `updated_at`, `created_at`, `published_at`,
+   `title`) and `id`. Only search requests use the raw SQL path; every other
+   list keeps the existing Prisma query builder.
 
 5. **Composable filters.** The raw builder carries the same filters as the
    Prisma paths: type, status, language, category/tag (id or slug), author

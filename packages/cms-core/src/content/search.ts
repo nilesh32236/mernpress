@@ -137,12 +137,18 @@ function buildConditions(filters: PostSearchFilters, term: string): Prisma.Sql[]
 
 function buildOrder(filters: PostSearchFilters, term: string): Prisma.Sql {
   const direction = Prisma.raw(filters.direction === 'asc' ? 'ASC' : 'DESC');
+  const like = likePattern(term);
   const parts: Prisma.Sql[] = [];
 
   // Search always ranks first; the requested order is a tiebreaker.
   parts.push(
     Prisma.sql`ts_rank_cd(p."search_vector", websearch_to_tsquery('simple', ${term})) DESC`,
   );
+  // Substring-only matches have rank 0 (partial words are not lexemes), so
+  // prefer a title hit over an excerpt/body hit before falling back to dates.
+  parts.push(Prisma.sql`(p."title" ILIKE ${like} ESCAPE '\\') DESC`);
+  parts.push(Prisma.sql`(coalesce(p."excerpt", '') ILIKE ${like} ESCAPE '\\') DESC`);
+  parts.push(Prisma.sql`(p."content" ILIKE ${like} ESCAPE '\\') DESC`);
   if (filters.order === 'sticky') {
     parts.push(Prisma.sql`p."sticky" DESC`);
   }

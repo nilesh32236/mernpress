@@ -35,7 +35,8 @@ recomputed on every insert/update of title, excerpt or content.
 2. Visibility and list filters (type, status, language, term id/slug, author
    id/username, updated month, public published/private bounds, role
    visibility).
-3. `ORDER BY ts_rank_cd(...) DESC`, then:
+3. `ORDER BY ts_rank_cd(...) DESC`, then title/excerpt/body substring match
+   (so partial-word hits rank by where they appear), then:
    - public: sticky DESC, `published_at` DESC, `id`;
    - admin: selected whitelisted column + direction, then `id`.
 4. A second query returns `count(*)::int`.

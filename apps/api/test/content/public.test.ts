@@ -205,7 +205,13 @@ describe('public search and term archives', () => {
     // A lexeme-only search would miss the partial word; the ILIKE fallback keeps it.
     const partial = await app.inject({ method: 'GET', url: '/api/public/posts?search=orch' });
     expect(partial.statusCode).toBe(200);
-    expect((partial.json() as Paged<PublicPost>).pagination.total).toBe(2);
+    const partialBody = partial.json() as Paged<PublicPost>;
+    expect(partialBody.pagination.total).toBe(2);
+    // Substring-only hits rank by where the match is, not just recency.
+    expect(partialBody.items.map((item) => item.title)).toEqual([
+      'Orchid care guide',
+      'Garden notebook',
+    ]);
   });
 
   it('composes ranked search with a category filter', async () => {
