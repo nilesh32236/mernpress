@@ -17,6 +17,42 @@ const list = {
   retention: 5,
 };
 
+const emptyJobs = {
+  items: [],
+  pagination: { page: 1, perPage: 5, total: 0, totalPages: 0 },
+};
+
+const pendingJob = {
+  id: 'job-1',
+  type: 'backup.create',
+  payload: {},
+  status: 'PENDING' as const,
+  priority: 0,
+  attempts: 0,
+  maxAttempts: 2,
+  scheduledAt: '2026-11-06T17:00:00.000Z',
+  lockedAt: null,
+  lockedBy: null,
+  startedAt: null,
+  completedAt: null,
+  lastError: null,
+  createdAt: '2026-11-06T17:00:00.000Z',
+  updatedAt: '2026-11-06T17:00:00.000Z',
+};
+
+const completedJob = {
+  ...pendingJob,
+  status: 'COMPLETED' as const,
+  attempts: 1,
+  startedAt: '2026-11-06T17:00:02.000Z',
+  completedAt: '2026-11-06T17:00:03.000Z',
+  updatedAt: '2026-11-06T17:00:03.000Z',
+};
+
+function urlOf(input: RequestInfo | URL): string {
+  return typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+}
+
 beforeEach(() => {
   document.cookie = 'mernpress_csrf=test-csrf; path=/';
   vi.stubGlobal('fetch', vi.fn());
@@ -31,7 +67,12 @@ afterEach(() => {
 
 describe('backups page', () => {
   it('lists backups with size, download and delete actions', async () => {
-    vi.mocked(fetch).mockResolvedValue(response(list));
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      const url = urlOf(input);
+      if (url.includes('/api/admin/jobs')) return response(emptyJobs);
+      if (init?.method === 'DELETE') return response({ backups: [], retention: 5 });
+      return response(list);
+    });
     render(<BackupsPage />);
 
     expect(await screen.findByText('mernpress-backup-20261105T090000Z.tar.gz')).toBeDefined();
@@ -42,7 +83,6 @@ describe('backups page', () => {
       '/api/admin/backups/mernpress-backup-20261105T090000Z.tar.gz/download',
     );
 
-    vi.mocked(fetch).mockResolvedValue(response({ backups: [], retention: 5 }));
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     await waitFor(() =>
       expect(vi.mocked(fetch)).toHaveBeenCalledWith(
@@ -53,23 +93,58 @@ describe('backups page', () => {
     expect(await screen.findByText('No backups yet.')).toBeDefined();
   });
 
-  it('creates a backup and reports the file name', async () => {
-    vi.mocked(fetch).mockImplementation(async (_input, init) => {
-      if (init?.method === 'POST') return response(list);
+  it('queues a backup, shows the pending job and polls to completion', async () => {
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      const url = urlOf(input);
+      if (url.includes('/api/admin/jobs/job-1')) return response(completedJob);
+      if (url.includes('/api/admin/jobs')) return response(emptyJobs);
+      if (init?.method === 'POST') {
+        return response({ ...list, job: pendingJob }, 202);
+      }
+      return response(list);
+    });
+    render(<BackupsPage />);
+    await screen.findByText('mernpress-backup-20261105T090000Z.tar.gz');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create backup' }));
+
+    expect(
+      await screen.findByText('Backup queued. The background worker will create it shortly.'),
+    ).toBeDefined();
+    expect(screen.getByText('pending')).toBeDefined();
+    expect(
+      (screen.getByRole('button', { name: 'Backup queued…' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(screen.getByRole('button', { name: 'View in Scheduled Actions' })).toBeDefined();
+
+    expect(
+      await screen.findByText(
+        'Backup created: mernpress-backup-20261105T090000Z.tar.gz.',
+        undefined,
+        {
+          timeout: 4500,
+        },
+      ),
+    ).toBeDefined();
+    expect(screen.getByText('completed')).toBeDefined();
+  });
+
+  it('shows an active backup job found on load', async () => {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = urlOf(input);
+      if (url.includes('/api/admin/jobs')) {
+        return response({
+          items: [{ ...pendingJob, status: 'RUNNING', attempts: 1 }],
+          pagination: { page: 1, perPage: 5, total: 1, totalPages: 1 },
+        });
+      }
       return response({ backups: [], retention: 5 });
     });
     render(<BackupsPage />);
-    await screen.findByText('No backups yet.');
-    fireEvent.click(screen.getByRole('button', { name: 'Create backup' }));
 
-    await waitFor(() =>
-      expect(vi.mocked(fetch)).toHaveBeenCalledWith(
-        '/api/admin/backups',
-        expect.objectContaining({ method: 'POST' }),
-      ),
-    );
+    expect(await screen.findByText('running')).toBeDefined();
     expect(
-      await screen.findByText('Backup created: mernpress-backup-20261105T090000Z.tar.gz.'),
-    ).toBeDefined();
+      (screen.getByRole('button', { name: 'Backup running…' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
   });
 });

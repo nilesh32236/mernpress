@@ -1493,6 +1493,10 @@ export interface BackupListResult {
   retention: number;
 }
 
+export interface BackupCreateResult extends BackupListResult {
+  job: ScheduledJob;
+}
+
 export async function fetchBackups(): Promise<BackupListResult> {
   const response = await fetch('/api/admin/backups', {
     credentials: 'include',
@@ -1502,14 +1506,14 @@ export async function fetchBackups(): Promise<BackupListResult> {
   return readJson<BackupListResult>(response);
 }
 
-export async function createBackup(): Promise<BackupListResult> {
+export async function createBackup(): Promise<BackupCreateResult> {
   const response = await fetch('/api/admin/backups', {
     method: 'POST',
     credentials: 'include',
     cache: 'no-store',
     headers: { accept: 'application/json', ...csrfHeader() },
   });
-  return readJson<BackupListResult>(response);
+  return readJson<BackupCreateResult>(response);
 }
 
 export async function deleteBackup(fileName: string): Promise<BackupListResult> {
@@ -1566,6 +1570,15 @@ export async function fetchJobs(
     headers: { accept: 'application/json' },
   });
   return readJson<JobListResult>(response);
+}
+
+export async function fetchJob(id: string): Promise<ScheduledJob> {
+  const response = await fetch(`/api/admin/jobs/${encodeURIComponent(id)}`, {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<ScheduledJob>(response);
 }
 
 export async function runJob(id: string): Promise<ScheduledJob> {

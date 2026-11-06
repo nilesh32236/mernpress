@@ -39,6 +39,17 @@ export function registerJobRoutes(app: FastifyInstance, options: JobRouteOptions
     }
   });
 
+  app.get('/api/admin/jobs/:id', async (request, reply) => {
+    const ctx = await guard(request, reply);
+    if (!ctx) return;
+    try {
+      const { id } = jobParamSchema.parse(request.params);
+      return await jobs.get(ctx.principal, id);
+    } catch (error) {
+      return sendRouteError(reply, request, error);
+    }
+  });
+
   app.post('/api/admin/jobs/:id/run', async (request, reply) => {
     const ctx = await guard(request, reply);
     if (!ctx) return;

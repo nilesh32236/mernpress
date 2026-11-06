@@ -206,6 +206,7 @@ describe('durable job queue', () => {
       notes: notes as never,
       analytics: analytics as never,
       jobs: { pruneHistory: async () => 0 } as never,
+      backups: { createSystem: async () => ({ backups: [], retention: 5 }) } as never,
     });
 
     await handlers[JOB_TYPES.notesRetention]?.({} as never);

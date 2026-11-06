@@ -13943,3 +13943,25 @@ button.button-link.is-danger {
 .analytics-range select {
   line-height: 30px;
 }
+
+/* Tools → Backups: durable backup.create job status. */
+.backup-job {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 12px 0 0;
+  padding: 8px 10px;
+  border: 1px solid #dcdcde;
+  background: #ffffff;
+  font-size: 12px;
+}
+
+.backup-job-meta {
+  color: #646970;
+}
+
+.backup-job-error {
+  flex: 1 1 100%;
+  color: #b32d2e;
+}

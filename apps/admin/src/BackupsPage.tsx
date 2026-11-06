@@ -4,10 +4,16 @@ import {
   createBackup,
   deleteBackup,
   fetchBackups,
+  fetchJob,
+  fetchJobs,
   type BackupListResult,
+  type ScheduledJob,
 } from './api.js';
 import { ErrorState, Notice, PageHeader, Skeleton, type NoticeMessage } from './components.js';
 import { formatDateTime } from './format.js';
+import { navigate } from './router.js';
+
+const JOB_POLL_MS = 2000;
 
 function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes < 0) return '—';
@@ -21,8 +27,9 @@ function formatBytes(bytes: number): string {
  * Tools → Backups.
  *
  * Creates a single `.tar.gz` with a plain SQL dump, the media directory and a
- * manifest. Restore is deliberately CLI-only; this screen never overwrites live
- * data.
+ * manifest. The upload runs as a durable `backup.create` job so a long archive
+ * survives an admin request timeout; this screen polls its status and links to
+ * Scheduled Actions. Restore is deliberately CLI-only.
  */
 export function BackupsPage() {
   const [data, setData] = useState<BackupListResult | null>(null);
@@ -31,15 +38,27 @@ export function BackupsPage() {
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [job, setJob] = useState<ScheduledJob | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+
+  const jobId = job?.id ?? null;
+  const jobStatus = job?.status ?? null;
+  const jobActive = jobStatus === 'PENDING' || jobStatus === 'RUNNING';
 
   useEffect(() => {
     let active = true;
     setLoading(true);
-    fetchBackups()
-      .then((result) => {
+    Promise.all([
+      fetchBackups(),
+      fetchJobs({ search: 'backup.create', perPage: 5 }).catch(() => null),
+    ])
+      .then(([result, jobs]) => {
         if (!active) return;
         setData(result);
+        const current = jobs?.items.find(
+          (entry) => entry.status === 'PENDING' || entry.status === 'RUNNING',
+        );
+        if (current) setJob(current);
         setLoading(false);
       })
       .catch((caught) => {
@@ -52,16 +71,47 @@ export function BackupsPage() {
     };
   }, [reloadKey]);
 
+  useEffect(() => {
+    if (!jobId || (jobStatus !== 'PENDING' && jobStatus !== 'RUNNING')) return;
+    let cancelled = false;
+    const timer = window.setInterval(() => {
+      fetchJob(jobId)
+        .then(async (next) => {
+          if (cancelled) return;
+          setJob(next);
+          if (next.status === 'COMPLETED') {
+            const result = await fetchBackups();
+            if (cancelled) return;
+            setData(result);
+            setNotice({
+              tone: 'success',
+              text: `Backup created: ${result.backups[0]?.fileName ?? 'download ready'}.`,
+            });
+          } else if (next.status === 'FAILED') {
+            setNotice({ tone: 'error', text: next.lastError ?? 'Backup failed.' });
+          }
+        })
+        .catch((caught) => {
+          if (!cancelled) setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+        });
+    }, JOB_POLL_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [jobId, jobStatus]);
+
   async function create() {
-    if (creating) return;
+    if (creating || jobActive) return;
     setCreating(true);
     setNotice(null);
     try {
       const result = await createBackup();
-      setData(result);
+      setData({ backups: result.backups, retention: result.retention });
+      setJob(result.job);
       setNotice({
         tone: 'success',
-        text: `Backup created: ${result.backups[0]?.fileName ?? 'download ready'}.`,
+        text: 'Backup queued. The background worker will create it shortly.',
       });
     } catch (caught) {
       setNotice({ tone: 'error', text: actionErrorMessage(caught) });
@@ -109,12 +159,35 @@ export function BackupsPage() {
             type="button"
             className="button primary-button"
             onClick={() => void create()}
-            disabled={creating}
-            aria-busy={creating}
+            disabled={creating || jobActive}
+            aria-busy={creating || jobActive}
           >
-            {creating ? 'Creating backup… this can take a moment' : 'Create backup'}
+            {jobActive
+              ? jobStatus === 'RUNNING'
+                ? 'Backup running…'
+                : 'Backup queued…'
+              : creating
+                ? 'Queueing…'
+                : 'Create backup'}
           </button>
         </p>
+        {job ? (
+          <div className="backup-job" role="status">
+            <span className={`job-status is-${job.status.toLowerCase()}`}>
+              {job.status.toLowerCase()}
+            </span>
+            <span className="backup-job-meta">
+              Backup job · attempts {job.attempts}/{job.maxAttempts} ·{' '}
+              {job.status === 'RUNNING' && job.startedAt
+                ? `started ${formatDateTime(job.startedAt)}`
+                : `scheduled ${formatDateTime(job.scheduledAt)}`}
+            </span>
+            {job.lastError ? <span className="backup-job-error">{job.lastError}</span> : null}
+            <button type="button" className="button-link" onClick={() => navigate('/tools/jobs')}>
+              View in Scheduled Actions
+            </button>
+          </div>
+        ) : null}
       </section>
 
       {error ? (

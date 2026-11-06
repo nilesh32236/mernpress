@@ -182,6 +182,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-118 | 2026-11-06 | OS file-drop uploads: folder tree rows (and Uncategorized) accept `DataTransfer.files`, including multiple files; each file uploads through the existing multipart `folderId` path and appears in the existing upload list with per-file progress. The explicit drop target wins over the folder currently being browsed; the grid inserts locally only when the upload matches active filters. Internal media drag still moves items; only folder rows are OS drop targets. | accepted | [ADR 0048](docs/adr/0048-media-virtual-folders.md) |
 
+| D-119 | 2026-11-06 | Backups run as a durable `backup.create` job: POST `/api/admin/backups` checks `hasActive`, enqueues with `maxAttempts: 2` and returns 202 with the job + list (409 `BACKUP_IN_PROGRESS` while active). The worker calls `BackupService.createSystem()` (route keeps `manage_options`); Tools → Backups polls `GET /api/admin/jobs/:id`, shows status/attempts/time/error, links to Scheduled Actions and refreshes the list on completion. Archive format, retention and CLI restore unchanged; member route `create(principal)` retained for internal callers. | accepted | [ADR 0034](docs/adr/0034-backup-packages.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

@@ -439,7 +439,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerAnalyticsRoutes(app, { env, auth, analytics });
   registerConsentRoutes(app, { env, auth, consent });
   registerRedirectRoutes(app, { env, auth, redirects });
-  registerBackupRoutes(app, { env, auth, backups });
+  registerBackupRoutes(app, { env, auth, backups, jobs });
   registerJobRoutes(app, { env, auth, jobs });
   registerPublicRedirectRoutes(app, { redirects });
   registerPublicCommentRoutes(app, { comments, auth });
@@ -448,7 +448,14 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     startSchedulers(app, { schedule, jobs });
     startJobWorker(app, {
       queue: jobs,
-      handlers: createJobHandlers({ prisma: database, notes, analytics, jobs, logger: app.log }),
+      handlers: createJobHandlers({
+        prisma: database,
+        notes,
+        analytics,
+        jobs,
+        backups,
+        logger: app.log,
+      }),
     });
   }
 

@@ -56,6 +56,7 @@ export interface JobQueueServiceOptions {
 
 export interface JobQueueService {
   enqueue(input: EnqueueJobInput): Promise<JobDto>;
+  get(principal: Principal, id: string): Promise<JobDto>;
   list(principal: Principal, query: JobListQuery): Promise<Paged<JobDto>>;
   reschedule(principal: Principal, id: string): Promise<JobDto>;
   cancel(principal: Principal, id: string): Promise<JobDto>;

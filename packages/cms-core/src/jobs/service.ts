@@ -108,6 +108,13 @@ export function createJobQueueService(options: JobQueueServiceOptions): JobQueue
     return toDto(row);
   }
 
+  async function get(principal: Principal, id: string): Promise<JobDto> {
+    requireCapability(principal, 'manage_options');
+    const row = await prisma.job.findUnique({ where: { id } });
+    if (!row) throw new ContentError('NOT_FOUND', 'Not found', 404);
+    return toDto(row);
+  }
+
   async function list(principal: Principal, query: JobListQuery) {
     requireCapability(principal, 'manage_options');
     const where: Prisma.JobWhereInput = {};
@@ -302,6 +309,7 @@ export function createJobQueueService(options: JobQueueServiceOptions): JobQueue
 
   return {
     enqueue,
+    get,
     list,
     reschedule,
     cancel,

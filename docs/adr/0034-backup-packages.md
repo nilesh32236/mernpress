@@ -51,3 +51,31 @@ archive.
   a 10-minute process timeout. A future slice can queue them.
 - A backup contains password hashes, reset tokens and media; access is
   administrator-only and the files are `0600`.
+
+## Amendment 2026-11-06 — queued execution (ADR 0054)
+
+Backup creation now runs as a durable `backup.create` job instead of inside the
+HTTP request:
+
+- `POST /api/admin/backups` checks `hasActive('backup.create')`, enqueues a job
+  with `maxAttempts: 2` and returns **202** with the job plus the current backup
+  list. A second request while one is pending/running returns
+  `409 BACKUP_IN_PROGRESS`.
+- The worker calls `BackupService.createSystem()`; the capability check remains
+  on the route, and the existing single-run guard still protects the service.
+  A failed dump/tar records the error in the job and schedules one retry before
+  `FAILED`.
+- Tools → Backups polls `GET /api/admin/jobs/:id` every 2 s, shows queued/
+  running/completed/failed status, attempts, scheduled or started time and the
+  last error, links to Scheduled Actions, and refreshes the archive list when
+  the job completes. An active job is rediscovered on page reload via the jobs
+  list.
+- The archive format, retention, download/delete route and CLI restore are
+  unchanged. `BackupService.create(principal)` remains available for internal
+  callers/tests; the HTTP route no longer uses it.
+
+Consequences: a long backup survives an admin request timeout and API restart;
+the request returns immediately; duplicate clicks are rejected while a job is
+active. The worker process must be enabled (`SCHEDULER_ENABLED=true`) for the
+job to run. The status is job-level (queued/running/completed), not a byte
+percentage.

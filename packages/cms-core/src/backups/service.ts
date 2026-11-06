@@ -136,8 +136,7 @@ export function createBackupService({
     }
   }
 
-  async function create(principal: Principal): Promise<BackupListResult> {
-    requireCapability(principal, 'manage_options');
+  async function createArchive(): Promise<BackupListResult> {
     if (running) {
       throw new ContentError(
         'VALIDATION_ERROR',
@@ -227,6 +226,15 @@ export function createBackupService({
     }
   }
 
+  async function create(principal: Principal): Promise<BackupListResult> {
+    requireCapability(principal, 'manage_options');
+    return createArchive();
+  }
+
+  async function createSystem(): Promise<BackupListResult> {
+    return createArchive();
+  }
+
   async function remove(principal: Principal, fileName: string): Promise<BackupListResult> {
     requireCapability(principal, 'manage_options');
     const absolute = assertFileName(fileName);
@@ -251,7 +259,7 @@ export function createBackupService({
     return absolute;
   }
 
-  return { list, create, remove, resolve };
+  return { list, create, createSystem, remove, resolve };
 }
 
 export type BackupService = ReturnType<typeof createBackupService>;

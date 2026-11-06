@@ -1,10 +1,16 @@
 import { createReadStream } from 'node:fs';
-import type { AuthService, BackupService } from '@mernpress/cms-core';
+import {
+  ContentError,
+  type AuthService,
+  type BackupService,
+  type JobQueueService,
+} from '@mernpress/cms-core';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { requireAdmin } from '../auth/require-admin.js';
 import type { Env } from '../config/env.js';
 import { sendRouteError } from './send-error.js';
+import { JOB_TYPES } from '../jobs/types.js';
 
 const backupParamSchema = z
   .object({ file: z.string().regex(/^mernpress-backup-\d{8}T\d{6}Z\.tar\.gz$/) })
@@ -14,11 +20,12 @@ interface BackupRouteOptions {
   env: Env;
   auth: AuthService;
   backups: BackupService;
+  jobs: JobQueueService;
 }
 
 /** Tools → Backups (administrators only). */
 export function registerBackupRoutes(app: FastifyInstance, options: BackupRouteOptions): void {
-  const { env, auth, backups } = options;
+  const { env, auth, backups, jobs } = options;
   const guard = (request: FastifyRequest, reply: FastifyReply) =>
     requireAdmin(request, reply, { env, auth });
 
@@ -36,7 +43,19 @@ export function registerBackupRoutes(app: FastifyInstance, options: BackupRouteO
     const ctx = await guard(request, reply);
     if (!ctx) return;
     try {
-      return await backups.create(ctx.principal);
+      if (await jobs.hasActive(JOB_TYPES.backupCreate)) {
+        throw new ContentError(
+          'BACKUP_IN_PROGRESS',
+          'A backup is already queued or running. Try again when it finishes.',
+          409,
+        );
+      }
+      const job = await jobs.enqueue({
+        type: JOB_TYPES.backupCreate,
+        maxAttempts: 2,
+      });
+      const list = await backups.list(ctx.principal);
+      return reply.code(202).send({ job, ...list });
     } catch (error) {
       return sendRouteError(reply, request, error);
     }

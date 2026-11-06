@@ -1,5 +1,6 @@
 import type {
   AnalyticsService,
+  BackupService,
   JobHandler,
   JobQueueService,
   NoteService,
@@ -18,6 +19,7 @@ interface HandlerOptions {
   notes: NoteService;
   analytics: AnalyticsService;
   jobs: JobQueueService;
+  backups: BackupService;
   logger?: { info(meta: Record<string, unknown>, message: string): void } | undefined;
 }
 
@@ -47,9 +49,13 @@ async function optionNumber(
 
 /** Handlers registered with the durable worker (ADR 0054). */
 export function createJobHandlers(options: HandlerOptions): Record<string, JobHandler> {
-  const { prisma, notes, analytics, jobs, logger } = options;
+  const { prisma, notes, analytics, jobs, backups, logger } = options;
 
   return {
+    [JOB_TYPES.backupCreate]: async () => {
+      const result = await backups.createSystem();
+      logger?.info({ backups: result.backups.length }, 'backup created');
+    },
     [JOB_TYPES.notesRetention]: async () => {
       const days = await optionNumber(
         prisma,

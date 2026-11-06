@@ -5185,3 +5185,24 @@ verified in production with a temporary administrator:
   back to 1 user, 2 posts, 0 media, 0 folders, 0 analytics rows (scheduler jobs
   remain); `/`, `/admin/`, `/admin/media`, `/api/health` and `/posts/testcom`
   return 200.
+
+### 2026-11-06 — Durable queued backups
+
+- `BackupService.createSystem()` exposes the existing guarded archive build to
+  the job worker; the HTTP route now checks `hasActive('backup.create')`,
+  enqueues `backup.create` with `maxAttempts: 2` and returns `202` with the job
+  plus the current list. A concurrent request returns `409 BACKUP_IN_PROGRESS`.
+- Worker handler `backup.create` creates the archive, records failure/retry
+  status, and the archive format/retention/download/delete/CLI restore are
+  unchanged.
+- `GET /api/admin/jobs/:id` added (administrator-only) for status polling.
+- Tools → Backups now shows queued/running/completed/failed status, attempts,
+  scheduled/started time, last error and a link to Scheduled Actions; it polls
+  every 2 s, refreshes the backup list on completion and rediscovers an active
+  job after reload. The Create button is disabled while a job is active.
+- Tests: API success (202 → PENDING → worker → COMPLETED, one archive), duplicate
+  enqueue 409, retry after failure then FAILED at maxAttempts; admin page list/
+  delete, queue → poll → completed, and active-job-on-load status.
+- Docs: ADR 0034 amendment, D-119, parity matrix.
+- Validation: 927 unit/integration tests (API 541, admin 256, web 52, contracts
+  13, block-system 65), 28 Playwright E2E tests and seven builds pass.
