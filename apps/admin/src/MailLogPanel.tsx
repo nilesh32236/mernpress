@@ -81,12 +81,18 @@ export function MailLogPanel() {
               <strong>From:</strong> {status.from}
             </p>
           ) : null}
-          {!status.configured ? (
+          {status.configured ? (
+            <p className="field-help">
+              Deliveries are queued as durable <code>mail.send</code> jobs and sent by the
+              background worker. This log records the delivery outcome; job progress and failures
+              are visible in Tools → Scheduled Actions.
+            </p>
+          ) : (
             <p className="field-help">
               Outbound mail is disabled until SMTP is configured on the server. Comment and
               password-reset notifications are not sent; the log records nothing for them.
             </p>
-          ) : null}
+          )}
         </div>
       ) : null}
 

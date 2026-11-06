@@ -74,6 +74,8 @@ describe('backup packages', () => {
         jobs,
         backups: app.backups,
         media: app.media,
+        mail: app.mail,
+        mailSecret: 'test-only-auth-hash-pepper-2026-10-25-0123456789',
       }),
       logger: { info: () => undefined, warn: () => undefined, error: () => undefined },
       workerId: 'backup-test',

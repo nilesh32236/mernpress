@@ -5,6 +5,7 @@ export const JOB_TYPES = {
   jobsCleanup: 'jobs.cleanup',
   backupCreate: 'backup.create',
   mediaRegenerate: 'media.regenerate',
+  mailSend: 'mail.send',
 } as const;
 
 export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];

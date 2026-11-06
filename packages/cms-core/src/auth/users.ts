@@ -791,7 +791,7 @@ export function createUserAdminService(options: UserAdminServiceOptions): UserAd
       token,
       expiresInMinutes: passwordResets.tokenTtlMinutes,
     });
-    if (!result.sent) {
+    if (!result.sent && !result.queued) {
       throw new UserAdminError(
         'MAIL_SEND_FAILED',
         'The password reset e-mail could not be sent.',

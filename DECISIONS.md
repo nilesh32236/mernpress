@@ -186,6 +186,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-120 | 2026-11-06 | Media derivative regeneration is a durable `media.regenerate` job: `POST /api/admin/media/regenerate` accepts `{folderId?: uuid|null}`, requires `content.create`, rejects an active job with 409 `MEDIA_REGENERATE_IN_PROGRESS`, and returns 202 with the job. The worker loops 20-item batches for the library/folder/Uncategorized, retries once on any item failure and then FAILS with the count; Media Library queues and links to Scheduled Actions, which shows status/attempts/last error. Direct `regenerateDerivatives(principal)` remains for internal callers. | accepted | [ADR 0047](docs/adr/0047-bulk-media-regeneration.md) |
 
+| D-121 | 2026-11-06 | Durable mail: when `SCHEDULER_ENABLED`, `MailService.deliver` seals the rendered message (AES-256-GCM, key derived from `AUTH_HASH_PEPPER`) and enqueues `mail.send` (maxAttempts 3); the worker opens it and calls `sendDirect`, which sends via SMTP and writes the metadata-only log. Job payloads never contain plaintext tokens/recipients/bodies. `MailResult.queued` is accepted by callers (including admin password reset); queue write failure logs `queue-failed`. Scheduler-less deployments/tests keep synchronous delivery. Settings → Discussion explains job status in Scheduled Actions. Production delivery remains owner-blocked without SMTP credentials. | accepted | [ADR 0019](docs/adr/0019-mail-transport.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

@@ -825,3 +825,55 @@ test('media derivative regeneration queues into Scheduled Actions', async ({ pag
   await expect(row).toContainText('pending');
   await expect(row.getByRole('button', { name: 'Cancel: media.regenerate' })).toBeVisible();
 });
+
+test('mail delivery panel keeps the measured settings contract', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await login(page);
+  await page.goto('http://127.0.0.1:5173/admin/settings#discussion');
+  await expect(page.getByRole('heading', { level: 1, name: 'Discussion Settings' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Mail delivery' })).toBeVisible();
+  await expect(page.getByText('Transport:')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Clear log' })).toBeVisible();
+
+  const desktop = await page.evaluate(() => {
+    const heading = [...document.querySelectorAll('.settings-panel > h2')].find(
+      (element) => element.textContent?.trim() === 'Mail delivery',
+    );
+    const button = [...document.querySelectorAll('button')].find(
+      (element) => element.textContent?.trim() === 'Clear log',
+    );
+    return {
+      heading: heading
+        ? { font: getComputedStyle(heading).fontSize, margin: getComputedStyle(heading).margin }
+        : null,
+      button: button
+        ? {
+            height: Math.round(button.getBoundingClientRect().height),
+            padding: getComputedStyle(button).padding,
+          }
+        : null,
+      scrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
+    };
+  });
+  expect(desktop.heading).toEqual({ font: '16.9px', margin: '16.9px 0px' });
+  expect(desktop.button).toEqual({ height: 32, padding: '0px 10px' });
+  expect(desktop.scrollWidth).toBeLessThanOrEqual(desktop.innerWidth);
+  await testInfo.attach('mail-delivery-desktop', {
+    body: await page.screenshot({ fullPage: false }),
+    contentType: 'image/png',
+  });
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('http://127.0.0.1:5173/admin/settings#discussion');
+  await expect(page.getByRole('heading', { name: 'Mail delivery' })).toBeVisible();
+  const mobile = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    innerWidth: window.innerWidth,
+  }));
+  expect(mobile.scrollWidth).toBeLessThanOrEqual(mobile.innerWidth);
+  await testInfo.attach('mail-delivery-mobile', {
+    body: await page.screenshot({ fullPage: false }),
+    contentType: 'image/png',
+  });
+});

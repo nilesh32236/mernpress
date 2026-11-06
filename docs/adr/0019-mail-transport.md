@@ -54,3 +54,34 @@ and can e-mail a newly created user. MERNPress stored `comments_notify` and
 - No migration: preferences already existed; mail state comes from env.
 - Production sends no mail until `SMTP_HOST`/`MAIL_FROM` are configured and the
   API restarted. Until then Site Settings and Add User state this explicitly.
+
+## Amendment 2026-11-06 — durable delivery (ADR 0054)
+
+When the API scheduler is enabled, rendered mail is no longer sent inside the
+request:
+
+- `MailService` accepts an optional `queue(message)` adapter. The app supplies
+  one that seals the rendered message with AES-256-GCM (key derived from the
+  server's `AUTH_HASH_PEPPER`) and enqueues `mail.send` with `maxAttempts: 3`.
+  Job payloads are visible to administrators through the jobs API, so tokens,
+  recipients, subjects and bodies never appear there in plaintext.
+- The worker opens the sealed payload and calls `MailService.sendDirect`, which
+  performs the SMTP send and writes the existing metadata-only delivery log.
+  A failed transport returns `sent: false`; the worker throws so the queue
+  retries with backoff and eventually FAILS with the reason. Each attempt is
+  logged as a failed delivery.
+- `MailResult` gains `queued`; notification callers treat queued as accepted
+  (notably the admin “send password reset” path). `deliver` returns
+  `{sent:false, queued:true, reason:'queued'}` when the adapter accepts the
+  message; a queue write failure is logged as `queue-failed`.
+- Tests and scheduler-less deployments keep synchronous delivery (no queue
+  adapter), so the in-memory outbox and existing mail tests remain deterministic.
+  Production uses the queue whenever `SCHEDULER_ENABLED=true`.
+- The Settings → Discussion mail panel explains that deliveries are queued as
+  `mail.send` jobs and links operators to Scheduled Actions for job status;
+  the delivery log still records only the final sent/failed outcomes.
+
+Residual blocker: production has no SMTP credentials yet, so the production
+queue path cannot deliver a message until the owner supplies them. Automated
+tests exercise sealed enqueue, successful delivery, retry-to-FAILED and the
+service queue adapter with the in-memory transport.

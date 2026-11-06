@@ -39,8 +39,10 @@ import {
   createJobQueueService,
   createMemoryMailTransport,
   createSmtpMailTransport,
+  sealMailMessage,
   type AuthConfig,
   type RedirectService,
+  type MailMessage,
   type MailTransport,
 } from '@mernpress/cms-core';
 import { checkDatabase, createDatabaseClient } from '@mernpress/database';
@@ -81,6 +83,7 @@ import { registerBackupRoutes } from './routes/backups.js';
 import { registerJobRoutes } from './routes/jobs.js';
 import { createJobHandlers } from './jobs/handlers.js';
 import { startJobWorker } from './jobs/worker.js';
+import { JOB_TYPES } from './jobs/types.js';
 import { registerRedirectRoutes, registerPublicRedirectRoutes } from './routes/redirects.js';
 import { registerAdminHealthRoutes } from './routes/admin-health.js';
 import { startSchedulers } from './scheduler.js';
@@ -203,6 +206,11 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const taxonomy = createTaxonomyService({ prisma: database, hooks: contentHooks });
   app.decorate('taxonomy', taxonomy);
 
+  const jobs = createJobQueueService({
+    prisma: database,
+    ...(options.now === undefined ? {} : { now: options.now }),
+  });
+
   // Outbound mail: SMTP when configured, an in-memory sink in tests/dev. The
   // environment schema rejects the memory transport in production.
   const mailTransport: MailTransport | null =
@@ -222,6 +230,17 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     transport: mailTransport,
     ...(env.MAIL_FROM ? { from: env.MAIL_FROM } : {}),
     ...(env.ADMIN_URL ? { adminUrl: env.ADMIN_URL } : {}),
+    ...(env.SCHEDULER_ENABLED
+      ? {
+          queue: async (message: MailMessage) => {
+            await jobs.enqueue({
+              type: JOB_TYPES.mailSend,
+              payload: { ...sealMailMessage(message, env.AUTH_HASH_PEPPER) },
+              maxAttempts: 3,
+            });
+          },
+        }
+      : {}),
     logger: (message, meta) => app.log.warn({ ...meta }, message),
   });
   app.decorate('mail', mail);
@@ -328,10 +347,6 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     ...(options.now === undefined ? {} : { now: options.now }),
   });
   app.decorate('analytics', analytics);
-  const jobs = createJobQueueService({
-    prisma: database,
-    ...(options.now === undefined ? {} : { now: options.now }),
-  });
   const consent = createConsentService({ prisma: database });
   app.decorate('consent', consent);
   const screenOptions = createScreenOptionsService({ prisma: database });
@@ -461,6 +476,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
         jobs,
         backups,
         media,
+        mail,
+        mailSecret: env.AUTH_HASH_PEPPER,
         logger: app.log,
       }),
     });

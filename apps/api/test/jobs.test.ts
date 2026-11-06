@@ -215,6 +215,8 @@ describe('durable job queue', () => {
           nextAfter: null,
         }),
       } as never,
+      mail: { sendDirect: async () => ({ sent: true }) } as never,
+      mailSecret: 'test-only-auth-hash-pepper-2026-10-25-0123456789',
     });
 
     await handlers[JOB_TYPES.notesRetention]?.({} as never);

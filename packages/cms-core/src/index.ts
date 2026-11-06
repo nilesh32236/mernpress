@@ -442,3 +442,5 @@ export type {
   JobQueueServiceOptions,
   JobStatus,
 } from './jobs/types.js';
+
+export { openMailMessage, sealMailMessage, type SealedMailPayload } from './mail/queue.js';

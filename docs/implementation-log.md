@@ -5269,3 +5269,26 @@ administrator:
   2 posts, 0 media, 0 folders, 0 analytics rows (queue history remains);
   `/`, `/admin/`, `/admin/media`, `/admin/tools/jobs`, `/api/health` and
   `/posts/testcom` return 200.
+
+### 2026-11-06 — Durable encrypted mail-delivery job
+
+- `MailService` accepts an optional queue adapter; when the scheduler is enabled
+  the app seals the rendered message with AES-256-GCM (key derived from
+  `AUTH_HASH_PEPPER`) and enqueues `mail.send` with `maxAttempts: 3`. Job payloads
+  exposed to administrators contain only ciphertext.
+- Worker handler opens the payload, calls `MailService.sendDirect`, sends via
+  SMTP and writes the existing metadata-only log. Transport failure throws so
+  the queue retries with backoff and eventually FAILS with the reason; each
+  attempt logs a failed delivery.
+- `MailResult.queued` is treated as accepted by callers (including admin send
+  password reset); queue write failure logs `queue-failed`. Tests/scheduler-less
+  deployments keep synchronous delivery for deterministic outbox tests.
+- Settings → Discussion now explains `mail.send` queue status in Scheduled
+  Actions; a measured desktop/mobile check covers the panel.
+- Tests: sealed payload round-trip/tamper rejection and no plaintext token or
+  recipient; handler success with completed job/outbox/log; transport failure
+  retry then FAILED; MailService queue adapter returns queued without touching
+  the outbox. Existing mail/password-reset suites still pass via sync mode.
+- Docs: ADR 0019 amendment, D-121, parity matrix.
+- Validation: 933 unit/integration tests (API 546, admin 257, web 52, contracts
+  13, block-system 65), 30 Playwright E2E tests and seven builds pass.

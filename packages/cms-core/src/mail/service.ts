@@ -42,6 +42,8 @@ export interface MailServiceOptions {
   /** Admin base URL when the admin is on a different origin (development). */
   adminUrl?: string | undefined;
   logger?: (message: string, meta?: Record<string, unknown>) => void;
+  /** When present, rendered messages are queued instead of sent inline. */
+  queue?: ((message: MailMessage) => Promise<void>) | undefined;
 }
 
 export interface MailLogEntry {
@@ -61,6 +63,8 @@ export interface MailStatus {
 
 export interface MailResult {
   sent: boolean;
+  /** True when the message was accepted by the durable mail queue. */
+  queued?: boolean;
   reason?: string;
 }
 
@@ -176,6 +180,7 @@ export function createMailService({
   from,
   adminUrl,
   logger,
+  queue,
 }: MailServiceOptions) {
   async function option<T>(key: string, fallback: T): Promise<T> {
     const row = await prisma.option.findUnique({ where: { key } });
@@ -274,6 +279,42 @@ export function createMailService({
     }
   }
 
+  /** Send a rendered message now and record the outcome. Used by the worker. */
+  async function sendDirect(message: MailMessage): Promise<MailResult> {
+    if (!transport) {
+      return { sent: false, reason: 'not-configured' };
+    }
+    if (!message.to || !EMAIL_PATTERN.test(message.to)) {
+      await writeLog({
+        recipient: message.to ?? '',
+        subject: message.subject,
+        status: 'failed',
+        reason: 'no-recipient',
+      });
+      return { sent: false, reason: 'no-recipient' };
+    }
+    try {
+      await transport.send(message);
+      await writeLog({
+        recipient: message.to,
+        subject: message.subject,
+        status: 'sent',
+      });
+      return { sent: true };
+    } catch (error) {
+      logger?.('mail delivery failed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      await writeLog({
+        recipient: message.to,
+        subject: message.subject,
+        status: 'failed',
+        reason: 'transport-failed',
+      });
+      return { sent: false, reason: 'transport-failed' };
+    }
+  }
+
   async function deliver(
     to: string | null,
     build: () => Promise<{ subject: string; text: string }>,
@@ -295,14 +336,30 @@ export function createMailService({
       const context = await siteContext();
       const built = await build();
       subject = built.subject;
-      await transport.send({
+      const message: MailMessage = {
         from: defaultFrom(context.siteTitle),
         to,
         subject: built.subject,
         text: built.text,
-      });
-      await writeLog({ recipient: to, subject, status: 'sent' });
-      return { sent: true };
+      };
+      if (queue) {
+        try {
+          await queue(message);
+          return { sent: false, queued: true, reason: 'queued' };
+        } catch (error) {
+          logger?.('mail queue failed', {
+            error: error instanceof Error ? error.message : String(error),
+          });
+          await writeLog({
+            recipient: to,
+            subject,
+            status: 'failed',
+            reason: 'queue-failed',
+          });
+          return { sent: false, reason: 'queue-failed' };
+        }
+      }
+      return await sendDirect(message);
     } catch (error) {
       logger?.('mail delivery failed', {
         error: error instanceof Error ? error.message : String(error),
@@ -511,6 +568,7 @@ export function createMailService({
 
   return {
     status,
+    sendDirect,
     notifyModeration,
     notifyComment,
     notifyNote,
