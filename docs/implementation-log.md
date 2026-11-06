@@ -4970,3 +4970,34 @@ temporary administrator and three temporary posts:
   2 posts, 0 media, 0 folders and 0 analytics rows; `/`, `/admin/`,
   `/api/health`, `/posts/testcom`, `/search?q=test` and `/sitemap.xml` all
   return 200.
+
+### 2026-11-06 — Durable background job queue (Action Scheduler gap)
+
+- Migration `20261106160000_add_jobs`: `jobs` table + `JobStatus` enum,
+  priority/attempts/maxAttempts, scheduled/locked/started/completed timestamps,
+  truncated `last_error`, JSONB payload (32 KB cap) and
+  `(status, scheduled_at)` / `type` / `(status, locked_at)` indexes.
+- `packages/cms-core/src/jobs/service.ts`: validation, admin list (status/hook
+  filter + pagination), reschedule (Run now), cancel, `hasActive`, one-statement
+  `FOR UPDATE SKIP LOCKED` claiming, complete/fail with 30 s × 2ⁿ backoff capped
+  at 1 h, stale-RUNNING recovery and history pruning (completed/cancelled 7 d,
+  failed 30 d).
+- `apps/api/src/jobs/worker.ts`: 15 s ticks (3 s boot), stale recovery, batch
+  claim, dispatch by type, missing-handler and throwing-handler failure paths,
+  never throws into the timer.
+- `apps/api/src/jobs/handlers.ts`: `notes.retention`, `analytics.retention`
+  and `jobs.cleanup`. Handlers read retention options at execution time and
+  throw on read failure so the job retries instead of guessing.
+- Scheduler now enqueues those jobs (6 h / 24 h / 24 h + boot catch-up) with
+  `hasActive` dedupe; the publish sweep remains direct. Worker/scheduler both
+  gated by `SCHEDULER_ENABLED`.
+- Tools → Scheduled Actions (`/tools/jobs`): status/hook filters, attempts,
+  scheduled time, status badges, last error, Run now and Cancel; API
+  `GET /api/admin/jobs`, `POST …/:id/run`, `POST …/:id/cancel` (administrator).
+  Nav, Tools card, router, title/breadcrumb and admin client added.
+- Tests: priority claim + no double claim, retry/backoff then FAILED, stale
+  recovery, worker success/failure/missing handler, admin list/run/cancel +
+  non-admin 403, retention handlers, history pruning; admin page list/run/
+  cancel/filter/empty.
+- Validation: 922 unit/integration tests (API 539, admin 253, web 52, contracts
+  13, block-system 65), 24 Playwright E2E tests and seven builds pass.

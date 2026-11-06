@@ -156,6 +156,19 @@ export function ToolsPage() {
               </button>
             </p>
           </section>
+          <section className="card" aria-labelledby="tool-jobs-heading">
+            <h2 id="tool-jobs-heading">Scheduled Actions</h2>
+            <p>
+              Inspect the durable background queue, retry a failed retention sweep or cancel a
+              pending job.
+            </p>
+            <p>
+              <button type="button" className="button" onClick={() => navigate('/tools/jobs')}>
+                Open Scheduled Actions
+              </button>
+            </p>
+          </section>
+
           <section className="card" aria-labelledby="tool-backups-heading">
             <h2 id="tool-backups-heading">Backups</h2>
             <p>

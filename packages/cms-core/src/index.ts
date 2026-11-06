@@ -429,3 +429,16 @@ export {
   type ConsentService,
   type ConsentServiceOptions,
 } from './consent/service.js';
+
+// ---- Durable background jobs (ADR 0054) ----
+export { createJobQueueService } from './jobs/service.js';
+export type {
+  ClaimedJob,
+  EnqueueJobInput,
+  JobDto,
+  JobHandler,
+  JobListQuery,
+  JobQueueService,
+  JobQueueServiceOptions,
+  JobStatus,
+} from './jobs/types.js';

@@ -36,6 +36,7 @@ import {
   createExportService,
   createRedirectService,
   createBackupService,
+  createJobQueueService,
   createMemoryMailTransport,
   createSmtpMailTransport,
   type AuthConfig,
@@ -77,6 +78,9 @@ import { registerNoteMentionRoutes } from './routes/note-mentions.js';
 import { registerAnalyticsRoutes } from './routes/analytics.js';
 import { registerConsentRoutes } from './routes/consent.js';
 import { registerBackupRoutes } from './routes/backups.js';
+import { registerJobRoutes } from './routes/jobs.js';
+import { createJobHandlers } from './jobs/handlers.js';
+import { startJobWorker } from './jobs/worker.js';
 import { registerRedirectRoutes, registerPublicRedirectRoutes } from './routes/redirects.js';
 import { registerAdminHealthRoutes } from './routes/admin-health.js';
 import { startSchedulers } from './scheduler.js';
@@ -324,6 +328,10 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     ...(options.now === undefined ? {} : { now: options.now }),
   });
   app.decorate('analytics', analytics);
+  const jobs = createJobQueueService({
+    prisma: database,
+    ...(options.now === undefined ? {} : { now: options.now }),
+  });
   const consent = createConsentService({ prisma: database });
   app.decorate('consent', consent);
   const screenOptions = createScreenOptionsService({ prisma: database });
@@ -432,11 +440,16 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerConsentRoutes(app, { env, auth, consent });
   registerRedirectRoutes(app, { env, auth, redirects });
   registerBackupRoutes(app, { env, auth, backups });
+  registerJobRoutes(app, { env, auth, jobs });
   registerPublicRedirectRoutes(app, { redirects });
   registerPublicCommentRoutes(app, { comments, auth });
 
   if (env.SCHEDULER_ENABLED) {
-    startSchedulers(app, { schedule, notes, analytics, prisma: database });
+    startSchedulers(app, { schedule, jobs });
+    startJobWorker(app, {
+      queue: jobs,
+      handlers: createJobHandlers({ prisma: database, notes, analytics, jobs, logger: app.log }),
+    });
   }
 
   app.get('/api/health', async () => ({

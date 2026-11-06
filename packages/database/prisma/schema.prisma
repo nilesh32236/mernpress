@@ -233,6 +233,16 @@ enum PostStatus {
   TRASHED
 }
 
+/// Durable background job states (ADR 0054). PENDING → RUNNING → COMPLETED,
+/// with FAILED/CANCELLED terminals. A stale RUNNING row is recovered to PENDING.
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
 model Post {
   id               String      @id @default(uuid(7)) @db.Uuid
   type             String      @db.VarChar(32)
@@ -467,6 +477,32 @@ model AnalyticsDaily {
   @@unique([day, path, referrerHost])
   @@index([day])
   @@map("analytics_daily")
+}
+
+/// Durable background jobs (Action Scheduler-style queue, ADR 0054).
+/// Claiming uses UPDATE … FOR UPDATE SKIP LOCKED, so multiple API instances can
+/// share the table without double-running a job.
+model Job {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  type        String    @db.VarChar(100)
+  payload     Json      @default("{}")
+  status      JobStatus @default(PENDING)
+  priority    Int       @default(0)
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3) @map("max_attempts")
+  scheduledAt DateTime  @default(now()) @map("scheduled_at") @db.Timestamptz(6)
+  lockedAt    DateTime? @map("locked_at") @db.Timestamptz(6)
+  lockedBy    String?   @map("locked_by") @db.VarChar(100)
+  startedAt   DateTime? @map("started_at") @db.Timestamptz(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  lastError   String?   @map("last_error") @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status, scheduledAt])
+  @@index([type])
+  @@index([status, lockedAt])
+  @@map("jobs")
 }
 
 model PostSlugHistory {

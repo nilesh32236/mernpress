@@ -31,6 +31,7 @@ export type Route =
   | { name: 'tools' }
   | { name: 'redirects' }
   | { name: 'backups' }
+  | { name: 'jobs' }
   | { name: 'updates' }
   | { name: 'notFound' };
 
@@ -129,6 +130,9 @@ export function parseRoute(pathname: string): Route {
   }
   if (typeSegment === 'tools' && parts.length === 2 && second === 'backups') {
     return { name: 'backups' };
+  }
+  if (typeSegment === 'tools' && parts.length === 2 && second === 'jobs') {
+    return { name: 'jobs' };
   }
   if (typeSegment === 'tools' && parts.length === 2 && second === 'export-personal-data') {
     return { name: 'exportPersonalData' };
@@ -309,6 +313,12 @@ export function breadcrumbs(route: Route): Array<{ label: string; to?: string }>
         { label: 'Dashboard', to: '/' },
         { label: 'Tools', to: '/tools' },
         { label: 'Backups' },
+      ];
+    case 'jobs':
+      return [
+        { label: 'Dashboard', to: '/' },
+        { label: 'Tools', to: '/tools' },
+        { label: 'Scheduled Actions' },
       ];
     case 'import':
       return [

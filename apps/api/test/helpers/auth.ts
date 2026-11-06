@@ -34,7 +34,7 @@ export async function resetAuthTables(app: FastifyInstance): Promise<void> {
       "options", "post_terms", "post_slug_history", "post_revisions",
       "terms", "posts", "media_items", "media_folders", "analytics_daily", "redirects",
       "not_found_entries", "mail_log_entries",
-      "audit_events", "sessions", "login_attempts", "users"
+      "audit_events", "sessions", "login_attempts", "users", "jobs"
     RESTART IDENTITY CASCADE
   `;
 }

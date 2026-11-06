@@ -1522,6 +1522,72 @@ export async function deleteBackup(fileName: string): Promise<BackupListResult> 
   return readJson<BackupListResult>(response);
 }
 
+export type JobStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+
+export interface ScheduledJob {
+  id: string;
+  type: string;
+  payload: unknown;
+  status: JobStatus;
+  priority: number;
+  attempts: number;
+  maxAttempts: number;
+  scheduledAt: string;
+  lockedAt: string | null;
+  lockedBy: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  lastError: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JobListResult {
+  items: ScheduledJob[];
+  pagination: { page: number; perPage: number; total: number; totalPages: number };
+}
+
+export async function fetchJobs(
+  params: {
+    status?: JobStatus | '';
+    search?: string;
+    page?: number;
+    perPage?: number;
+  } = {},
+): Promise<JobListResult> {
+  const query = new URLSearchParams();
+  if (params.status) query.set('status', params.status);
+  if (params.search) query.set('search', params.search);
+  if (params.page) query.set('page', String(params.page));
+  if (params.perPage) query.set('perPage', String(params.perPage));
+  const response = await fetch(`/api/admin/jobs?${query.toString()}`, {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<JobListResult>(response);
+}
+
+export async function runJob(id: string): Promise<ScheduledJob> {
+  const response = await fetch(`/api/admin/jobs/${encodeURIComponent(id)}/run`, {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  return readJson<ScheduledJob>(response);
+}
+
+export async function cancelJob(id: string): Promise<ScheduledJob> {
+  const response = await fetch(`/api/admin/jobs/${encodeURIComponent(id)}/cancel`, {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  return readJson<ScheduledJob>(response);
+}
+
 // ---- Tools: redirects and 404 log ----
 export interface RedirectItem {
   id: string;

@@ -31,7 +31,9 @@ export type ContentErrorCode =
   | 'LANGUAGE_NOT_ENABLED'
   | 'TRANSLATION_EXISTS'
   | 'FOLDER_PARENT_INVALID'
-  | 'FOLDER_CYCLE';
+  | 'FOLDER_CYCLE'
+  | 'JOB_RUNNING'
+  | 'JOB_NOT_CANCELLABLE';
 
 /**
  * Typed domain error for content/taxonomy. Routes map `statusCode` + `code` to

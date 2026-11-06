@@ -1044,7 +1044,8 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
         route.name === 'tools' ||
         route.name === 'import' ||
         route.name === 'exportPersonalData' ||
-        route.name === 'erasePersonalData',
+        route.name === 'erasePersonalData' ||
+        route.name === 'jobs',
       show: isAdmin,
       icon: <span className="dashicons dashicons-admin-tools" />,
       subs: [
@@ -1069,6 +1070,11 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
           label: 'Site Health',
           to: '/tools?section=health',
           active: route.name === 'tools' && searchParams.get('section') === 'health',
+        },
+        {
+          label: 'Scheduled Actions',
+          to: '/tools/jobs',
+          active: route.name === 'jobs',
         },
         {
           label: 'Export Personal Data',

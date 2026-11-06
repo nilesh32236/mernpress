@@ -178,6 +178,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-116 | 2026-11-06 | Ranked full-text search: migration `20261106150500` adds a generated weighted `posts.search_vector` (title A, excerpt B, tag-stripped body C, `simple` config) + GIN index. `packages/cms-core/src/content/search.ts` builds parameterized SQL matching `@@ websearch_to_tsquery` OR LIKE-escaped substring, applies the same visibility/filters and orders by `ts_rank_cd` first (public: sticky/published; admin: whitelisted sort). Search paths return ordered ids + count, then Prisma loads relations. Non-search lists keep Prisma. No stemming/synonyms/typos; ILIKE fallback may scan. | accepted | [ADR 0053](docs/adr/0053-ranked-full-text-search.md) |
 
+| D-117 | 2026-11-06 | Durable background jobs: `jobs` table + `JobStatus` (migration `20261106160000`), `JobQueueService` with `FOR UPDATE SKIP LOCKED` claims, attempts/backoff (30 s × 2ⁿ capped 1 h), stale-RUNNING recovery, ordered ids, admin list/run/cancel and history pruning (completed/cancelled 7 d, failed 30 d). Scheduler enqueues `notes.retention` (6 h), `analytics.retention` (24 h) and `jobs.cleanup` (24 h) with `hasActive` dedupe; a 15 s worker runs them when `SCHEDULER_ENABLED=true`. Tools → Scheduled Actions exposes status/hook filters, Run now and Cancel. No arbitrary enqueue HTTP endpoint; handlers are code-owned. | accepted | [ADR 0054](docs/adr/0054-durable-background-jobs.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

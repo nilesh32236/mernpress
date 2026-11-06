@@ -1,21 +1,15 @@
-import {
-  ANALYTICS_RETENTION_DEFAULT_DAYS,
-  ANALYTICS_RETENTION_MAX_DAYS,
-} from '@mernpress/contracts';
-import type { AnalyticsService, NoteService, ScheduleService } from '@mernpress/cms-core';
-import type { DatabaseClient } from '@mernpress/database';
+import type { JobQueueService, ScheduleService } from '@mernpress/cms-core';
 import type { FastifyInstance } from 'fastify';
+import { JOB_TYPES } from './jobs/types.js';
 
 /**
- * In-process background sweeps (ADR 0008 §4, ADR 0045).
+ * In-process schedulers (ADR 0008 §4, ADR 0045, ADR 0054).
  *
  * - publish: promotes due scheduled posts every minute (the claim is the lock).
- * - notes: permanently removes editor notes that have been in the trash past
- *   the configured retention window. Runs every six hours, with a boot catch-up
- *   so downtime does not postpone retention indefinitely.
- * - analytics: deletes aggregate `analytics_daily` rows older than the privacy
- *   retention window. Runs daily with a boot catch-up (rows hold no visitor
- *   identifiers; only counts are logged).
+ * - retention: enqueues durable `notes.retention` (6 h) and
+ *   `analytics.retention` (24 h) jobs instead of running the sweeps here. The
+ *   job row survives a restart and the worker retries failures, so a crash
+ *   between intervals no longer loses the window.
  *
  * All are disabled via SCHEDULER_ENABLED=false (tests, unsynchronized
  * multi-instance deployments). Notes and analytics also have operator CLIs.
@@ -23,25 +17,22 @@ import type { FastifyInstance } from 'fastify';
 
 const PUBLISH_INTERVAL_MS = 60_000;
 const PUBLISH_BOOT_DELAY_MS = 2_000;
-const TRASH_INTERVAL_MS = 6 * 60 * 60 * 1000;
-const TRASH_BOOT_DELAY_MS = 8_000;
-const DEFAULT_TRASH_RETENTION_DAYS = 30;
+const NOTES_INTERVAL_MS = 6 * 60 * 60 * 1000;
+const NOTES_BOOT_DELAY_MS = 8_000;
 const ANALYTICS_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const ANALYTICS_BOOT_DELAY_MS = 15_000;
+const JOBS_CLEANUP_BOOT_DELAY_MS = 20_000;
 
 export function startSchedulers(
   app: FastifyInstance,
   options: {
     schedule: ScheduleService;
-    notes: NoteService;
-    analytics: AnalyticsService;
-    prisma: DatabaseClient;
+    jobs: JobQueueService;
   },
 ): void {
-  const { schedule, notes, analytics, prisma } = options;
+  const { schedule, jobs } = options;
   let publishing = false;
-  let sweeping = false;
-  let pruning = false;
+  let enqueueing = false;
 
   async function sweepPublish(): Promise<void> {
     if (publishing) {
@@ -60,90 +51,18 @@ export function startSchedulers(
     }
   }
 
-  /**
-   * Read a non-negative integer option. A missing row or unparseable value
-   * falls back to the default; a failed *query* returns null so the sweep is
-   * skipped instead of pruning with a guessed window.
-   */
-  async function optionNumber(key: string, fallback: number, max: number): Promise<number | null> {
-    let row: { value: string } | null;
+  async function enqueueRetention(type: string): Promise<void> {
+    if (enqueueing) return;
+    enqueueing = true;
     try {
-      row = await prisma.option.findUnique({ where: { key }, select: { value: true } });
-    } catch {
-      return null;
-    }
-    if (!row) return fallback;
-    try {
-      const parsed: unknown = JSON.parse(row.value);
-      if (typeof parsed === 'number' && Number.isInteger(parsed) && parsed >= 0 && parsed <= max) {
-        return parsed;
-      }
-    } catch {
-      // Corrupt stored value: use the default.
-    }
-    return fallback;
-  }
-
-  async function retentionDays(): Promise<number | null> {
-    return optionNumber('notes_trash_retention_days', DEFAULT_TRASH_RETENTION_DAYS, 365);
-  }
-
-  async function analyticsRetentionDays(): Promise<number | null> {
-    return optionNumber(
-      'analytics_retention_days',
-      ANALYTICS_RETENTION_DEFAULT_DAYS,
-      ANALYTICS_RETENTION_MAX_DAYS,
-    );
-  }
-
-  async function sweepTrash(): Promise<void> {
-    if (sweeping) {
-      return;
-    }
-    sweeping = true;
-    try {
-      const days = await retentionDays();
-      if (days === null) {
-        app.log.warn('note trash sweep skipped: retention option read failed');
-        return;
-      }
-      const result = await notes.purgeExpiredTrash({ retentionDays: days });
-      if (result.purged > 0) {
-        app.log.info({ purged: result.purged }, 'expired note trash purged');
-      }
+      // One pending/running job per type is enough; the worker owns execution.
+      if (await jobs.hasActive(type)) return;
+      await jobs.enqueue({ type });
+      app.log.info({ type }, 'background retention job enqueued');
     } catch (error) {
-      app.log.error({ err: error }, 'note trash sweep failed');
+      app.log.error({ err: error, type }, 'failed to enqueue retention job');
     } finally {
-      sweeping = false;
-    }
-  }
-
-  async function sweepAnalytics(): Promise<void> {
-    if (pruning) {
-      return;
-    }
-    pruning = true;
-    try {
-      const days = await analyticsRetentionDays();
-      if (days === null) {
-        app.log.warn('analytics retention sweep skipped: option read failed');
-        return;
-      }
-      const result = await analytics.prune(days);
-      if (result.pruned > 0) {
-        app.log.info(
-          {
-            pruned: result.pruned,
-            retentionDays: result.retentionDays,
-            cutoffDay: result.cutoffDay,
-          },
-          'analytics retention sweep pruned old rows',
-        );
-      }
-    } catch (error) {
-      app.log.error({ err: error }, 'analytics retention sweep failed');
-    } finally {
-      pruning = false;
+      enqueueing = false;
     }
   }
 
@@ -152,22 +71,47 @@ export function startSchedulers(
   const publishBoot = setTimeout(() => void sweepPublish(), PUBLISH_BOOT_DELAY_MS);
   publishBoot.unref();
 
-  const trashTimer = setInterval(() => void sweepTrash(), TRASH_INTERVAL_MS);
-  trashTimer.unref();
-  const trashBoot = setTimeout(() => void sweepTrash(), TRASH_BOOT_DELAY_MS);
-  trashBoot.unref();
+  const notesTimer = setInterval(
+    () => void enqueueRetention(JOB_TYPES.notesRetention),
+    NOTES_INTERVAL_MS,
+  );
+  notesTimer.unref();
+  const notesBoot = setTimeout(
+    () => void enqueueRetention(JOB_TYPES.notesRetention),
+    NOTES_BOOT_DELAY_MS,
+  );
+  notesBoot.unref();
 
-  const analyticsTimer = setInterval(() => void sweepAnalytics(), ANALYTICS_INTERVAL_MS);
+  const cleanupTimer = setInterval(
+    () => void enqueueRetention(JOB_TYPES.jobsCleanup),
+    ANALYTICS_INTERVAL_MS,
+  );
+  cleanupTimer.unref();
+  const cleanupBoot = setTimeout(
+    () => void enqueueRetention(JOB_TYPES.jobsCleanup),
+    JOBS_CLEANUP_BOOT_DELAY_MS,
+  );
+  cleanupBoot.unref();
+
+  const analyticsTimer = setInterval(
+    () => void enqueueRetention(JOB_TYPES.analyticsRetention),
+    ANALYTICS_INTERVAL_MS,
+  );
   analyticsTimer.unref();
-  const analyticsBoot = setTimeout(() => void sweepAnalytics(), ANALYTICS_BOOT_DELAY_MS);
+  const analyticsBoot = setTimeout(
+    () => void enqueueRetention(JOB_TYPES.analyticsRetention),
+    ANALYTICS_BOOT_DELAY_MS,
+  );
   analyticsBoot.unref();
 
   app.addHook('onClose', async () => {
     clearInterval(publishTimer);
     clearTimeout(publishBoot);
-    clearInterval(trashTimer);
-    clearTimeout(trashBoot);
+    clearInterval(notesTimer);
+    clearTimeout(notesBoot);
     clearInterval(analyticsTimer);
     clearTimeout(analyticsBoot);
+    clearInterval(cleanupTimer);
+    clearTimeout(cleanupBoot);
   });
 }
