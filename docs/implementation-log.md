@@ -5131,3 +5131,20 @@ administrator and a temporary `Audit Root`/`Audit Child` folder tree:
   (desktop for every screen, mobile for the layout-sensitive ones).
 - Validation: 922 unit/integration tests (API 539, admin 253, web 52, contracts
   13, block-system 65), 27 Playwright E2E tests and seven builds pass.
+
+**Deployment (remaining custom screens, release `20261106T170527Z-68f8f1d`):**
+verified in production with a temporary administrator:
+- Redirects: scrollWidth = innerWidth = 1440; form 1238px; Status select
+  180px wide and right edge at 1430 (fully visible).
+- Connectors: threshold/API-key inputs 40px, 14px, `#949494`, radius 2; the
+  spam card, AI banner and provider list all 760px at x=182.
+- Export filters: select and input 40px, radius 2, `#949494`.
+- Personal Data: request input 40px and Send Request button 40px.
+- Terms: add-form input radius 2; Add Category h2 16.9px / 16.9px margin.
+- Consent Preview h2 16.9px; Customizer header 20px/200 and fields 40px,
+  radius 2, `#949494`.
+- Mobile: Import 375 = 375 with a 355px table; Redirects 375 = 375.
+- Cleanup removed analytics rows, the temporary administrator/sessions and
+  recent audit events. Production is back to 1 user, 2 posts, 0 media,
+  0 folders, 0 analytics rows (scheduler jobs remain); public, admin and API
+  routes sampled above return 200.
