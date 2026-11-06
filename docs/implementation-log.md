@@ -5148,3 +5148,26 @@ verified in production with a temporary administrator:
   recent audit events. Production is back to 1 user, 2 posts, 0 media,
   0 folders, 0 analytics rows (scheduler jobs remain); public, admin and API
   routes sampled above return 200.
+
+### 2026-11-06 — OS file-drop uploads into media folders
+
+- Folder tree rows and Uncategorized now accept files dragged from the
+  operating system (`DataTransfer.files`), including multiple files. Each file
+  uses the existing multipart upload path with the row's `folderId` (or null for
+  Uncategorized), appears in the existing upload list with per-file progress,
+  updates folder counts and follows the same server image validation/error
+  handling.
+- The explicit drop target wins over the folder currently being browsed; the
+  grid inserts locally only when the uploaded item matches the active
+  folder/search/month filters, otherwise it refetches.
+- Internal media drag still moves items by id; files take precedence only when
+  the drop actually carries files. Only the folder tree rows are OS drop
+  targets; dropping elsewhere on the page is unchanged.
+- Tests: admin unit coverage for a dropped file targeting `f1` with a visible
+  35% progressbar and completion notice, plus an Uncategorized drop without a
+  folder id; media E2E creates a folder, dispatches a real DataTransfer drop of
+  a generated PNG, verifies the upload appears in the folder filter and its
+  count is 1. Existing API folder-upload test remains.
+- Docs: ADR 0048, media architecture, D-118, parity matrix, implementation log.
+- Validation: 924 unit/integration tests (API 539, admin 255, web 52, contracts
+  13, block-system 65), 28 Playwright E2E tests and seven builds pass.

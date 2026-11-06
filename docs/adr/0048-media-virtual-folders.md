@@ -63,7 +63,11 @@ existing URLs, the derivative paths and the immutable-cache headers.
    the multipart upload); the grid only inserts the new item locally when it
    matches the active folder/search/month filters, otherwise it refetches.
    Changing the folder/search/month filter clears the bulk selection, and the
-   list-view Apply button requires choosing an action before it runs.
+   list-view Apply button requires choosing an action before it runs. Files
+   dragged from the operating system onto a folder tree row (or Uncategorized)
+   are uploaded with that `folderId`; multiple files queue in the existing
+   upload list with per-file progress. The drop target wins over the folder
+   currently being browsed.
 6. **Counts are derived.** `itemCount` comes from a Prisma `_count` on the
    relation, so it cannot drift from the rows.
 
@@ -74,7 +78,9 @@ existing URLs, the derivative paths and the immutable-cache headers.
   folder assignment is lost; the UI says so before deleting.
 - The folder list is small and unpaginated; a site with thousands of folders
   would need pagination or a tree, which is not built.
-- Bulk assignment is not implemented; items are moved one at a time from the
-  drawer.
+- Bulk assignment is implemented from the grid/list selection toolbar and the
+  list-view action; the attachment drawer moves one item at a time.
 - Folder names are globally unique, children inherit nothing from a parent, and
-  the folder filter shows direct items only. Drag-and-drop is not implemented.
+  the folder filter shows direct items only. Internal drag-and-drop moves media
+  between rows; OS file drops upload into a row. Dropping files elsewhere on
+  the page, or non-file URL drops, is not a target.

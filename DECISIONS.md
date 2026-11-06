@@ -180,6 +180,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-117 | 2026-11-06 | Durable background jobs: `jobs` table + `JobStatus` (migration `20261106160000`), `JobQueueService` with `FOR UPDATE SKIP LOCKED` claims, attempts/backoff (30 s × 2ⁿ capped 1 h), stale-RUNNING recovery, ordered ids, admin list/run/cancel and history pruning (completed/cancelled 7 d, failed 30 d). Scheduler enqueues `notes.retention` (6 h), `analytics.retention` (24 h) and `jobs.cleanup` (24 h) with `hasActive` dedupe; a 15 s worker runs them when `SCHEDULER_ENABLED=true`. Tools → Scheduled Actions exposes status/hook filters, Run now and Cancel. No arbitrary enqueue HTTP endpoint; handlers are code-owned. | accepted | [ADR 0054](docs/adr/0054-durable-background-jobs.md) |
 
+| D-118 | 2026-11-06 | OS file-drop uploads: folder tree rows (and Uncategorized) accept `DataTransfer.files`, including multiple files; each file uploads through the existing multipart `folderId` path and appears in the existing upload list with per-file progress. The explicit drop target wins over the folder currently being browsed; the grid inserts locally only when the upload matches active filters. Internal media drag still moves items; only folder rows are OS drop targets. | accepted | [ADR 0048](docs/adr/0048-media-virtual-folders.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

@@ -66,9 +66,12 @@ changes clear the bulk selection, and list-view Apply requires selecting an
 action. Selected items can be moved in bulk from the grid selection toolbar or
 the list-view “Move to folder” action (one authorized PATCH per item, then a
 refetch), or by dragging a card/row (the selection, when the item is part of it)
-onto a folder tree row or Uncategorized. Limits: one folder per item, globally
-unique names, the folder filter and counts show direct items only, and
-operating-system file drops are not handled.
+onto a folder tree row or Uncategorized. Files dragged from the operating system
+onto a folder row/Uncategorized are uploaded through the same multipart
+`folderId` path; multiple files queue with per-file progress, and the explicit
+drop target wins over the browsed folder. Limits: one folder per item, globally
+unique names, the folder filter and counts show direct items only, and only the
+folder tree rows accept OS drops.
 
 ## Bulk regeneration
 

@@ -24,6 +24,7 @@ export function MediaFolderTree({
   onMove,
   onDelete,
   onAssignItems,
+  onUploadFiles,
 }: {
   folders: MediaFolder[];
   selectedId: string;
@@ -35,6 +36,8 @@ export function MediaFolderTree({
   onDelete: (folder: MediaFolder) => Promise<boolean>;
   /** Assign dragged media ids to a folder (null = Uncategorized). */
   onAssignItems: (ids: string[], folderId: string | null) => Promise<void>;
+  /** Upload files dropped from the operating system into a folder. */
+  onUploadFiles: (files: File[], folderId: string | null) => void;
 }) {
   const [open, setOpen] = useState(true);
   const [action, setAction] = useState<Action | null>(null);
@@ -46,15 +49,21 @@ export function MediaFolderTree({
   function dropHandlers(target: string | null, folderId: string | null) {
     return {
       onDragOver: (event: DragEvent<HTMLElement>) => {
-        if (!event.dataTransfer.types.includes('text/plain')) return;
+        const types = event.dataTransfer.types;
+        if (!types.includes('text/plain') && !types.includes('Files')) return;
         event.preventDefault();
-        event.dataTransfer.dropEffect = 'move';
+        event.dataTransfer.dropEffect = types.includes('Files') ? 'copy' : 'move';
         setDropTarget(target);
       },
       onDragLeave: () => setDropTarget((current) => (current === target ? null : current)),
       onDrop: (event: DragEvent<HTMLElement>) => {
         event.preventDefault();
         setDropTarget(null);
+        const files = Array.from(event.dataTransfer.files ?? []);
+        if (files.length > 0) {
+          onUploadFiles(files, folderId);
+          return;
+        }
         const ids = event.dataTransfer
           .getData('text/plain')
           .split(',')
@@ -246,9 +255,9 @@ export function MediaFolderTree({
           <p className="field-help">No folders yet. Create one to organise the library.</p>
         ) : null}
         <p className="field-help">
-          Counts show items directly in each folder. Drag one or more media items onto a folder row
-          (or Uncategorized) to move them. Deleting a folder moves its child folders up and leaves
-          its media Uncategorized.
+          Counts show items directly in each folder. Drag media items onto a folder row (or
+          Uncategorized) to move them, or drop files from your computer to upload them there.
+          Deleting a folder moves its child folders up and leaves its media Uncategorized.
         </p>
       </div>
     </details>

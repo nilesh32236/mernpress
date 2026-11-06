@@ -902,7 +902,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
     });
   }
 
-  async function startUpload(file: File) {
+  async function startUpload(file: File, targetFolderId?: string | null) {
     uploadKey.current += 1;
     const key = uploadKey.current;
     setUploads((current) => [
@@ -910,9 +910,15 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
       { key, name: file.name, progress: 0, status: 'uploading' },
     ]);
 
-    // Upload into the folder currently being browsed; "All folders" and
+    // An explicit target (OS drop onto a folder row) wins; otherwise upload
+    // into the folder currently being browsed. "All folders" and
     // "Uncategorized" leave the item Uncategorized.
-    const uploadFolder = folderFilter !== '' && folderFilter !== 'none' ? folderFilter : undefined;
+    const uploadFolder =
+      targetFolderId === undefined
+        ? folderFilter !== '' && folderFilter !== 'none'
+          ? folderFilter
+          : undefined
+        : (targetFolderId ?? undefined);
     try {
       const item = await uploadMedia(file, {
         onProgress: (percent) => patchUpload(key, { progress: percent }),
@@ -1166,6 +1172,9 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
           onMove={moveFolderTo}
           onDelete={deleteFolderById}
           onAssignItems={assignItemsToFolder}
+          onUploadFiles={(files, folderId) => {
+            for (const file of files) void startUpload(file, folderId);
+          }}
         />
 
         <input

@@ -681,4 +681,63 @@ describe('media library page', () => {
       expect(vi.mocked(updateMedia)).toHaveBeenCalledWith('m1', { folderId: null }),
     );
   });
+  it('uploads OS files dropped on a folder row into that folder with progress', async () => {
+    const folder = {
+      id: 'f1',
+      name: 'Travel',
+      parentId: null,
+      itemCount: 0,
+      createdAt: '2026-11-06T10:00:00.000Z',
+      updatedAt: '2026-11-06T10:00:00.000Z',
+    };
+    vi.mocked(listMediaFolders).mockResolvedValue([folder]);
+    let finish: (item: MediaItem) => void = () => undefined;
+    vi.mocked(uploadMedia).mockImplementationOnce((_file, options) => {
+      options?.onProgress?.(35);
+      return new Promise<MediaItem>((resolve) => {
+        finish = resolve;
+      });
+    });
+
+    render(<MediaPage user={admin} />);
+    await screen.findByRole('button', { name: 'View sunset.png' });
+    await screen.findByRole('button', { name: 'Travel' });
+
+    const row = screen.getByRole('button', { name: 'Travel' }).closest('.folder-tree-row')!;
+    fireEvent.drop(row, {
+      dataTransfer: {
+        files: [new File(['pixels'], 'drop.png', { type: 'image/png' })],
+        types: ['Files'],
+        getData: () => '',
+      },
+    });
+
+    const bar = await screen.findByRole('progressbar', { name: 'Uploading drop.png' });
+    expect(bar.getAttribute('aria-valuenow')).toBe('35');
+    expect(vi.mocked(uploadMedia)).toHaveBeenCalledWith(
+      expect.any(File),
+      expect.objectContaining({ folderId: 'f1' }),
+    );
+
+    finish(makeMedia({ id: 'm3', originalName: 'drop.png', folderId: 'f1' }));
+    expect(await screen.findByText('Uploaded “drop.png”.')).toBeDefined();
+  });
+
+  it('uploads files dropped on Uncategorized without a folder id', async () => {
+    render(<MediaPage user={admin} />);
+    await screen.findByRole('button', { name: 'View sunset.png' });
+    const row = screen.getByRole('button', { name: 'Uncategorized' }).closest('.folder-tree-row')!;
+    fireEvent.drop(row, {
+      dataTransfer: {
+        files: [new File(['pixels'], 'desktop.png', { type: 'image/png' })],
+        types: ['Files'],
+        getData: () => '',
+      },
+    });
+
+    await waitFor(() => expect(vi.mocked(uploadMedia)).toHaveBeenCalled());
+    const call = vi.mocked(uploadMedia).mock.calls.find(([file]) => file.name === 'desktop.png');
+    expect(call).toBeDefined();
+    expect(call?.[1]?.folderId).toBeUndefined();
+  });
 });

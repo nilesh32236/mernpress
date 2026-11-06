@@ -121,3 +121,62 @@ test('editor can upload, browse, edit metadata and delete media', async ({ page 
   await page.getByRole('button', { name: 'Delete permanently' }).click();
   await expect(page.getByText(/160 × 90/)).toHaveCount(0, { timeout: 10_000 });
 });
+
+test('editor can drop an OS file onto a media folder row', async ({ page }) => {
+  await login(page);
+  await page.goto(`${ADMIN_URL}media`);
+  await expect(page.getByRole('heading', { name: /Media Library/ })).toBeVisible();
+
+  const folderName = `Drop Target ${suffix}`;
+  await page.getByRole('button', { name: 'New top-level folder' }).click();
+  await page.getByLabel('New top-level folder name').fill(folderName);
+  await page.locator('.folder-tree-editor').getByRole('button', { name: 'Create folder' }).click();
+  await expect(page.getByRole('button', { name: folderName })).toBeVisible();
+
+  // Build a real PNG File in the page and dispatch the same drag/drop sequence
+  // the browser produces when files are dragged from the operating system.
+  await page.evaluate(async (name) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 120;
+    canvas.height = 80;
+    const context = canvas.getContext('2d');
+    if (context) {
+      context.fillStyle = '#d63638';
+      context.fillRect(0, 0, 120, 80);
+    }
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (value) => (value ? resolve(value) : reject(new Error('no blob'))),
+        'image/png',
+      );
+    });
+    const file = new File([blob], name, { type: 'image/png' });
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    const row = [...document.querySelectorAll('.folder-tree-row')].find((element) =>
+      element.textContent?.includes('Drop Target'),
+    );
+    if (!row) throw new Error('Drop Target folder row not found');
+    for (const type of ['dragenter', 'dragover', 'drop']) {
+      row.dispatchEvent(
+        new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: transfer }),
+      );
+    }
+  }, `e2e-drop-${suffix}.png`);
+
+  await expect(page.getByRole('button', { name: `View e2e-drop-${suffix}.png` })).toBeVisible({
+    timeout: 20_000,
+  });
+  await expect(page.getByText(/Uploaded “e2e-drop-/).first()).toBeVisible();
+
+  const folderValue = await page
+    .locator('select[aria-label="Filter by folder"] option')
+    .filter({ hasText: folderName })
+    .getAttribute('value');
+  expect(folderValue).toBeTruthy();
+  await page.getByLabel('Filter by folder').selectOption(folderValue!);
+  await expect(page.getByRole('button', { name: `View e2e-drop-${suffix}.png` })).toBeVisible();
+  await expect(
+    page.locator(`select[aria-label="Filter by folder"] option[value="${folderValue}"]`),
+  ).toContainText('(1)');
+});

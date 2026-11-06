@@ -138,23 +138,30 @@ test('remaining admin screens keep the measured WordPress chrome contract', asyn
   await page.goto('http://127.0.0.1:5173/admin/settings');
   await expect(page.getByRole('heading', { level: 1, name: 'General Settings' })).toBeVisible();
   await expect(page.locator('#site_title')).toBeVisible();
-  const settings = await page.evaluate(() => {
-    const input = document.getElementById('site_title');
-    if (!input) return null;
-    const style = getComputedStyle(input);
-    return {
-      height: Math.round(input.getBoundingClientRect().height),
-      radius: style.borderRadius,
-      border: style.borderColor,
-      fontSize: style.fontSize,
-    };
-  });
-  expect(settings).toEqual({
-    height: 40,
-    radius: '2px',
-    border: 'rgb(148, 148, 148)',
-    fontSize: '14px',
-  });
+  // The group fetch can briefly replace the form with a skeleton after the
+  // first render; poll until the real input is stable.
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const input = document.getElementById('site_title');
+          if (!input) return null;
+          const style = getComputedStyle(input);
+          return {
+            height: Math.round(input.getBoundingClientRect().height),
+            radius: style.borderRadius,
+            border: style.borderColor,
+            fontSize: style.fontSize,
+          };
+        }),
+      { timeout: 8000 },
+    )
+    .toEqual({
+      height: 40,
+      radius: '2px',
+      border: 'rgb(148, 148, 148)',
+      fontSize: '14px',
+    });
 
   // Plugins rows use the WordPress 10px 9px cell padding, not the generic 8/10.
   await page.goto('http://127.0.0.1:5173/admin/plugins');
