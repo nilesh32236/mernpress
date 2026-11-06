@@ -296,6 +296,26 @@ describe('multilingual content', () => {
       hi: { blog: 'ब्लॉग', home: 'होम' },
     });
 
+    // Date locales are validated like any other string and must look like a
+    // BCP 47 tag; malformed values are rejected rather than stored.
+    const badLocale = await app.inject({
+      method: 'PUT',
+      url: '/api/admin/theme-strings',
+      headers: adminHeaders,
+      payload: { language: 'hi', strings: { dateLocale: 'not a locale' } },
+    });
+    expect(badLocale.statusCode).toBe(400);
+    const goodLocale = await app.inject({
+      method: 'PUT',
+      url: '/api/admin/theme-strings',
+      headers: adminHeaders,
+      payload: { language: 'hi', strings: { dateLocale: 'hi-IN' } },
+    });
+    expect(goodLocale.statusCode).toBe(200);
+    expect(
+      (goodLocale.json() as { strings: Record<string, Record<string, string>> }).strings.hi,
+    ).toMatchObject({ dateLocale: 'hi-IN' });
+
     const unknownKey = await app.inject({
       method: 'PUT',
       url: '/api/admin/theme-strings',

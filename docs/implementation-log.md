@@ -4486,3 +4486,20 @@ administrator:
   and the temporary administrator; production is back to 1 user, 2 posts, 0
   analytics rows and default English-only chrome, with `/`, `/admin/`,
   `/admin/settings/languages`, `/api/health` and `/posts/testcom` at 200.
+
+### 2026-11-06 — Locale-aware public dates
+
+- Added the `dateLocale` theme-string key (default `en-US`, BCP 47 shape, max
+  35). The contract normalizer drops malformed locales; the API rejects a PUT
+  whose only value is invalid.
+- New `apps/web/lib/date.ts`: `safeDateLocale()` (shape check +
+  `Intl.DateTimeFormat.supportedLocalesOf`, `en-US` fallback) and
+  `formatPublicDate()` (UTC long date, null for missing/invalid instants).
+- `PostList`, `RelatedPosts`, `MorePosts` and `Comments` now format dates with
+  `strings.dateLocale` instead of hardcoded `en-US`.
+- Tests: `date-format.test.ts` (en-US vs hi-IN vs ar-EG, malformed locale
+  fallback, invalid instants); the component test renders the Hindi list and
+  asserts `नवंबर` with no `November`; the API test rejects
+  `dateLocale: "not a locale"` and accepts `hi-IN`.
+- Validation: 884 unit/integration tests (API 521, admin 240, web 45, contracts
+  13, block-system 65), 24 Playwright E2E tests and seven builds pass.

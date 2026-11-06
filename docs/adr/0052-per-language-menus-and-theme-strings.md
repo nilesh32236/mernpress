@@ -63,7 +63,9 @@ or adding a translation-file pipeline.
    `PostView`, `PostList`, `Pagination`, `SearchForm`, `MorePosts` and
    `LanguageLinks`. Components default to `DEFAULT_THEME_STRINGS` so they remain
    usable in isolation and their unit tests do not need a request context.
-   Dates are still formatted with `en-US` month names (documented limit).
+   The `dateLocale` key (default `en-US`, BCP 47 shape) drives
+   `formatPublicDate()` in `apps/web/lib/date.ts`, used by post lists, related/
+   more posts and comments; malformed locales fall back to `en-US`.
 
 ## Consequences
 
@@ -72,9 +74,9 @@ or adding a translation-file pipeline.
 - Menu URLs are literal: a Hindi menu must use `/hi/...` paths. Automatic
   prefixing would break external links and the default language menu.
 - Layout chrome, post meta, author box, related/more-posts headings, comments,
-  pagination aria labels and the search form are translated. Remaining English:
-  date formatting (`en-US` month names), the 404 page copy and API error
-  messages (server-provided, not theme strings).
+  pagination aria labels, the search form and date formatting are translated.
+  Remaining English: the 404 page copy and API error messages (server-provided,
+  not theme strings).
 - No per-language widgets, sidebars or theme template overrides.
 - Changing the enabled languages leaves orphaned `theme_strings`/menu entries
   in the option; they are ignored while the language is disabled and become

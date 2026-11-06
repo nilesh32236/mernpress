@@ -1,16 +1,7 @@
 import Link from 'next/link';
 import { postHref, type PublicPost } from '@/lib/api';
 import { DEFAULT_THEME_STRINGS, type ThemeStrings } from '@mernpress/contracts';
-
-function formatDate(iso: string | null): string | null {
-  if (!iso) return null;
-  return new Date(iso).toLocaleDateString('en-US', {
-    timeZone: 'UTC',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
+import { formatPublicDate } from '@/lib/date';
 
 /** Twenty Twenty-Five "More posts" pattern: title + date, four most recent. */
 export default function MorePosts({
@@ -26,7 +17,7 @@ export default function MorePosts({
       <h2 id="more-posts-heading">{strings.morePosts}</h2>
       <ul>
         {posts.slice(0, 4).map((post) => {
-          const date = formatDate(post.publishedAt);
+          const date = formatPublicDate(post.publishedAt, strings.dateLocale);
           return (
             <li key={post.id}>
               <Link className="more-posts-title" href={postHref(post)}>

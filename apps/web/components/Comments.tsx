@@ -12,15 +12,10 @@ interface PublicComment {
   createdAt: string;
 }
 
-function formatCommentDate(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleDateString('en-US', {
-    timeZone: 'UTC',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
+import { formatPublicDate } from '@/lib/date';
+
+function formatCommentDate(value: string, locale: string): string {
+  return formatPublicDate(value, locale) ?? '';
 }
 
 function CommentItem({
@@ -54,7 +49,9 @@ function CommentItem({
             ) : (
               <strong>{comment.authorName}</strong>
             )}
-            <time dateTime={comment.createdAt}>{formatCommentDate(comment.createdAt)}</time>
+            <time dateTime={comment.createdAt}>
+              {formatCommentDate(comment.createdAt, strings.dateLocale)}
+            </time>
             <button type="button" className="comment-reply-link" onClick={() => onReply(comment)}>
               {strings.reply}
             </button>

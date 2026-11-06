@@ -150,6 +150,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-102 | 2026-11-06 | Component-level per-language strings: the `theme_strings` contract gains keys for post meta (written by/min read/in/uncategorized/post navigation/languages), author box, related/more headings, comments (title, reply, form labels, submit, notices), pagination aria labels, search form and archive/search empty states. `requestThemeStrings()` resolves `x-mn-language` + stored overrides once per page; `PostView`, `PostList`, `Pagination`, `SearchForm`, `MorePosts`, `AuthorBox`, `RelatedPosts`, `Comments` and `LanguageLinks` accept the map and default to `DEFAULT_THEME_STRINGS` for isolated rendering/tests. Dates stay en-US; 404 copy and API error messages remain English. | accepted | [ADR 0052](docs/adr/0052-per-language-menus-and-theme-strings.md) |
 
+| D-103 | 2026-11-06 | Locale-aware public dates: new `theme_strings.dateLocale` key (default `en-US`, BCP 47 shape, max 35). The contract normalizer rejects malformed tags; `apps/web/lib/date.ts` (`safeDateLocale`, `formatPublicDate`) renders UTC long dates in that locale with an `en-US` fallback, used by PostList, RelatedPosts, MorePosts and Comments. Invalid/unsupported locales never throw during render. | accepted | [ADR 0052](docs/adr/0052-per-language-menus-and-theme-strings.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

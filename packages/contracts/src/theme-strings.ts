@@ -16,6 +16,7 @@ export const THEME_STRING_KEYS = [
   { key: 'feed', label: 'Feed link', fallback: 'Feed', max: 40 },
   { key: 'primaryNav', label: 'Primary navigation label', fallback: 'Primary', max: 60 },
   { key: 'footerNav', label: 'Footer navigation label', fallback: 'Footer', max: 60 },
+  { key: 'dateLocale', label: 'Date locale (BCP 47)', fallback: 'en-US', max: 35 },
   { key: 'writtenBy', label: 'Post meta: written by', fallback: 'Written by', max: 60 },
   { key: 'minRead', label: 'Post meta: read time suffix', fallback: 'min read', max: 40 },
   { key: 'inCategory', label: 'Post meta: category connector', fallback: 'in', max: 40 },
@@ -130,6 +131,9 @@ export function normalizeThemeStringOverrides(value: unknown): ThemeStringOverri
     if (!KEY_SET.has(key)) continue;
     if (typeof raw !== 'string') continue;
     const trimmed = raw.trim().slice(0, maxFor(key as ThemeStringKey));
+    // A date locale must look like a language tag; a malformed value would
+    // throw in Intl at render time, so drop it and keep the default.
+    if (key === 'dateLocale' && !/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(trimmed)) continue;
     if (trimmed.length > 0) result[key as ThemeStringKey] = trimmed;
   }
   return result;

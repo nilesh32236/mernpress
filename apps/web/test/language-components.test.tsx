@@ -36,6 +36,7 @@ const strings = themeStringsFor(
       searchButton: 'खोजें',
       search: 'खोज',
       languagesLabel: 'भाषाएँ',
+      dateLocale: 'hi-IN',
     },
   },
   'hi',
@@ -101,6 +102,9 @@ describe('per-language component strings', () => {
   it('translates list meta, pagination and the search form', () => {
     const list = renderToStaticMarkup(<PostList posts={[post()]} strings={strings} />);
     expect(list).toContain('मिनट पढ़ें');
+    // Dates follow the language's locale instead of a hardcoded en-US.
+    expect(list).toContain('नवंबर');
+    expect(list).not.toContain('November');
 
     const pagination = renderToStaticMarkup(
       <Pagination page={2} totalPages={3} basePath="/hi/posts" strings={strings} />,

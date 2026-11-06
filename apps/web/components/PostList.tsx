@@ -3,16 +3,7 @@ import { postHref, type PublicPost } from '@/lib/api';
 import ResponsiveImage from './ResponsiveImage';
 import { readingTime } from '@/lib/reading-time';
 import { DEFAULT_THEME_STRINGS, type ThemeStrings } from '@mernpress/contracts';
-
-function formatDate(iso: string | null): string | null {
-  if (!iso) return null;
-  return new Date(iso).toLocaleDateString('en-US', {
-    timeZone: 'UTC',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
+import { formatPublicDate } from '@/lib/date';
 
 function excerptText(post: PublicPost): string | null {
   if (post.excerpt) return post.excerpt;
@@ -36,7 +27,7 @@ export default function PostList({
   return (
     <ul className="post-list">
       {posts.map((post) => {
-        const date = formatDate(post.publishedAt);
+        const date = formatPublicDate(post.publishedAt, strings.dateLocale);
         const excerpt = excerptText(post);
         const read = readingTime(post.renderedContent);
         return (
