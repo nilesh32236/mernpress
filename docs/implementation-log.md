@@ -5499,3 +5499,25 @@ administrator and public routes:
   state.
 - Validation: 949 unit/integration tests (API 551, admin 257, web 59, contracts
   17, block-system 65), 34 Playwright E2E tests and seven builds pass.
+
+**Deployment (field Core Web Vitals, release `20261106T203154Z-a93410c`):**
+- Migration `20261106210000_add_web_vitals_daily` applied to production
+  (`All migrations have been successfully applied`), then the API and web
+  services restarted; `/`, `/admin/` and `/api/health` returned 200.
+- Sent 12 samples through the public beacon (browser Origin/UA): LCP
+  2100/2400/2600/2800, CLS 0.05/0.08/0.12/0.31, INP 180/420, FCP 900, TTFB
+  2400. All answered 204; a `DNT: 1` and a Googlebot sample also answered 204
+  but stored nothing. The table held only the expected buckets (10 rows).
+- `GET /api/admin/analytics` returned p75 `lcp 3000` (needs improvement, 4),
+  `inp 500` (needs improvement, 2), `cls 150` (0.15, needs improvement, 4),
+  `fcp 1000` (good, 1) and `ttfb 2500` (poor, 1).
+- Dashboard → Analytics rendered “Core Web Vitals (field data)” with those five
+  rows, rating badges (`is-needs-improvement`/`is-good`/`is-poor`), `4 samples`
+  and values `3 s`/`500 ms`/`0.15`/`1 s`/`2.5 s`; no overflow at 1440, and the
+  same five rows with 375 = 375 on mobile.
+- Real-client path verified: visiting `/` and then `/test` in the browser added
+  new LCP/FCP/TTFB/CLS buckets, proving `WebVitals` sends from production pages
+  (consent `analyticsRequired:false`, DNT unset).
+- Cleanup removed every web-vital and analytics row plus the temporary
+  administrator/sessions and recent audit events. Production is back to 1 user,
+  2 posts, 0 vitals rows and 0 analytics rows; sampled routes return 200.
