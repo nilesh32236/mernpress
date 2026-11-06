@@ -4536,3 +4536,23 @@ schema change. Production verification with a temporary administrator:
   test saves/returns the 404 keys and accepts a 200-character description.
 - Validation: 885 unit/integration tests (API 521, admin 240, web 46, contracts
   13, block-system 65), 24 Playwright E2E tests and seven builds pass.
+
+**Deployment (per-language 404):** release `20261106T120733Z-71a6a5f`
+(current), no schema change. Production verification with a temporary
+administrator:
+- Saved Hindi 404 copy (`पृष्ठ नहीं मिला` + description + image alt) and search
+  labels.
+- `/hi/no-such-page` returned 404 with `<html lang="hi">`, the Hindi title,
+  description, image alt and search button (`खोजें`); `/no-such-page` kept
+  “Page not found” with `lang="en"`.
+- Settings → Languages showed 52 string inputs with the saved
+  `notFoundTitle`/`notFoundText` values.
+- The deployed API accepted the 300-character-capable payload (the local pass
+  also covered a 200-character description after fixing the old 80-character
+  body cap).
+- Cleanup removed the `site_languages`, `theme_strings` and `customizer_menus`
+  options, verification analytics rows, the verification 404 log row, recent
+  audit events and the temporary administrator; production is back to 1 user,
+  2 posts, 0 analytics rows and default English-only chrome, with `/`,
+  `/admin/`, `/admin/settings/languages`, `/api/health` and `/posts/testcom` at
+  200.
