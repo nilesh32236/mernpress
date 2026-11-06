@@ -13965,3 +13965,25 @@ button.button-link.is-danger {
   flex: 1 1 100%;
   color: #b32d2e;
 }
+
+/* Remaining mobile parity: Add Plugins table and Add User password row. */
+@media (max-width: 782px) {
+  .plugins-install-screen .content-table.plugins {
+    min-width: 0;
+  }
+
+  .plugins-install-screen .plugin-install-action {
+    width: auto;
+    text-align: left;
+  }
+
+  .user-new-page .password-row {
+    flex-wrap: wrap;
+  }
+
+  .user-new-page .password-row input {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+  }
+}

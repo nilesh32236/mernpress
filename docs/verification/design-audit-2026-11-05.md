@@ -231,3 +231,27 @@ connectors alignment/inputs, export filters, personal-data form, terms radius,
 consent preview heading and Customizer header/controls, and attaches desktop
 screenshots for every screen plus mobile screenshots for the layout-sensitive
 ones.
+
+## Remaining routes responsive pass (2026-11-06)
+
+Measured 13 previously uncovered admin routes at 1440×1000 and 375×812:
+Appearance → Themes/Add Themes/Fonts, Plugins → Add Plugins, Users → Add User,
+Tools → Site Health, Updates, and Settings → Writing/Reading/Media/Permalinks/
+Privacy.
+
+Two real mobile overflows were found and fixed:
+
+| Screen | Before | Cause | After |
+| --- | --- | --- | --- |
+| Plugins → Add Plugins | **582px** scroll width at 375 | `.content-table` inherited the 44rem (572px) list-table minimum; the Installed package table kept a fixed 160px action column | **375px**, table 355px, action column auto |
+| Users → Add User | **433px** scroll width at 375 | `.user-new-page .password-row input` was fixed at `0 0 350px`; the Show button pushed the row to 413px | **375px**, password row/input 345px and wrapping |
+
+All other routes measured 375 = 375 and 1440 = 1440 with no changes: Themes
+cards/footers, Add Themes/Add Plugins filter bars, Fonts tabs (20px app heading),
+Site Health cards, Updates sections and the five Settings tabs retain the
+WordPress control/heading scale. Add Themes and Add Plugins intentionally show
+disabled directory tabs (no marketplace/remote install).
+
+`tests/e2e/admin-parity.spec.ts` now has a sixth test covering all 13 routes at
+both viewports, asserting no horizontal overflow, with desktop screenshots for
+every route and mobile screenshots for the two fixed screens.

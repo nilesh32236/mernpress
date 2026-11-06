@@ -877,3 +877,75 @@ test('mail delivery panel keeps the measured settings contract', async ({ page }
     contentType: 'image/png',
   });
 });
+
+test('remaining admin routes keep the WordPress responsive contract', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await login(page);
+
+  const screens: Array<[string, string, string]> = [
+    ['themes', '/admin/themes', 'Themes'],
+    ['add-themes', '/admin/themes/new', 'Add Themes'],
+    ['fonts', '/admin/fonts', 'Fonts'],
+    ['add-plugins', '/admin/plugins/new', 'Add Plugins'],
+    ['add-user', '/admin/users?action=add', 'Add User'],
+    ['site-health', '/admin/tools?section=health', 'Site Health'],
+    ['updates', '/admin/updates', 'MERNPress Updates'],
+    ['writing', '/admin/settings#writing', 'Writing Settings'],
+    ['reading', '/admin/settings#reading', 'Reading Settings'],
+    ['media-settings', '/admin/settings#media', 'Media Settings'],
+    ['permalinks', '/admin/settings#permalinks', 'Permalink Settings'],
+    ['privacy-settings', '/admin/settings#privacy', 'Privacy'],
+  ];
+
+  for (const [name, route, heading] of screens) {
+    await page.goto(`http://127.0.0.1:5173${route}`);
+    await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+    const metrics = await h1AndOverflow(page);
+    expect(metrics.scrollWidth, `${name} desktop overflow`).toBeLessThanOrEqual(metrics.innerWidth);
+    await testInfo.attach(`${name}-desktop`, {
+      body: await page.screenshot({ fullPage: false }),
+      contentType: 'image/png',
+    });
+  }
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  for (const [name, route, heading] of screens) {
+    await page.goto(`http://127.0.0.1:5173${route}`);
+    await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+    const metrics = await h1AndOverflow(page);
+    expect(metrics.scrollWidth, `${name} mobile overflow`).toBeLessThanOrEqual(metrics.innerWidth);
+    if (name === 'add-plugins' || name === 'add-user') {
+      await testInfo.attach(`${name}-mobile`, {
+        body: await page.screenshot({ fullPage: false }),
+        contentType: 'image/png',
+      });
+    }
+  }
+
+  await page.goto('http://127.0.0.1:5173/admin/plugins/new');
+  await expect(page.getByRole('heading', { name: 'Add Plugins' })).toBeVisible();
+  await expect(page.locator('.plugins-install-screen .content-table')).toBeVisible();
+  const pluginTable = await page.evaluate(() => ({
+    width: Math.round(
+      document.querySelector('.plugins-install-screen .content-table')!.getBoundingClientRect()
+        .width,
+    ),
+    innerWidth: window.innerWidth,
+  }));
+  expect(pluginTable.width).toBeLessThanOrEqual(pluginTable.innerWidth);
+
+  await page.goto('http://127.0.0.1:5173/admin/users?action=add');
+  await expect(page.getByRole('heading', { name: 'Add User' })).toBeVisible();
+  await expect(page.locator('.user-new-page .password-row')).toBeVisible();
+  const userPassword = await page.evaluate(() => ({
+    row: Math.round(document.querySelector('.password-row')!.getBoundingClientRect().width),
+    input: Math.round(
+      document.querySelector('.user-new-page .password-row input')!.getBoundingClientRect().width,
+    ),
+    innerWidth: window.innerWidth,
+  }));
+  expect(userPassword.row).toBeLessThanOrEqual(userPassword.innerWidth);
+  expect(userPassword.input).toBeLessThanOrEqual(userPassword.innerWidth);
+});

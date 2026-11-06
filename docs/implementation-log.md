@@ -5306,3 +5306,21 @@ administrator:
 - Cleanup removed analytics rows, the temporary administrator/sessions and
   recent audit events. Production is back to 1 user, 2 posts, 0 media and 0
   analytics rows; public/admin/API routes return 200.
+
+### 2026-11-06 — Remaining admin routes measured; two mobile overflows fixed
+
+- Measured Themes, Add Themes, Fonts, Add Plugins, Add User, Site Health,
+  Updates and the Writing/Reading/Media/Permalinks/Privacy settings tabs at
+  1440×1000 and 375×812.
+- Fixed Add Plugins mobile overflow (582 → 375): the Installed package table no
+  longer inherits the 44rem list-table minimum and its action column is auto on
+  phones.
+- Fixed Add User mobile overflow (433 → 375): the password input no longer
+  forces a 350px flex basis beside the Show button; the row wraps and the input
+  fills the available width.
+- Extended `tests/e2e/admin-parity.spec.ts` with a sixth test for all 13 routes
+  at both viewports (no overflow; desktop screenshots for every route, mobile
+  screenshots for the two fixed screens).
+- Docs: design audit remaining-routes section.
+- Validation: 933 unit/integration tests (API 546, admin 257, web 52, contracts
+  13, block-system 65), 31 Playwright E2E tests and seven builds pass.
