@@ -462,3 +462,339 @@ test('Analytics, Languages, Backups and the Media folder manager keep the contro
   expect(mediaMobile.actionsWrap).toBe('wrap');
   expect(mediaMobile.scrollWidth).toBeLessThanOrEqual(mediaMobile.innerWidth);
 });
+
+test('remaining custom screens keep the WordPress control and responsive contracts', async ({
+  page,
+}, testInfo) => {
+  await login(page);
+
+  const screens: Array<{
+    name: string;
+    route: string;
+    heading: string;
+    wait: () => Promise<void>;
+    mobileShot?: boolean;
+  }> = [
+    {
+      name: 'consent',
+      route: '/admin/settings/consent',
+      heading: 'Consent',
+      wait: async () => {
+        await expect(page.getByRole('heading', { name: 'Preview' })).toBeVisible();
+      },
+      mobileShot: true,
+    },
+    {
+      name: 'connectors',
+      route: '/admin/settings/connectors',
+      heading: 'Connectors',
+      wait: async () => {
+        await expect(page.getByRole('heading', { name: 'Spam protection' })).toBeVisible();
+      },
+      mobileShot: true,
+    },
+    {
+      name: 'redirects',
+      route: '/admin/tools/redirects',
+      heading: 'Redirects',
+      wait: async () => {
+        await expect(page.getByRole('heading', { name: /Redirects \(/ })).toBeVisible();
+      },
+      mobileShot: true,
+    },
+    {
+      name: 'export-personal-data',
+      route: '/admin/tools/export-personal-data',
+      heading: 'Export Personal Data',
+      wait: async () => {
+        await expect(page.getByRole('heading', { name: 'Add Data Export Request' })).toBeVisible();
+      },
+      mobileShot: true,
+    },
+    {
+      name: 'erase-personal-data',
+      route: '/admin/tools/erase-personal-data',
+      heading: 'Erase Personal Data',
+      wait: async () => {
+        await expect(page.getByRole('heading', { name: 'Add Data Erasure Request' })).toBeVisible();
+      },
+    },
+    {
+      name: 'import',
+      route: '/admin/tools/import',
+      heading: 'Import',
+      wait: async () => {
+        await expect(page.getByText('Blogger', { exact: true })).toBeVisible();
+      },
+      mobileShot: true,
+    },
+    {
+      name: 'export',
+      route: '/admin/tools?section=export',
+      heading: 'Export',
+      wait: async () => {
+        await expect(page.getByRole('heading', { name: 'Choose what to export' })).toBeVisible();
+      },
+    },
+    {
+      name: 'profile',
+      route: '/admin/profile',
+      heading: 'Profile',
+      wait: async () => {
+        await expect(page.getByRole('heading', { name: 'Personal Options' })).toBeVisible();
+      },
+      mobileShot: true,
+    },
+    {
+      name: 'terms',
+      route: '/admin/terms?taxonomy=category',
+      heading: 'Categories',
+      wait: async () => {
+        await expect(page.getByRole('heading', { name: 'Add Category' })).toBeVisible();
+      },
+      mobileShot: true,
+    },
+    {
+      name: 'customize',
+      route: '/admin/themes/customize',
+      heading: 'Customizing: MERNPress',
+      wait: async () => {
+        await expect(page.getByRole('heading', { name: 'Customizing: MERNPress' })).toBeVisible();
+      },
+      mobileShot: true,
+    },
+    {
+      name: 'site-editor',
+      route: '/admin/site-editor',
+      heading: 'Design',
+      wait: async () => {
+        await expect(page.getByRole('heading', { name: 'Design' })).toBeVisible();
+      },
+      mobileShot: true,
+    },
+  ];
+
+  for (const screen of screens) {
+    await page.goto(`http://127.0.0.1:5173${screen.route}`);
+    await screen.wait();
+    const metrics = await h1AndOverflow(page);
+    expect(metrics.h1).toBe(screen.heading);
+    expect(metrics.scrollWidth, `${screen.name} desktop overflow`).toBeLessThanOrEqual(
+      metrics.innerWidth,
+    );
+    await testInfo.attach(`${screen.name}-desktop`, {
+      body: await page.screenshot({ fullPage: false }),
+      contentType: 'image/png',
+    });
+  }
+
+  // Redirects: the status select must stay inside the 1440 viewport.
+  await page.goto('http://127.0.0.1:5173/admin/tools/redirects');
+  await expect(page.getByRole('heading', { name: /Redirects \(/ })).toBeVisible();
+  const redirects = await page.evaluate(() => {
+    const form = document.querySelector('.redirect-form');
+    const status = document.querySelector('#redirect-status');
+    return {
+      scrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
+      formWidth: form ? Math.round(form.getBoundingClientRect().width) : null,
+      statusRight: status ? Math.round(status.getBoundingClientRect().right) : null,
+      statusWidth: status ? Math.round(status.getBoundingClientRect().width) : null,
+    };
+  });
+  expect(redirects.scrollWidth).toBeLessThanOrEqual(redirects.innerWidth);
+  expect(redirects.statusWidth).toBe(180);
+  expect(redirects.statusRight).toBeLessThanOrEqual(redirects.innerWidth);
+  expect(redirects.formWidth).toBeGreaterThan(1000);
+
+  // Connectors: aligned 760px stack and WordPress 40px inputs.
+  await page.goto('http://127.0.0.1:5173/admin/settings/connectors');
+  await expect(page.getByRole('heading', { name: 'Spam protection' })).toBeVisible();
+  await expect(page.getByText('OpenAI', { exact: true })).toBeVisible();
+  const connectors = await page.evaluate(() => {
+    const areas = ['.spam-guard-card', '.connectors-banner', '.connectors-list'].map((selector) => {
+      const element = document.querySelector(selector);
+      return element
+        ? {
+            x: Math.round(element.getBoundingClientRect().left),
+            width: Math.round(element.getBoundingClientRect().width),
+          }
+        : null;
+    });
+    const inputs = [
+      ...document.querySelectorAll('.spam-guard-thresholds input, .connector-connect input'),
+    ]
+      .slice(0, 4)
+      .map((element) => ({
+        height: Math.round(element.getBoundingClientRect().height),
+        font: getComputedStyle(element).fontSize,
+        radius: getComputedStyle(element).borderRadius,
+        border: getComputedStyle(element).borderColor,
+      }));
+    return { areas, inputs };
+  });
+  expect(connectors.areas).toEqual([
+    { x: 182, width: 760 },
+    { x: 182, width: 760 },
+    { x: 182, width: 760 },
+  ]);
+  for (const input of connectors.inputs) {
+    expect(input).toEqual({
+      height: 40,
+      font: '14px',
+      radius: '2px',
+      border: 'rgb(148, 148, 148)',
+    });
+  }
+
+  // Export filters: WordPress 40px selects/inputs.
+  await page.goto('http://127.0.0.1:5173/admin/tools?section=export');
+  await expect(page.getByRole('heading', { name: 'Choose what to export' })).toBeVisible();
+  const exportControls = await page.evaluate(() => {
+    const select = document.querySelector('.export-filter select');
+    const input = document.querySelector('.export-filter input');
+    const metrics = (element: Element | null) => {
+      if (!element) return null;
+      const style = getComputedStyle(element);
+      return {
+        height: Math.round(element.getBoundingClientRect().height),
+        font: style.fontSize,
+        radius: style.borderRadius,
+        border: style.borderColor,
+        padding: style.padding,
+      };
+    };
+    return { select: metrics(select), input: metrics(input) };
+  });
+  expect(exportControls.select).toEqual({
+    height: 40,
+    font: '14px',
+    radius: '2px',
+    border: 'rgb(148, 148, 148)',
+    padding: '0px 24px 0px 12px',
+  });
+  expect(exportControls.input).toEqual({
+    height: 40,
+    font: '14px',
+    radius: '2px',
+    border: 'rgb(148, 148, 148)',
+    padding: '0px 12px',
+  });
+
+  // Personal data request form.
+  await page.goto('http://127.0.0.1:5173/admin/tools/export-personal-data');
+  await expect(page.getByRole('heading', { name: 'Add Data Export Request' })).toBeVisible();
+  const personal = await page.evaluate(() => {
+    const input = document.querySelector('#requester-EXPORT');
+    const button = [...document.querySelectorAll('button')].find(
+      (element) => element.textContent?.trim() === 'Send Request',
+    );
+    const inputStyle = input ? getComputedStyle(input) : null;
+    return {
+      input: input
+        ? {
+            height: Math.round(input.getBoundingClientRect().height),
+            radius: inputStyle?.borderRadius ?? null,
+            border: inputStyle?.borderColor ?? null,
+          }
+        : null,
+      button: button ? { height: Math.round(button.getBoundingClientRect().height) } : null,
+    };
+  });
+  expect(personal.input).toEqual({ height: 40, radius: '2px', border: 'rgb(148, 148, 148)' });
+  expect(personal.button).toEqual({ height: 40 });
+
+  // Terms form controls and consent preview heading use the WordPress scale.
+  await page.goto('http://127.0.0.1:5173/admin/terms?taxonomy=category');
+  await expect(page.getByRole('heading', { name: 'Add Category' })).toBeVisible();
+  const terms = await page.evaluate(() => {
+    const input = document.querySelector('#term-new-name');
+    const select = document.querySelector('#term-new-parent');
+    const heading = document.querySelector('.terms-add-form h2');
+    return {
+      inputRadius: input ? getComputedStyle(input).borderRadius : null,
+      selectRadius: select ? getComputedStyle(select).borderRadius : null,
+      heading: heading
+        ? { font: getComputedStyle(heading).fontSize, margin: getComputedStyle(heading).margin }
+        : null,
+    };
+  });
+  expect(terms.inputRadius).toBe('2px');
+  expect(terms.selectRadius).toBe('2px');
+  expect(terms.heading).toEqual({ font: '16.9px', margin: '16.9px 0px' });
+
+  await page.goto('http://127.0.0.1:5173/admin/settings/consent');
+  await expect(page.getByRole('heading', { name: 'Preview' })).toBeVisible();
+  const consent = await page.evaluate(() => {
+    const heading = document.querySelector('.consent-preview h2');
+    return heading
+      ? { font: getComputedStyle(heading).fontSize, margin: getComputedStyle(heading).margin }
+      : null;
+  });
+  expect(consent).toEqual({ font: '16.9px', margin: '16.9px 0px 8px' });
+
+  // Customizer header and control scale (WordPress panel title 20/200 and
+  // standard 40px form controls).
+  await page.goto('http://127.0.0.1:5173/admin/themes/customize');
+  await expect(page.getByRole('heading', { name: 'Customizing: MERNPress' })).toBeVisible();
+  const customize = await page.evaluate(() => {
+    const heading = document.querySelector('.customize-header h1');
+    const input = document.querySelector(
+      '.customize-panel .field input[type=text], .customize-panel .field input:not([type])',
+    );
+    const headingStyle = heading ? getComputedStyle(heading) : null;
+    const inputStyle = input ? getComputedStyle(input) : null;
+    return {
+      heading: headingStyle
+        ? { font: headingStyle.fontSize, weight: headingStyle.fontWeight }
+        : null,
+      input: input
+        ? {
+            height: Math.round(input.getBoundingClientRect().height),
+            radius: inputStyle?.borderRadius ?? null,
+            border: inputStyle?.borderColor ?? null,
+          }
+        : null,
+    };
+  });
+  expect(customize.heading).toEqual({ font: '20px', weight: '200' });
+  expect(customize.input).toEqual({ height: 40, radius: '2px', border: 'rgb(148, 148, 148)' });
+
+  // Mobile pass over every screen; import and redirects get explicit assertions
+  // plus mobile screenshots because they previously overflowed or wrapped.
+  await page.setViewportSize({ width: 375, height: 812 });
+  for (const screen of screens) {
+    await page.goto(`http://127.0.0.1:5173${screen.route}`);
+    await screen.wait();
+    const metrics = await h1AndOverflow(page);
+    expect(metrics.scrollWidth, `${screen.name} mobile overflow`).toBeLessThanOrEqual(
+      metrics.innerWidth,
+    );
+    if (screen.mobileShot) {
+      await testInfo.attach(`${screen.name}-mobile`, {
+        body: await page.screenshot({ fullPage: false }),
+        contentType: 'image/png',
+      });
+    }
+  }
+
+  await page.goto('http://127.0.0.1:5173/admin/tools/import');
+  await expect(page.getByText('Blogger', { exact: true })).toBeVisible();
+  const importMobile = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    innerWidth: window.innerWidth,
+    tableWidth: Math.round(
+      document.querySelector('.importers-table')!.getBoundingClientRect().width,
+    ),
+  }));
+  expect(importMobile.scrollWidth).toBeLessThanOrEqual(importMobile.innerWidth);
+  expect(importMobile.tableWidth).toBeLessThanOrEqual(importMobile.innerWidth);
+
+  await page.goto('http://127.0.0.1:5173/admin/tools/redirects');
+  await expect(page.getByRole('heading', { name: /Redirects \(/ })).toBeVisible();
+  const redirectsMobile = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    innerWidth: window.innerWidth,
+  }));
+  expect(redirectsMobile.scrollWidth).toBeLessThanOrEqual(redirectsMobile.innerWidth);
+});

@@ -197,3 +197,37 @@ h2 scale, 32px media input) and the extended
 both viewports and attaches desktop/mobile screenshots to the report. The
 media test seeds an `Audit Root`/`Audit Child` tree in the disposable E2E
 database and removes it afterwards.
+
+## Remaining custom screens pass (2026-11-06, Consent/Connectors/Redirects/Personal Data/Import-Export/Profile/Terms/Customize/Site Editor)
+
+Measured at 1440×1000 and 375×812 against the WordPress 7.1.4 control
+contract, the saved Terms/Users/Posts screenshots and the `wp-admin` CSS source
+(`forms.css`, `customize-controls.css`). Only the differences that were fixed
+are listed; Profile, Site Editor and the Consent form controls already matched.
+
+| Screen | Metric | WordPress contract | MERNPress before | MERNPress after |
+| --- | --- | --- | --- | --- |
+| Redirects | desktop width | no overflow; inline form fits | **1498px scrollWidth**, Status select at x=1460 (off-screen) | **1440px**, fields 517/517/180, Status fully visible |
+| Redirects | field layout | label above control | labels and inputs shared a 210px grid inside each 1fr column | **label above control in three columns** |
+| Import | 375px width | table fits the viewport | **582px scrollWidth**, clipped importer text | **375px**, table 355px, text wraps |
+| Export | filters | 40px, 14px, #949494, radius 2 | native 32px, 13.33px, radius 0, #767676 | **40px/14px/#949494/2**, select `0 24 0 12`, input `0 12` |
+| Connectors | API/threshold inputs | 40px, 14px, #949494, radius 2 | native 21px, 13.33px, radius 0 | **40px/14px/#949494/2** |
+| Connectors | card/stack | balanced section width | spam card 760px at x=182; banner/list 630px centred at x=487 | **all 760px, left-aligned at x=182** |
+| Personal Data | request input/button | 40px form controls | input 30px/`3 8`; button 32px | **input 40px/`0 12`/radius 2; button 40px** |
+| Terms | add-form controls | radius 2 | radius 4 | **radius 2** (input, select, textarea) |
+| Terms | Add Category h2 | 16.9px/600 | 14.3px | **16.9px/600, 16.9px margin** |
+| Consent | Preview h2 | 16.9px/600 | 14px | **16.9px/600** |
+| Customize | header title | 20px/200 (panel title) | 16px/600 | **20px/200** |
+| Customize | field controls | 40px form controls | 30px/`3 8` | **40px/#949494/radius 2/`0 12`** |
+| All | 375px layout | no horizontal overflow | Import and Redirects overflowed | **all 11 screens 375 = 375** |
+
+Site Editor already measured 20px white heading, no overflow at either viewport.
+Profile/Consent fields already used the 40px settings control; their headings now
+share the 16.9px section scale.
+
+The extended `tests/e2e/admin-parity.spec.ts` (third test) covers these 11
+screens, asserts the redirect form/status position, import mobile table,
+connectors alignment/inputs, export filters, personal-data form, terms radius,
+consent preview heading and Customizer header/controls, and attaches desktop
+screenshots for every screen plus mobile screenshots for the layout-sensitive
+ones.

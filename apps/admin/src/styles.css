@@ -7189,9 +7189,9 @@ a.glance-chip:hover {
 }
 
 .wp-list-screen .terms-add-form h2 {
-  margin: 12px 0;
+  margin: 16.9px 0;
   padding: 0;
-  font-size: 14.3px;
+  font-size: 16.9px;
   font-weight: 600;
   color: #1d2327;
 }
@@ -7216,7 +7216,7 @@ a.glance-chip:hover {
   width: 100%;
   min-height: 40px;
   border: 1px solid #949494;
-  border-radius: 4px;
+  border-radius: 2px;
   font-size: 14px;
   padding: 0 12px;
 }
@@ -7229,7 +7229,7 @@ a.glance-chip:hover {
 .wp-list-screen .terms-add-form .field textarea {
   min-height: 118px;
   padding: 8px 12px;
-  border-radius: 4px;
+  border-radius: 2px;
 }
 
 .wp-list-screen .terms-add-form .field-help {
@@ -10241,8 +10241,9 @@ a.glance-chip:hover {
 
 .customize-header h1 {
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 200;
+  line-height: 1.3;
 }
 
 .customize-header-actions {
@@ -10293,8 +10294,32 @@ a.glance-chip:hover {
   font-size: 13px;
 }
 
-.customize-panel .field input {
+.customize-panel .field input[type='text'],
+.customize-panel .field input[type='url'],
+.customize-panel .field input[type='search'],
+.customize-panel .field input:not([type]),
+.customize-panel .field select {
   width: 100%;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #949494;
+  border-radius: 2px;
+  background: #ffffff;
+  color: #1e1e1e;
+  font-size: 14px;
+  line-height: normal;
+}
+
+.customize-panel .field textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid #949494;
+  border-radius: 2px;
+  background: #ffffff;
+  color: #1e1e1e;
+  font-size: 14px;
 }
 
 .customize-actions {
@@ -11134,8 +11159,10 @@ a.glance-chip:hover {
   line-height: 1.6;
 }
 
-.importers-table {
+.import-screen .importers-table {
   table-layout: auto;
+  width: 100%;
+  min-width: 0;
   margin-bottom: 20px;
 }
 
@@ -11228,6 +11255,21 @@ a.glance-chip:hover {
 .personal-data-panel .field input#requester-ERASE {
   width: 25rem;
   max-width: 100%;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #949494;
+  border-radius: 2px;
+  background: #ffffff;
+  color: #1e1e1e;
+  font-size: 14px;
+  line-height: normal;
+}
+
+.personal-data-panel .field.actions .button {
+  height: 40px;
+  min-height: 40px;
+  padding: 0 16px;
 }
 
 .personal-data-list {
@@ -11305,9 +11347,9 @@ a.glance-chip:hover {
 .connectors-list,
 .connectors-footer {
   width: 100%;
-  max-width: 630px;
-  margin-left: auto;
-  margin-right: auto;
+  max-width: 760px;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 .connectors-banner {
@@ -11400,14 +11442,22 @@ a.glance-chip:hover {
 
 .connector-connect input {
   width: 170px;
-  height: 32px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #949494;
+  border-radius: 2px;
+  background: #ffffff;
+  color: #1e1e1e;
+  font-size: 14px;
+  line-height: normal;
 }
 
 .connector-connect .button,
 .connector-row > .button {
-  height: 32px;
-  min-height: 32px;
-  padding: 0 12px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 16px;
   white-space: nowrap;
 }
 
@@ -12152,7 +12202,23 @@ a.glance-chip:hover {
 }
 
 .redirect-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   margin: 0;
+}
+
+.redirect-form .field > label,
+.redirect-form .field > input,
+.redirect-form .field > select {
+  grid-column: auto;
+  margin: 0;
+}
+
+.redirect-form .field input,
+.redirect-form .field select {
+  width: 100%;
+  max-width: 100%;
 }
 
 .redirect-form-actions {
@@ -12430,7 +12496,19 @@ a.glance-chip:hover {
 
 .export-filter select,
 .export-filter input {
-  min-height: 32px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #949494;
+  border-radius: 2px;
+  background: #ffffff;
+  color: #1e1e1e;
+  font-size: 14px;
+  line-height: normal;
+}
+
+.export-filter select {
+  padding: 0 24px 0 12px;
 }
 
 @media (max-width: 900px) {
@@ -12586,8 +12664,26 @@ a.glance-chip:hover {
 
 .spam-guard-head h2 {
   margin: 0;
-  font-size: 16px;
+  font-size: 16.9px;
   font-weight: 600;
+}
+
+.spam-guard-thresholds input {
+  height: 40px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #949494;
+  border-radius: 2px;
+  background: #ffffff;
+  color: #1e1e1e;
+  font-size: 14px;
+  line-height: normal;
+}
+
+.spam-guard-card .button.primary-button {
+  height: 40px;
+  min-height: 40px;
+  padding: 0 16px;
 }
 
 .spam-guard-badge {
@@ -13304,8 +13400,15 @@ select:not([multiple]):not([size]) {
 }
 
 .consent-preview h2 {
-  margin: 0 0 8px;
-  font-size: 14px;
+  margin: 16.9px 0 8px;
+  font-size: 16.9px;
+  font-weight: 600;
+}
+
+.consent-preview h2 {
+  margin: 16.9px 0 8px;
+  font-size: 16.9px;
+  font-weight: 600;
 }
 
 .consent-preview-card {

@@ -5107,3 +5107,27 @@ administrator and a temporary `Audit Root`/`Audit Child` folder tree:
   0 folders, 0 analytics rows (scheduler jobs remain); `/`, `/admin/`,
   `/admin/analytics`, `/admin/settings/languages`, `/admin/tools/backups`,
   `/admin/media`, `/api/health` and `/posts/testcom` return 200.
+
+### 2026-11-06 — Remaining custom admin screens measured and fixed
+
+- Measured Consent, Connectors, Redirects, Export/Erase Personal Data, Import,
+  Export, Profile, Terms, Customize and Site Editor at 1440×1000 and 375×812.
+  Fixed the real discrepancies:
+  - Redirects had a 1498px desktop scroll width and the Status select was at
+    x=1460 (off-screen). The form now stacks each label above its control in the
+    517/517/180 grid, no overflow, Status visible.
+  - Import overflowed to 582px at 375 (44rem list-table min-width); the
+    importers table now fills 355px and wraps text.
+  - Export filters were native selects/inputs; now 40px, 14px, #949494,
+    radius 2 with WordPress padding.
+  - Connectors threshold/API-key inputs were native 21px; now 40px WordPress
+    controls, and the spam card/banner/list share one 760px left-aligned stack.
+  - Personal Data request input/button are now 40px.
+  - Terms add-form controls use radius 2 and its h2 the 16.9px section scale.
+  - Consent Preview and Customizer header/control sizes follow the WordPress
+    16.9px section / 20px panel-title / 40px control scale.
+- Extended `tests/e2e/admin-parity.spec.ts` with a third test for all 11
+  screens, explicit control/overflow assertions and screenshot attachments
+  (desktop for every screen, mobile for the layout-sensitive ones).
+- Validation: 922 unit/integration tests (API 539, admin 253, web 52, contracts
+  13, block-system 65), 27 Playwright E2E tests and seven builds pass.
