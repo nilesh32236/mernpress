@@ -5049,3 +5049,23 @@ All three were `COMPLETED` with `attempts=1`; the log contained
   the background worker cannot add jobs mid-test.
 - Validation: 922 unit/integration tests (API 539, admin 253, web 52, contracts
   13, block-system 65), 25 Playwright E2E tests and seven builds pass.
+
+**Deployment (measured admin parity, release `20261106T162243Z-91e4ff3`):**
+verified in production with a temporary administrator:
+- Scheduled Actions at 1440 px: heading “Scheduled Actions”, 6 queue rows, the
+  search field measured 32 px with `0 12` padding, `#949494` border, 2 px radius
+  and 14 px font; the Actions column was static/visible (`Run now`), no
+  horizontal overflow (scrollWidth = innerWidth = 1440).
+- Plugins: the first body cell measured `10px 9px`, matching the WordPress
+  plugin-row rule.
+- Scheduled Actions at 375 px: 3 of 6 cells visible (`column-hook`,
+  `column-status`, `column-actions`), the toolbar stayed `display:flex`, the
+  action button had width, the first row was 41 px high and scrollWidth =
+  innerWidth = 375 (no blank rows, no horizontal scroll).
+- A new DOM regression test (`tests/e2e/admin-parity.spec.ts`) covers nine
+  screens plus the settings input, plugin padding and the Scheduled Actions
+  desktop/mobile contracts; the full suite passes 25/25.
+- Cleanup removed analytics rows, the temporary administrator/sessions and
+  recent audit events; the scheduler-created job history remains. Production is
+  back to 1 user, 2 posts, 0 media, 0 analytics rows; `/`, `/admin/`,
+  `/admin/tools/jobs`, `/api/health` and `/posts/testcom` return 200.
