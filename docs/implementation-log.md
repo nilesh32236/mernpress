@@ -4692,3 +4692,39 @@ Production verification with a temporary administrator:
   `--days 0` override.
 - Validation: targeted API/media/contracts/sitemap tests pass; full gates: 896 unit/integration tests (API 526, admin 242, web 50, contracts
   13, block-system 65), 24 Playwright E2E tests and seven builds pass.
+
+**Deployment (analytics retention + review hardening):** releases
+`20261106T133032Z-2427778` (feature/hardening), `20261106T133754Z-3c25b52`
+(redirect query fix) and `20261106T134114Z-43a8715` (current; Analytics nav
+restored to content roles). Production verification with a temporary
+administrator:
+- Settings → Privacy showed `analytics_retention_days` = 90 with the
+  “keep the last N days including today” label, and saved 7.
+- Four aggregate rows (today, today−6, today−7, today−30) were inserted; the
+  operator CLI printed “Pruned 2 analytics row(s); keeping 7 day(s) including
+  today (from 2026-10-31)” and left exactly the today and today−6 rows.
+- A today−9 row was then inserted and the API restarted; the boot sweep logged
+  `{"pruned":1,"retentionDays":7,"cutoffDay":"2026-10-31"}` and removed it.
+- Media: drawer folder options were `Uncategorized / Verify Root / — Verify
+  Child`; assigning the image to the child made `?folder=<child>` return 1;
+  duplicate `verify root` returned 409, root-under-child returned
+  `400 FOLDER_CYCLE`; folder select measured 32 px and the Rename action
+  measured 24 px, borderless, blue.
+- i18n: a published EN/HI pair rendered `/hi/posts/<slug>` with `<html lang="hi">`,
+  `hi/en/x-default` alternates and `"inLanguage":"hi"` JSON-LD; the solo
+  default post emitted no hreflang; the sitemap listed both variants with six
+  `xhtml:link` alternates and excluded a `noindex` post.
+- Redirects: `POSTS/<hi>?lang=hi` → 301 `/hi/posts/<hi>`,
+  `/hi/posts` → 301 `/posts`, `/hi/search?q=test` → 301 `/search?q=test`,
+  `/hi/category/news?page=2` → 301 `/category/news?page=2`, `/hi/feed` → 301
+  `/feed`.
+- Design measures: Analytics period select 32 px, Languages enabled rows span
+  the full fieldset width, Media folder selects 32 px with wrapping, and the
+  analytics submenu/command entry is gated on `content.read.any` (editors can
+  use the API; subscribers cannot).
+- Cleanup removed the verification posts, media, folders, analytics rows,
+  options (`site_languages`, `analytics_retention_days`, `theme_strings`,
+  `customizer_menus`), recent audit events and both temporary accounts;
+  production is back to 1 user, 2 posts, 0 media, 0 folders, 0 analytics rows,
+  with `/`, `/admin/`, `/admin/analytics`, `/admin/media`, `/api/health`,
+  `/posts/testcom` and `/sitemap.xml` at 200.
