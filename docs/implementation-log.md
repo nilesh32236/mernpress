@@ -5001,3 +5001,27 @@ temporary administrator and three temporary posts:
   cancel/filter/empty.
 - Validation: 922 unit/integration tests (API 539, admin 253, web 52, contracts
   13, block-system 65), 24 Playwright E2E tests and seven builds pass.
+
+**Deployment (durable background jobs, release `20261106T155113Z-e5b1197`):**
+migration `20261106160000_add_jobs` applied to production
+(`All migrations have been successfully applied`). After restarting the API
+with `SCHEDULER_ENABLED=true`, the scheduler/worker boot sequence was verified
+from the database and API log:
+- `notes.retention` enqueued at 15:52:33 and completed at 15:52:40;
+- `analytics.retention` enqueued at 15:52:40 and completed in the same second;
+- `jobs.cleanup` enqueued at 15:52:45 and completed at 15:52:55.
+All three were `COMPLETED` with `attempts=1`; the log contained
+`background retention job enqueued` and `background job completed` records.
+- Tools → Scheduled Actions rendered the jobs with status badges, attempts
+  `1/3`, scheduled times and status filter options; filtering `PENDING` showed
+  the two manually inserted verification jobs.
+- **Run now** on the pending `analytics.retention` row showed “Job rescheduled;
+  the worker will pick it up shortly.” and the worker completed it within the
+  next tick. **Cancel** on the pending `notes.retention` row showed “Job
+  cancelled.” and the row became `cancelled`.
+- Cleanup removed the two manual verification jobs, analytics rows, the
+  temporary administrator/sessions and recent audit events. The three
+  scheduler-created completed rows remain as normal queue history; production
+  is back to 1 user, 2 posts, 0 media, 0 folders and 0 analytics rows.
+  `/`, `/admin/`, `/admin/tools/jobs`, `/api/health`, `/posts/testcom` and
+  `/search?q=test` return 200.
