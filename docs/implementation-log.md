@@ -4947,3 +4947,26 @@ verified in production with a temporary administrator:
   category; admin ranking + status; existing search/visibility/term/date suites.
 - Validation: 911 unit/integration tests (API 531, admin 250, web 52, contracts
   13, block-system 65), 24 Playwright E2E tests and seven builds pass.
+
+**Deployment (ranked full-text search, releases `20261106T151612Z-d8c030e` and
+`20261106T152515Z-4c10a27`):** migration
+`20261106150500_add_post_search_vector` applied to production
+(`All migrations have been successfully applied`), then verified with a
+temporary administrator and three temporary posts:
+- Public `search=alpha` returned `[Search Lab Alpha, Search Lab Beta]`
+  (title match first, body-only match second) with total 2; `search=alph`
+  returned the same order after the substring tiebreakers; the quoted phrase
+  `"alpha appears only"` returned only `Search Lab Beta`; `search=%` returned 0
+  (LIKE wildcards are literal).
+- Admin `search=alpha` returned 3 (including the draft), `status=DRAFT`
+  returned only the draft, `status=PUBLISHED` returned 2, the current month
+  returned 3 and `month=2020-01` returned 0.
+- `/search?q=alpha` rendered “Search results for: “alpha”” with both posts.
+- `EXPLAIN` with `enable_seqscan=off` showed
+  `Bitmap Index Scan on posts_search_vector_idx` for the `@@` predicate,
+  confirming the GIN index is used.
+- Cleanup deleted the three temporary posts, analytics rows, the temporary
+  administrator/sessions and recent audit events: production is back to 1 user,
+  2 posts, 0 media, 0 folders and 0 analytics rows; `/`, `/admin/`,
+  `/api/health`, `/posts/testcom`, `/search?q=test` and `/sitemap.xml` all
+  return 200.
