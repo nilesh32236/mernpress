@@ -2150,6 +2150,13 @@ a.glance-chip:hover {
   padding: 0;
 }
 
+.settings-panel > h2 {
+  margin: 16.9px 0;
+  font-size: 16.9px;
+  font-weight: 600;
+  color: #1d2327;
+}
+
 .settings-panel .field {
   display: grid;
   grid-template-columns: 210px minmax(0, 1fr);
@@ -13423,8 +13430,9 @@ select:not([multiple]):not([size]) {
 }
 
 .languages-extras h2 {
-  margin: 0 0 8px;
-  font-size: 16px;
+  margin: 16.9px 0;
+  font-size: 16.9px;
+  font-weight: 600;
 }
 
 .languages-strings-grid {
@@ -13459,6 +13467,24 @@ select:not([multiple]):not([size]) {
   height: 32px;
   min-height: 32px;
   padding: 0 24px 0 8px;
+  border: 1px solid #949494;
+  border-radius: 2px;
+  background-color: #ffffff;
+  color: #1e1e1e;
+  font-size: 14px;
+  line-height: 30px;
+}
+
+.media-folder-inline input {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid #949494;
+  border-radius: 2px;
+  background: #ffffff;
+  color: #1e1e1e;
+  font-size: 14px;
+  line-height: normal;
 }
 
 .media-folder-bar,
@@ -13806,4 +13832,11 @@ button.button-link.is-danger {
     flex-wrap: wrap;
     white-space: normal;
   }
+}
+
+/* Keep the folder/period selects on the WordPress 32px control line. */
+.media-folder-bar select,
+.media-folder-inline select,
+.analytics-range select {
+  line-height: 30px;
 }

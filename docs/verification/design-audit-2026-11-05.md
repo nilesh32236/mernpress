@@ -170,3 +170,30 @@ Not changed: the WordPress 7.1 standard button is 40px in
 `page-title-action`); the settings Save button at 40px and list-page actions at
 32px are therefore correct. The Customizer/menu, Akismet, pings and file-editor
 deviations recorded above remain deliberate.
+
+## Custom-screen control pass (2026-11-06, Analytics / Languages / Backups / Media)
+
+The four screens without a direct WordPress core equivalent were measured against
+the WordPress control contract (32px list controls, 14px `#949494` inputs with
+2px radius, 1.3em = 16.9px section headings) and the saved media screenshot.
+Measurements at 1440×1000 and 375×812.
+
+| Screen | Metric | WordPress contract | MERNPress before | MERNPress after |
+| --- | --- | --- | --- | --- |
+| Analytics | period select | 32px, 14px, #949494, radius 2 | 32px but native 13.33px, radius 0, #767676 | **32px, 14px, #949494, radius 2** |
+| Analytics | privacy text width | readable measure | 820px | match |
+| Languages | section h2 (Theme strings / Language menu) | 16.9px/600, margin 1em | 14–16px, 8px margin | **16.9px/600, 16.9px margin** |
+| Languages | text/select fields | 40px, #949494, radius 2 | 40px, #949494, radius 2 | match |
+| Backups | section h2 (Create a backup / Stored backups) | 16.9px/600, margin 1em | 14px, 7px gap under h1 | **16.9px/600, 16.9px margin** |
+| Backups | primary section button | standard/compact WP button | 32px, padding 0 10, radius 2 | match (compact action) |
+| Media | folder filter/parent selects | list select 32px, 14px, #949494, radius 2 | 32px but native 13.33px, radius 0, #767676 | **32px, 14px, #949494, radius 2** |
+| Media | New folder input | list text input 32px, 14px, #949494, radius 2, padding 0 12 | 28px, 13px, padding 0 8 | **32px, 14px, #949494, radius 2, padding 0 12** |
+| Media | folder tree rows/actions | visible management + wrap | tree present; controls native-sized | **3 tree rows incl. Uncategorized; actions wrap; no overflow** |
+| All four | 375px layout | no horizontal overflow | no overflow | no overflow; media selects/input stay 32px |
+
+Changes: `apps/admin/src/styles.css` (media/analytics control sizing, settings
+h2 scale, 32px media input) and the extended
+`tests/e2e/admin-parity.spec.ts`, which now also covers these four screens at
+both viewports and attaches desktop/mobile screenshots to the report. The
+media test seeds an `Audit Root`/`Audit Child` tree in the disposable E2E
+database and removes it afterwards.

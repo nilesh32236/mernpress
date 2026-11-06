@@ -53,6 +53,14 @@ test.beforeAll(() => {
       testDatabaseUrl,
       '-c',
       `DELETE FROM jobs;
+       DELETE FROM media_folders;
+       WITH root AS (
+         INSERT INTO media_folders (id, name, created_at, updated_at)
+         VALUES (gen_random_uuid(), 'Audit Root', now(), now())
+         RETURNING id
+       )
+       INSERT INTO media_folders (id, name, parent_id, created_at, updated_at)
+       SELECT gen_random_uuid(), 'Audit Child', id, now(), now() FROM root;
        INSERT INTO jobs (id, type, payload, status, priority, attempts, max_attempts, scheduled_at, completed_at, created_at, updated_at)
        VALUES
          (gen_random_uuid(), 'analytics.retention', '{}', 'COMPLETED', 0, 1, 3, now() - interval '5 minutes', now() - interval '5 minutes', now(), now()),
@@ -70,7 +78,8 @@ test.afterAll(() => {
       '-c',
       `DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE username = '${adminUsername}');
        DELETE FROM users WHERE username = '${adminUsername}';
-       DELETE FROM jobs WHERE type IN ('analytics.retention', 'notes.retention');`,
+       DELETE FROM jobs WHERE type IN ('analytics.retention', 'notes.retention');
+       DELETE FROM media_folders WHERE name IN ('Audit Root', 'Audit Child');`,
     ],
     { stdio: 'pipe' },
   );
@@ -130,9 +139,7 @@ test('remaining admin screens keep the measured WordPress chrome contract', asyn
   await expect(page.getByRole('heading', { level: 1, name: 'General Settings' })).toBeVisible();
   await expect(page.locator('#site_title')).toBeVisible();
   const settings = await page.evaluate(() => {
-    const input = document.querySelector(
-      '.settings-panel .field input:not([type]), .settings-panel .field input[type=text]',
-    );
+    const input = document.getElementById('site_title');
     if (!input) return null;
     const style = getComputedStyle(input);
     return {
@@ -242,4 +249,216 @@ test('remaining admin screens keep the measured WordPress chrome contract', asyn
     body: await page.screenshot({ fullPage: true }),
     contentType: 'image/png',
   });
+});
+
+test('Analytics, Languages, Backups and the Media folder manager keep the control and responsive contracts', async ({
+  page,
+}, testInfo) => {
+  await login(page);
+
+  const screens: Array<[string, string, () => Promise<void>]> = [
+    [
+      'analytics',
+      '/admin/analytics',
+      async () => {
+        await expect(page.getByRole('heading', { name: 'Views per day' })).toBeVisible();
+      },
+    ],
+    [
+      'languages',
+      '/admin/settings/languages',
+      async () => {
+        await expect(page.getByRole('heading', { name: 'Theme strings' })).toBeVisible();
+      },
+    ],
+    [
+      'backups',
+      '/admin/tools/backups',
+      async () => {
+        await expect(page.getByRole('heading', { name: /Stored backups/ })).toBeVisible();
+      },
+    ],
+    [
+      'media',
+      '/admin/media',
+      async () => {
+        await expect(page.locator('.folder-manager summary')).toBeVisible();
+      },
+    ],
+  ];
+
+  for (const [name, route, waitFor] of screens) {
+    await page.goto(`http://127.0.0.1:5173${route}`);
+    await waitFor();
+    const metrics = await h1AndOverflow(page);
+    expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth);
+    await testInfo.attach(`${name}-desktop`, {
+      body: await page.screenshot({ fullPage: true }),
+      contentType: 'image/png',
+    });
+  }
+
+  await page.goto('http://127.0.0.1:5173/admin/analytics');
+  await expect(page.getByRole('heading', { name: 'Views per day' })).toBeVisible();
+  const analytics = await page.evaluate(() => {
+    const select = document.querySelector('.analytics-range select');
+    if (!select) return null;
+    const style = getComputedStyle(select);
+    const privacy = document.querySelector('.analytics-privacy');
+    return {
+      select: {
+        height: Math.round(select.getBoundingClientRect().height),
+        font: style.fontSize,
+        radius: style.borderRadius,
+        border: style.borderColor,
+        padding: style.padding,
+      },
+      privacyWidth: privacy ? Math.round(privacy.getBoundingClientRect().width) : null,
+    };
+  });
+  expect(analytics?.select).toEqual({
+    height: 32,
+    font: '14px',
+    radius: '2px',
+    border: 'rgb(148, 148, 148)',
+    padding: '0px 24px 0px 8px',
+  });
+  expect(analytics?.privacyWidth).toBeLessThanOrEqual(820);
+
+  await page.goto('http://127.0.0.1:5173/admin/settings/languages');
+  await expect(page.getByRole('heading', { name: 'Theme strings' })).toBeVisible();
+  const languages = await page.evaluate(() => {
+    const h2 = [...document.querySelectorAll('.settings-panel > h2')].find(
+      (element) => element.textContent?.trim() === 'Theme strings',
+    );
+    const input = document.querySelector('#theme-strings-filter');
+    return {
+      heading: h2
+        ? {
+            font: getComputedStyle(h2).fontSize,
+            margin: getComputedStyle(h2).margin,
+            weight: getComputedStyle(h2).fontWeight,
+          }
+        : null,
+      input: input
+        ? {
+            height: Math.round(input.getBoundingClientRect().height),
+            radius: getComputedStyle(input).borderRadius,
+            border: getComputedStyle(input).borderColor,
+          }
+        : null,
+    };
+  });
+  expect(languages.heading).toEqual({ font: '16.9px', margin: '16.9px 0px', weight: '600' });
+  expect(languages.input).toEqual({ height: 40, radius: '2px', border: 'rgb(148, 148, 148)' });
+
+  await page.goto('http://127.0.0.1:5173/admin/tools/backups');
+  await expect(page.getByRole('heading', { name: /Stored backups/ })).toBeVisible();
+  const backups = await page.evaluate(() => {
+    const h2 = [...document.querySelectorAll('.settings-panel > h2')].find(
+      (element) => element.textContent?.trim() === 'Create a backup',
+    );
+    const button = [...document.querySelectorAll('button')].find(
+      (element) => element.textContent?.trim() === 'Create backup',
+    );
+    return {
+      heading: h2
+        ? { font: getComputedStyle(h2).fontSize, margin: getComputedStyle(h2).margin }
+        : null,
+      button: button
+        ? {
+            height: Math.round(button.getBoundingClientRect().height),
+            padding: getComputedStyle(button).padding,
+            radius: getComputedStyle(button).borderRadius,
+          }
+        : null,
+    };
+  });
+  expect(backups.heading).toEqual({ font: '16.9px', margin: '16.9px 0px' });
+  expect(backups.button).toEqual({ height: 32, padding: '0px 10px', radius: '2px' });
+
+  await page.goto('http://127.0.0.1:5173/admin/media');
+  await expect(page.locator('.folder-manager summary')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Audit Root' })).toBeVisible();
+  const media = await page.evaluate(() => {
+    const select = document.querySelector('.media-folder-bar select');
+    const input = document.querySelector('.media-folder-inline input');
+    const rows = document.querySelectorAll('.folder-tree-item');
+    const actions = document.querySelector('.folder-tree-actions');
+    const style = (element: Element | null) => (element ? getComputedStyle(element) : null);
+    const selectStyle = style(select);
+    const inputStyle = style(input);
+    return {
+      select: select
+        ? {
+            height: Math.round(select.getBoundingClientRect().height),
+            font: selectStyle?.fontSize ?? null,
+            radius: selectStyle?.borderRadius ?? null,
+            border: selectStyle?.borderColor ?? null,
+          }
+        : null,
+      input: input
+        ? {
+            height: Math.round(input.getBoundingClientRect().height),
+            radius: inputStyle?.borderRadius ?? null,
+            border: inputStyle?.borderColor ?? null,
+            padding: inputStyle?.padding ?? null,
+          }
+        : null,
+      folderRows: rows.length,
+      actionsWrap: actions ? (style(actions)?.flexWrap ?? null) : null,
+      toolbarWrap: document.querySelector('.media-folder-bar')
+        ? getComputedStyle(document.querySelector('.media-folder-bar')!).flexWrap
+        : null,
+    };
+  });
+  expect(media.select).toEqual({
+    height: 32,
+    font: '14px',
+    radius: '2px',
+    border: 'rgb(148, 148, 148)',
+  });
+  expect(media.input).toEqual({
+    height: 32,
+    radius: '2px',
+    border: 'rgb(148, 148, 148)',
+    padding: '0px 12px',
+  });
+  expect(media.folderRows).toBeGreaterThanOrEqual(3);
+  expect(media.actionsWrap).toBe('wrap');
+  expect(media.toolbarWrap).toBe('wrap');
+
+  // Mobile pass for the same four screens: no horizontal overflow, and the
+  // media folder controls stay on the 32px touch target.
+  await page.setViewportSize({ width: 375, height: 812 });
+  for (const [name, route, waitFor] of screens) {
+    await page.goto(`http://127.0.0.1:5173${route}`);
+    await waitFor();
+    const metrics = await h1AndOverflow(page);
+    expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth);
+    await testInfo.attach(`${name}-mobile`, {
+      body: await page.screenshot({ fullPage: true }),
+      contentType: 'image/png',
+    });
+  }
+
+  await page.goto('http://127.0.0.1:5173/admin/media');
+  await expect(page.locator('.folder-manager summary')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Audit Root' })).toBeVisible();
+  const mediaMobile = await page.evaluate(() => {
+    const select = document.querySelector('.media-folder-bar select');
+    const input = document.querySelector('.media-folder-inline input');
+    const actions = document.querySelector('.folder-tree-actions');
+    return {
+      select: select ? Math.round(select.getBoundingClientRect().height) : null,
+      input: input ? Math.round(input.getBoundingClientRect().height) : null,
+      actionsWrap: actions ? getComputedStyle(actions).flexWrap : null,
+      scrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
+    };
+  });
+  expect(mediaMobile.select).toBe(32);
+  expect(mediaMobile.input).toBe(32);
+  expect(mediaMobile.actionsWrap).toBe('wrap');
+  expect(mediaMobile.scrollWidth).toBeLessThanOrEqual(mediaMobile.innerWidth);
 });

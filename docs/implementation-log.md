@@ -5069,3 +5069,22 @@ verified in production with a temporary administrator:
   recent audit events; the scheduler-created job history remains. Production is
   back to 1 user, 2 posts, 0 media, 0 analytics rows; `/`, `/admin/`,
   `/admin/tools/jobs`, `/api/health` and `/posts/testcom` return 200.
+
+### 2026-11-06 — Custom-screen design contract (Analytics/Languages/Backups/Media)
+
+- Measured Analytics, Languages, Backups and the Media folder manager at
+  1440×1000 and 375×812 against the WordPress control contract and the saved
+  media screenshot.
+- Fixed native-looking controls: Analytics period and Media folder
+  filter/parent selects are now 32px, 14px, `#949494`, radius 2; the New folder
+  input is 32px with `0 12` padding (was 28px/`0 8`).
+- Section headings inside settings panels now use the WordPress 1.3em scale:
+  16.9px/600 with a 16.9px margin (Backups sections, Languages Theme
+  strings/Language menu); the previous 14px headings sat too close to the h1.
+- Extended `tests/e2e/admin-parity.spec.ts` with a second test: all four screens
+  at desktop and mobile (no overflow), Analytics select metrics, Languages h2
+  and filter input, Backups h2/button, Media folder control sizes, seeded
+  folder tree (3 rows incl. Uncategorized), action wrapping and mobile 32px
+  targets. Eight desktop/mobile screenshots attach to the report.
+- Validation: 922 unit/integration tests (API 539, admin 253, web 52, contracts
+  13, block-system 65), 26 Playwright E2E tests and seven builds pass.
