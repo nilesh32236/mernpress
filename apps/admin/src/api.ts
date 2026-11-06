@@ -2282,16 +2282,13 @@ export async function deleteMediaFolder(id: string): Promise<void> {
   if (!response.ok) await readJson(response);
 }
 
-export interface MediaRegenerateResult {
-  processed: number;
-  failed: number;
-  remaining: number;
-  nextAfter: string | null;
+export interface MediaRegenerateQueued {
+  job: ScheduledJob;
 }
 
-export async function regenerateMediaDerivatives(
-  input: { after?: string; limit?: number } = {},
-): Promise<MediaRegenerateResult> {
+export async function queueMediaRegeneration(
+  input: { folderId?: string | null } = {},
+): Promise<MediaRegenerateQueued> {
   const response = await fetch('/api/admin/media/regenerate', {
     method: 'POST',
     credentials: 'include',
@@ -2303,7 +2300,7 @@ export async function regenerateMediaDerivatives(
     },
     body: JSON.stringify(input),
   });
-  return readJson<MediaRegenerateResult>(response);
+  return readJson<MediaRegenerateQueued>(response);
 }
 
 export async function getMedia(id: string): Promise<MediaItem> {

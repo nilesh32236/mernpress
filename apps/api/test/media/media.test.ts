@@ -12,7 +12,10 @@ import {
   seedAdmin,
   seedUser,
 } from '../helpers/auth.js';
+import { createJobQueueService } from '@mernpress/cms-core';
 import { closeMediaTestApp, createMediaTestApp } from './helpers.js';
+import { createJobHandlers } from '../../src/jobs/handlers.js';
+import { createJobWorker } from '../../src/jobs/worker.js';
 
 interface ErrorEnvelope {
   error: { code: string; message: string; requestId: string };
@@ -1091,107 +1094,169 @@ describe('admin media library', () => {
       await expect(readFile(backupPath)).rejects.toThrow();
     });
   });
-  describe('bulk derivative regeneration', () => {
-    async function regenerate(headers: Record<string, string>, body: Record<string, unknown> = {}) {
-      return app.inject({
+  describe('bulk derivative regeneration job', () => {
+    function queue() {
+      return createJobQueueService({ prisma: app.database });
+    }
+
+    function worker() {
+      const jobs = queue();
+      return createJobWorker({
+        queue: jobs,
+        handlers: createJobHandlers({
+          prisma: app.database,
+          notes: app.notes,
+          analytics: app.analytics,
+          jobs,
+          backups: app.backups,
+          media: app.media,
+        }),
+        logger: { info: () => undefined, warn: () => undefined, error: () => undefined },
+        workerId: 'media-regenerate-test',
+      });
+    }
+
+    async function regenerate(
+      headers: Record<string, string>,
+      body: Record<string, unknown> = {},
+    ): Promise<{ job: { id: string; status: string; attempts: number; maxAttempts: number } }> {
+      const response = await app.inject({
         method: 'POST',
         url: '/api/admin/media/regenerate',
         headers: { ...headers, 'content-type': 'application/json' },
         payload: body,
       });
+      expect(response.statusCode).toBe(202);
+      return response.json() as {
+        job: { id: string; status: string; attempts: number; maxAttempts: number };
+      };
     }
 
-    it('rebuilds missing derivative files and reports the batch', async () => {
+    async function createFolder(name: string): Promise<string> {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/admin/media/folders',
+        headers: { ...adminHeaders(), 'content-type': 'application/json' },
+        payload: { name },
+      });
+      expect(response.statusCode).toBe(201);
+      return (response.json() as { id: string }).id;
+    }
+
+    async function assignFolder(id: string, folderId: string): Promise<void> {
+      const response = await app.inject({
+        method: 'PATCH',
+        url: `/api/admin/media/${id}`,
+        headers: { ...adminHeaders(), 'content-type': 'application/json' },
+        payload: { folderId },
+      });
+      expect(response.statusCode).toBe(200);
+    }
+
+    async function derivativePath(media: MediaShape, width = '600'): Promise<string> {
+      const url = media.derivatives[width];
+      expect(url).toBeTruthy();
+      return findStoredFile(storageRoot, path.basename(url!));
+    }
+
+    it('queues regeneration, rebuilds missing derivatives and exposes the job', async () => {
       const created = await createMedia({
         filename: 'regen.png',
         contentType: 'image/png',
         data: png,
       });
-      const derivativeUrl = created.derivatives['600'];
-      expect(derivativeUrl).toBeTruthy();
-      const derivativeName = path.basename(derivativeUrl!);
-      const derivativePath = await findStoredFile(storageRoot, derivativeName);
-      await rm(derivativePath);
-      await expect(readFile(derivativePath)).rejects.toThrow();
+      const missing = await derivativePath(created);
+      await rm(missing);
+      await expect(readFile(missing)).rejects.toThrow();
 
-      const response = await regenerate(adminHeaders(), { limit: 10 });
-      expect(response.statusCode).toBe(200);
-      const result = response.json() as {
-        processed: number;
-        failed: number;
-        remaining: number;
-        nextAfter: string | null;
-      };
-      expect(result.processed).toBe(1);
-      expect(result.failed).toBe(0);
-      expect(result.remaining).toBe(0);
-      expect(result.nextAfter).toBeNull();
+      const queued = await regenerate(adminHeaders());
+      expect(queued.job.status).toBe('PENDING');
 
-      const rebuilt = await readFile(derivativePath);
+      const duplicate = await app.inject({
+        method: 'POST',
+        url: '/api/admin/media/regenerate',
+        headers: { ...adminHeaders(), 'content-type': 'application/json' },
+        payload: {},
+      });
+      expect(duplicate.statusCode).toBe(409);
+      expect((duplicate.json() as ErrorEnvelope).error.code).toBe('MEDIA_REGENERATE_IN_PROGRESS');
+
+      const result = await worker().tick();
+      expect(result).toMatchObject({ claimed: 1, completed: 1, failed: 0 });
+
+      const rebuilt = await readFile(missing);
       expect(rebuilt.length).toBeGreaterThan(0);
       const listed = await app.inject({
         method: 'GET',
         url: `/api/admin/media/${created.id}`,
         headers: { cookie: adminCookie },
       });
-      expect((listed.json() as MediaShape).derivatives['600']).toBe(derivativeUrl);
+      expect((listed.json() as MediaShape).derivatives['600']).toBe(created.derivatives['600']);
+
+      const job = await app.inject({
+        method: 'GET',
+        url: `/api/admin/jobs/${queued.job.id}`,
+        headers: { cookie: adminCookie },
+      });
+      expect((job.json() as { status: string; attempts: number }).status).toBe('COMPLETED');
+      expect((job.json() as { attempts: number }).attempts).toBe(1);
     });
 
-    it('walks the library with a cursor and survives a missing canonical file', async () => {
-      const first = await createMedia({
-        filename: 'regen-a.png',
+    it('regenerates only the requested folder and leaves other media untouched', async () => {
+      const folderId = await createFolder('Regenerate folder');
+      const inside = await createMedia({
+        filename: 'inside.png',
         contentType: 'image/png',
         data: png,
       });
-      const second = await createMedia({
-        filename: 'regen-b.png',
+      await assignFolder(inside.id, folderId);
+      const outside = await createMedia({
+        filename: 'outside.png',
         contentType: 'image/png',
         data: png,
       });
-      const third = await createMedia({
-        filename: 'regen-c.png',
-        contentType: 'image/png',
-        data: png,
-      });
+      const insideFile = await derivativePath(inside);
+      const outsideFile = await derivativePath(outside);
+      await rm(insideFile);
+      await rm(outsideFile);
 
-      const batchOne = await regenerate(adminHeaders(), { limit: 2 });
-      expect(batchOne.statusCode).toBe(200);
-      const one = batchOne.json() as {
-        processed: number;
-        failed: number;
-        remaining: number;
-        nextAfter: string | null;
-      };
-      expect(one.processed).toBe(2);
-      expect(one.remaining).toBe(1);
-      expect(one.nextAfter).toBeTruthy();
+      await regenerate(adminHeaders(), { folderId });
+      expect(await worker().tick()).toMatchObject({ claimed: 1, completed: 1, failed: 0 });
 
-      const batchTwo = await regenerate(adminHeaders(), {
-        limit: 2,
-        after: one.nextAfter,
-      });
-      const two = batchTwo.json() as {
-        processed: number;
-        failed: number;
-        remaining: number;
-        nextAfter: string | null;
-      };
-      expect(two.processed).toBe(1);
-      expect(two.remaining).toBe(0);
-      expect(two.nextAfter).toBeNull();
-
-      // Remove a canonical file: the batch reports a failure and keeps going.
-      const thirdPath = await findStoredFile(storageRoot, third.fileName);
-      await rm(thirdPath);
-      const failedBatch = await regenerate(adminHeaders(), {
-        limit: 50,
-        after: [first.id, second.id, third.id].sort()[1],
-      });
-      expect(failedBatch.statusCode).toBe(200);
-      expect((failedBatch.json() as { failed: number }).failed).toBeGreaterThanOrEqual(1);
+      expect((await readFile(insideFile)).length).toBeGreaterThan(0);
+      await expect(readFile(outsideFile)).rejects.toThrow();
     });
 
-    it('rejects anonymous and subscriber callers and validates the body', async () => {
+    it('retries a failed regeneration and marks the job failed at maxAttempts', async () => {
+      const created = await createMedia({
+        filename: 'broken.png',
+        contentType: 'image/png',
+        data: png,
+      });
+      const canonical = await findStoredFile(storageRoot, created.fileName);
+      await rm(canonical);
+
+      const queued = await regenerate(adminHeaders());
+      const first = await worker().tick();
+      expect(first.failed).toBe(1);
+
+      let job = await app.database.job.findUniqueOrThrow({ where: { id: queued.job.id } });
+      expect(job.status).toBe('PENDING');
+      expect(job.attempts).toBe(1);
+      expect(job.lastError).toContain('could not be regenerated');
+
+      await app.database.job.update({
+        where: { id: queued.job.id },
+        data: { scheduledAt: new Date(0) },
+      });
+      const second = await worker().tick();
+      expect(second.failed).toBe(1);
+      job = await app.database.job.findUniqueOrThrow({ where: { id: queued.job.id } });
+      expect(job.status).toBe('FAILED');
+      expect(job.attempts).toBe(2);
+    });
+
+    it('rejects anonymous and subscriber callers and validates the folder id', async () => {
       const anonymous = await app.inject({
         method: 'POST',
         url: '/api/admin/media/regenerate',
@@ -1201,10 +1266,26 @@ describe('admin media library', () => {
       expect(anonymous.statusCode).toBe(401);
 
       const subscriber = await createSession('regen-subscriber', 'subscriber');
-      const forbidden = await regenerate(sessionHeaders(subscriber.session));
+      const forbidden = await app.inject({
+        method: 'POST',
+        url: '/api/admin/media/regenerate',
+        headers: {
+          cookie: subscriber.session.cookie,
+          'x-csrf-token': subscriber.session.csrf,
+          origin: ADMIN_ORIGIN,
+          'content-type': 'application/json',
+        },
+        payload: {},
+      });
       expect(forbidden.statusCode).toBe(403);
+      expect(await app.database.job.count({ where: { type: 'media.regenerate' } })).toBe(0);
 
-      const invalid = await regenerate(adminHeaders(), { limit: 500 });
+      const invalid = await app.inject({
+        method: 'POST',
+        url: '/api/admin/media/regenerate',
+        headers: { ...adminHeaders(), 'content-type': 'application/json' },
+        payload: { folderId: 'not-a-uuid' },
+      });
       expect(invalid.statusCode).toBe(400);
     });
   });

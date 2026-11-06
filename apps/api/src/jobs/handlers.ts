@@ -3,6 +3,7 @@ import type {
   BackupService,
   JobHandler,
   JobQueueService,
+  MediaService,
   NoteService,
 } from '@mernpress/cms-core';
 import type { DatabaseClient } from '@mernpress/database';
@@ -20,6 +21,7 @@ interface HandlerOptions {
   analytics: AnalyticsService;
   jobs: JobQueueService;
   backups: BackupService;
+  media: MediaService;
   logger?: { info(meta: Record<string, unknown>, message: string): void } | undefined;
 }
 
@@ -49,12 +51,54 @@ async function optionNumber(
 
 /** Handlers registered with the durable worker (ADR 0054). */
 export function createJobHandlers(options: HandlerOptions): Record<string, JobHandler> {
-  const { prisma, notes, analytics, jobs, backups, logger } = options;
+  const { prisma, notes, analytics, jobs, backups, media, logger } = options;
 
   return {
     [JOB_TYPES.backupCreate]: async () => {
       const result = await backups.createSystem();
       logger?.info({ backups: result.backups.length }, 'backup created');
+    },
+    [JOB_TYPES.mediaRegenerate]: async (payload) => {
+      const raw = payload as { folderId?: unknown } | null;
+      if (
+        raw !== null &&
+        typeof raw === 'object' &&
+        raw.folderId !== undefined &&
+        raw.folderId !== null &&
+        typeof raw.folderId !== 'string'
+      ) {
+        throw new Error('Invalid media.regenerate folderId payload.');
+      }
+      const folderId =
+        raw && typeof raw === 'object' && 'folderId' in raw
+          ? (raw.folderId as string | null)
+          : undefined;
+      let after: string | undefined;
+      let processed = 0;
+      let failed = 0;
+      for (let batch = 0; batch < 10_000; batch += 1) {
+        const result = await media.regenerateDerivativesSystem({
+          ...(folderId === undefined ? {} : { folderId }),
+          ...(after ? { after } : {}),
+          limit: 20,
+        });
+        processed += result.processed;
+        failed += result.failed;
+        if (!result.nextAfter) break;
+        if (result.nextAfter === after) {
+          throw new Error('Media regeneration cursor did not advance.');
+        }
+        after = result.nextAfter;
+      }
+      logger?.info(
+        { processed, failed, folderId: folderId ?? null },
+        'media derivatives regenerated',
+      );
+      if (failed > 0) {
+        throw new Error(
+          `${failed} image(s) could not be regenerated; see the API log for item ids.`,
+        );
+      }
     },
     [JOB_TYPES.notesRetention]: async () => {
       const days = await optionNumber(

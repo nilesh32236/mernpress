@@ -417,7 +417,13 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerOptionRoutes(app, { env, auth, options: optionService });
   registerScheduleRoutes(app, { env, auth, schedule });
   registerContentBulkRoutes(app, { env, auth, bulk });
-  registerMediaRoutes(app, { env, auth, media, storageRoot: env.MEDIA_STORAGE_DIR });
+  registerMediaRoutes(app, {
+    env,
+    auth,
+    media,
+    jobs,
+    storageRoot: env.MEDIA_STORAGE_DIR,
+  });
   registerAutosaveRoutes(app, { env, auth, autosave });
   registerAdminHealthRoutes(app, { env, auth, database });
   registerPublicContentRoutes(app, { content, options: optionService, themes });
@@ -454,6 +460,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
         analytics,
         jobs,
         backups,
+        media,
         logger: app.log,
       }),
     });

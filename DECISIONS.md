@@ -184,6 +184,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-119 | 2026-11-06 | Backups run as a durable `backup.create` job: POST `/api/admin/backups` checks `hasActive`, enqueues with `maxAttempts: 2` and returns 202 with the job + list (409 `BACKUP_IN_PROGRESS` while active). The worker calls `BackupService.createSystem()` (route keeps `manage_options`); Tools → Backups polls `GET /api/admin/jobs/:id`, shows status/attempts/time/error, links to Scheduled Actions and refreshes the list on completion. Archive format, retention and CLI restore unchanged; member route `create(principal)` retained for internal callers. | accepted | [ADR 0034](docs/adr/0034-backup-packages.md) |
 
+| D-120 | 2026-11-06 | Media derivative regeneration is a durable `media.regenerate` job: `POST /api/admin/media/regenerate` accepts `{folderId?: uuid|null}`, requires `content.create`, rejects an active job with 409 `MEDIA_REGENERATE_IN_PROGRESS`, and returns 202 with the job. The worker loops 20-item batches for the library/folder/Uncategorized, retries once on any item failure and then FAILS with the count; Media Library queues and links to Scheduled Actions, which shows status/attempts/last error. Direct `regenerateDerivatives(principal)` remains for internal callers. | accepted | [ADR 0047](docs/adr/0047-bulk-media-regeneration.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

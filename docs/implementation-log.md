@@ -5223,3 +5223,29 @@ verified in production with a temporary administrator:
   events. Production is back to 1 user, 2 posts, 0 media, 0 folders, 0
   analytics rows (queue history remains); `/`, `/admin/`, `/admin/tools/backups`,
   `/api/health` and `/posts/testcom` return 200.
+
+### 2026-11-06 — Durable media derivative regeneration job
+
+- `MediaService.regenerateDerivativesSystem(input)` is the worker variant of
+  the existing bounded regeneration, now with a `folderId` filter (`undefined`
+  = whole library, `null` = Uncategorized) applied to both the page and the
+  remaining-count query. `regenerateDerivatives(principal, input)` keeps the
+  capability check for direct callers.
+- `POST /api/admin/media/regenerate` now accepts `{folderId?: uuid|null}`,
+  requires `content.create`, rejects an active job with `409
+  MEDIA_REGENERATE_IN_PROGRESS` and enqueues `media.regenerate` (maxAttempts 2),
+  returning 202 with the job. The client-side cursor loop is gone; the worker
+  owns 20-item batches and retries once on any item failure.
+- Media Library queues for the whole library, the browsed folder or
+  Uncategorized, shows a queued notice and a direct Scheduled Actions link; the
+  previous in-page progress loop is removed.
+- Security hardening found while testing: media and backup enqueue routes now
+  run the capability check before creating a job, so a subscriber/editor cannot
+  queue privileged work that fails only after the job exists.
+- Tests: API success (202/pending → worker → completed, derivative rebuilt),
+  folder-scoped regeneration leaves other media missing, duplicate 409,
+  failure retry to FAILED, subscriber 403 with no job row, invalid folder id;
+  admin queue notice + folder target; E2E media queue → Scheduled Actions row.
+- Docs: ADR 0047 amendment, D-120, parity matrix.
+- Validation: 929 unit/integration tests (API 542, admin 257, web 52, contracts
+  13, block-system 65), 29 Playwright E2E tests and seven builds pass.

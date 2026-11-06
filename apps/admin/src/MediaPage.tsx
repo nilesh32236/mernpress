@@ -21,7 +21,7 @@ import {
   listMedia,
   listMediaFolders,
   moveMediaFolder,
-  regenerateMediaDerivatives,
+  queueMediaRegeneration,
   renameMediaFolder,
   updateMedia,
   uploadMedia,
@@ -40,6 +40,7 @@ import {
   Pagination,
 } from './components.js';
 import { formatDateTime } from './format.js';
+import { navigate } from './router.js';
 import { folderDescendants, folderTree, indentedFolder } from './mediaFolders.js';
 import { MediaFolderTree } from './MediaFolderTree.js';
 import { MediaImageEditor } from './MediaImageEditor.js';
@@ -641,37 +642,32 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
     await moveFolderTo(selectedFolder.id, moveTarget === '' ? null : moveTarget);
   }
 
-  /** Rebuild WebP/AVIF derivatives for the whole library, in bounded batches. */
+  /** Queue a durable media.regenerate job for the library or the browsed folder. */
   async function regenerateImageSizes(): Promise<void> {
     if (regenerating) return;
     setRegenerating(true);
     setNotice(null);
-    setRegenProgress('Starting…');
-    let after: string | undefined;
-    let processed = 0;
-    let failed = 0;
+    setRegenQueued(false);
+    const targetName =
+      folderFilter === ''
+        ? 'the whole library'
+        : folderFilter === 'none'
+          ? 'Uncategorized'
+          : `“${selectedFolder?.name ?? 'this folder'}”`;
     try {
-      for (;;) {
-        const batch = await regenerateMediaDerivatives({
-          ...(after ? { after } : {}),
-          limit: 20,
-        });
-        processed += batch.processed;
-        failed += batch.failed;
-        setRegenProgress(`Regenerated ${processed} image(s)${failed ? `, ${failed} failed` : ''}…`);
-        if (!batch.nextAfter) break;
-        after = batch.nextAfter;
-      }
+      await queueMediaRegeneration(
+        folderFilter === '' ? {} : { folderId: folderFilter === 'none' ? null : folderFilter },
+      );
+      setRegenProgress(`Queued for ${targetName}.`);
+      setRegenQueued(true);
       setNotice({
-        tone: failed > 0 ? 'warning' : 'success',
-        text: `Regenerated ${processed} image(s)${failed > 0 ? `; ${failed} failed` : ''}.`,
+        tone: 'success',
+        text: `Derivative regeneration queued for ${targetName}. Track it in Scheduled Actions.`,
       });
-      setReloadKey((value) => value + 1);
     } catch (caught) {
       setNotice({ tone: 'error', text: actionErrorMessage(caught) });
     } finally {
       setRegenerating(false);
-      setRegenProgress(null);
     }
   }
 
@@ -707,6 +703,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
   const [reloadKey, setReloadKey] = useState(0);
   const [regenerating, setRegenerating] = useState(false);
   const [regenProgress, setRegenProgress] = useState<string | null>(null);
+  const [regenQueued, setRegenQueued] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadKey = useRef(0);
@@ -1018,12 +1015,21 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
           disabled={regenerating}
           title="Rebuild the WebP and AVIF sizes stored for every image"
         >
-          {regenerating ? 'Regenerating…' : 'Regenerate image sizes'}
+          {regenerating ? 'Queueing…' : 'Regenerate image sizes'}
         </button>
         {regenProgress ? (
           <span className="media-regenerate-progress" role="status">
             {regenProgress}
           </span>
+        ) : null}
+        {regenQueued ? (
+          <button
+            type="button"
+            className="button-link media-regenerate-link"
+            onClick={() => navigate('/tools/jobs')}
+          >
+            View in Scheduled Actions
+          </button>
         ) : null}
 
         <div className="media-folder-bar">

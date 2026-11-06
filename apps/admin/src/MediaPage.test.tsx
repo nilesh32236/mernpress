@@ -8,7 +8,7 @@ import {
   deleteMediaFolder,
   listMedia,
   listMediaFolders,
-  regenerateMediaDerivatives,
+  queueMediaRegeneration,
   renameMediaFolder,
   moveMediaFolder,
   restoreMediaOriginal,
@@ -30,7 +30,7 @@ vi.mock('./api.js', async (importOriginal) => {
     renameMediaFolder: vi.fn(),
     moveMediaFolder: vi.fn(),
     deleteMediaFolder: vi.fn(),
-    regenerateMediaDerivatives: vi.fn(),
+    queueMediaRegeneration: vi.fn(),
     getMedia: vi.fn(),
     uploadMedia: vi.fn(),
     updateMedia: vi.fn(),
@@ -104,11 +104,24 @@ beforeEach(() => {
   vi.mocked(deleteMedia).mockResolvedValue(undefined);
   vi.mocked(editMediaImage).mockResolvedValue(makeMedia());
   vi.mocked(restoreMediaOriginal).mockResolvedValue(makeMedia());
-  vi.mocked(regenerateMediaDerivatives).mockResolvedValue({
-    processed: 1,
-    failed: 0,
-    remaining: 0,
-    nextAfter: null,
+  vi.mocked(queueMediaRegeneration).mockResolvedValue({
+    job: {
+      id: 'job-regen',
+      type: 'media.regenerate',
+      payload: {},
+      status: 'PENDING',
+      priority: 0,
+      attempts: 0,
+      maxAttempts: 2,
+      scheduledAt: '2026-11-06T17:00:00.000Z',
+      lockedAt: null,
+      lockedBy: null,
+      startedAt: null,
+      completedAt: null,
+      lastError: null,
+      createdAt: '2026-11-06T17:00:00.000Z',
+      updatedAt: '2026-11-06T17:00:00.000Z',
+    },
   });
   vi.mocked(listMediaFolders).mockResolvedValue([]);
   // jsdom has no 2D canvas; the editor still renders its controls.
@@ -336,22 +349,52 @@ describe('media library page', () => {
     fireEvent.click(within(editor).getByRole('button', { name: 'Cancel' }));
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Edit image' })).toBeNull());
   });
-  it('regenerates image sizes in batches and reports the total', async () => {
-    vi.mocked(regenerateMediaDerivatives)
-      .mockResolvedValueOnce({ processed: 2, failed: 0, remaining: 1, nextAfter: 'm2' })
-      .mockResolvedValueOnce({ processed: 1, failed: 1, remaining: 0, nextAfter: null });
+  it('queues library derivative regeneration and links to Scheduled Actions', async () => {
     render(<MediaPage user={admin} />);
     await screen.findByRole('button', { name: 'View sunset.png' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Regenerate image sizes' }));
 
-    await waitFor(() => expect(vi.mocked(regenerateMediaDerivatives)).toHaveBeenCalledTimes(2));
-    expect(vi.mocked(regenerateMediaDerivatives)).toHaveBeenNthCalledWith(1, { limit: 20 });
-    expect(vi.mocked(regenerateMediaDerivatives)).toHaveBeenNthCalledWith(2, {
-      after: 'm2',
-      limit: 20,
+    await waitFor(() => expect(vi.mocked(queueMediaRegeneration)).toHaveBeenCalledWith({}));
+    expect(
+      await screen.findByText(
+        'Derivative regeneration queued for the whole library. Track it in Scheduled Actions.',
+      ),
+    ).toBeDefined();
+    expect(screen.getByRole('button', { name: 'View in Scheduled Actions' })).toBeDefined();
+  });
+
+  it('queues regeneration for the filtered folder', async () => {
+    const folder = {
+      id: 'f1',
+      name: 'Travel',
+      parentId: null,
+      itemCount: 1,
+      createdAt: '2026-11-06T10:00:00.000Z',
+      updatedAt: '2026-11-06T10:00:00.000Z',
+    };
+    vi.mocked(listMediaFolders).mockResolvedValue([folder]);
+    render(<MediaPage user={admin} />);
+    await screen.findByRole('button', { name: 'View sunset.png' });
+    fireEvent.change(screen.getByLabelText('Filter by folder'), {
+      target: { value: 'f1' },
     });
-    expect(await screen.findByText('Regenerated 3 image(s); 1 failed.')).toBeDefined();
+    await waitFor(() =>
+      expect(vi.mocked(listMedia)).toHaveBeenLastCalledWith(
+        expect.objectContaining({ folder: 'f1' }),
+      ),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Regenerate image sizes' }));
+
+    await waitFor(() =>
+      expect(vi.mocked(queueMediaRegeneration)).toHaveBeenCalledWith({ folderId: 'f1' }),
+    );
+    expect(
+      await screen.findByText(
+        'Derivative regeneration queued for “Travel”. Track it in Scheduled Actions.',
+      ),
+    ).toBeDefined();
   });
   it('creates a folder and filters the library by folder', async () => {
     const travel = {

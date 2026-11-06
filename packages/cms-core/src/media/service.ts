@@ -799,15 +799,15 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
    * brought up to date without re-uploading. Batched with an id cursor so a
    * large library neither times out nor holds one transaction for minutes.
    */
-  async function regenerateDerivatives(
-    principal: Principal,
+  async function regenerateDerivativesSystem(
     input: RegenerateMediaInput = {},
   ): Promise<RegenerateMediaResult> {
-    requireCapability(principal, 'content.create');
     const limit = Math.min(50, Math.max(1, Math.trunc(input.limit ?? 20)));
+    const folderFilter = input.folderId === undefined ? {} : { folderId: input.folderId };
     const rows = await prisma.mediaItem.findMany({
       where: {
         mimeType: { startsWith: 'image/' },
+        ...folderFilter,
         ...(input.after ? { id: { gt: input.after } } : {}),
       },
       orderBy: { id: 'asc' },
@@ -847,7 +847,11 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
       lastId === null
         ? 0
         : await prisma.mediaItem.count({
-            where: { mimeType: { startsWith: 'image/' }, id: { gt: lastId } },
+            where: {
+              mimeType: { startsWith: 'image/' },
+              ...folderFilter,
+              id: { gt: lastId },
+            },
           });
     return {
       processed,
@@ -855,6 +859,14 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
       remaining,
       nextAfter: remaining > 0 ? lastId : null,
     };
+  }
+
+  async function regenerateDerivatives(
+    principal: Principal,
+    input: RegenerateMediaInput = {},
+  ): Promise<RegenerateMediaResult> {
+    requireCapability(principal, 'content.create');
+    return regenerateDerivativesSystem(input);
   }
 
   async function get(principal: Principal, id: string): Promise<MediaDto> {
@@ -1160,6 +1172,7 @@ export function createMediaService(options: MediaServiceOptions): MediaService {
     remove,
     resolvePublicFile,
     regenerateDerivatives,
+    regenerateDerivativesSystem,
     listFolders,
     createFolder,
     renameFolder,

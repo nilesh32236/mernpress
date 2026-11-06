@@ -1,4 +1,4 @@
-import { createMediaService } from '@mernpress/cms-core';
+import { createJobQueueService, createMediaService } from '@mernpress/cms-core';
 import type { FastifyInstance } from 'fastify';
 import { rm } from 'node:fs/promises';
 import { buildApp } from '../../src/app.js';
@@ -30,6 +30,7 @@ export async function createMediaTestApp(): Promise<MediaTestApp> {
       env,
       auth: app.auth,
       media: createMediaService({ prisma: app.database, storageRoot }),
+      jobs: createJobQueueService({ prisma: app.database }),
       storageRoot,
     });
   }

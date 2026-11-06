@@ -78,7 +78,7 @@ test.afterAll(() => {
       '-c',
       `DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE username = '${adminUsername}');
        DELETE FROM users WHERE username = '${adminUsername}';
-       DELETE FROM jobs WHERE type IN ('analytics.retention', 'notes.retention');
+       DELETE FROM jobs WHERE type IN ('analytics.retention', 'notes.retention', 'media.regenerate');
        DELETE FROM media_folders WHERE name IN ('Audit Root', 'Audit Child');`,
     ],
     { stdio: 'pipe' },
@@ -804,4 +804,24 @@ test('remaining custom screens keep the WordPress control and responsive contrac
     innerWidth: window.innerWidth,
   }));
   expect(redirectsMobile.scrollWidth).toBeLessThanOrEqual(redirectsMobile.innerWidth);
+});
+
+test('media derivative regeneration queues into Scheduled Actions', async ({ page }) => {
+  await login(page);
+  await page.goto('http://127.0.0.1:5173/admin/media');
+  await expect(page.getByRole('heading', { name: 'Media Library' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Regenerate image sizes' }).click();
+  await expect(
+    page.getByText(
+      'Derivative regeneration queued for the whole library. Track it in Scheduled Actions.',
+    ),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'View in Scheduled Actions' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Scheduled Actions' })).toBeVisible();
+  const row = page.locator('.jobs-table tbody tr', { hasText: 'media.regenerate' }).first();
+  await expect(row).toBeVisible();
+  await expect(row).toContainText('pending');
+  await expect(row.getByRole('button', { name: 'Cancel: media.regenerate' })).toBeVisible();
 });

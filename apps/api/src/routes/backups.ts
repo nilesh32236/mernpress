@@ -1,6 +1,7 @@
 import { createReadStream } from 'node:fs';
 import {
   ContentError,
+  requireCapability,
   type AuthService,
   type BackupService,
   type JobQueueService,
@@ -43,6 +44,7 @@ export function registerBackupRoutes(app: FastifyInstance, options: BackupRouteO
     const ctx = await guard(request, reply);
     if (!ctx) return;
     try {
+      requireCapability(ctx.principal, 'manage_options');
       if (await jobs.hasActive(JOB_TYPES.backupCreate)) {
         throw new ContentError(
           'BACKUP_IN_PROGRESS',

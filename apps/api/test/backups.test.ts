@@ -73,6 +73,7 @@ describe('backup packages', () => {
         analytics: app.analytics,
         jobs,
         backups: app.backups,
+        media: app.media,
       }),
       logger: { info: () => undefined, warn: () => undefined, error: () => undefined },
       workerId: 'backup-test',
@@ -181,6 +182,7 @@ describe('backup packages', () => {
       },
     });
     expect(createForbidden.statusCode).toBe(403);
+    expect(await app.database.job.count({ where: { type: 'backup.create' } })).toBe(0);
   });
 
   it('queues a backup job, exposes it through the admin API and completes it', async () => {

@@ -2,7 +2,9 @@ import multipart from '@fastify/multipart';
 import {
   ContentError,
   MEDIA_MAX_UPLOAD_BYTES,
+  requireCapability,
   type AuthService,
+  type JobQueueService,
   type MediaDto,
   type MediaService,
 } from '@mernpress/cms-core';
@@ -12,6 +14,7 @@ import { z } from 'zod';
 import { requireAdmin } from '../auth/require-admin.js';
 import type { Env } from '../config/env.js';
 import { sendRouteError } from './send-error.js';
+import { JOB_TYPES } from '../jobs/types.js';
 
 const uuid = z.string().uuid();
 const mediaIdParamSchema = z.object({ id: uuid }).strict();
@@ -67,8 +70,7 @@ const folderMoveSchema = z.object({ parentId: uuid.nullable() }).strict();
 
 const regenerateSchema = z
   .object({
-    after: uuid.optional(),
-    limit: z.number().int().min(1).max(50).optional(),
+    folderId: uuid.nullable().optional(),
   })
   .strict();
 
@@ -123,6 +125,7 @@ export interface MediaRouteOptions {
   env: Env;
   auth: AuthService;
   media: MediaService;
+  jobs: JobQueueService;
   /**
    * Absolute uploads root. The media service owns path resolution, so the route
    * only carries it through for the composition root / tests.
@@ -140,7 +143,7 @@ export interface MediaRouteOptions {
  * caching.
  */
 export function registerMediaRoutes(app: FastifyInstance, options: MediaRouteOptions): void {
-  const { env, auth, media } = options;
+  const { env, auth, media, jobs } = options;
   const guard = (request: FastifyRequest, reply: FastifyReply) =>
     requireAdmin(request, reply, { env, auth });
 
@@ -301,7 +304,22 @@ export function registerMediaRoutes(app: FastifyInstance, options: MediaRouteOpt
     if (!ctx) return;
     try {
       const body = regenerateSchema.parse(request.body ?? {});
-      return await media.regenerateDerivatives(ctx.principal, body);
+      requireCapability(ctx.principal, 'content.create');
+      if (await jobs.hasActive(JOB_TYPES.mediaRegenerate)) {
+        throw new ContentError(
+          'MEDIA_REGENERATE_IN_PROGRESS',
+          'Derivative regeneration is already queued or running.',
+          409,
+        );
+      }
+      const payload: Record<string, unknown> = {};
+      if (body.folderId !== undefined) payload.folderId = body.folderId;
+      const job = await jobs.enqueue({
+        type: JOB_TYPES.mediaRegenerate,
+        payload,
+        maxAttempts: 2,
+      });
+      return reply.code(202).send({ job });
     } catch (error) {
       return sendRouteError(reply, request, error);
     }

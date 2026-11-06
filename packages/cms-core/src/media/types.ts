@@ -126,6 +126,8 @@ export interface RegenerateMediaInput {
   after?: string | undefined;
   /** 1-50; defaults to 20. */
   limit?: number | undefined;
+  /** Limit to one folder, or null for Uncategorized; omitted = whole library. */
+  folderId?: string | null | undefined;
 }
 
 export interface RegenerateMediaResult {
@@ -170,6 +172,8 @@ export interface MediaService {
     principal: Principal,
     input?: RegenerateMediaInput,
   ): Promise<RegenerateMediaResult>;
+  /** Worker variant; the route/worker owns authorization. */
+  regenerateDerivativesSystem(input?: RegenerateMediaInput): Promise<RegenerateMediaResult>;
   /** Public, unauthenticated file resolution with path confinement. */
   resolvePublicFile(id: string, name: string): Promise<MediaFile>;
 }
