@@ -149,12 +149,11 @@ function rewriteTo(
   });
 }
 
-function redirectTo(request: NextRequest, pathname: string) {
+function redirectTo(request: NextRequest, pathname: string, search = '') {
   const site = process.env.MERNPRESS_SITE_URL;
-  return NextResponse.redirect(
-    new URL(pathname, site && /^https?:\/\//.test(site) ? site : request.url),
-    301,
-  );
+  const url = new URL(pathname, site && /^https?:\/\//.test(site) ? site : request.url);
+  url.search = search;
+  return NextResponse.redirect(url, 301);
 }
 
 function withPathHeader(
@@ -241,7 +240,9 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
         }
       }
     } else if (isArchivePath(path)) {
-      return redirectTo(request, path);
+      const search = new URLSearchParams(request.nextUrl.search);
+      search.delete('lang');
+      return redirectTo(request, path, search.toString());
     } else if (path !== '/' && path.split('/').filter(Boolean).length === 1) {
       return redirectTo(request, `/${queryLanguage}${path}`);
     }
@@ -300,7 +301,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
   // redirects to the plain one instead of rendering default content in foreign
   // chrome (or 404ing, depending on the path).
   if (languagePrefixed && !matched && isArchivePath(localizedPath)) {
-    return redirectTo(request, localizedPath);
+    return redirectTo(request, localizedPath, request.nextUrl.search);
   }
   // `/posts/...` is reserved for the internal renderer only in the default
   // language; a prefixed structured URL must still be resolved and rewritten.
