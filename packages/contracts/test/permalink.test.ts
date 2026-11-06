@@ -247,3 +247,39 @@ describe('language contract', () => {
     });
   });
 });
+
+describe('theme strings contract', () => {
+  it('normalizes overrides and merges with defaults', async () => {
+    const {
+      DEFAULT_THEME_STRINGS,
+      normalizeThemeStringOverrides,
+      normalizeThemeStringsByLanguage,
+      themeStringsFor,
+    } = await import('../src/theme-strings.js');
+
+    expect(normalizeThemeStringOverrides(null)).toEqual({});
+    expect(
+      normalizeThemeStringOverrides({
+        blog: '  ब्लॉग  ',
+        search: '   ',
+        unknown: 'ignored',
+        home: 42,
+      }),
+    ).toEqual({ blog: 'ब्लॉग' });
+    expect(
+      normalizeThemeStringsByLanguage({
+        en: { home: 'Start' },
+        hi: { blog: 'ब्लॉग' },
+        'bad code': { home: 'Nope' },
+        fr: {},
+      }),
+    ).toEqual({ en: { home: 'Start' }, hi: { blog: 'ब्लॉग' } });
+
+    const merged = themeStringsFor({ en: { home: 'Start' }, hi: { blog: 'ब्लॉग' } }, 'hi', 'en');
+    expect(merged.home).toBe('Start');
+    expect(merged.blog).toBe('ब्लॉग');
+    expect(merged.search).toBe(DEFAULT_THEME_STRINGS.search);
+    // Unknown/null maps fall back to the built-ins.
+    expect(themeStringsFor(null, 'hi', 'en')).toEqual(DEFAULT_THEME_STRINGS);
+  });
+});

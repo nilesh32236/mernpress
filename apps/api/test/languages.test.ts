@@ -264,4 +264,109 @@ describe('multilingual content', () => {
     const anonymous = await app.inject({ method: 'GET', url: '/api/admin/languages' });
     expect(anonymous.statusCode).toBe(401);
   });
+  it('stores per-language theme strings and exposes them publicly', async () => {
+    const initial = await app.inject({
+      method: 'GET',
+      url: '/api/admin/theme-strings',
+      headers: { cookie: adminCookie },
+    });
+    expect(initial.statusCode).toBe(200);
+    const initialBody = initial.json() as {
+      strings: Record<string, unknown>;
+      defaults: Record<string, string>;
+      keys: Array<{ key: string }>;
+    };
+    expect(initialBody.strings).toEqual({});
+    expect(initialBody.defaults).toMatchObject({ skipToContent: 'Skip to content', blog: 'Blog' });
+    expect(initialBody.keys.map((entry) => entry.key)).toContain('footerNav');
+
+    const saved = await app.inject({
+      method: 'PUT',
+      url: '/api/admin/theme-strings',
+      headers: adminHeaders,
+      payload: { language: 'hi', strings: { blog: 'ब्लॉग', home: 'होम' } },
+    });
+    expect(saved.statusCode).toBe(200);
+    expect((saved.json() as { strings: Record<string, unknown> }).strings).toEqual({
+      hi: { blog: 'ब्लॉग', home: 'होम' },
+    });
+
+    const site = await app.inject({ method: 'GET', url: '/api/public/site' });
+    expect((site.json() as { themeStrings: Record<string, unknown> }).themeStrings).toEqual({
+      hi: { blog: 'ब्लॉग', home: 'होम' },
+    });
+
+    const unknownKey = await app.inject({
+      method: 'PUT',
+      url: '/api/admin/theme-strings',
+      headers: adminHeaders,
+      payload: { language: 'hi', strings: { bogus: 'x' } },
+    });
+    expect(unknownKey.statusCode).toBe(400);
+    const disabled = await app.inject({
+      method: 'PUT',
+      url: '/api/admin/theme-strings',
+      headers: adminHeaders,
+      payload: { language: 'fr', strings: { blog: 'Blog' } },
+    });
+    expect(disabled.statusCode).toBe(400);
+    expect((disabled.json() as { error: { code: string } }).error.code).toBe(
+      'LANGUAGE_NOT_ENABLED',
+    );
+  });
+
+  it('stores a menu override for non-default languages', async () => {
+    const saved = await app.inject({
+      method: 'PUT',
+      url: '/api/admin/language-menus',
+      headers: adminHeaders,
+      payload: {
+        language: 'hi',
+        menu: [
+          { label: 'होम', url: '/hi' },
+          { label: 'ब्लॉग', url: '/hi/posts' },
+        ],
+      },
+    });
+    expect(saved.statusCode).toBe(200);
+    expect((saved.json() as { menus: Record<string, unknown> }).menus).toEqual({
+      hi: [
+        { label: 'होम', url: '/hi' },
+        { label: 'ब्लॉग', url: '/hi/posts' },
+      ],
+    });
+
+    const site = await app.inject({ method: 'GET', url: '/api/public/site' });
+    expect((site.json() as { languageMenus: Record<string, unknown> }).languageMenus).toEqual({
+      hi: [
+        { label: 'होम', url: '/hi' },
+        { label: 'ब्लॉग', url: '/hi/posts' },
+      ],
+    });
+
+    const defaultLanguage = await app.inject({
+      method: 'PUT',
+      url: '/api/admin/language-menus',
+      headers: adminHeaders,
+      payload: { language: 'en', menu: [{ label: 'Home', url: '/' }] },
+    });
+    expect(defaultLanguage.statusCode).toBe(400);
+
+    const invalidUrl = await app.inject({
+      method: 'PUT',
+      url: '/api/admin/language-menus',
+      headers: adminHeaders,
+      payload: { language: 'hi', menu: [{ label: 'Bad', url: 'javascript:alert(1)' }] },
+    });
+    expect(invalidUrl.statusCode).toBe(400);
+
+    const cleared = await app.inject({
+      method: 'PUT',
+      url: '/api/admin/language-menus',
+      headers: adminHeaders,
+      payload: { language: 'hi', menu: [] },
+    });
+    expect(cleared.statusCode).toBe(200);
+    expect((cleared.json() as { menus: unknown }).menus).toBeNull();
+  });
 });

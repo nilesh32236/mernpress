@@ -84,6 +84,28 @@ export function validateMenu(value: unknown): CustomMenuItem[] | null {
 }
 
 /**
+ * Per-language menu overrides. Keys are language codes; each value is a normal
+ * menu (label + site path or http(s) URL). Empty arrays and empty objects are
+ * dropped so the stored option never grows without content.
+ */
+export function validateLanguageMenus(value: unknown): Record<string, CustomMenuItem[]> | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== 'object' || Array.isArray(value)) {
+    invalid('Language menus must be an object or null.');
+  }
+  const input = value as Record<string, unknown>;
+  const result: Record<string, CustomMenuItem[]> = {};
+  for (const [language, menu] of Object.entries(input)) {
+    if (!/^[a-z]{2,3}(?:-[a-z]{2})?$/.test(language)) {
+      invalid('Language menu codes must look like en or pt-br.');
+    }
+    const validated = validateMenu(menu);
+    if (validated && validated.length > 0) result[language] = validated;
+  }
+  return Object.keys(result).length === 0 ? null : result;
+}
+
+/**
  * Additional CSS is injected into a `<style>` element. Reject constructs that
  * escape the element, execute script in legacy engines, or fetch third-party
  * resources. It is CSS, not a script sandbox: the rules only affect styling.

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import type { CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
 import { Manrope } from 'next/font/google';
@@ -8,7 +9,7 @@ import PublicAdminBar from '@/components/PublicAdminBar';
 import JsonLd from '@/components/JsonLd';
 import { ViewTracker } from '@/components/ViewTracker';
 import { ConsentBanner, ConsentSettingsButton } from '@/components/ConsentBanner';
-import { DEFAULT_CONSENT } from '@mernpress/contracts';
+import { DEFAULT_CONSENT, themeStringsFor } from '@mernpress/contracts';
 import { siteGraph } from '@/lib/seo';
 import { siteUrl } from '@/lib/api';
 
@@ -66,6 +67,18 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const consent = settings?.consent ?? DEFAULT_CONSENT;
   const customColors = settings?.customColors ?? null;
   const customMenu = settings?.customMenu ?? null;
+  const defaultLanguage = settings?.languages?.default ?? 'en';
+  // The edge middleware sets x-mn-language for every rendered request (default
+  // or a /<lang>/ variant); the layout selects menus and chrome strings. When
+  // the layout is rendered outside a request (unit tests) the default applies.
+  let requestLanguage: string;
+  try {
+    requestLanguage = (await headers()).get('x-mn-language') ?? defaultLanguage;
+  } catch {
+    requestLanguage = defaultLanguage;
+  }
+  const strings = themeStringsFor(settings?.themeStrings ?? null, requestLanguage, defaultLanguage);
+  const languageMenu = settings?.languageMenus?.[requestLanguage] ?? null;
   const style: Record<string, string> = {};
   if (theme) {
     style['--site-bg'] = theme.tokens.background;
@@ -86,11 +99,16 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     if (customColors.accent) style['--site-accent'] = customColors.accent;
   }
   const themeStyle = Object.keys(style).length > 0 ? (style as CSSProperties) : undefined;
-  const menu = customMenu && customMenu.length > 0 ? customMenu : null;
+  const menu =
+    languageMenu && languageMenu.length > 0
+      ? languageMenu
+      : requestLanguage === defaultLanguage && customMenu && customMenu.length > 0
+        ? customMenu
+        : null;
 
   return (
     <html
-      lang="en"
+      lang={requestLanguage}
       className={manrope.variable}
       data-theme={theme?.id}
       data-layout={theme?.layout}
@@ -109,14 +127,14 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         />
         <PublicAdminBar siteTitle={siteTitle} />
         <a href="#main-content" className="skip-link">
-          Skip to content
+          {strings.skipToContent}
         </a>
         <header className="site-header">
           <Link href="/" className="site-title">
             {siteTitle}
           </Link>
           {menu ? (
-            <nav className="site-nav" aria-label="Primary">
+            <nav className="site-nav" aria-label={strings.primaryNav}>
               {menu.map((item, index) =>
                 item.url.startsWith('/') ? (
                   <Link key={`${item.url}-${index}`} href={item.url}>
@@ -134,8 +152,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 ),
               )}
             </nav>
-          ) : pageLinks.length > 0 ? (
-            <nav className="site-nav" aria-label="Primary">
+          ) : requestLanguage === defaultLanguage && pageLinks.length > 0 ? (
+            <nav className="site-nav" aria-label={strings.primaryNav}>
               {pageLinks.map((page) => (
                 <Link key={page.id} href={`/${page.slug}`}>
                   {page.title}
@@ -154,11 +172,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               {settings?.tagline ? <p className="site-footer-tagline">{settings.tagline}</p> : null}
             </div>
             <div className="site-footer-navs">
-              <nav className="site-footer-nav" aria-label="Footer">
-                <Link href="/posts">Blog</Link>
-                <Link href="/">Home</Link>
-                <Link href="/search">Search</Link>
-                <Link href="/feed">Feed</Link>
+              <nav className="site-footer-nav" aria-label={strings.footerNav}>
+                <Link href="/posts">{strings.blog}</Link>
+                <Link href="/">{strings.home}</Link>
+                <Link href="/search">{strings.search}</Link>
+                <Link href="/feed">{strings.feed}</Link>
               </nav>
               {pageLinks.length > 0 ? (
                 <nav className="site-footer-nav" aria-label="Pages">

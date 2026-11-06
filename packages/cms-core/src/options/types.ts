@@ -1,6 +1,7 @@
 import type { ConsentConfig, LanguageConfig } from '@mernpress/contracts';
 import type { Principal } from '../content/types.js';
 import type { CustomColors, CustomMenuItem } from '../customizer/validation.js';
+import type { ThemeStringsByLanguage } from '@mernpress/contracts';
 
 export type OptionGroup =
   | 'general'
@@ -51,6 +52,10 @@ export interface SiteSettings {
   consent: ConsentConfig;
   /** Enabled content languages and the default (public-safe). */
   languages: LanguageConfig;
+  /** Per-language menu overrides (non-default languages); default uses customMenu. */
+  languageMenus: Record<string, CustomMenuItem[]> | null;
+  /** Per-language theme-string overrides (public-safe). */
+  themeStrings: ThemeStringsByLanguage;
 }
 
 export interface OptionService {

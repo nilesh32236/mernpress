@@ -1340,6 +1340,79 @@ export interface CustomizerMenuItem {
   url: string;
 }
 
+export interface ThemeStringKey {
+  key: string;
+  label: string;
+  fallback: string;
+  max: number;
+}
+
+export interface ThemeStringsPayload {
+  strings: Record<string, Record<string, string>>;
+  defaults: Record<string, string>;
+  keys: ThemeStringKey[];
+}
+
+export interface LanguageMenusPayload {
+  menus: Record<string, CustomizerMenuItem[]> | null;
+  default: string;
+  enabled: string[];
+}
+
+export async function fetchThemeStrings(): Promise<ThemeStringsPayload> {
+  const response = await fetch('/api/admin/theme-strings', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<ThemeStringsPayload>(response);
+}
+
+export async function updateThemeStrings(
+  language: string,
+  strings: Record<string, string>,
+): Promise<{ strings: Record<string, Record<string, string>> }> {
+  const response = await fetch('/api/admin/theme-strings', {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ language, strings }),
+  });
+  return readJson<{ strings: Record<string, Record<string, string>> }>(response);
+}
+
+export async function fetchLanguageMenus(): Promise<LanguageMenusPayload> {
+  const response = await fetch('/api/admin/language-menus', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<LanguageMenusPayload>(response);
+}
+
+export async function updateLanguageMenus(
+  language: string,
+  menu: CustomizerMenuItem[],
+): Promise<{ menus: Record<string, CustomizerMenuItem[]> | null }> {
+  const response = await fetch('/api/admin/language-menus', {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ language, menu }),
+  });
+  return readJson<{ menus: Record<string, CustomizerMenuItem[]> | null }>(response);
+}
+
 export interface CustomizerSettings {
   colors: CustomizerColors | null;
   menu: CustomizerMenuItem[] | null;

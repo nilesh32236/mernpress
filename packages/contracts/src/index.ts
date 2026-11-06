@@ -10,3 +10,4 @@ export * from './admin-colors.js';
 export * from './screen-options.js';
 export * from './consent.js';
 export * from './languages.js';
+export * from './theme-strings.js';

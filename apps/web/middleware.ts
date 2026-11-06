@@ -115,11 +115,22 @@ async function resolvePost(query: string): Promise<ResolvedPost | null> {
  */
 const INTERNAL_ORIGIN = `http://127.0.0.1:${process.env.PORT ?? '3000'}`;
 
+function headersWithLanguage(request: NextRequest, language: string) {
+  const headers = new Headers(request.headers);
+  // The rewritten internal path passes through the middleware a second time;
+  // keep the language resolved on the first hop instead of resetting it to the
+  // default.
+  if (!headers.has('x-mn-language')) headers.set('x-mn-language', language);
+  return headers;
+}
+
 function rewriteTo(request: NextRequest, pathname: string, language?: string) {
-  void request;
   const target = new URL(pathname, INTERNAL_ORIGIN);
   if (language) target.searchParams.set('lang', language);
-  return NextResponse.rewrite(target);
+  // The root layout reads this header to pick per-language menus/strings.
+  return NextResponse.rewrite(target, {
+    request: { headers: headersWithLanguage(request, language ?? 'en') },
+  });
 }
 
 function redirectTo(request: NextRequest, pathname: string) {
@@ -130,8 +141,8 @@ function redirectTo(request: NextRequest, pathname: string) {
   );
 }
 
-function withPathHeader(request: NextRequest, path: string) {
-  const requestHeaders = new Headers(request.headers);
+function withPathHeader(request: NextRequest, path: string, language = 'en') {
+  const requestHeaders = headersWithLanguage(request, language);
   requestHeaders.set('x-mn-path', path);
   return NextResponse.next({ request: { headers: requestHeaders } });
 }
@@ -180,7 +191,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
         return rewriteTo(request, `/posts/${encodeURIComponent(resolved.slug)}`, langQuery);
       }
     }
-    return withPathHeader(request, path);
+    return withPathHeader(request, path, language);
   }
 
   // Custom category/tag bases are rewritten onto the existing archive routes.
@@ -188,14 +199,18 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     const prefix = `/${settings.categoryBase}/`;
     if (path.startsWith(prefix) && path.slice(prefix.length).split('/').length === 1) {
       const slug = path.slice(prefix.length);
-      if (slug) return rewriteTo(request, `/category/${encodeURIComponent(slug)}`);
+      if (slug) {
+        return rewriteTo(request, `/category/${encodeURIComponent(slug)}`, language);
+      }
     }
   }
   if (!languagePrefixed && settings.tagBase !== 'tag') {
     const prefix = `/${settings.tagBase}/`;
     if (path.startsWith(prefix) && path.slice(prefix.length).split('/').length === 1) {
       const slug = path.slice(prefix.length);
-      if (slug) return rewriteTo(request, `/tag/${encodeURIComponent(slug)}`);
+      if (slug) {
+        return rewriteTo(request, `/tag/${encodeURIComponent(slug)}`, language);
+      }
     }
   }
 
@@ -214,7 +229,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     localizedPath.startsWith('/search/') ||
     localizedPath === '/feed' ||
     localizedPath === '/llms.txt';
-  if (reserved && !(languagePrefixed && matched)) return withPathHeader(request, path);
+  if (reserved && !(languagePrefixed && matched)) return withPathHeader(request, path, language);
 
   if (!matched) {
     // Language-prefixed pages: /<lang>/<slug> renders the page route with a
@@ -223,14 +238,14 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     if (languagePrefixed && segments.length === 1) {
       return rewriteTo(request, localizedPath, language);
     }
-    return withPathHeader(request, path);
+    return withPathHeader(request, path, language);
   }
 
   const query = languagePrefixed
     ? `path=${encodeURIComponent(localizedPath)}&lang=${encodeURIComponent(language)}`
     : `path=${encodeURIComponent(localizedPath)}`;
   const resolved = await resolvePost(query);
-  if (!resolved) return withPathHeader(request, path);
+  if (!resolved) return withPathHeader(request, path, language);
 
   const canonical = resolved.canonicalPath === '/' ? '/' : normalize(resolved.canonicalPath);
   if (canonical !== localizedPath) {

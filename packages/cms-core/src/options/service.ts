@@ -1,5 +1,10 @@
 import { normalizePattern, validatePattern, validateTermBase } from '@mernpress/contracts';
-import { validateColors, validateCustomCss, validateMenu } from '../customizer/validation.js';
+import {
+  validateColors,
+  validateCustomCss,
+  validateLanguageMenus,
+  validateMenu,
+} from '../customizer/validation.js';
 import type { DatabaseClient, Prisma } from '@mernpress/database';
 import { ContentError } from '../content/errors.js';
 import { requireCapability } from '../auth/capabilities.js';
@@ -8,6 +13,7 @@ import {
   DEFAULT_LANGUAGES,
   normalizeConsentConfig,
   normalizeLanguageConfig,
+  normalizeThemeStringsByLanguage,
 } from '@mernpress/contracts';
 import type { Principal } from '../content/types.js';
 import type { OptionGroup, SiteSettings, UpdateOptionsInput } from './types.js';
@@ -805,6 +811,21 @@ const SPECS: Record<string, OptionSpec> = {
     defaultValue: null,
     validate: (value) => validateMenu(value),
   },
+  customizer_menus: {
+    group: 'appearance',
+    defaultValue: null,
+    validate: (value) => validateLanguageMenus(value),
+  },
+  theme_strings: {
+    group: 'appearance',
+    defaultValue: {},
+    validate: (value) => {
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+        throwValidation('theme_strings must be an object.');
+      }
+      return normalizeThemeStringsByLanguage(value);
+    },
+  },
   customizer_css: {
     group: 'appearance',
     defaultValue: null,
@@ -986,6 +1007,8 @@ export function createOptionService(options: OptionServiceOptions) {
       'show_avatars',
       'customizer_colors',
       'customizer_menu',
+      'customizer_menus',
+      'theme_strings',
       'customizer_css',
       'show_on_front',
       'page_on_front',
@@ -1013,6 +1036,14 @@ export function createOptionService(options: OptionServiceOptions) {
         : null;
 
     const languages = normalizeLanguageConfig(values.site_languages);
+    const languageMenus = (() => {
+      try {
+        return validateLanguageMenus(values.customizer_menus);
+      } catch {
+        return null;
+      }
+    })();
+    const themeStrings = normalizeThemeStringsByLanguage(values.theme_strings);
 
     const consent = (() => {
       const stored = values.consent_config;
@@ -1079,6 +1110,8 @@ export function createOptionService(options: OptionServiceOptions) {
       pageForPostsSlug: postsPage?.slug ?? null,
       consent,
       languages,
+      languageMenus,
+      themeStrings,
     };
   }
 

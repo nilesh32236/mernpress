@@ -161,6 +161,10 @@ export interface SiteSettings {
   pageOnFrontSlug: string | null;
   pageForPostsSlug: string | null;
   languages?: { default: string; enabled: string[] };
+  /** Per-language menu overrides (non-default languages). */
+  languageMenus?: Record<string, Array<{ label: string; url: string }>> | null;
+  /** Per-language theme-string overrides. */
+  themeStrings?: Record<string, Record<string, string>>;
   consent?: ConsentConfig;
   theme?: PublicTheme | null;
 }

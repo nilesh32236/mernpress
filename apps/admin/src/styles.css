@@ -13395,3 +13395,25 @@ select:not([multiple]):not([size]) {
   font-size: 12px;
   font-weight: 600;
 }
+
+/* Settings → Languages: theme strings and per-language menu. */
+.languages-extras {
+  margin-top: 20px;
+}
+
+.languages-extras h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.languages-strings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 16px;
+}
+
+@media (max-width: 782px) {
+  .languages-strings-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

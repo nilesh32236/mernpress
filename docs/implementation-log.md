@@ -4391,3 +4391,33 @@ administrator:
   administrator; production is back to 1 user, 2 posts, 0 analytics rows and the
   default single language, with `/`, `/admin/`,
   `/admin/settings/languages`, `/api/health` and `/posts/testcom` at 200.
+
+### 2026-11-06 — Per-language menus and theme strings
+
+- `customizer_menus` (appearance) stores a validated menu per non-default
+  language; the default language still uses `customizer_menu` and Appearance →
+  Customize → Menus. `theme_strings` (appearance) stores per-language overrides
+  for the skip link, footer links and navigation labels; the shared contract
+  (`packages/contracts/src/theme-strings.ts`) owns defaults, validation and
+  merging (built-ins → default language → request language).
+- Middleware now sets `x-mn-language` on the forwarded request and preserves it
+  on the internal `/posts/<slug>` second hop (a real bug found while verifying:
+  the second pass reset it to `en`, so the Hindi page rendered English chrome).
+  The root layout reads it and sets `<html lang>`, strings and the
+  language-specific menu. Non-default languages do not fall back to the default
+  menu/page titles.
+- Settings → Languages gains **Theme strings** (any enabled language) and
+  **Language menu** (non-default languages, label/URL rows, add/remove). API:
+  `GET/PUT /api/admin/theme-strings`, `GET/PUT /api/admin/language-menus`,
+  writes through the option service; `/api/public/site` exposes both maps.
+- Browser verification in development: enabled Hindi, saved Hindi strings and a
+  Hindi menu (`/hi`, `/hi/posts`). `/hi/posts/chrome-language-test-hi` rendered
+  `<html lang="hi">`, `सामग्री पर जाएँ`, footer `फुटर`/`ब्लॉग`, header aria
+  `मुख्य` and the `/hi` menu; the English page kept `lang="en"`, “Skip to
+  content”, “Primary/Footer” and the default page menu. The admin editors showed
+  the saved Hindi strings and both menu rows.
+- Tests: contracts override/merge rules; API theme-string and language-menu
+  read/write, unknown keys, disabled language, default-menu rejection, invalid
+  URL and public payloads; admin Languages page string save and menu save.
+- Validation: 879 unit/integration tests (API 521, admin 240, web 40, contracts
+  13, block-system 65), 24 Playwright E2E tests and seven builds pass.

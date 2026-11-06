@@ -370,6 +370,7 @@ export {
   validateColors,
   validateCustomCss,
   validateMenu,
+  validateLanguageMenus,
   type CustomColorKey,
   type CustomColors,
   type CustomizerSettings,
