@@ -5292,3 +5292,17 @@ administrator:
 - Docs: ADR 0019 amendment, D-121, parity matrix.
 - Validation: 933 unit/integration tests (API 546, admin 257, web 52, contracts
   13, block-system 65), 30 Playwright E2E tests and seven builds pass.
+
+**Deployment (durable encrypted mail, release `20261106T183027Z-c9bc7f4`):**
+- Production Settings → Discussion → Mail delivery renders the 16.9px
+  “Mail delivery” heading, a 32px Clear log action, no horizontal overflow at
+  1440 or 375, and states “Transport: Not configured”. No `mail.send` jobs exist
+  because there is no SMTP transport.
+- Production delivery is **owner-blocked**: `/api/admin/mail/status` returns
+  `{configured:false, transport:null}`. Set `SMTP_HOST`/`SMTP_PORT`/`SMTP_FROM`
+  (and credentials when required), restart the API, then a notification/queue
+  smoke test can be run. Automated tests cover sealed enqueue, delivery, mail
+  log, retry-to-FAILED and tamper rejection with the in-memory transport.
+- Cleanup removed analytics rows, the temporary administrator/sessions and
+  recent audit events. Production is back to 1 user, 2 posts, 0 media and 0
+  analytics rows; public/admin/API routes return 200.
