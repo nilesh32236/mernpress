@@ -7,6 +7,7 @@ import JsonLd from '@/components/JsonLd';
 import { breadcrumbSchema, collectionSchema } from '@/lib/seo';
 import { siteUrl } from '@/lib/api';
 import { termPath } from '@mernpress/contracts';
+import { requestThemeStrings } from '@/lib/theme-strings';
 
 export default async function CategoryArchive({
   params,
@@ -53,6 +54,7 @@ export default async function CategoryArchive({
   }
 
   const settings = await getSiteSettings().catch(() => null);
+  const strings = await requestThemeStrings(settings);
   const archiveUrl = `${siteUrl()}${termPath('category', slug, {
     categoryBase: settings?.categoryBase ?? 'category',
   })}`;
@@ -73,13 +75,15 @@ export default async function CategoryArchive({
         ])}
       />
       <div className="site-content">
-        <h1 className="blog-title">Category: {term.name}</h1>
+        <h1 className="blog-title">
+          {strings.categoryArchive}: {term.name}
+        </h1>
         {term.description ? <p className="archive-description">{term.description}</p> : null}
         {items.length > 0 ? (
-          <PostList posts={items} />
+          <PostList posts={items} strings={strings} />
         ) : (
           <p role="status" className="status archive-empty">
-            Sorry, but nothing was found. Please try a search with different keywords.
+            {strings.noResults}
           </p>
         )}
       </div>
@@ -87,6 +91,7 @@ export default async function CategoryArchive({
         page={page}
         totalPages={totalPages}
         basePath={`${termPath('category', slug, { categoryBase: settings?.categoryBase ?? 'category' })}`}
+        strings={strings}
       />
     </main>
   );

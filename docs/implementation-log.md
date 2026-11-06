@@ -4441,3 +4441,29 @@ temporary administrator:
   and the temporary administrator; production is back to 1 user, 2 posts, 0
   analytics rows and default English-only chrome, with `/`, `/admin/`,
   `/admin/settings/languages`, `/api/health` and `/posts/testcom` at 200.
+
+### 2026-11-06 — Component-level per-language strings
+
+- Extended the `theme_strings` contract from 8 layout keys to 48 keys covering
+  post meta (written by, min read, in, uncategorized, post navigation, language
+  switcher), author box, related/more-posts headings, comments (title/thoughts,
+  reply, leave/cancel reply, notes, name/email/website/comment labels, posting,
+  submit, posted/pending notices), pagination aria labels, search form
+  (label/placeholder/button), archive search/empty text and archive prefixes.
+- `requestThemeStrings(settings?)` resolves `x-mn-language` + stored overrides
+  once per page. Pages pass the map to `PostView`, `PostList`, `Pagination`,
+  `SearchForm`, `MorePosts` and `LanguageLinks`; `Comments`, `AuthorBox` and
+  `RelatedPosts` receive it through `PostView`. Components default to
+  `DEFAULT_THEME_STRINGS`, so isolated rendering and existing tests keep working.
+- Browser verification in development: Hindi overrides for all component keys;
+  `/hi/posts/component-strings-test-hi` rendered `लेखक`, `मिनट पढ़ें`,
+  `लेखक के बारे में`, `टिप्पणियाँ`, `उत्तर दें`, `टिप्पणी भेजें`,
+  `पोस्ट नेविगेशन` and the `भाषाएँ` switcher label with zero occurrences of
+  “Written by”, “Leave a Reply” or “Post Comment”. The English post kept the
+  English strings, and `/search` used the default-language overrides
+  (`Search the site...`, `Find`).
+- Tests: new `apps/web/test/language-components.test.tsx` renders `PostView`,
+  `PostList`, `Pagination` and `SearchForm` with Hindi strings and asserts the
+  translated text and aria labels plus the absence of English defaults.
+- Validation: 882 unit/integration tests (API 521, admin 240, web 43, contracts
+  13, block-system 65), 24 Playwright E2E tests and seven builds pass.

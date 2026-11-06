@@ -54,6 +54,16 @@ or adding a translation-file pipeline.
    administrator-only writes through the option service.
 7. **Public payload.** `GET /api/public/site` includes `themeStrings` and
    `languageMenus`. They contain no secrets and are safe to expose.
+8. **Component strings.** The same contract carries the visible strings for
+   post meta (written by / min read / category connector / uncategorized / post
+   navigation), the author box, related/more-posts headings, comments (headings,
+   reply, form labels, submit and notices), pagination aria labels, the search
+   form and archive/search empty states. `requestThemeStrings()` resolves the
+   request language and settings once per page; pages pass the map to
+   `PostView`, `PostList`, `Pagination`, `SearchForm`, `MorePosts` and
+   `LanguageLinks`. Components default to `DEFAULT_THEME_STRINGS` so they remain
+   usable in isolation and their unit tests do not need a request context.
+   Dates are still formatted with `en-US` month names (documented limit).
 
 ## Consequences
 
@@ -61,9 +71,10 @@ or adding a translation-file pipeline.
   translation files, no build step, no server restart.
 - Menu URLs are literal: a Hindi menu must use `/hi/...` paths. Automatic
   prefixing would break external links and the default language menu.
-- Only layout chrome is translated in this slice. Post meta (“Written by”,
-  “min read”), comments, search form labels and pagination remain English;
-  they are component-level strings with no language context.
+- Layout chrome, post meta, author box, related/more-posts headings, comments,
+  pagination aria labels and the search form are translated. Remaining English:
+  date formatting (`en-US` month names), the 404 page copy and API error
+  messages (server-provided, not theme strings).
 - No per-language widgets, sidebars or theme template overrides.
 - Changing the enabled languages leaves orphaned `theme_strings`/menu entries
   in the option; they are ignored while the language is disabled and become

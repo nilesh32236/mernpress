@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { postHref, type PublicPost } from '@/lib/api';
 import { readingTime } from '@/lib/reading-time';
+import { DEFAULT_THEME_STRINGS, type ThemeStrings } from '@mernpress/contracts';
 
 function formatDate(iso: string | null): string | null {
   if (!iso) return null;
@@ -19,10 +20,12 @@ function formatDate(iso: string | null): string | null {
  */
 export default function RelatedPosts({
   posts,
-  heading = 'Related posts',
+  heading = DEFAULT_THEME_STRINGS.relatedPosts,
+  strings = DEFAULT_THEME_STRINGS,
 }: {
   posts: PublicPost[];
   heading?: string;
+  strings?: ThemeStrings;
 }) {
   if (posts.length === 0) return null;
   return (
@@ -40,7 +43,7 @@ export default function RelatedPosts({
               <p className="related-post-meta">
                 {date ? <time dateTime={post.publishedAt ?? undefined}>{date}</time> : null}
                 {date ? ' · ' : null}
-                {minutes} min read
+                {minutes} {strings.minRead}
               </p>
             </li>
           );

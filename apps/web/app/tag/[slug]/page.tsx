@@ -7,6 +7,7 @@ import JsonLd from '@/components/JsonLd';
 import { breadcrumbSchema, collectionSchema } from '@/lib/seo';
 import { siteUrl } from '@/lib/api';
 import { termPath } from '@mernpress/contracts';
+import { requestThemeStrings } from '@/lib/theme-strings';
 
 export default async function TagArchive({
   params,
@@ -53,6 +54,7 @@ export default async function TagArchive({
   }
 
   const settings = await getSiteSettings().catch(() => null);
+  const strings = await requestThemeStrings(settings);
   const archiveUrl = `${siteUrl()}${termPath('tag', slug, {
     tagBase: settings?.tagBase ?? 'tag',
   })}`;
@@ -73,13 +75,15 @@ export default async function TagArchive({
         ])}
       />
       <div className="site-content">
-        <h1 className="blog-title">Tag: {term.name}</h1>
+        <h1 className="blog-title">
+          {strings.tagArchive}: {term.name}
+        </h1>
         {term.description ? <p className="archive-description">{term.description}</p> : null}
         {items.length > 0 ? (
-          <PostList posts={items} />
+          <PostList posts={items} strings={strings} />
         ) : (
           <p role="status" className="status archive-empty">
-            Sorry, but nothing was found. Please try a search with different keywords.
+            {strings.noResults}
           </p>
         )}
       </div>
@@ -87,6 +91,7 @@ export default async function TagArchive({
         page={page}
         totalPages={totalPages}
         basePath={`${termPath('tag', slug, { tagBase: settings?.tagBase ?? 'tag' })}`}
+        strings={strings}
       />
     </main>
   );

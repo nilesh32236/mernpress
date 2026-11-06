@@ -6,6 +6,7 @@ import JsonLd from '@/components/JsonLd';
 import PostView from '@/components/PostView';
 import { articleSchema, breadcrumbSchema, collectionSchema } from '@/lib/seo';
 import { siteUrl } from '@/lib/api';
+import { requestThemeStrings } from '@/lib/theme-strings';
 
 const FRIENDLY_ERROR =
   'We couldn\u2019t load content right now. Content is temporarily unavailable. Please try again later.';
@@ -20,13 +21,14 @@ export default async function HomePage({
 
   // Appearance → Customize can show a static page instead of the latest posts.
   const settings = await getSiteSettings().catch(() => null);
+  const strings = await requestThemeStrings(settings);
   if (settings?.showOnFront === 'page' && settings.pageOnFrontSlug) {
     const frontPage = await getPublishedBySlug('page', settings.pageOnFrontSlug).catch(() => null);
     if (frontPage) {
       return (
         <>
           <JsonLd data={articleSchema(siteUrl(), frontPage)} />
-          <PostView post={frontPage} />
+          <PostView post={frontPage} strings={strings} />
         </>
       );
     }
@@ -54,7 +56,7 @@ export default async function HomePage({
       />
       <JsonLd data={breadcrumbSchema(siteUrl(), [{ name: 'Home', url: siteUrl() }])} />
       <div className="site-content">
-        <h1 className="blog-title">Blog</h1>
+        <h1 className="blog-title">{strings.blog}</h1>
 
         {error ? (
           <p role="status" className="status">
@@ -62,13 +64,15 @@ export default async function HomePage({
           </p>
         ) : items.length === 0 ? (
           <p role="status" className="status">
-            Sorry, but nothing was found. Please try a search with different keywords.
+            {strings.noResults}
           </p>
         ) : (
-          <PostList posts={items} />
+          <PostList posts={items} strings={strings} />
         )}
       </div>
-      {!error ? <Pagination page={page} totalPages={totalPages} basePath="/" /> : null}
+      {!error ? (
+        <Pagination page={page} totalPages={totalPages} basePath="/" strings={strings} />
+      ) : null}
     </main>
   );
 }

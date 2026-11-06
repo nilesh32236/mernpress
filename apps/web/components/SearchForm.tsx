@@ -1,15 +1,19 @@
+import { DEFAULT_THEME_STRINGS, type ThemeStrings } from '@mernpress/contracts';
+
 /** WordPress search block: text input plus a dark Search button. */
 export default function SearchForm({
   query = '',
-  label = 'Search',
+  label,
+  strings = DEFAULT_THEME_STRINGS,
 }: {
   query?: string;
   label?: string;
+  strings?: ThemeStrings;
 }) {
   return (
     <form className="search-form" role="search" method="get" action="/search">
       <label className="screen-reader-text" htmlFor="site-search-input">
-        {label}
+        {label ?? strings.search}
       </label>
       <div className="search-form-inner">
         <input
@@ -17,12 +21,12 @@ export default function SearchForm({
           className="search-form-input"
           type="search"
           name="q"
-          placeholder="Type here..."
+          placeholder={strings.searchPlaceholder}
           defaultValue={query}
           required
         />
         <button className="search-form-button" type="submit">
-          Search
+          {strings.searchButton}
         </button>
       </div>
     </form>

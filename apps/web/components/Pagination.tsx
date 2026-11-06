@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { DEFAULT_THEME_STRINGS, type ThemeStrings } from '@mernpress/contracts';
 
 /** WordPress query pagination: previous arrow, page numbers, next arrow. */
 export default function Pagination({
@@ -6,11 +7,13 @@ export default function Pagination({
   totalPages,
   basePath,
   query = {},
+  strings = DEFAULT_THEME_STRINGS,
 }: {
   page: number;
   totalPages: number;
   basePath: string;
   query?: Record<string, string>;
+  strings?: ThemeStrings;
 }) {
   if (totalPages <= 1) return null;
 
@@ -26,9 +29,9 @@ export default function Pagination({
   }
 
   return (
-    <nav className="pagination" aria-label="Posts pagination">
+    <nav className="pagination" aria-label={strings.paginationLabel}>
       {page > 1 ? (
-        <Link className="pagination-arrow" href={href(page - 1)} aria-label="Previous page">
+        <Link className="pagination-arrow" href={href(page - 1)} aria-label={strings.previousPage}>
           <span aria-hidden="true">←</span>
         </Link>
       ) : (
@@ -50,7 +53,7 @@ export default function Pagination({
         )}
       </span>
       {page < totalPages ? (
-        <Link className="pagination-arrow" href={href(page + 1)} aria-label="Next page">
+        <Link className="pagination-arrow" href={href(page + 1)} aria-label={strings.nextPage}>
           <span aria-hidden="true">→</span>
         </Link>
       ) : (

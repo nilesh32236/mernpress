@@ -5,6 +5,7 @@ import Pagination from '@/components/Pagination';
 import JsonLd from '@/components/JsonLd';
 import { breadcrumbSchema, collectionSchema } from '@/lib/seo';
 import { siteUrl } from '@/lib/api';
+import { requestThemeStrings } from '@/lib/theme-strings';
 
 const FRIENDLY_ERROR =
   'We couldn\u2019t load content right now. Content is temporarily unavailable. Please try again later.';
@@ -16,6 +17,7 @@ export default async function PostsPage({
 }) {
   const sp = await searchParams;
   const page = Math.max(1, Number(sp?.page ?? 1) || 1);
+  const strings = await requestThemeStrings();
 
   let items: PublicPost[] = [];
   let totalPages = 1;
@@ -45,7 +47,7 @@ export default async function PostsPage({
         ])}
       />
       <div className="site-content">
-        <h1 className="blog-title">Blog</h1>
+        <h1 className="blog-title">{strings.blog}</h1>
 
         {error ? (
           <p role="status" className="status">
@@ -53,13 +55,15 @@ export default async function PostsPage({
           </p>
         ) : items.length === 0 ? (
           <p role="status" className="status">
-            Sorry, but nothing was found. Please try a search with different keywords.
+            {strings.noResults}
           </p>
         ) : (
-          <PostList posts={items} />
+          <PostList posts={items} strings={strings} />
         )}
       </div>
-      {!error ? <Pagination page={page} totalPages={totalPages} basePath="/posts" /> : null}
+      {!error ? (
+        <Pagination page={page} totalPages={totalPages} basePath="/posts" strings={strings} />
+      ) : null}
     </main>
   );
 }

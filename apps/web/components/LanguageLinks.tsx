@@ -9,13 +9,15 @@ import { languageLabel } from '@mernpress/contracts';
 export function LanguageLinks({
   language,
   translations,
+  label = 'Languages',
 }: {
   language: string;
   translations: Array<{ language: string; title: string; path: string }>;
+  label?: string;
 }) {
   if (translations.length === 0) return null;
   return (
-    <nav className="language-links" aria-label="Languages">
+    <nav className="language-links" aria-label={label}>
       <ul>
         <li>
           <span aria-current="true" lang={language}>

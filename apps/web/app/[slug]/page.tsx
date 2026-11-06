@@ -9,6 +9,7 @@ import {
 import { hreflangAlternates } from '@mernpress/contracts';
 import PostView from '@/components/PostView';
 import { LanguageLinks } from '@/components/LanguageLinks';
+import { requestThemeStrings } from '@/lib/theme-strings';
 import PostList from '@/components/PostList';
 import Pagination from '@/components/Pagination';
 import JsonLd from '@/components/JsonLd';
@@ -65,6 +66,7 @@ export default async function PageBySlug({
   }
   if (!post) notFound();
 
+  const strings = await requestThemeStrings();
   // Appearance → Customize can assign this page as the posts index.
   const settings = await getSiteSettings().catch(() => null);
   if (settings?.pageForPostsSlug === slug) {
@@ -86,14 +88,19 @@ export default async function PageBySlug({
         <div className="site-content">
           <h1 className="blog-title">{post.title}</h1>
           {items.length > 0 ? (
-            <PostList posts={items} />
+            <PostList posts={items} strings={strings} />
           ) : (
             <p role="status" className="status">
-              Sorry, but nothing was found. Please try a search with different keywords.
+              {strings.noResults}
             </p>
           )}
         </div>
-        <Pagination page={pageNumber} totalPages={totalPages} basePath={`/${slug}`} />
+        <Pagination
+          page={pageNumber}
+          totalPages={totalPages}
+          basePath={`/${slug}`}
+          strings={strings}
+        />
       </main>
     );
   }
@@ -108,8 +115,12 @@ export default async function PageBySlug({
           { name: post.title, url: canonical },
         ])}
       />
-      <LanguageLinks language={post.language} translations={post.translations ?? []} />
-      <PostView post={post} />
+      <LanguageLinks
+        language={post.language}
+        translations={post.translations ?? []}
+        label={strings.languagesLabel}
+      />
+      <PostView post={post} strings={strings} />
     </>
   );
 }

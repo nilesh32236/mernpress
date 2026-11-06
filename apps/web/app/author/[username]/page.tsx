@@ -5,6 +5,7 @@ import Pagination from '@/components/Pagination';
 import JsonLd from '@/components/JsonLd';
 import { breadcrumbSchema, profileSchema } from '@/lib/seo';
 import { siteUrl } from '@/lib/api';
+import { requestThemeStrings } from '@/lib/theme-strings';
 
 export default async function AuthorArchive({
   params,
@@ -16,6 +17,7 @@ export default async function AuthorArchive({
   const { username } = await params;
   const sp = await searchParams;
   const page = Math.max(1, Number(sp?.page ?? 1) || 1);
+  const strings = await requestThemeStrings();
 
   let items: PublicPost[] = [];
   let totalPages = 1;
@@ -39,20 +41,27 @@ export default async function AuthorArchive({
         ])}
       />
       <div className="site-content">
-        <h1 className="blog-title">Author: {username}</h1>
+        <h1 className="blog-title">
+          {strings.authorArchive}: {username}
+        </h1>
         {error ? (
           <p role="status" className="status">
             We couldn&rsquo;t load this author right now. Please try again later.
           </p>
         ) : items.length > 0 ? (
-          <PostList posts={items} />
+          <PostList posts={items} strings={strings} />
         ) : (
           <p role="status" className="status archive-empty">
-            Sorry, but nothing was found. Please try a search with different keywords.
+            {strings.noResults}
           </p>
         )}
         {!error ? (
-          <Pagination page={page} totalPages={totalPages} basePath={`/author/${username}`} />
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            basePath={`/author/${username}`}
+            strings={strings}
+          />
         ) : null}
       </div>
     </main>

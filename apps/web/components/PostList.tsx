@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { postHref, type PublicPost } from '@/lib/api';
 import ResponsiveImage from './ResponsiveImage';
 import { readingTime } from '@/lib/reading-time';
+import { DEFAULT_THEME_STRINGS, type ThemeStrings } from '@mernpress/contracts';
 
 function formatDate(iso: string | null): string | null {
   if (!iso) return null;
@@ -25,7 +26,13 @@ function excerptText(post: PublicPost): string | null {
 }
 
 /** WordPress query loop used by the blog, archives and search results. */
-export default function PostList({ posts }: { posts: PublicPost[] }) {
+export default function PostList({
+  posts,
+  strings = DEFAULT_THEME_STRINGS,
+}: {
+  posts: PublicPost[];
+  strings?: ThemeStrings;
+}) {
   return (
     <ul className="post-list">
       {posts.map((post) => {
@@ -54,7 +61,9 @@ export default function PostList({ posts }: { posts: PublicPost[] }) {
                   <time dateTime={post.publishedAt ?? undefined}>{date}</time>
                 </Link>
                 <span aria-hidden="true"> · </span>
-                <span>{read.minutes} min read</span>
+                <span>
+                  {read.minutes} {strings.minRead}
+                </span>
               </p>
             ) : null}
           </li>

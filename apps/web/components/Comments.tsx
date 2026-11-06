@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { DEFAULT_THEME_STRINGS, type ThemeStrings } from '@mernpress/contracts';
 
 interface PublicComment {
   id: string;
@@ -27,11 +28,13 @@ function CommentItem({
   byParent,
   onReply,
   showAvatars,
+  strings,
 }: {
   comment: PublicComment;
   byParent: Map<string, PublicComment[]>;
   onReply: (comment: PublicComment) => void;
   showAvatars: boolean;
+  strings: ThemeStrings;
 }) {
   const replies = byParent.get(comment.id) ?? [];
   return (
@@ -53,7 +56,7 @@ function CommentItem({
             )}
             <time dateTime={comment.createdAt}>{formatCommentDate(comment.createdAt)}</time>
             <button type="button" className="comment-reply-link" onClick={() => onReply(comment)}>
-              Reply
+              {strings.reply}
             </button>
           </div>
           <p className="comment-content">{comment.content}</p>
@@ -68,6 +71,7 @@ function CommentItem({
               byParent={byParent}
               onReply={onReply}
               showAvatars={showAvatars}
+              strings={strings}
             />
           ))}
         </ol>
@@ -76,7 +80,15 @@ function CommentItem({
   );
 }
 
-export default function Comments({ postId, postTitle }: { postId: string; postTitle: string }) {
+export default function Comments({
+  postId,
+  postTitle,
+  strings = DEFAULT_THEME_STRINGS,
+}: {
+  postId: string;
+  postTitle: string;
+  strings?: ThemeStrings;
+}) {
   const [showAvatars, setShowAvatars] = useState(true);
   const [comments, setComments] = useState<PublicComment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -158,20 +170,16 @@ export default function Comments({ postId, postTitle }: { postId: string; postTi
       });
       const body = await response.json().catch(() => null);
       if (!response.ok) {
-        throw new Error(body?.error?.message ?? 'We could not post your comment.');
+        throw new Error(body?.error?.message ?? strings.commentFailed);
       }
       if (body.status === 'APPROVED') {
         setComments((current) => [...current, body as PublicComment]);
       }
       setContent('');
       setParentId(null);
-      setNotice(
-        body?.status === 'PENDING'
-          ? 'Your comment is awaiting moderation.'
-          : 'Your comment has been posted.',
-      );
+      setNotice(body?.status === 'PENDING' ? strings.commentPending : strings.commentPosted);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'We could not post your comment.');
+      setError(caught instanceof Error ? caught.message : strings.commentFailed);
     } finally {
       setSubmitting(false);
     }
@@ -183,16 +191,16 @@ export default function Comments({ postId, postTitle }: { postId: string; postTi
     <section className="site-content comments-area" aria-labelledby="comments-heading">
       <h2 id="comments-heading" className="comments-title">
         {comments.length === 0
-          ? 'Comments'
-          : `${comments.length} ${comments.length === 1 ? 'thought' : 'thoughts'} on “${postTitle}”`}
+          ? strings.comments
+          : `${comments.length} ${comments.length === 1 ? strings.thoughtOn : strings.thoughtsOn} “${postTitle}”`}
       </h2>
       {loading ? (
         <p role="status" className="status">
-          Loading comments…
+          {strings.loadingComments}
         </p>
       ) : loadError ? (
         <p role="status" className="status">
-          We couldn&rsquo;t load comments right now.
+          {strings.commentsUnavailable}
         </p>
       ) : roots.length > 0 ? (
         <ol className="comment-list">
@@ -203,6 +211,7 @@ export default function Comments({ postId, postTitle }: { postId: string; postTi
               byParent={replies}
               onReply={(target) => setParentId(target.id)}
               showAvatars={showAvatars}
+              strings={strings}
             />
           ))}
         </ol>
@@ -210,19 +219,17 @@ export default function Comments({ postId, postTitle }: { postId: string; postTi
 
       <div className="comment-respond">
         <h3 className="comment-reply-title">
-          {replyTo ? `Reply to ${replyTo.authorName}` : 'Leave a Reply'}
+          {replyTo ? `${strings.replyTo} ${replyTo.authorName}` : strings.leaveReply}
         </h3>
         {replyTo ? (
           <button type="button" className="comment-cancel-reply" onClick={() => setParentId(null)}>
-            Cancel reply
+            {strings.cancelReply}
           </button>
         ) : null}
         <form className="comment-form" onSubmit={handleSubmit}>
-          <p className="comment-notes">
-            Your email address will not be published. Required fields are marked <span>*</span>.
-          </p>
+          <p className="comment-notes">{strings.commentNotes}</p>
           <p className="comment-form-author">
-            <label htmlFor="comment-author">Name *</label>
+            <label htmlFor="comment-author">{strings.nameLabel}</label>
             <input
               id="comment-author"
               name="author"
@@ -234,7 +241,7 @@ export default function Comments({ postId, postTitle }: { postId: string; postTi
             />
           </p>
           <p className="comment-form-email">
-            <label htmlFor="comment-email">Email *</label>
+            <label htmlFor="comment-email">{strings.emailLabel}</label>
             <input
               id="comment-email"
               name="email"
@@ -246,7 +253,7 @@ export default function Comments({ postId, postTitle }: { postId: string; postTi
             />
           </p>
           <p className="comment-form-url">
-            <label htmlFor="comment-url">Website</label>
+            <label htmlFor="comment-url">{strings.websiteLabel}</label>
             <input
               id="comment-url"
               name="url"
@@ -257,7 +264,7 @@ export default function Comments({ postId, postTitle }: { postId: string; postTi
             />
           </p>
           <p className="comment-form-comment">
-            <label htmlFor="comment-content">Comment *</label>
+            <label htmlFor="comment-content">{strings.commentLabel}</label>
             <textarea
               id="comment-content"
               name="comment"
@@ -280,7 +287,7 @@ export default function Comments({ postId, postTitle }: { postId: string; postTi
           ) : null}
           <p className="form-submit">
             <button type="submit" className="submit" disabled={submitting}>
-              {submitting ? 'Posting…' : 'Post Comment'}
+              {submitting ? strings.posting : strings.postComment}
             </button>
           </p>
         </form>

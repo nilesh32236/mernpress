@@ -4,6 +4,7 @@ import PostList from '@/components/PostList';
 import Pagination from '@/components/Pagination';
 import MorePosts from '@/components/MorePosts';
 import SearchForm from '@/components/SearchForm';
+import { requestThemeStrings } from '@/lib/theme-strings';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,7 @@ export default async function SearchPage({
   const sp = await searchParams;
   const query = (sp?.q ?? '').trim();
   const page = Math.max(1, Number(sp?.page ?? 1) || 1);
+  const strings = await requestThemeStrings();
 
   let items: PublicPost[] = [];
   let morePosts: PublicPost[] = [];
@@ -40,27 +42,23 @@ export default async function SearchPage({
     <main id="main-content" className="site-main">
       <div className="site-content">
         <h1 className="blog-title">
-          {query ? (
-            <>Search results for: &ldquo;{query}&rdquo;</>
-          ) : (
-            <>Search results for: &ldquo;&rdquo;</>
-          )}
+          {strings.searchResultsFor}: &ldquo;{query}&rdquo;
         </h1>
-        <SearchForm query={query} />
+        <SearchForm query={query} strings={strings} />
         {error ? (
           <p role="status" className="status search-status">
-            We couldn&rsquo;t run that search right now. Please try again later.
+            {strings.searchError}
           </p>
         ) : !query ? (
           <p role="status" className="status search-status">
-            Type a question above to search the site.
+            {strings.searchHint}
           </p>
         ) : items.length === 0 ? (
           <p role="status" className="status search-status">
-            Sorry, but nothing was found. Please try a search with different keywords.
+            {strings.noResults}
           </p>
         ) : (
-          <PostList posts={items} />
+          <PostList posts={items} strings={strings} />
         )}
       </div>
       {!error ? (
@@ -69,9 +67,10 @@ export default async function SearchPage({
           totalPages={totalPages}
           basePath="/search"
           query={query ? { q: query } : {}}
+          strings={strings}
         />
       ) : null}
-      <MorePosts posts={morePosts} />
+      <MorePosts posts={morePosts} strings={strings} />
     </main>
   );
 }

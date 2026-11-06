@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { PublicAuthorSummary } from '@/lib/api';
+import { DEFAULT_THEME_STRINGS, type ThemeStrings } from '@mernpress/contracts';
 
 function displayName(author: PublicAuthorSummary): string {
   const preferred = author.displayName?.trim();
@@ -26,14 +27,20 @@ function initials(name: string): string {
  * The archive link uses `rel="author"`; the external website is opened safely
  * and is authored by the account owner (validated http(s) server-side).
  */
-export default function AuthorBox({ author }: { author: PublicAuthorSummary }) {
+export default function AuthorBox({
+  author,
+  strings = DEFAULT_THEME_STRINGS,
+}: {
+  author: PublicAuthorSummary;
+  strings?: ThemeStrings;
+}) {
   const name = displayName(author);
   const avatar = initials(name);
   const bio = author.bio?.trim();
   return (
     <section className="entry-wide author-box" aria-labelledby="author-box-heading">
       <h2 id="author-box-heading" className="author-box-heading">
-        About the author
+        {strings.aboutAuthor}
       </h2>
       <div className="author-box-body">
         <span className="author-avatar" aria-hidden="true">
@@ -49,7 +56,7 @@ export default function AuthorBox({ author }: { author: PublicAuthorSummary }) {
           {author.website ? (
             <p className="author-box-website">
               <a href={author.website} rel="me noopener noreferrer" target="_blank">
-                Visit {name}&rsquo;s website
+                {strings.visitWebsite}
               </a>
             </p>
           ) : null}

@@ -6,16 +6,19 @@ import AuthorBox from './AuthorBox';
 import { readingTime } from '@/lib/reading-time';
 import Comments from './Comments';
 import PasswordForm from './PasswordForm';
+import { DEFAULT_THEME_STRINGS, type ThemeStrings } from '@mernpress/contracts';
 
 export default function PostView({
   post,
   morePosts = [],
   relatedPosts = [],
+  strings = DEFAULT_THEME_STRINGS,
 }: {
   post: PublicPost;
   morePosts?: PublicPost[];
   /** Same-category posts; falls back to `morePosts` when empty. */
   relatedPosts?: PublicPost[];
+  strings?: ThemeStrings;
 }) {
   const isPage = post.type === 'page';
   const author = post.author?.username ?? null;
@@ -53,11 +56,13 @@ export default function PostView({
         {!isPage ? featured : null}
         {!isPage ? (
           <div className="entry-meta">
-            <span>Written by </span>
+            <span>{strings.writtenBy} </span>
             {author ? <Link href={`/author/${encodeURIComponent(author)}`}>{author}</Link> : null}
             <span aria-hidden="true"> · </span>
-            <span>{read.minutes} min read</span>
-            <span> in </span>
+            <span>
+              {read.minutes} {strings.minRead}
+            </span>
+            <span> {strings.inCategory} </span>
             {categories.length > 0 ? (
               categories.map((term, index) => (
                 <span key={term.id}>
@@ -68,7 +73,7 @@ export default function PostView({
                 </span>
               ))
             ) : (
-              <span>Uncategorized</span>
+              <span>{strings.uncategorized}</span>
             )}
           </div>
         ) : null}
@@ -94,9 +99,9 @@ export default function PostView({
 
       {!isPage ? (
         <>
-          {post.author ? <AuthorBox author={post.author} /> : null}
+          {post.author ? <AuthorBox author={post.author} strings={strings} /> : null}
           <div className="entry-wide">
-            <nav className="post-navigation" aria-label="Post navigation">
+            <nav className="post-navigation" aria-label={strings.postNavigation}>
               <span className="post-navigation-slot">
                 {older ? (
                   <Link className="post-navigation-link" href={postHref(older)}>
@@ -114,10 +119,11 @@ export default function PostView({
             </nav>
           </div>
 
-          <Comments postId={post.id} postTitle={post.title} />
+          <Comments postId={post.id} postTitle={post.title} strings={strings} />
           <RelatedPosts
             posts={related}
-            heading={relatedPosts.length > 0 ? 'Related posts' : 'More posts'}
+            heading={relatedPosts.length > 0 ? strings.relatedPosts : strings.morePosts}
+            strings={strings}
           />
         </>
       ) : null}

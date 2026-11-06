@@ -9,6 +9,7 @@ import {
 } from '@/lib/api';
 import { hreflangAlternates } from '@mernpress/contracts';
 import { LanguageLinks } from '@/components/LanguageLinks';
+import { requestThemeStrings } from '@/lib/theme-strings';
 import type { PublicPost } from '@/lib/api';
 import PostView from '@/components/PostView';
 import JsonLd from '@/components/JsonLd';
@@ -62,6 +63,7 @@ export default async function PostPage({
     );
   }
   if (!post) notFound();
+  const strings = await requestThemeStrings();
 
   // WordPress's single-post template ends with the previous post and a
   // "More posts" list. Fetch the newest posts once; failures degrade to the
@@ -92,8 +94,12 @@ export default async function PostPage({
           { name: post.title, url: canonical },
         ])}
       />
-      <LanguageLinks language={post.language} translations={post.translations ?? []} />
-      <PostView post={post} morePosts={morePosts} relatedPosts={relatedPosts} />
+      <LanguageLinks
+        language={post.language}
+        translations={post.translations ?? []}
+        label={strings.languagesLabel}
+      />
+      <PostView post={post} morePosts={morePosts} relatedPosts={relatedPosts} strings={strings} />
     </>
   );
 }

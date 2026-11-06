@@ -1,8 +1,10 @@
 import SearchForm from '@/components/SearchForm';
 import { logCurrentNotFound } from '@/lib/not-found-log';
+import { requestThemeStrings } from '@/lib/theme-strings';
 
 export default async function NotFound() {
   await logCurrentNotFound();
+  const strings = await requestThemeStrings();
   return (
     <main id="main-content" className="site-main not-found-main">
       <div className="not-found-columns">
@@ -20,7 +22,7 @@ export default async function NotFound() {
             The page you are looking for doesn&rsquo;t exist, or it has been moved. Please try
             searching using the form below.
           </p>
-          <SearchForm />
+          <SearchForm strings={strings} />
         </div>
       </div>
     </main>
