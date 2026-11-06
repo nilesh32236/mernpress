@@ -61,7 +61,7 @@ owner decision.
 | Appearance → Customize | D/P | Site Identity, Colors (five theme tokens), Menus (label/URL items), Homepage Settings (static front page + posts page) and validated Additional CSS; Site Editor covers templates |\n| Settings → Discussion/Media/Permalinks/Privacy | D/P | Options drive comments, uploads, permalink structures (presets, custom pattern, category/tag bases), privacy page; comment/moderation e-mails sent when mail is configured |
 | Settings → Connectors | D/P | Encrypted provider credentials, masked state |
 | Updates | D/P | Version report, "Check again", manifest checks |
-| Public: home/blog/single/page/archives/search/404/author/feed/sitemap | D/P | Twenty Twenty-Five geometry, comments, pagination |
+| Public: home/blog/single/page/archives/search/404/author/feed/sitemap | D/P | Twenty Twenty-Five geometry, comments, pagination | WordPress shows published changes immediately; MERNPress invalidates its public cache from the API (ADR 0056) instead of waiting for the 60 s window.
 | Public/admin search | D/P | Ranked PostgreSQL FTS (title A / excerpt B / body C, GIN) with quoted phrases, `-exclusion`, substring fallback and composable filters (status, language, category/tag, author, month, role visibility). WordPress core is a `LIKE` scan; users install Relevanssi (100k+) for relevance |
 
 ## Verification evidence

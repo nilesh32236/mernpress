@@ -8,6 +8,20 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../
 loadDotenv({ path: path.join(repoRoot, '.env'), quiet: true });
 
 const SITE = 'http://127.0.0.1:3000';
+const REVALIDATE_SECRET = 'e2e-revalidate-secret-2026-11-06';
+
+/**
+ * The API notifies the web cache after API-driven writes. This suite seeds
+ * with SQL, so flush the public-content tag explicitly before measuring.
+ */
+async function revalidatePublicContent(page: Page): Promise<void> {
+  const response = await page.request.post(`${SITE}/api/revalidate`, {
+    headers: { 'x-revalidate-secret': REVALIDATE_SECRET },
+    data: { tags: ['public-content'] },
+  });
+  expect(response.status()).toBe(200);
+}
+
 const ADMIN_URL = 'http://127.0.0.1:5173/admin/';
 const adminUsername = 'visual_admin';
 const password = 'Visual-E2E-2026-strong!';
@@ -26,6 +40,10 @@ test.beforeAll(() => {
     NODE_ENV: 'test',
     MERNPRESS_ADMIN_PASSWORD: password,
   };
+  // Earlier suites (content, editor, terms) leave extra published posts and
+  // users behind. Start from the same reset state the E2E runner uses so the
+  // home/blog/search captures do not depend on test order.
+  execFileSync('pnpm', ['db:reset:test'], { cwd: repoRoot, env, stdio: 'pipe' });
   execFileSync('pnpm', ['db:seed'], { cwd: repoRoot, env, stdio: 'pipe' });
   execFileSync(
     'psql',
@@ -50,23 +68,36 @@ test.beforeAll(() => {
     env,
     stdio: 'pipe',
   });
+  const published = execFileSync(
+    'psql',
+    [testDatabaseUrl, '-t', '-A', '-c', "SELECT count(*) FROM posts WHERE status = 'PUBLISHED';"],
+    { encoding: 'utf8' },
+  ).trim();
+  if (published !== '2') {
+    throw new Error(`visual fixtures: expected 2 published rows, found ${published}`);
+  }
 });
 
 test.afterAll(() => {
   const testDatabaseUrl = process.env['TEST_DATABASE_URL'];
   if (!testDatabaseUrl) return;
-  execFileSync(
-    'psql',
-    [
-      testDatabaseUrl,
-      '-c',
-      `DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE username = '${adminUsername}'); DELETE FROM users WHERE username = '${adminUsername}';`,
-    ],
-    { stdio: 'pipe' },
-  );
+  // Leave the test database clean for later suites and local runs.
+  execFileSync('pnpm', ['db:reset:test'], {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      DATABASE_URL: testDatabaseUrl,
+      TEST_DATABASE_URL: testDatabaseUrl,
+    },
+    stdio: 'pipe',
+  });
 });
 
 async function settle(page: Page) {
+  // The Next dev overlay lives in a custom element and can show an issues badge
+  // when a page logs an error; it never renders in production, so hide the host
+  // before capturing.
+  await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
   await page.evaluate(async () => {
     await document.fonts.ready;
     await Promise.all(
@@ -92,34 +123,38 @@ async function login(page: Page) {
   await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible();
 }
 
+const publicScreens: Array<[string, string, string | RegExp]> = [
+  ['home', '/', 'Blog'],
+  ['blog', '/posts', 'Blog'],
+  ['single', '/posts/welcome-to-mernpress', 'Welcome to MERNPress'],
+  ['search', '/search?q=mernpress', /Search results for/],
+  ['about', '/about', 'About'],
+  ['404', '/public-visual-missing', 'Page not found'],
+];
+
 test('public visual baselines', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
-  for (const [name, route, heading] of [
-    ['about', '/about', 'About'],
-    ['404', '/public-visual-missing', 'Page not found'],
-  ] as const) {
+  await revalidatePublicContent(page);
+  for (const [name, route, heading] of publicScreens) {
     await page.goto(`${SITE}${route}`, { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
     await settle(page);
     await expect(page).toHaveScreenshot(`${name}-desktop.png`, {
       animations: 'disabled',
       caret: 'hide',
-      maxDiffPixelRatio: 0.01,
+      maxDiffPixelRatio: 0.001,
     });
   }
 
   await page.setViewportSize({ width: 375, height: 812 });
-  for (const [name, route, heading] of [
-    ['about', '/about', 'About'],
-    ['404', '/public-visual-missing', 'Page not found'],
-  ] as const) {
+  for (const [name, route, heading] of publicScreens) {
     await page.goto(`${SITE}${route}`, { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
     await settle(page);
     await expect(page).toHaveScreenshot(`${name}-mobile.png`, {
       animations: 'disabled',
       caret: 'hide',
-      maxDiffPixelRatio: 0.01,
+      maxDiffPixelRatio: 0.001,
     });
   }
 });
@@ -148,7 +183,7 @@ test('admin visual baselines', async ({ page }) => {
       animations: 'disabled',
       caret: 'hide',
       fullPage: false,
-      maxDiffPixelRatio: 0.01,
+      maxDiffPixelRatio: 0.001,
     });
   }
 
@@ -165,7 +200,7 @@ test('admin visual baselines', async ({ page }) => {
       animations: 'disabled',
       caret: 'hide',
       fullPage: false,
-      maxDiffPixelRatio: 0.01,
+      maxDiffPixelRatio: 0.001,
     });
   }
 });

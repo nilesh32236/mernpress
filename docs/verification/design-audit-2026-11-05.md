@@ -295,9 +295,18 @@ disabled, the caret hidden, fonts awaited and images settled first.
 
 | Group | Baselines |
 | --- | --- |
-| Public | `about-desktop`, `about-mobile`, `404-desktop`, `404-mobile` |
+| Public desktop | Home, Blog, Single post, Search, About, 404 |
+| Public mobile | Home, Blog, Single post, Search, About, 404 |
 | Admin desktop | Themes, Add Plugins, Add User, Connectors, Mail delivery |
 | Admin mobile | Themes, Add Plugins, Add User |
+
+20 baselines in total. The diff budget is `maxDiffPixelRatio: 0.001`
+(0.1% of the viewport) after an earlier 1% budget silently tolerated two real
+changes: the Next dev indicator badge and a dangling “Written by ·” label are
+each smaller than 1% of the frame. `settle()` also injects
+`nextjs-portal { display: none !important; }` so the development overlay can
+never contaminate a capture (it does not exist in production), and
+`devIndicators: false` keeps the route badge out of the screen entirely.
 
 Why these screens: they are the ones this audit changed or that carry the most
 layout risk (card footers, the Installed package table, the password row, the
@@ -309,6 +318,14 @@ once on the pixels.
 The visual spec seeds and publishes `welcome-to-mernpress`/`about`, bootstraps
 its own `visual_admin` account, and takes the screenshots only after a fixed
 settle step, so the baselines are deterministic in the isolated E2E database.
+
+### Post meta without an author
+
+The single-post baseline caught a real rendering defect: a post with no author
+still rendered “Written by” followed by the separator, producing
+“Written by · 1 min read in News, Guides”. The author label, link and separator
+now render only when an author exists; the reading time and categories always
+render. Covered by a web unit test.
 
 ### Empty-blog copy
 

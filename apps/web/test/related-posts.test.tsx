@@ -66,4 +66,14 @@ describe('related posts and reading time', () => {
     expect(html).toContain('Related post');
     expect(html).not.toContain('Current post</a>');
   });
+
+  it('omits the author label and separator when the post has no author', () => {
+    const html = renderToStaticMarkup(
+      <PostView post={{ ...basePost, author: null }} relatedPosts={[]} />,
+    );
+    expect(html).not.toContain('Written by');
+    expect(html).not.toContain(' · 2 min read');
+    expect(html).toContain('2 min read');
+    expect(html).toContain('Cat');
+  });
 });

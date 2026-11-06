@@ -110,6 +110,10 @@ const rawEnvSchema = z.object({
   /// Absolute path of the media storage root (Phase 6). Files are served only
   /// through the API; the directory must not be exposed statically.
   MEDIA_STORAGE_DIR: z.string().min(1, 'MEDIA_STORAGE_DIR must not be empty').default('var/media'),
+  /// Private web-origin cache revalidation (ADR 0056). Both values are
+  /// optional: without them the web app still revalidates every 60 s.
+  WEB_REVALIDATE_URL: z.string().url().optional(),
+  WEB_REVALIDATE_SECRET: z.string().min(16).optional(),
   /// First-publish scheduling sweeper (P8-04, ADR 0008 §4). Disable in tests
   /// or when running multiple unsynchronized instances.
   SCHEDULER_ENABLED: z
@@ -136,6 +140,8 @@ export type Env = {
   UPDATE_MANIFEST_URL: string | undefined;
   EVENTS_API_URL: string | undefined;
   NEWS_FEED_URL: string | undefined;
+  WEB_REVALIDATE_URL?: string | undefined;
+  WEB_REVALIDATE_SECRET?: string | undefined;
   MAIL_TRANSPORT: 'smtp' | 'memory';
   SMTP_HOST: string | undefined;
   SMTP_PORT: number;

@@ -146,7 +146,9 @@ sequenceDiagram
 
 - Public endpoints only return published, non-trashed content.
 - Preview/draft content uses a separate signed token endpoint in Phase 8.
-- The web app caches by tag/path and revalidates via a secret-protected webhook.
+- The web app caches public lists/terms for 60 s under the `public-content`
+  tag; the API posts to the private `/api/revalidate` route after every content
+  or taxonomy commit (ADR 0056), so a publish is visible on the next request.
 - The theme controls layout/chrome; the API controls content HTML.
 
 ### 4.3 Media upload (target; Phase 6)

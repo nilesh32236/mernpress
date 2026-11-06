@@ -188,6 +188,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-121 | 2026-11-06 | Durable mail: when `SCHEDULER_ENABLED`, `MailService.deliver` seals the rendered message (AES-256-GCM, key derived from `AUTH_HASH_PEPPER`) and enqueues `mail.send` (maxAttempts 3); the worker opens it and calls `sendDirect`, which sends via SMTP and writes the metadata-only log. Job payloads never contain plaintext tokens/recipients/bodies. `MailResult.queued` is accepted by callers (including admin password reset); queue write failure logs `queue-failed`. Scheduler-less deployments/tests keep synchronous delivery. Settings → Discussion explains job status in Scheduled Actions. Production delivery remains owner-blocked without SMTP credentials. | accepted | [ADR 0019](docs/adr/0019-mail-transport.md) |
 
+| D-122 | 2026-11-06 | Public cache revalidation: every cacheable public list/term read is tagged `public-content`; the API calls a private, secret-protected `POST /api/revalidate` (SHA-256 + `timingSafeEqual`, tag allowlist, `revalidateTag(tag, { expire: 0 })`) after content/taxonomy actions, so publishes are visible on the next request and the 60 s window is only a safety net. Unconfigured deployments keep the window; E2E SQL seeding flushes the tag explicitly. | accepted | [ADR 0056](docs/adr/0056-public-cache-revalidation.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

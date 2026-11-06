@@ -5370,9 +5370,10 @@ verified against production public routes at 1440 and 375:
 ### 2026-11-06 — Screenshot baselines and empty-blog copy
 
 - Added `tests/e2e/visual.spec.ts` with Playwright screenshot baselines
-  (`tests/e2e/visual.spec.ts-snapshots/`, 11 PNGs): public About/404 at 1440 and
-  375, admin Themes/Add Plugins/Add User/Connectors/Mail delivery at 1440, and
-  Themes/Add Plugins/Add User at 375. `toHaveScreenshot` runs with
+  (`tests/e2e/visual.spec.ts-snapshots/`, now **20 PNGs**): public Home, Blog,
+  Single post, Search, About and 404 at 1440 and 375; admin Themes, Add Plugins,
+  Add User, Connectors and Mail delivery at 1440; Themes, Add Plugins and Add
+  User at 375. `toHaveScreenshot` runs with
   `maxDiffPixelRatio: 0.01`, animations disabled, caret hidden, fonts and images
   settled; the spec seeds/publishes fixtures and bootstraps its own
   `visual_admin`.
@@ -5406,3 +5407,48 @@ administrator and public routes:
   recent audit events. Production is back to 1 user, 2 posts, 0 media, 0
   analytics rows and no theme-string overrides; `/`, `/admin/`, `/api/health`,
   `/posts/testcom` and `/test` return 200.
+
+
+### 2026-11-06 — Full public screenshot surface and a meta defect
+
+- Extended the visual baselines from 11 to 20: Home, Blog, Single post, Search,
+  About and 404 at both 1440 and 375 (admin baselines unchanged).
+- Tightened the screenshot budget from 1% to **0.1%** (`maxDiffPixelRatio:
+  0.001`) after confirming a 1% budget silently accepted the Next development
+  badge and the author-label change. `settle()` now hides the `nextjs-portal`
+  dev overlay, and `apps/web/next.config.ts` sets `devIndicators: false`.
+- Fixed a real single-post defect found by the new baseline: when a post has no
+  author, the meta line rendered a dangling “Written by ·”. The label, link and
+  separator are now conditional; reading time and categories always render.
+  Web unit test added.
+- Visual suite passes twice in a row against the committed baselines.
+- Validation: 933 unit/integration tests (API 546, admin 257, web 52, contracts
+  13, block-system 65), 34 Playwright E2E tests and seven builds pass.
+
+### 2026-11-06 — Public cache revalidation (instant publish)
+
+- Every cacheable public read (home/blog/category/tag/author/search lists and
+  term lookups) is now tagged `public-content` instead of only having a
+  60-second window. Single posts, settings, previews and sitemaps stay
+  `no-store`.
+- Added the private `POST /api/revalidate` web route: 503 when
+  `MERNPRESS_REVALIDATE_SECRET` is unset, 403 for a bad secret (SHA-256 digests
+  compared with `timingSafeEqual`), 400 for unknown tags/malformed bodies, and
+  `revalidateTag(tag, { expire: 0 })` so the next request re-renders instead of
+  serving one stale response. The route is localhost-only in production
+  (Caddy routes `/api/*` to Fastify).
+- Added `apps/api/src/revalidate.ts`: a 3 s fire-and-forget notifier plus
+  `registerRevalidation`, subscribed to every content and taxonomy action. A
+  web outage logs a warning and never fails an editorial save.
+- Env: optional `WEB_REVALIDATE_URL`/`WEB_REVALIDATE_SECRET` on the API and
+  matching `MERNPRESS_REVALIDATE_SECRET` on the web app; documented in
+  `.env.example` and ADR 0056.
+- Tests: web route (success, missing/wrong secret, unknown tag, malformed body,
+  disabled without a secret); API notifier (payload/headers/timeout, unset
+  no-op, failure is contained) and an integration publish that reaches the
+  webhook; Playwright supplies the shared secret and SQL-seeding specs flush
+  the tag explicitly.
+- This also fixed the visual-suite order dependency: a readiness probe could
+  cache an empty home page and hide SQL-seeded fixtures for 60 seconds.
+- Validation: 940 unit/integration tests (API 549, admin 257, web 57, contracts
+  13, block-system 65), 34 Playwright E2E tests and seven builds pass.

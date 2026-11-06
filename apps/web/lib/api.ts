@@ -210,13 +210,22 @@ export function siteUrl(): string {
   ).replace(/\/+$/, '');
 }
 
+/**
+ * Tag shared by every cacheable public-content response. The API posts to
+ * `/api/revalidate` after a content/taxonomy commit, so a publish is visible on
+ * the next request instead of waiting for the 60-second window.
+ */
+export const PUBLIC_CONTENT_TAG = 'public-content';
+
 async function apiFetch(path: string, noStore = false): Promise<Response> {
   const url = `${apiUrl()}${path}`;
-  // Sitemaps must see content published since the last render; the default
-  // 60-second data cache would otherwise return a stale per-language list.
+  // Sitemaps and previews bypass the cache entirely; everything else uses the
+  // short revalidate window as a safety net if a webhook is missed.
   return noStore
     ? fetch(url, { cache: 'no-store' })
-    : fetch(url, { next: { revalidate: 60 } } as RequestInit);
+    : fetch(url, {
+        next: { revalidate: 60, tags: [PUBLIC_CONTENT_TAG] },
+      } as RequestInit);
 }
 
 export interface PublicPostQuery {

@@ -56,9 +56,13 @@ export default function PostView({
         {!isPage ? featured : null}
         {!isPage ? (
           <div className="entry-meta">
-            <span>{strings.writtenBy} </span>
-            {author ? <Link href={`/author/${encodeURIComponent(author)}`}>{author}</Link> : null}
-            <span aria-hidden="true"> · </span>
+            {author ? (
+              <>
+                <span>{strings.writtenBy} </span>
+                <Link href={`/author/${encodeURIComponent(author)}`}>{author}</Link>
+                <span aria-hidden="true"> · </span>
+              </>
+            ) : null}
             <span>
               {read.minutes} {strings.minRead}
             </span>

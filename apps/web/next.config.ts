@@ -4,6 +4,10 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   output: 'standalone',
+  // The dev overlay is a development-only floating badge; it obscured the
+  // bottom-left corner of visual-regression captures and is never rendered in
+  // production.
+  devIndicators: false,
   async rewrites() {
     // The public site posts comments to the API over a same-origin URL. In
     // production Caddy routes /api to Fastify before Next; in local development

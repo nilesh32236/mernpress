@@ -8,6 +8,19 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../
 loadDotenv({ path: path.join(repoRoot, '.env'), quiet: true });
 
 const SITE = 'http://127.0.0.1:3000';
+const REVALIDATE_SECRET = 'e2e-revalidate-secret-2026-11-06';
+
+/**
+ * The API notifies the web cache after API-driven writes. This suite seeds
+ * with SQL, so flush the public-content tag explicitly before measuring.
+ */
+async function revalidatePublicContent(page: Page): Promise<void> {
+  const response = await page.request.post(`${SITE}/api/revalidate`, {
+    headers: { 'x-revalidate-secret': REVALIDATE_SECRET },
+    data: { tags: ['public-content'] },
+  });
+  expect(response.status()).toBe(200);
+}
 
 test.describe.configure({ mode: 'serial', retries: 0 });
 
@@ -97,6 +110,7 @@ async function measurements(page: Page) {
 
 test('public screens keep the Twenty Twenty-Five layout contract', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
+  await revalidatePublicContent(page);
   for (const screen of screens) {
     const response = await page.goto(`${SITE}${screen.path}`, { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { level: 1, name: screen.heading })).toBeVisible();

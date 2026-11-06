@@ -83,6 +83,7 @@ import { registerBackupRoutes } from './routes/backups.js';
 import { registerJobRoutes } from './routes/jobs.js';
 import { createJobHandlers } from './jobs/handlers.js';
 import { startJobWorker } from './jobs/worker.js';
+import { createRevalidator, registerRevalidation } from './revalidate.js';
 import { JOB_TYPES } from './jobs/types.js';
 import { registerRedirectRoutes, registerPublicRedirectRoutes } from './routes/redirects.js';
 import { registerAdminHealthRoutes } from './routes/admin-health.js';
@@ -95,6 +96,8 @@ export interface BuildAppOptions {
   logger?: boolean;
   loggerStream?: { write(message: string): void };
   now?: () => Date;
+  /** Test seam for the public-cache revalidation webhook. */
+  revalidateFetch?: typeof fetch;
 }
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
@@ -165,10 +168,18 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   // Phase 3: internal hook registry + content/taxonomy services (ADR 0003).
   // The registry is per-app-instance, not a global singleton, so tests and
   // multiple instances stay isolated.
+  const revalidate = createRevalidator({
+    ...(env.WEB_REVALIDATE_URL === undefined ? {} : { url: env.WEB_REVALIDATE_URL }),
+    ...(env.WEB_REVALIDATE_SECRET === undefined ? {} : { secret: env.WEB_REVALIDATE_SECRET }),
+    logger: { warn: (meta, message) => app.log.warn(meta, message) },
+    ...(options.revalidateFetch === undefined ? {} : { fetchImpl: options.revalidateFetch }),
+  });
+
   const contentHooks = createHookRegistry({
     logger: { warn: (message) => app.log.warn(message) },
   });
   app.decorate('contentHooks', contentHooks);
+  registerRevalidation(contentHooks, revalidate);
 
   // Set after the redirect service is created; the callback runs per request.
   let redirectsForSlugs: RedirectService | null = null;

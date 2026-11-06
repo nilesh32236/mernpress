@@ -13,6 +13,8 @@ const apiPort = Number(process.env['E2E_API_PORT'] ?? 4000);
 const adminUrl = 'http://127.0.0.1:5173';
 const apiUrl = `http://127.0.0.1:${apiPort}`;
 const e2eOrigins = `${adminUrl},http://localhost:5173`;
+// Shared between the web route handler and the API notifier during E2E.
+export const E2E_REVALIDATE_SECRET = 'e2e-revalidate-secret-2026-11-06';
 
 if (!testDatabaseUrl) {
   throw new Error(
@@ -51,6 +53,8 @@ export default defineConfig({
         CORS_ORIGINS: e2eOrigins,
         NODE_ENV: 'test',
         SCHEDULER_ENABLED: 'false',
+        WEB_REVALIDATE_URL: 'http://127.0.0.1:3000/api/revalidate',
+        WEB_REVALIDATE_SECRET: E2E_REVALIDATE_SECRET,
         LOG_LEVEL: 'warn',
         HOST: '127.0.0.1',
         PORT: String(apiPort),
@@ -73,6 +77,7 @@ export default defineConfig({
       env: {
         MERNPRESS_API_URL: apiUrl,
         MERNPRESS_SITE_URL: 'http://127.0.0.1:3000',
+        MERNPRESS_REVALIDATE_SECRET: E2E_REVALIDATE_SECRET,
       },
     },
   ],

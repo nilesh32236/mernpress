@@ -14,14 +14,16 @@ export async function createTestApp(
   options: {
     now?: () => Date;
     loggerStream?: { write(message: string): void };
+    revalidateFetch?: typeof fetch;
   } & Partial<Env> = {},
 ): Promise<FastifyInstance> {
-  const { now, loggerStream, ...envOverrides } = options;
+  const { now, loggerStream, revalidateFetch, ...envOverrides } = options;
   const app = await buildApp({
     env: makeTestEnv(envOverrides),
     logger: false,
     ...(now === undefined ? {} : { now }),
     ...(loggerStream === undefined ? {} : { loggerStream }),
+    ...(revalidateFetch === undefined ? {} : { revalidateFetch }),
   });
 
   await resetAuthTables(app);
