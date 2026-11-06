@@ -1,4 +1,12 @@
-import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type DragEvent,
+  type FormEvent,
+} from 'react';
 import {
   SCREEN_COLUMNS_EVENT,
   SCREEN_OPTIONS_EVENT,
@@ -803,9 +811,8 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
     return () => observer.disconnect();
   }, [view, infiniteScroll, loading, data, page]);
 
-  async function moveSelected(): Promise<void> {
-    if (selectedIds.size === 0 || bulkFolder === '') return;
-    const folderId = bulkFolder === 'none' ? null : bulkFolder;
+  async function assignItemsToFolder(ids: string[], folderId: string | null): Promise<void> {
+    if (ids.length === 0 || bulkBusy) return;
     const targetName =
       folderId === null
         ? 'Uncategorized'
@@ -815,10 +822,10 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
     try {
       // One PATCH per item keeps the existing single-item authorization and
       // audit path; a partial failure refetches so the grid matches the server.
-      await Promise.all([...selectedIds].map((id) => updateMedia(id, { folderId })));
+      await Promise.all(ids.map((id) => updateMedia(id, { folderId })));
       setNotice({
         tone: 'success',
-        text: `Moved ${selectedIds.size} media item(s) to “${targetName}”.`,
+        text: `Moved ${ids.length} media item(s) to “${targetName}”.`,
       });
       setSelectedIds(new Set());
       setBulkSelect(false);
@@ -833,6 +840,18 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
     } finally {
       setBulkBusy(false);
     }
+  }
+
+  async function moveSelected(): Promise<void> {
+    if (selectedIds.size === 0 || bulkFolder === '') return;
+    await assignItemsToFolder([...selectedIds], bulkFolder === 'none' ? null : bulkFolder);
+  }
+
+  /** Start an internal drag: the selection if the item is part of it, else the item. */
+  function startItemDrag(event: DragEvent<HTMLElement>, itemId: string): void {
+    const ids = selectedIds.has(itemId) ? [...selectedIds] : [itemId];
+    event.dataTransfer.setData('text/plain', ids.join(','));
+    event.dataTransfer.effectAllowed = 'move';
   }
 
   async function deleteSelected(): Promise<void> {
@@ -1146,6 +1165,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
           onRename={renameFolderById}
           onMove={moveFolderTo}
           onDelete={deleteFolderById}
+          onAssignItems={assignItemsToFolder}
         />
 
         <input
@@ -1431,6 +1451,8 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
                       <button
                         type="button"
                         className={`media-card${isSelected ? ' is-selected' : ''}`}
+                        draggable={!bulkBusy}
+                        onDragStart={(event) => startItemDrag(event, item.id)}
                         onClick={() => {
                           if (bulkSelect) {
                             setSelectedIds((current) => {
@@ -1592,7 +1614,11 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
                   </thead>
                   <tbody>
                     {data.items.map((item) => (
-                      <tr key={item.id}>
+                      <tr
+                        key={item.id}
+                        draggable={!bulkBusy}
+                        onDragStart={(event) => startItemDrag(event, item.id)}
+                      >
                         <th scope="row" className="check-column">
                           <input
                             type="checkbox"

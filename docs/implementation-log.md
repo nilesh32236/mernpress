@@ -4851,3 +4851,20 @@ in production with a temporary administrator:
 - Cleanup removed the media item and its files, the folder, the temporary
   administrator/sessions, recent audit events and analytics rows; production is
   back to 1 user, 2 posts, 0 media, 0 folders, 0 analytics rows.
+
+### 2026-11-06 — Media drag-and-drop into folders
+
+- Grid cards and list rows are draggable. Dragging a card/row starts the whole
+  current selection when that item is selected, otherwise just the item, and
+  writes the ids into the drag payload.
+- Folder tree rows (and the new **Uncategorized** row) accept the drop, show a
+  dashed highlight while hovered, and assign the ids through the same
+  `assignItemsToFolder` path as bulk move (single-item PATCH per id, folder
+  count/list refetch, success/error notice, selection cleared).
+- Bulk move remains the keyboard-accessible equivalent; dropping files from the
+  operating system is still out of scope.
+- Tests: drag one item onto a folder row and onto Uncategorized, asserting the
+  `{ folderId }` PATCH and notice; existing bulk, folder tree and drawer tests
+  remain.
+- Validation: 905 unit/integration tests (API 527, admin 250, web 50, contracts
+  13, block-system 65), 24 Playwright E2E tests and seven builds pass.

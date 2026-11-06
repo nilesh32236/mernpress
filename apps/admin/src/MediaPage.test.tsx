@@ -628,4 +628,57 @@ describe('media library page', () => {
     );
     expect(await screen.findByText(/Moved 1 media item/)).toBeDefined();
   });
+  it('moves a dragged media item onto a folder tree row', async () => {
+    vi.mocked(listMediaFolders).mockResolvedValue([
+      {
+        id: 'f1',
+        name: 'Travel',
+        parentId: null,
+        itemCount: 0,
+        createdAt: '2026-11-06T10:00:00.000Z',
+        updatedAt: '2026-11-06T10:00:00.000Z',
+      },
+    ]);
+    render(<MediaPage user={admin} />);
+    const card = await screen.findByRole('button', { name: 'View sunset.png' });
+    const store = new Map<string, string>();
+    const dataTransfer = {
+      types: ['text/plain'],
+      effectAllowed: '',
+      dropEffect: 'none',
+      setData: (type: string, value: string) => store.set(type, value),
+      getData: (type: string) => store.get(type) ?? '',
+    };
+
+    fireEvent.dragStart(card, { dataTransfer });
+    const row = screen.getByRole('button', { name: 'Travel' }).closest('.folder-tree-row')!;
+    fireEvent.dragOver(row, { dataTransfer });
+    fireEvent.drop(row, { dataTransfer });
+
+    await waitFor(() =>
+      expect(vi.mocked(updateMedia)).toHaveBeenCalledWith('m1', { folderId: 'f1' }),
+    );
+    expect(await screen.findByText(/Moved 1 media item/)).toBeDefined();
+  });
+
+  it('moves a dragged media item back to Uncategorized', async () => {
+    render(<MediaPage user={admin} />);
+    const card = await screen.findByRole('button', { name: 'View sunset.png' });
+    const store = new Map<string, string>([['text/plain', 'm1']]);
+    const dataTransfer = {
+      types: ['text/plain'],
+      effectAllowed: '',
+      dropEffect: 'none',
+      setData: (type: string, value: string) => store.set(type, value),
+      getData: (type: string) => store.get(type) ?? '',
+    };
+
+    fireEvent.dragStart(card, { dataTransfer });
+    const row = screen.getByRole('button', { name: 'Uncategorized' }).closest('.folder-tree-row')!;
+    fireEvent.drop(row, { dataTransfer });
+
+    await waitFor(() =>
+      expect(vi.mocked(updateMedia)).toHaveBeenCalledWith('m1', { folderId: null }),
+    );
+  });
 });

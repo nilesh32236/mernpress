@@ -65,8 +65,10 @@ the grid inserts them locally only when they match the current filters. Filter
 changes clear the bulk selection, and list-view Apply requires selecting an
 action. Selected items can be moved in bulk from the grid selection toolbar or
 the list-view “Move to folder” action (one authorized PATCH per item, then a
-refetch). Limits: one folder per item, globally unique names, the folder filter
-and counts show direct items only, and no drag-and-drop.
+refetch), or by dragging a card/row (the selection, when the item is part of it)
+onto a folder tree row or Uncategorized. Limits: one folder per item, globally
+unique names, the folder filter and counts show direct items only, and
+operating-system file drops are not handled.
 
 ## Bulk regeneration
 

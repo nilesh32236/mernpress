@@ -172,6 +172,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-113 | 2026-11-06 | Media bulk folder move: grid selection toolbar and list-view “Move to folder” action assign every selected item to a chosen folder or Uncategorized via the existing single-item PATCH (authorization/audit path unchanged), then refetch the list and folder counts. Partial failures show the error and refetch so the grid matches the server. Drag-and-drop remains out of scope. | accepted | [ADR 0048](docs/adr/0048-media-virtual-folders.md) |
 
+| D-114 | 2026-11-06 | Media drag-and-drop: grid cards and list rows are draggable; dropping on a folder tree row (or Uncategorized) assigns the dragged selection via the same per-item PATCH path as bulk move, highlighting the drop target. Bulk move stays the keyboard-accessible path. OS file drops and cross-window drags are out of scope. | accepted | [ADR 0048](docs/adr/0048-media-virtual-folders.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

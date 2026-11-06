@@ -13646,3 +13646,10 @@ button.button-link.is-danger {
   gap: 10px;
   margin-bottom: 6px;
 }
+
+/* Media Library: drag a card/row onto a folder tree row. */
+.folder-tree-row.is-drop-target {
+  background: #f0f6fc;
+  outline: 1px dashed var(--wp-blue, #2271b1);
+  outline-offset: -1px;
+}

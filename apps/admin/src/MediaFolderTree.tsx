@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type DragEvent, type FormEvent } from 'react';
 import type { MediaFolder } from './api.js';
 import { folderDescendants, folderTree, indentedFolder } from './mediaFolders.js';
 
@@ -23,6 +23,7 @@ export function MediaFolderTree({
   onRename,
   onMove,
   onDelete,
+  onAssignItems,
 }: {
   folders: MediaFolder[];
   selectedId: string;
@@ -32,12 +33,38 @@ export function MediaFolderTree({
   onRename: (id: string, name: string) => Promise<boolean>;
   onMove: (id: string, parentId: string | null) => Promise<boolean>;
   onDelete: (folder: MediaFolder) => Promise<boolean>;
+  /** Assign dragged media ids to a folder (null = Uncategorized). */
+  onAssignItems: (ids: string[], folderId: string | null) => Promise<void>;
 }) {
   const [open, setOpen] = useState(true);
   const [action, setAction] = useState<Action | null>(null);
   const [value, setValue] = useState('');
   const [moveTarget, setMoveTarget] = useState('');
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
   const rows = folderTree(folders);
+
+  function dropHandlers(target: string | null, folderId: string | null) {
+    return {
+      onDragOver: (event: DragEvent<HTMLElement>) => {
+        if (!event.dataTransfer.types.includes('text/plain')) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        setDropTarget(target);
+      },
+      onDragLeave: () => setDropTarget((current) => (current === target ? null : current)),
+      onDrop: (event: DragEvent<HTMLElement>) => {
+        event.preventDefault();
+        setDropTarget(null);
+        const ids = event.dataTransfer
+          .getData('text/plain')
+          .split(',')
+          .map((id) => id.trim())
+          .filter((id) => id.length > 0)
+          .slice(0, 100);
+        if (ids.length > 0) void onAssignItems(ids, folderId);
+      },
+    };
+  }
 
   function start(kind: ActionKind, id: string | null, initial = ''): void {
     setAction({ kind, id });
@@ -143,65 +170,85 @@ export function MediaFolderTree({
           New top-level folder
         </button>
         {action?.kind === 'create' && action.id === null ? editor(null) : null}
-        {rows.length === 0 ? (
-          <p className="field-help">No folders yet. Create one to organise the library.</p>
-        ) : (
-          <ul className="folder-tree" aria-label="Folder tree">
-            {rows.map(({ folder, depth }) => (
-              <li key={folder.id} className="folder-tree-item">
-                <div className="folder-tree-row" style={{ paddingLeft: `${depth * 16}px` }}>
+        <ul className="folder-tree" aria-label="Folder tree">
+          <li className="folder-tree-item">
+            <div
+              className={`folder-tree-row${dropTarget === 'none' ? ' is-drop-target' : ''}`}
+              {...dropHandlers('none', null)}
+            >
+              <button
+                type="button"
+                className="button-link folder-tree-name"
+                aria-current={selectedId === 'none' ? 'true' : undefined}
+                onClick={() => onSelect('none')}
+              >
+                Uncategorized
+              </button>
+              <span className="folder-tree-count">drop media here</span>
+            </div>
+          </li>
+          {rows.map(({ folder, depth }) => (
+            <li key={folder.id} className="folder-tree-item">
+              <div
+                className={`folder-tree-row${dropTarget === folder.id ? ' is-drop-target' : ''}`}
+                style={{ paddingLeft: `${depth * 16}px` }}
+                {...dropHandlers(folder.id, folder.id)}
+              >
+                <button
+                  type="button"
+                  className="button-link folder-tree-name"
+                  aria-current={selectedId === folder.id ? 'true' : undefined}
+                  onClick={() => onSelect(folder.id)}
+                >
+                  {folder.name}
+                </button>
+                <span className="folder-tree-count">({folder.itemCount})</span>
+                <span className="folder-tree-actions">
                   <button
                     type="button"
-                    className="button-link folder-tree-name"
-                    aria-current={selectedId === folder.id ? 'true' : undefined}
-                    onClick={() => onSelect(folder.id)}
+                    className="button-link"
+                    onClick={() => start('create', folder.id)}
+                    disabled={busy}
                   >
-                    {folder.name}
+                    New subfolder
                   </button>
-                  <span className="folder-tree-count">({folder.itemCount})</span>
-                  <span className="folder-tree-actions">
-                    <button
-                      type="button"
-                      className="button-link"
-                      onClick={() => start('create', folder.id)}
-                      disabled={busy}
-                    >
-                      New subfolder
-                    </button>
-                    <button
-                      type="button"
-                      className="button-link"
-                      onClick={() => start('rename', folder.id, folder.name)}
-                      disabled={busy}
-                    >
-                      Rename
-                    </button>
-                    <button
-                      type="button"
-                      className="button-link"
-                      onClick={() => start('move', folder.id)}
-                      disabled={busy}
-                    >
-                      Move
-                    </button>
-                    <button
-                      type="button"
-                      className="button-link is-danger"
-                      onClick={() => void onDelete(folder)}
-                      disabled={busy}
-                    >
-                      Delete
-                    </button>
-                  </span>
-                </div>
-                {action?.id === folder.id ? editor(folder.id) : null}
-              </li>
-            ))}
-          </ul>
-        )}
+                  <button
+                    type="button"
+                    className="button-link"
+                    onClick={() => start('rename', folder.id, folder.name)}
+                    disabled={busy}
+                  >
+                    Rename
+                  </button>
+                  <button
+                    type="button"
+                    className="button-link"
+                    onClick={() => start('move', folder.id)}
+                    disabled={busy}
+                  >
+                    Move
+                  </button>
+                  <button
+                    type="button"
+                    className="button-link is-danger"
+                    onClick={() => void onDelete(folder)}
+                    disabled={busy}
+                  >
+                    Delete
+                  </button>
+                </span>
+              </div>
+              {action?.id === folder.id ? editor(folder.id) : null}
+            </li>
+          ))}
+        </ul>
+        {rows.length === 0 ? (
+          <p className="field-help">No folders yet. Create one to organise the library.</p>
+        ) : null}
         <p className="field-help">
-          Counts show items directly in each folder. Deleting a folder moves its child folders up
-          and leaves its media Uncategorized.
+          Counts show items directly in each folder. Drag one or more media items onto a folder row
+          (or Uncategorized) to move them. Deleting a folder moves its child folders up and leaves
+          its media Uncategorized.
         </p>
       </div>
     </details>

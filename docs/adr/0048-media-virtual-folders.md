@@ -36,7 +36,10 @@ existing URLs, the derivative paths and the immutable-cache headers.
    Bulk move is built: the selection toolbar (grid) and the list-view
    “Move to folder” action move every selected item, one authorized PATCH per
    item, into the chosen folder or Uncategorized, then refetch the grid and
-   folder counts. Drag-and-drop is not built.
+   folder counts. Internal drag-and-drop is built: dragging a grid card or list
+   row (the whole selection when the item is selected) onto a folder tree row or
+   Uncategorized assigns it the same way; the tree row highlights while hovered.
+   Dragging files from the operating system is still not built.
 3. **Case-insensitive unique names.** The service trims the name, requires
    1–100 characters and rejects a duplicate (case-insensitive) with
    `409 FOLDER_EXISTS`. The database unique index is a final guard. Names are
