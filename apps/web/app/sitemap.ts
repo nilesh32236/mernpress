@@ -24,7 +24,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const type of ['post', 'page'] as const) {
     for (const language of languages) {
       try {
-        const data = await listPublished(type, 1, 100, language);
+        const data = await listPublished(type, 1, 100, language, true);
         documents.push(...(data?.items ?? []));
       } catch {
         // Ignore API failures during sitemap generation.

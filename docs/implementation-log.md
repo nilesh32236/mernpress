@@ -4572,7 +4572,10 @@ administrator:
   home/blog URLs. Verifying exposed a stale-cache defect: `revalidate = 3600`
   served the build-time sitemap (and its old documents) for an hour, so the
   route is now `force-dynamic`; newly published translations appear on the next
-  request.
+  request. A second verification pass found the per-language list itself was
+  still served from Next's 60-second data cache, so the sitemap calls
+  `listPublished(..., noStore)` (direct `cache: 'no-store'` fetch) for every
+  language.
 - Tests: new `apps/web/test/sitemap.test.ts` covers two-language post/page
   groups, `x-default`, deduplication, single-language entries and image data.
 - Validation: 888 unit/integration tests (API 521, admin 240, web 49, contracts

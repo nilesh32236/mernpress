@@ -210,9 +210,13 @@ export function siteUrl(): string {
   ).replace(/\/+$/, '');
 }
 
-async function apiFetch(path: string): Promise<Response> {
+async function apiFetch(path: string, noStore = false): Promise<Response> {
   const url = `${apiUrl()}${path}`;
-  return fetch(url, { next: { revalidate: 60 } } as RequestInit);
+  // Sitemaps must see content published since the last render; the default
+  // 60-second data cache would otherwise return a stale per-language list.
+  return noStore
+    ? fetch(url, { cache: 'no-store' })
+    : fetch(url, { next: { revalidate: 60 } } as RequestInit);
 }
 
 export interface PublicPostQuery {
@@ -225,6 +229,8 @@ export interface PublicPostQuery {
   author?: string;
   page?: number;
   perPage?: number;
+  /** Bypass the 60-second data cache (sitemap generation). */
+  noStore?: boolean;
 }
 
 export async function listPublicPosts(query: PublicPostQuery = {}): Promise<PostsPage | null> {
@@ -237,7 +243,7 @@ export async function listPublicPosts(query: PublicPostQuery = {}): Promise<Post
   if (query.tag) params.set('tag', query.tag);
   if (query.author) params.set('author', query.author);
   if (query.lang) params.set('lang', query.lang);
-  const res = await apiFetch(`/api/public/posts?${params.toString()}`);
+  const res = await apiFetch(`/api/public/posts?${params.toString()}`, query.noStore === true);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Failed to list posts: ${res.status}`);
   return (await res.json()) as PostsPage;
@@ -261,8 +267,15 @@ export async function listPublished(
   page = 1,
   perPage = 10,
   language?: string,
+  noStore = false,
 ): Promise<PostsPage | null> {
-  return listPublicPosts({ type, page, perPage, ...(language ? { lang: language } : {}) });
+  return listPublicPosts({
+    type,
+    page,
+    perPage,
+    ...(language ? { lang: language } : {}),
+    ...(noStore ? { noStore: true } : {}),
+  });
 }
 
 export async function getPublishedBySlug(
