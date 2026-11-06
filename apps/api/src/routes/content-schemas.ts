@@ -2,6 +2,10 @@ import { z } from 'zod';
 
 // Shared scalars
 const uuid = z.string().uuid();
+const languageCode = z
+  .string()
+  .regex(/^[a-z]{2,3}(?:-[a-z]{2})?$/)
+  .max(10);
 const slug = z.string().min(1).max(200);
 const title = z.string().trim().min(1).max(300);
 const excerpt = z.string().max(2000).nullable();
@@ -28,6 +32,7 @@ export const createPostSchema = z
     ogDescription: seoDescription.optional(),
     sticky: z.boolean().optional(),
     notesNotify: z.boolean().nullable().optional(),
+    language: languageCode.optional(),
     format: z
       .enum([
         'standard',
@@ -64,6 +69,7 @@ export const updatePostSchema = z
     commentStatus: z.enum(['open', 'closed']).optional(),
     sticky: z.boolean().optional(),
     notesNotify: z.boolean().nullable().optional(),
+    language: languageCode.optional(),
     password: z.string().max(100).nullable().optional(),
     isPrivate: z.boolean().optional(),
     structureLocked: z.boolean().optional(),
@@ -132,6 +138,7 @@ export const publicListQuerySchema = z
     category: z.string().min(1).max(200).optional(),
     tag: z.string().min(1).max(200).optional(),
     author: z.string().min(1).max(200).optional(),
+    lang: languageCode.optional(),
     ...pagination,
   })
   .strict();
@@ -139,6 +146,7 @@ export const publicListQuerySchema = z
 export const publicSlugQuerySchema = z
   .object({
     type: contentType.default('post'),
+    lang: languageCode.optional(),
   })
   .strict();
 

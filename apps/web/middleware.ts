@@ -1,4 +1,9 @@
-import { matchPostPath } from '@mernpress/contracts';
+import {
+  DEFAULT_LANGUAGES,
+  matchPostPath,
+  stripLanguagePrefix,
+  type LanguageConfig,
+} from '@mernpress/contracts';
 import { NextResponse, type NextFetchEvent, type NextRequest } from 'next/server';
 
 interface RedirectItem {
@@ -12,6 +17,7 @@ interface PermalinkSettings {
   pattern: string;
   categoryBase: string;
   tagBase: string;
+  languages: LanguageConfig;
 }
 
 interface ResolvedPost {
@@ -59,12 +65,14 @@ async function permalinkSettings(): Promise<PermalinkSettings> {
       permalinkPattern: string;
       categoryBase: string;
       tagBase: string;
+      languages: LanguageConfig;
     }>;
     const value: PermalinkSettings = {
       structure: body.permalinkStructure ?? 'custom',
       pattern: body.permalinkPattern ?? '/posts/%postname%/',
       categoryBase: body.categoryBase ?? 'category',
       tagBase: body.tagBase ?? 'tag',
+      languages: body.languages ?? DEFAULT_LANGUAGES,
     };
     settingsCache = { value, at: Date.now() };
     return value;
@@ -75,6 +83,7 @@ async function permalinkSettings(): Promise<PermalinkSettings> {
         pattern: '/posts/%postname%/',
         categoryBase: 'category',
         tagBase: 'tag',
+        languages: DEFAULT_LANGUAGES,
       }
     );
   }
@@ -106,9 +115,11 @@ async function resolvePost(query: string): Promise<ResolvedPost | null> {
  */
 const INTERNAL_ORIGIN = `http://127.0.0.1:${process.env.PORT ?? '3000'}`;
 
-function rewriteTo(request: NextRequest, pathname: string) {
+function rewriteTo(request: NextRequest, pathname: string, language?: string) {
   void request;
-  return NextResponse.rewrite(new URL(pathname, INTERNAL_ORIGIN));
+  const target = new URL(pathname, INTERNAL_ORIGIN);
+  if (language) target.searchParams.set('lang', language);
+  return NextResponse.rewrite(target);
 }
 
 function redirectTo(request: NextRequest, pathname: string) {
@@ -153,6 +164,12 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
   }
 
   const settings = await permalinkSettings();
+  const {
+    language,
+    path: localizedPath,
+    prefixed: languagePrefixed,
+  } = stripLanguagePrefix(settings.languages, path);
+  const langQuery = languagePrefixed ? language : undefined;
 
   // Plain permalinks: /?p=<id> renders through the internal post route.
   if (settings.structure === 'plain') {
@@ -160,21 +177,21 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     if (id) {
       const resolved = await resolvePost(`p=${encodeURIComponent(id)}`);
       if (resolved) {
-        return rewriteTo(request, `/posts/${encodeURIComponent(resolved.slug)}`);
+        return rewriteTo(request, `/posts/${encodeURIComponent(resolved.slug)}`, langQuery);
       }
     }
     return withPathHeader(request, path);
   }
 
   // Custom category/tag bases are rewritten onto the existing archive routes.
-  if (settings.categoryBase !== 'category') {
+  if (!languagePrefixed && settings.categoryBase !== 'category') {
     const prefix = `/${settings.categoryBase}/`;
     if (path.startsWith(prefix) && path.slice(prefix.length).split('/').length === 1) {
       const slug = path.slice(prefix.length);
       if (slug) return rewriteTo(request, `/category/${encodeURIComponent(slug)}`);
     }
   }
-  if (settings.tagBase !== 'tag') {
+  if (!languagePrefixed && settings.tagBase !== 'tag') {
     const prefix = `/${settings.tagBase}/`;
     if (path.startsWith(prefix) && path.slice(prefix.length).split('/').length === 1) {
       const slug = path.slice(prefix.length);
@@ -183,30 +200,43 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
   }
 
   // Internal renderer and known routes never need post resolution.
+  const matched = matchPostPath(settings.pattern, localizedPath);
+  // `/posts/...` is reserved for the internal renderer only in the default
+  // language; a prefixed structured URL must still be resolved and rewritten.
   const reserved =
-    path === '/posts' ||
-    path.startsWith('/posts/') ||
-    path.startsWith('/category/') ||
-    path.startsWith('/tag/') ||
-    path.startsWith('/author/') ||
-    path.startsWith('/preview/') ||
-    path === '/search' ||
-    path.startsWith('/search/') ||
-    path === '/feed' ||
-    path === '/llms.txt';
-  if (reserved) return withPathHeader(request, path);
+    localizedPath === '/posts' ||
+    localizedPath.startsWith('/posts/') ||
+    localizedPath.startsWith('/category/') ||
+    localizedPath.startsWith('/tag/') ||
+    localizedPath.startsWith('/author/') ||
+    localizedPath.startsWith('/preview/') ||
+    localizedPath === '/search' ||
+    localizedPath.startsWith('/search/') ||
+    localizedPath === '/feed' ||
+    localizedPath === '/llms.txt';
+  if (reserved && !(languagePrefixed && matched)) return withPathHeader(request, path);
 
-  const matched = matchPostPath(settings.pattern, path);
-  if (!matched) return withPathHeader(request, path);
+  if (!matched) {
+    // Language-prefixed pages: /<lang>/<slug> renders the page route with a
+    // language hint. Archives and the home page stay default-language only.
+    const segments = localizedPath.split('/').filter(Boolean);
+    if (languagePrefixed && segments.length === 1) {
+      return rewriteTo(request, localizedPath, language);
+    }
+    return withPathHeader(request, path);
+  }
 
-  const resolved = await resolvePost(`path=${encodeURIComponent(path)}`);
+  const query = languagePrefixed
+    ? `path=${encodeURIComponent(localizedPath)}&lang=${encodeURIComponent(language)}`
+    : `path=${encodeURIComponent(localizedPath)}`;
+  const resolved = await resolvePost(query);
   if (!resolved) return withPathHeader(request, path);
 
   const canonical = resolved.canonicalPath === '/' ? '/' : normalize(resolved.canonicalPath);
-  if (canonical !== path) {
-    return redirectTo(request, canonical);
+  if (canonical !== localizedPath) {
+    return redirectTo(request, languagePrefixed ? `/${language}${canonical}` : canonical);
   }
-  return rewriteTo(request, `/posts/${encodeURIComponent(resolved.slug)}`);
+  return rewriteTo(request, `/posts/${encodeURIComponent(resolved.slug)}`, langQuery);
 }
 
 export const config = {

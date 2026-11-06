@@ -47,7 +47,8 @@ describe('post page', () => {
   it('renders renderedContent HTML and terms', async () => {
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(jsonResponse(samplePost));
     const params = Promise.resolve({ slug: 'hello-world' });
-    const html = renderToStaticMarkup(await PostPage({ params }));
+    const searchParams = Promise.resolve({});
+    const html = renderToStaticMarkup(await PostPage({ params, searchParams }));
     expect(html).toContain('Hello World');
     expect(html).toContain('<p>Body <strong>bold</strong></p>');
     expect(html).toContain('Cat');
@@ -60,7 +61,10 @@ describe('post page', () => {
 
   it('emits Twitter card metadata alongside Open Graph', async () => {
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(jsonResponse(samplePost));
-    const meta = await generateMetadata({ params: Promise.resolve({ slug: 'hello-world' }) });
+    const meta = await generateMetadata({
+      params: Promise.resolve({ slug: 'hello-world' }),
+      searchParams: Promise.resolve({}),
+    });
     expect(meta.twitter).toMatchObject({
       card: 'summary_large_image',
       title: 'OG Title',
@@ -78,7 +82,8 @@ describe('post page', () => {
     };
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(jsonResponse(post));
     const params = Promise.resolve({ slug: 'hello-world' });
-    const html = renderToStaticMarkup(await PostPage({ params }));
+    const searchParams = Promise.resolve({});
+    const html = renderToStaticMarkup(await PostPage({ params, searchParams }));
     expect(html).toContain('Hello World');
     expect(html).toContain('<p>Body <strong>bold</strong></p>');
     expect(html).not.toContain('On this page');
@@ -98,7 +103,8 @@ describe('post page', () => {
     };
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(jsonResponse(post));
     const params = Promise.resolve({ slug: 'hello-world' });
-    const html = renderToStaticMarkup(await PostPage({ params }));
+    const searchParams = Promise.resolve({});
+    const html = renderToStaticMarkup(await PostPage({ params, searchParams }));
     expect(html).toContain('abc-1200.webp');
     expect(html).toContain('Hero image');
   });
@@ -117,7 +123,8 @@ describe('post page', () => {
     };
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(jsonResponse(post));
     const params = Promise.resolve({ slug: 'hello-world' });
-    const meta = await generateMetadata({ params });
+    const searchParams = Promise.resolve({});
+    const meta = await generateMetadata({ params, searchParams });
     const images = meta.openGraph?.images as Array<{ url: string; alt?: string }> | undefined;
     expect(images?.[0]?.url).toMatch(/^http/);
     expect(images?.[0]?.url).toContain('/api/media/m1/abc.webp');
@@ -129,13 +136,15 @@ describe('post page', () => {
       jsonResponse({ error: { code: 'NOT_FOUND' } }, 404),
     );
     const params = Promise.resolve({ slug: 'missing' });
-    await expect(PostPage({ params })).rejects.toThrow();
+    const searchParams = Promise.resolve({});
+    await expect(PostPage({ params, searchParams })).rejects.toThrow();
   });
 
   it('generateMetadata uses seoTitle when present', async () => {
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(jsonResponse(samplePost));
     const params = Promise.resolve({ slug: 'hello-world' });
-    const meta = await generateMetadata({ params });
+    const searchParams = Promise.resolve({});
+    const meta = await generateMetadata({ params, searchParams });
     expect(meta.title).toBe('SEO Title');
     expect(meta.description).toBe('SEO Desc');
     expect(meta.robots).toBe('index,follow');
@@ -156,7 +165,8 @@ describe('post page', () => {
     };
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(jsonResponse(post));
     const params = Promise.resolve({ slug: 'hello-world' });
-    const meta = await generateMetadata({ params });
+    const searchParams = Promise.resolve({});
+    const meta = await generateMetadata({ params, searchParams });
     expect(meta.title).toBe('Hello World');
     expect(meta.robots).toBeUndefined();
     // WordPress always emits a canonical; the default is derived from the slug.
@@ -171,7 +181,10 @@ describe('post page', () => {
         featuredImage: null,
       }),
     );
-    const meta = await generateMetadata({ params: Promise.resolve({ slug: 'hello-world' }) });
+    const meta = await generateMetadata({
+      params: Promise.resolve({ slug: 'hello-world' }),
+      searchParams: Promise.resolve({}),
+    });
     expect(meta.alternates?.canonical).toBe('http://localhost:3000/2026/01/hello-world');
   });
 });

@@ -6,7 +6,9 @@ import {
   mediaUrl,
   siteUrl,
 } from '@/lib/api';
+import { hreflangAlternates } from '@mernpress/contracts';
 import PostView from '@/components/PostView';
+import { LanguageLinks } from '@/components/LanguageLinks';
 import PostList from '@/components/PostList';
 import Pagination from '@/components/Pagination';
 import JsonLd from '@/components/JsonLd';
@@ -38,13 +40,14 @@ export default async function PageBySlug({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; lang?: string }>;
 }) {
   const { slug } = await params;
+  const { lang } = await searchParams;
   let post = null;
   let error = false;
   try {
-    post = await getPublishedBySlug('page', slug);
+    post = await getPublishedBySlug('page', slug, lang);
   } catch {
     error = true;
   }
@@ -105,6 +108,7 @@ export default async function PageBySlug({
           { name: post.title, url: canonical },
         ])}
       />
+      <LanguageLinks language={post.language} translations={post.translations ?? []} />
       <PostView post={post} />
     </>
   );
@@ -112,21 +116,37 @@ export default async function PageBySlug({
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ lang?: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getPublishedBySlug('page', slug).catch(() => null);
+  const { lang } = await searchParams;
+  const [post, settings] = await Promise.all([
+    getPublishedBySlug('page', slug, lang).catch(() => null),
+    getSiteSettings().catch(() => null),
+  ]);
   if (!post) return { title: 'Not found' };
 
   const title = post.seoTitle ?? post.title;
   const description = fallbackDescription(post);
+  const languages =
+    settings?.languages && post.translations
+      ? hreflangAlternates(
+          settings.languages,
+          post.translations,
+          { language: post.language, path: post.path },
+          (path) => `${siteUrl()}${path}`,
+        )
+      : undefined;
   return {
     title,
     description: description || undefined,
     robots: post.robots ?? undefined,
     alternates: {
-      canonical: post.canonicalUrl ?? `${siteUrl()}/${post.slug}`,
+      canonical: post.canonicalUrl ?? `${siteUrl()}${post.path ?? `/${post.slug}`}`,
+      ...(languages ? { languages } : {}),
     },
     twitter: {
       card: 'summary_large_image',

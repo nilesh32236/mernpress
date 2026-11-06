@@ -4332,3 +4332,39 @@ schema change. Production verification with a temporary administrator:
   the temporary administrator; production is back to 1 user, 2 posts, 0
   analytics rows and 0 consent config, with `/`, `/admin/`, `/api/health` and
   `/posts/testcom` at 200.
+
+### 2026-11-06 — Multilingual content model (smallest complete slice)
+
+- `posts.language` + `posts.translation_group` (unique per group+language,
+  migration `add_post_languages`); existing posts stay `en` and become their own
+  groups.
+- `site_languages` option and Settings → Languages: predefined + custom codes,
+  default language select, English/Hindi/… chips. The shared contract
+  normalizes codes, keeps the default enabled and validates.
+- API: `GET/PUT /api/admin/languages`, `GET/POST
+  /api/admin/posts/:id/translations`, `language` on post create/update
+  (`400 LANGUAGE_NOT_ENABLED`, `409 TRANSLATION_EXISTS`), `?lang=` on the public
+  slug/resolve/list routes. Creating a translation copies body/title/excerpt/
+  format, clears SEO/OG/canonical, terms and comments, and uses a
+  `<source>-<language>` slug.
+- Editor: language select (from `LanguagesProvider` in the admin shell) and a
+  collapsed Translations panel listing every sibling with status and edit link,
+  plus create-draft for unused languages.
+- Public: middleware strips enabled non-default prefixes and rewrites with
+  `?lang=`; default-language paths stay unprefixed; translated pages work;
+  `generateMetadata` emits hreflang alternates including `x-default`; the post
+  page renders a language switcher; the sitemap lists every language variant.
+  Archives/home stay default-language.
+- Browser verification in development: Languages enabled `hi`; admin list showed
+  English (default)/Hindi; a post + Hindi translation published at
+  `/posts/multilingual-launch` and `/hi/posts/multilingual-launch-hi`; the
+  Hindi page returned 200 with the Hindi title, canonical under `/hi/`, hreflang
+  en/hi/x-default, and the editor showed both variants with PUBLISHED status
+  and a language select of en+hi. The sitemap listed both paths.
+- Tests: contract normalization/prefix/hreflang; API language read/write,
+  validation, default+disabled language, translation linking, duplicates,
+  public per-language slug (wrong language 404), resolver, default-only archive
+  and permissions; admin Languages page (enable, custom code, invalid code),
+  router/breadcrumb and the editor language save + translation create flow.
+- Validation: 874 unit/integration tests (API 519, admin 238, web 40, contracts
+  12, block-system 65), 24 Playwright E2E tests and seven builds pass.

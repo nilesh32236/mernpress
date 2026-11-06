@@ -63,6 +63,8 @@ function screenKey(route: Route): string {
       return 'connectors';
     case 'consent':
       return 'consent';
+    case 'languages':
+      return 'languages';
     case 'plugins':
     case 'pluginInstall':
       return 'plugins';
@@ -275,6 +277,27 @@ function screenHelp(route: Route): {
           {
             label: 'Documentation on Personal Data',
             href: 'https://wordpress.org/documentation/article/tools-export-personal-data-screen/',
+          },
+          support,
+        ],
+      };
+    case 'languages':
+      return {
+        title: 'Languages',
+        sections: [
+          {
+            heading: 'Overview',
+            body: 'Enable content languages and pick the default. Each translation is a normal post in the same translation group; the default language keeps unprefixed URLs and others use /<language>/.',
+          },
+          {
+            heading: 'Public URLs and SEO',
+            body: 'Translated documents are reachable under their language prefix and advertise hreflang alternates (x-default = default language). Archives and the home feed stay default-language; the sitemap lists every language variant.',
+          },
+        ],
+        links: [
+          {
+            label: 'Documentation on multilingual sites',
+            href: 'https://wordpress.org/documentation/article/multilingual-wordpress/',
           },
           support,
         ],
@@ -1062,7 +1085,11 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
     {
       to: '/settings',
       label: 'Settings',
-      active: route.name === 'settings' || route.name === 'connectors' || route.name === 'consent',
+      active:
+        route.name === 'settings' ||
+        route.name === 'connectors' ||
+        route.name === 'consent' ||
+        route.name === 'languages',
       show: isAdmin,
       icon: <span className="dashicons dashicons-admin-settings" />,
       subs: [
@@ -1110,6 +1137,11 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
           label: 'Consent',
           to: '/settings/consent',
           active: route.name === 'consent',
+        },
+        {
+          label: 'Languages',
+          to: '/settings/languages',
+          active: route.name === 'languages',
         },
       ],
     },

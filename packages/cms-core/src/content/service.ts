@@ -1,5 +1,12 @@
 import type { DatabaseClient, PostStatus, Prisma } from '@mernpress/database';
-import { matchPostPath, postPath } from '@mernpress/contracts';
+import {
+  DEFAULT_LANGUAGES,
+  isLanguageCode,
+  matchPostPath,
+  normalizeLanguageConfig,
+  postPath,
+  type LanguageConfig,
+} from '@mernpress/contracts';
 import { validateBlockMarkup } from '@mernpress/block-system/validate';
 import { renderBlockMarkup } from '@mernpress/block-system/render';
 import { structureUnchanged } from '@mernpress/block-system/structure';
@@ -41,6 +48,7 @@ import type {
   AdminRevision,
   AdminRevisionDetail,
   AdminTermSummary,
+  AdminTranslation,
   ContentType,
   CreatePostInput,
   Paged,
@@ -52,6 +60,7 @@ import type {
   PublicListQuery,
   PublicPost,
   PublicTerm,
+  PublicTranslation,
   UpdatePostInput,
 } from './types.js';
 
@@ -108,11 +117,26 @@ export interface ContentService {
   revokePreviewToken(principal: Principal, postId: string): Promise<PreviewLinkResult>;
   getPreviewPost(token: string): Promise<PublicPost>;
   listPublic(query: PublicListQuery): Promise<Paged<PublicPost>>;
-  getPublicBySlug(type: ContentType, slug: string): Promise<PublicPost>;
+  getPublicBySlug(
+    type: ContentType,
+    slug: string,
+    options?: { language?: string | undefined; permalinkPattern?: string | undefined },
+  ): Promise<PublicPost>;
+  /** Admin: every language variant in the post's translation group. */
+  listTranslations(principal: Principal, postId: string): Promise<AdminTranslation[]>;
+  /** Admin: create a draft translation sibling and link it to the group. */
+  createTranslation(principal: Principal, postId: string, language: string): Promise<AdminPost>;
+  /** Public: published translations of the same document (resolver appends paths). */
+  listPublicTranslations(post: {
+    id: string;
+    translationGroup: string;
+    language: string;
+  }): Promise<PublicTranslation[]>;
   /** Resolve a structured public URL (middleware rewrites). */
   resolvePublicPath(
     pattern: string,
     pathname: string,
+    language?: string,
   ): Promise<{ slug: string; canonicalPath: string } | null>;
   /** Resolve the Plain permalink form `?p=<id>`. */
   resolvePublicId(
@@ -123,6 +147,7 @@ export interface ContentService {
   resolvePublicSlug(
     pattern: string,
     slug: string,
+    language?: string,
   ): Promise<{ slug: string; canonicalPath: string } | null>;
   unlockPublicPost(
     slug: string,
@@ -324,6 +349,8 @@ function toAdmin(row: PostWithTerms, options: { includePreviewToken?: boolean } 
     format: (POST_FORMATS as readonly string[]).includes(row.format)
       ? (row.format as PostFormat)
       : 'standard',
+    language: row.language,
+    translationGroup: row.translationGroup,
     trashedAt: row.trashedAt?.toISOString() ?? null,
     previousStatus: row.previousStatus,
     version: row.version,
@@ -407,6 +434,7 @@ function toPublic(row: PostWithTerms, logger?: ContentServiceOptions['logger']):
     format: (POST_FORMATS as readonly string[]).includes(row.format)
       ? (row.format as PostFormat)
       : 'standard',
+    language: row.language,
     updatedAt: row.updatedAt.toISOString(),
     author: row.author
       ? {
@@ -436,6 +464,50 @@ async function loadWithTerms(tx: Tx, id: string): Promise<PostWithTerms | null> 
 export function createContentService(options: ContentServiceOptions): ContentService {
   const { prisma, hooks } = options;
   const now = options.now ?? (() => new Date());
+
+  // The language list changes rarely; a short cache keeps public resolution
+  // from reading the option on every request. Settings writes are visible within
+  // 10 seconds (same order as the edge middleware's settings cache).
+  let languageCache: { value: LanguageConfig; at: number } | null = null;
+  async function languageConfig(): Promise<LanguageConfig> {
+    if (languageCache && Date.now() - languageCache.at < 10_000) return languageCache.value;
+    const row = await prisma.option.findUnique({
+      where: { key: 'site_languages' },
+      select: { value: true },
+    });
+    let value: LanguageConfig = DEFAULT_LANGUAGES;
+    if (row) {
+      try {
+        value = normalizeLanguageConfig(JSON.parse(row.value));
+      } catch {
+        value = DEFAULT_LANGUAGES;
+      }
+    }
+    languageCache = { value, at: Date.now() };
+    return value;
+  }
+
+  async function resolveLanguage(requested: string | undefined): Promise<string> {
+    const config = await languageConfig();
+    if (requested === undefined) return config.default;
+    if (!isLanguageCode(requested) || !config.enabled.includes(requested)) {
+      throw new ContentError(
+        'LANGUAGE_NOT_ENABLED',
+        'That language is not enabled for this site.',
+        400,
+      );
+    }
+    return requested;
+  }
+
+  /** Validate and normalize a language filter used by public resolution. */
+  async function resolvePublicLanguage(requested: string | undefined): Promise<string> {
+    const config = await languageConfig();
+    if (requested === undefined) return config.default;
+    return isLanguageCode(requested) && config.enabled.includes(requested)
+      ? requested
+      : config.default;
+  }
 
   async function applyFilter(
     name: 'content.post.create' | 'content.post.update',
@@ -518,6 +590,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     if (!(POST_FORMATS as readonly string[]).includes(format)) {
       throw new ContentError('VALIDATION_ERROR', 'Invalid post format', 400);
     }
+    const language = await resolveLanguage(input.language);
 
     const draft = await applyFilter('content.post.create', {
       type: input.type,
@@ -565,6 +638,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
             ogDescription: draft.ogDescription,
             authorId: principal.userId,
             format,
+            language,
             sticky: draft.type === 'post' ? (input.sticky ?? false) : false,
             notesNotify: input.notesNotify ?? null,
           },
@@ -602,6 +676,8 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     input: UpdatePostInput,
   ): Promise<AdminPost> {
     let previousSlugForRedirect: string | null = null;
+    const requestedLanguage =
+      input.language === undefined ? null : await resolveLanguage(input.language);
     const row = await prisma.$transaction(async (tx) => {
       const existing = await loadWithTerms(tx, id);
       if (!existing) {
@@ -648,6 +724,24 @@ export function createContentService(options: ContentServiceOptions): ContentSer
       const notesNotify =
         input.notesNotify === undefined ? existing.notesNotify : input.notesNotify;
       const isPrivate = input.isPrivate === undefined ? existing.isPrivate : input.isPrivate;
+      const language = requestedLanguage ?? existing.language;
+      if (language !== existing.language) {
+        const clash = await tx.post.findFirst({
+          where: {
+            translationGroup: existing.translationGroup,
+            language,
+            NOT: { id },
+          },
+          select: { id: true },
+        });
+        if (clash) {
+          throw new ContentError(
+            'TRANSLATION_EXISTS',
+            'This document already has a translation in that language.',
+            409,
+          );
+        }
+      }
       const format =
         input.format === undefined
           ? (POST_FORMATS as readonly string[]).includes(existing.format)
@@ -786,6 +880,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
             structureLocked,
             isPrivate,
             format,
+            language,
           },
         });
       } catch (error) {
@@ -1407,10 +1502,12 @@ export function createContentService(options: ContentServiceOptions): ContentSer
   async function resolvePublicPath(
     pattern: string,
     pathname: string,
+    language?: string,
   ): Promise<{ slug: string; canonicalPath: string } | null> {
     if (pattern === '') return null;
     const matched = matchPostPath(pattern, pathname);
     if (!matched) return null;
+    const wantedLanguage = await resolvePublicLanguage(language);
 
     let row: PostWithTerms | null = null;
     if (matched.id) {
@@ -1429,6 +1526,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
         where: {
           type: 'post',
           slug: matched.slug,
+          language: wantedLanguage,
           status: 'PUBLISHED',
           isPrivate: false,
           publishedAt: { lte: now() },
@@ -1437,6 +1535,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
       });
     }
     if (!row) return null;
+    if (row.language !== wantedLanguage) return null;
     if (!dateMatches(row, matched)) return null;
     if (matched.category) {
       const categories = row.terms
@@ -1458,11 +1557,14 @@ export function createContentService(options: ContentServiceOptions): ContentSer
   async function resolvePublicSlug(
     pattern: string,
     slug: string,
+    language?: string,
   ): Promise<{ slug: string; canonicalPath: string } | null> {
+    const wantedLanguage = await resolvePublicLanguage(language);
     const row = await prisma.post.findFirst({
       where: {
         type: 'post',
         slug,
+        language: wantedLanguage,
         status: 'PUBLISHED',
         isPrivate: false,
         publishedAt: { lte: now() },
@@ -1474,10 +1576,14 @@ export function createContentService(options: ContentServiceOptions): ContentSer
 
   async function listPublic(query: PublicListQuery): Promise<Paged<PublicPost>> {
     const current = now();
+    // Archives and the home feed are default-language surfaces; translated
+    // posts are reachable through their language-prefixed URLs and hreflang.
+    const defaultLanguage = query.language ?? (await languageConfig()).default;
     const where: Prisma.PostWhereInput = {
       status: 'PUBLISHED',
       isPrivate: false,
       publishedAt: { lte: current },
+      language: defaultLanguage,
     };
     if (query.type) {
       where.type = query.type;
@@ -1543,12 +1649,18 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     return term ?? null;
   }
 
-  async function getPublicBySlug(type: ContentType, slug: string): Promise<PublicPost> {
+  async function getPublicBySlug(
+    type: ContentType,
+    slug: string,
+    languageOptions: { language?: string | undefined; permalinkPattern?: string | undefined } = {},
+  ): Promise<PublicPost> {
     const current = now();
+    const language = await resolvePublicLanguage(languageOptions.language);
     const row = await prisma.post.findFirst({
       where: {
         type,
         slug,
+        language,
         status: 'PUBLISHED',
         isPrivate: false,
         publishedAt: { lte: current },
@@ -1558,7 +1670,154 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     if (!row) {
       throw new ContentError('NOT_FOUND', 'Not found', 404);
     }
-    return toPublic(row, options.logger);
+    const post = toPublic(row, options.logger);
+    const pattern = languageOptions.permalinkPattern ?? '/posts/%postname%/';
+    const siblings = await prisma.post.findMany({
+      where: {
+        translationGroup: row.translationGroup,
+        status: 'PUBLISHED',
+        isPrivate: false,
+        publishedAt: { lte: current },
+        NOT: { id: row.id },
+      },
+      include: WITH_TERMS,
+      orderBy: { language: 'asc' },
+    });
+    post.translations = siblings.map((sibling) => ({
+      language: sibling.language,
+      title: sibling.title,
+      slug: sibling.slug,
+      type: sibling.type as ContentType,
+      path:
+        sibling.type === 'page'
+          ? `/${sibling.slug}`
+          : publicPathFor(sibling as PostWithTerms, pattern),
+    }));
+    return post;
+  }
+
+  /** Published translations of a document, for the public language links. */
+  async function listPublicTranslations(post: {
+    id: string;
+    translationGroup: string;
+    language: string;
+  }): Promise<PublicTranslation[]> {
+    const rows = await prisma.post.findMany({
+      where: {
+        translationGroup: post.translationGroup,
+        status: 'PUBLISHED',
+        isPrivate: false,
+        publishedAt: { lte: now() },
+        NOT: { id: post.id },
+      },
+      select: { language: true, title: true, slug: true, type: true },
+      orderBy: { language: 'asc' },
+    });
+    return rows.map((row) => ({
+      language: row.language,
+      title: row.title,
+      slug: row.slug,
+      type: row.type as ContentType,
+      path: '',
+    }));
+  }
+
+  async function listTranslations(
+    principal: Principal,
+    postId: string,
+  ): Promise<AdminTranslation[]> {
+    requireCapability(principal, 'content.read.any');
+    const source = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { id: true, translationGroup: true, authorId: true, status: true },
+    });
+    if (!source || !canReadPost(principal, source.authorId, source.status)) {
+      throw new ContentError('NOT_FOUND', 'Not found', 404);
+    }
+    const rows = await prisma.post.findMany({
+      where: { translationGroup: source.translationGroup },
+      select: {
+        id: true,
+        language: true,
+        title: true,
+        slug: true,
+        type: true,
+        status: true,
+        updatedAt: true,
+      },
+      orderBy: { language: 'asc' },
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      language: row.language,
+      title: row.title,
+      slug: row.slug,
+      type: row.type as ContentType,
+      status: row.status,
+      updatedAt: row.updatedAt.toISOString(),
+    }));
+  }
+
+  async function createTranslation(
+    principal: Principal,
+    postId: string,
+    language: string,
+  ): Promise<AdminPost> {
+    requireCapability(principal, 'content.create');
+    const source = await prisma.post.findUnique({ where: { id: postId }, include: WITH_TERMS });
+    if (!source) {
+      throw new ContentError('NOT_FOUND', 'Not found', 404);
+    }
+    canEditPost(principal, source.authorId, source.status);
+    const nextLanguage = await resolveLanguage(language);
+    if (nextLanguage === source.language) {
+      throw new ContentError('VALIDATION_ERROR', 'This post is already in that language.', 400);
+    }
+    const existing = await prisma.post.findFirst({
+      where: { translationGroup: source.translationGroup, language: nextLanguage },
+      select: { id: true },
+    });
+    if (existing) {
+      throw new ContentError(
+        'TRANSLATION_EXISTS',
+        'This document already has a translation in that language.',
+        409,
+      );
+    }
+
+    const row = await prisma.$transaction(async (tx) => {
+      await lockSlug(tx, source.type as ContentType, `${source.slug}-${nextLanguage}`);
+      const slug = await resolveDerivedSlug(
+        tx,
+        source.type as ContentType,
+        `${source.slug}-${nextLanguage}`,
+      );
+      return tx.post.create({
+        data: {
+          type: source.type,
+          title: source.title,
+          slug,
+          excerpt: source.excerpt,
+          content: source.content,
+          contentFormat: source.contentFormat,
+          // SEO/OG overrides are language-specific: never copy the source
+          // language's metadata (it would duplicate titles/descriptions).
+          seoTitle: null,
+          seoDescription: null,
+          canonicalUrl: null,
+          ogTitle: null,
+          ogDescription: null,
+          authorId: principal.userId,
+          language: nextLanguage,
+          translationGroup: source.translationGroup,
+          format: source.format,
+          notesNotify: source.notesNotify,
+        },
+        include: WITH_TERMS,
+      });
+    });
+    await hooks.doAction('content.post.created', actionPayload(row, null));
+    return toAdmin(row);
   }
 
   return {
@@ -1579,6 +1838,9 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     getPreviewPost,
     listPublic,
     getPublicBySlug,
+    listPublicTranslations,
+    listTranslations,
+    createTranslation,
     resolvePublicPath,
     resolvePublicId,
     resolvePublicSlug,

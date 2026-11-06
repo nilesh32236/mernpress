@@ -33,6 +33,15 @@ describe('admin router', () => {
     ]);
   });
 
+  it('maps the languages route with breadcrumbs', () => {
+    expect(parseRoute('/admin/settings/languages')).toEqual({ name: 'languages' });
+    expect(breadcrumbs({ name: 'languages' })).toEqual([
+      { label: 'Dashboard', to: '/' },
+      { label: 'Settings', to: '/settings' },
+      { label: 'Languages' },
+    ]);
+  });
+
   it('maps the users, profile and settings routes', () => {
     expect(parseRoute('/admin/users')).toEqual({ name: 'users' });
     expect(parseRoute('/admin/profile')).toEqual({ name: 'profile' });

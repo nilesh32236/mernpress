@@ -1,4 +1,10 @@
-import type { AdminColorScheme, ConsentConfig, ScreenOptionsState } from '@mernpress/contracts';
+import {
+  normalizeLanguageConfig,
+  type AdminColorScheme,
+  type ConsentConfig,
+  type LanguageConfig,
+  type ScreenOptionsState,
+} from '@mernpress/contracts';
 export type UserRole = 'administrator' | 'editor' | 'author' | 'contributor' | 'subscriber';
 export type ContentType = 'post' | 'page';
 export type PostFormat =
@@ -68,6 +74,10 @@ export interface AdminPost {
   passwordProtected: boolean;
   isPrivate: boolean;
   format: PostFormat;
+  /** Language code of this variant. */
+  language: string;
+  /** Translation group shared by every language variant. */
+  translationGroup: string;
   trashedAt: string | null;
   previousStatus: PostStatus | null;
   version: number;
@@ -296,6 +306,7 @@ export interface CreatePostPayload {
   ogDescription?: string | null;
   format?: PostFormat;
   notesNotify?: boolean | null;
+  language?: string;
 }
 
 export interface UpdatePostPayload {
@@ -316,6 +327,7 @@ export interface UpdatePostPayload {
   commentStatus?: 'open' | 'closed';
   sticky?: boolean;
   notesNotify?: boolean | null;
+  language?: string;
   password?: string | null;
   isPrivate?: boolean;
   format?: PostFormat;
@@ -978,6 +990,66 @@ export interface ApplicationPassword {
 }
 
 export type OptionValues = Record<string, unknown>;
+
+// ---- Settings → Languages and translations ----
+export interface AdminTranslation {
+  id: string;
+  language: string;
+  title: string;
+  slug: string;
+  type: ContentType;
+  status: PostStatus;
+  updatedAt: string;
+}
+
+export async function fetchLanguages(): Promise<LanguageConfig> {
+  const response = await fetch('/api/admin/languages', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return normalizeLanguageConfig(await readJson<unknown>(response));
+}
+
+export async function updateLanguages(config: LanguageConfig): Promise<LanguageConfig> {
+  const response = await fetch('/api/admin/languages', {
+    method: 'PUT',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify(config),
+  });
+  return normalizeLanguageConfig(await readJson<unknown>(response));
+}
+
+export async function fetchPostTranslations(postId: string): Promise<AdminTranslation[]> {
+  const response = await fetch(`/api/admin/posts/${encodeURIComponent(postId)}/translations`, {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  const body = await readJson<{ items?: AdminTranslation[] }>(response);
+  return Array.isArray(body.items) ? body.items : [];
+}
+
+export async function createPostTranslation(postId: string, language: string): Promise<AdminPost> {
+  const response = await fetch(`/api/admin/posts/${encodeURIComponent(postId)}/translations`, {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      ...csrfHeader(),
+    },
+    body: JSON.stringify({ language }),
+  });
+  return readJson<AdminPost>(response);
+}
 
 // ---- Settings → Consent ----
 export async function fetchConsent(): Promise<ConsentConfig> {

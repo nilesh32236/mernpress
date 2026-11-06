@@ -19,6 +19,8 @@ import { ImportPage } from './ImportPage.js';
 import { PersonalDataPage } from './PersonalDataPage.js';
 import { ConnectorsPage } from './ConnectorsPage.js';
 import { ConsentPage } from './ConsentPage.js';
+import { LanguagesPage } from './LanguagesPage.js';
+import { LanguagesProvider } from './languages-context.js';
 import { ContentList } from './ContentList.js';
 import { TermsPage } from './TermsPage.js';
 import { MediaPage } from './MediaPage.js';
@@ -181,7 +183,9 @@ function SignedInApp({
 
   return (
     <AdminShell user={user} route={route} onSignedOut={onSignedOut}>
-      <RouteView user={user} route={route} onUserUpdated={onUserUpdated} />
+      <LanguagesProvider>
+        <RouteView user={user} route={route} onUserUpdated={onUserUpdated} />
+      </LanguagesProvider>
     </AdminShell>
   );
 }
@@ -224,6 +228,8 @@ function pageTitle(route: Route): string {
       return 'MERNPress admin · Connectors';
     case 'consent':
       return 'MERNPress admin · Consent';
+    case 'languages':
+      return 'MERNPress admin · Languages';
     case 'plugins':
       return 'MERNPress admin · Plugins';
     case 'pluginInstall':
@@ -302,6 +308,8 @@ function RouteView({
       return user.role === 'administrator' ? <ConnectorsPage /> : <Forbidden />;
     case 'consent':
       return user.role === 'administrator' ? <ConsentPage /> : <Forbidden />;
+    case 'languages':
+      return user.role === 'administrator' ? <LanguagesPage /> : <Forbidden />;
     case 'plugins':
       return user.role === 'administrator' ? <PluginsPage user={user} /> : <Forbidden />;
     case 'pluginInstall':

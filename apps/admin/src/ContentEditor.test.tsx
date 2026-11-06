@@ -4,6 +4,7 @@ import type { AdminPost, AdminTerm, AuthUser, Paged } from './api.js';
 import { ContentEditor } from './ContentEditor.js';
 import { editorHiddenPanels, hydrateScreenOptions } from './screenOptions.js';
 import { NavigationGuardProvider } from './navigation-guard.js';
+import { LanguagesProvider } from './languages-context.js';
 
 // The Gutenberg canvas is a 6 MB lazy chunk; unit tests replace it with a
 // textarea so document-workflow behaviour stays fast and deterministic. The
@@ -52,6 +53,8 @@ function makePost(overrides: Partial<AdminPost> = {}): AdminPost {
     commentStatus: 'open',
     sticky: false,
     notesNotify: null,
+    language: 'en',
+    translationGroup: 'group-1',
     structureLocked: false,
     passwordProtected: false,
     isPrivate: false,
@@ -128,6 +131,7 @@ describe('content editor', () => {
       format: 'standard',
       sticky: false,
       notesNotify: null,
+      language: 'en',
     });
     await waitFor(() => expect(window.location.pathname).toBe('/posts/created-1/edit'));
   });
@@ -1311,6 +1315,8 @@ describe('safe client editing', () => {
       status: 'DRAFT',
       version: 5,
       notesNotify: null,
+      language: 'en',
+      translationGroup: 'group-1',
     });
     const bodies: Array<Record<string, unknown>> = [];
     const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input, init) => {
@@ -1356,5 +1362,70 @@ describe('safe client editing', () => {
     renderEditor(authorA, post.id);
     const select = (await screen.findByLabelText('Notes email')) as HTMLSelectElement;
     expect(select.value).toBe('on');
+  });
+  it('saves the per-post language and creates a linked translation draft', async () => {
+    const post = makePost({ authorId: 'a1', status: 'DRAFT', language: 'en', version: 7 });
+    const patches: Array<Record<string, unknown>> = [];
+    const translations: Array<Record<string, unknown>> = [];
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input, init) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+      if (url.includes('/api/admin/languages')) {
+        return response({ default: 'en', enabled: ['en', 'hi'] });
+      }
+      if (url.includes('/translations')) {
+        if (method === 'POST') {
+          translations.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+          return response(
+            makePost({ id: 'translation-1', language: 'hi', translationGroup: 'group-1' }),
+            201,
+          );
+        }
+        return response({ items: [] });
+      }
+      if (method === 'PATCH') {
+        patches.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+        return response({ ...post, language: 'hi', version: 8 });
+      }
+      if (url.includes('/notes')) return response({ notes: [], trash: [] });
+      if (url.includes('/revisions')) return response([]);
+      if (url.includes('/schedule')) return response({ scheduledAt: null });
+      if (url.includes('/api/terms')) return response(termsPage());
+      if (url.includes('/api/admin/posts/')) return response(post);
+      return response(termsPage());
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <LanguagesProvider>
+        <NavigationGuardProvider>
+          <ContentEditor user={authorA} type="post" id={post.id} />
+        </NavigationGuardProvider>
+      </LanguagesProvider>,
+    );
+
+    const language = (await screen.findByLabelText('Language')) as HTMLSelectElement;
+    await waitFor(() => expect(language.querySelectorAll('option').length).toBe(2));
+    fireEvent.change(language, { target: { value: 'hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+
+    await waitFor(() => expect(patches[0]).toMatchObject({ language: 'hi' }));
+
+    // Back to English so Hindi is offered for a new translation.
+    fireEvent.change(screen.getByLabelText('Language'), { target: { value: 'en' } });
+
+    // The translation group panel loads its siblings when opened.
+    fireEvent.click(screen.getByText('Translations'));
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([input]) => String(input).includes('/translations'))).toBe(
+        true,
+      ),
+    );
+    await screen.findByText('No translations yet.');
+    fireEvent.change(screen.getByLabelText('Add translation'), { target: { value: 'hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create draft' }));
+
+    await waitFor(() => expect(translations).toEqual([{ language: 'hi' }]));
+    await waitFor(() => expect(window.location.pathname).toBe('/posts/translation-1/edit'));
   });
 });

@@ -1,4 +1,4 @@
-import type { ConsentConfig } from '@mernpress/contracts';
+import type { ConsentConfig, LanguageConfig } from '@mernpress/contracts';
 import type { Principal } from '../content/types.js';
 import type { CustomColors, CustomMenuItem } from '../customizer/validation.js';
 
@@ -49,6 +49,8 @@ export interface SiteSettings {
   pageForPostsSlug: string | null;
   /** Cookie-consent banner configuration (public-safe). */
   consent: ConsentConfig;
+  /** Enabled content languages and the default (public-safe). */
+  languages: LanguageConfig;
 }
 
 export interface OptionService {

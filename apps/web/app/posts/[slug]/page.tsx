@@ -1,11 +1,14 @@
 import { notFound } from 'next/navigation';
 import {
   getPublishedBySlug,
+  getSiteSettings,
   listPublicPosts,
   listPublishedPosts,
   mediaUrl,
   siteUrl,
 } from '@/lib/api';
+import { hreflangAlternates } from '@mernpress/contracts';
+import { LanguageLinks } from '@/components/LanguageLinks';
 import type { PublicPost } from '@/lib/api';
 import PostView from '@/components/PostView';
 import JsonLd from '@/components/JsonLd';
@@ -29,13 +32,20 @@ function fallbackDescription(post: PublicPost): string {
   return '';
 }
 
-export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function PostPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ lang?: string }>;
+}) {
   const { slug } = await params;
+  const { lang } = await searchParams;
   let error = false;
   // This route is the internal renderer. The middleware rewrites the public
   // permalink (whatever the configured structure) to /posts/<slug>, so the
   // browser URL and canonical tags stay structure-aware.
-  const post = await getPublishedBySlug('post', slug).catch(() => {
+  const post = await getPublishedBySlug('post', slug, lang).catch(() => {
     error = true;
     return null;
   });
@@ -82,6 +92,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           { name: post.title, url: canonical },
         ])}
       />
+      <LanguageLinks language={post.language} translations={post.translations ?? []} />
       <PostView post={post} morePosts={morePosts} relatedPosts={relatedPosts} />
     </>
   );
@@ -89,21 +100,37 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ lang?: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getPublishedBySlug('post', slug).catch(() => null);
+  const { lang } = await searchParams;
+  const [post, settings] = await Promise.all([
+    getPublishedBySlug('post', slug, lang).catch(() => null),
+    getSiteSettings().catch(() => null),
+  ]);
   if (!post) return { title: 'Not found' };
 
   const title = post.seoTitle ?? post.title;
   const description = fallbackDescription(post);
+  const languages =
+    settings?.languages && post.translations
+      ? hreflangAlternates(
+          settings.languages,
+          post.translations,
+          { language: post.language, path: post.path },
+          (path) => `${siteUrl()}${path}`,
+        )
+      : undefined;
   return {
     title,
     description: description || undefined,
     robots: post.robots ?? undefined,
     alternates: {
       canonical: post.canonicalUrl ?? `${siteUrl()}${post.path}`,
+      ...(languages ? { languages } : {}),
     },
     twitter: {
       card: 'summary_large_image',

@@ -1,12 +1,14 @@
 import { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { postPath } from '@mernpress/contracts';
+import { languageLabel, postPath } from '@mernpress/contracts';
 import {
   actionErrorMessage,
   assignTerms,
   createPost,
+  createPostTranslation,
   discardAutosave,
   fetchAutosave,
   fetchPost,
+  fetchPostTranslations,
   fetchRevision,
   fetchRevisions,
   fetchTerms,
@@ -24,6 +26,7 @@ import {
   type AdminRevision,
   type AdminRevisionDetail,
   type AdminTerm,
+  type AdminTranslation,
   type AuthUser,
   type AutosaveSnapshot,
   type AutosaveState,
@@ -45,6 +48,7 @@ import {
 } from './components.js';
 import { formatDateTime, formatRelativeTime } from './format.js';
 import { useUnsavedChanges } from './navigation-guard.js';
+import { useLanguages } from './languages-context.js';
 import {
   availableTransitions,
   canAssignTerms,
@@ -95,6 +99,7 @@ interface Baseline {
   structureLocked: boolean;
   sticky: boolean;
   notesNotify: boolean | null;
+  language: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -240,6 +245,50 @@ export function ContentEditor({
   const [format, setFormat] = useState<PostFormat>('standard');
   const [sticky, setSticky] = useState(false);
   const [notesNotify, setNotesNotify] = useState<'' | 'on' | 'off'>('');
+  const languages = useLanguages();
+  const [language, setLanguage] = useState('');
+  const [translationsOpen, setTranslationsOpen] = useState(false);
+  const [translations, setTranslations] = useState<AdminTranslation[]>([]);
+  const [translationChoice, setTranslationChoice] = useState('');
+  const [translationBusy, setTranslationBusy] = useState(false);
+  const [translationError, setTranslationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!post?.id || !translationsOpen) {
+      setTranslations([]);
+      return undefined;
+    }
+    let active = true;
+    fetchPostTranslations(post.id)
+      .then((items) => {
+        if (active) setTranslations(items);
+      })
+      .catch(() => {
+        if (active) setTranslations([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [post?.id, translationsOpen]);
+
+  // A new post starts in the configured default language; an existing post
+  // always shows the language the API returned.
+  const effectiveLanguage = language === '' ? languages.default : language;
+
+  async function addTranslation(): Promise<void> {
+    if (!post || translationChoice === '' || translationBusy) return;
+    setTranslationBusy(true);
+    setTranslationError(null);
+    try {
+      const created = await createPostTranslation(post.id, translationChoice);
+      setTranslationChoice('');
+      navigate(editContentPath(created.type, created.id));
+    } catch (caught) {
+      setTranslationError(actionErrorMessage(caught));
+    } finally {
+      setTranslationBusy(false);
+    }
+  }
   const [structureLocked, setStructureLocked] = useState(false);
   const [hiddenPanels, setHiddenPanels] = useState<Set<string>>(() => editorHiddenPanels());
   const [permalinkPattern, setPermalinkPattern] = useState('/posts/%postname%/');
@@ -324,7 +373,8 @@ export function ContentEditor({
       format !== baseline.format ||
       structureLocked !== baseline.structureLocked ||
       sticky !== baseline.sticky ||
-      (notesNotify === '' ? null : notesNotify === 'on') !== baseline.notesNotify
+      (notesNotify === '' ? null : notesNotify === 'on') !== baseline.notesNotify ||
+      effectiveLanguage !== baseline.language
     );
   }, [
     baseline,
@@ -340,6 +390,7 @@ export function ContentEditor({
     structureLocked,
     sticky,
     notesNotify,
+    effectiveLanguage,
   ]);
 
   useUnsavedChanges(dirty, 'You have unsaved changes. Leave this page without saving?');
@@ -428,6 +479,7 @@ export function ContentEditor({
         setFormat(loaded.format);
         setSticky(loaded.sticky);
         setNotesNotify(loaded.notesNotify === null ? '' : loaded.notesNotify ? 'on' : 'off');
+        setLanguage(loaded.language);
         setStructureLocked(loaded.structureLocked);
         setBaseline({
           form: nextForm,
@@ -437,6 +489,7 @@ export function ContentEditor({
           structureLocked: loaded.structureLocked,
           sticky: loaded.sticky,
           notesNotify: loaded.notesNotify,
+          language: loaded.language,
         });
         setContentTouched(false);
         setLoading(false);
@@ -840,6 +893,7 @@ export function ContentEditor({
     setFormat(nextPost.format);
     setSticky(nextPost.sticky);
     setNotesNotify(nextPost.notesNotify === null ? '' : nextPost.notesNotify ? 'on' : 'off');
+    setLanguage(nextPost.language);
     setStructureLocked(nextPost.structureLocked);
     setBaseline({
       form: nextForm,
@@ -849,6 +903,7 @@ export function ContentEditor({
       structureLocked: nextPost.structureLocked,
       sticky: nextPost.sticky,
       notesNotify: nextPost.notesNotify,
+      language: nextPost.language,
     });
     setContentTouched(false);
   }
@@ -937,6 +992,7 @@ export function ContentEditor({
           format,
           ...(type === 'post' ? { sticky } : {}),
           notesNotify: notesNotify === '' ? null : notesNotify === 'on',
+          language: effectiveLanguage,
         });
         const termsResult = await saveTerms(created.id, created);
         if (!termsResult.ok) {
@@ -982,6 +1038,7 @@ export function ContentEditor({
         structureLocked,
         ...(type === 'post' ? { sticky } : {}),
         notesNotify: notesNotify === '' ? null : notesNotify === 'on',
+        language: effectiveLanguage,
         // Only send when changed; undefined keeps the server-side value.
         ...((featuredMedia?.id ?? null) !== (baseline?.featuredMediaId ?? null)
           ? { featuredMediaId: featuredMedia?.id ?? null }
@@ -997,6 +1054,7 @@ export function ContentEditor({
         setFormat(updated.format);
         setSticky(updated.sticky);
         setNotesNotify(updated.notesNotify === null ? '' : updated.notesNotify ? 'on' : 'off');
+        setLanguage(updated.language);
         setStructureLocked(updated.structureLocked);
         setBaseline({
           form: formFromPost(updated),
@@ -1006,6 +1064,7 @@ export function ContentEditor({
           structureLocked: updated.structureLocked,
           sticky: updated.sticky,
           notesNotify: updated.notesNotify,
+          language: updated.language,
         });
         setContentTouched(false);
         setNotice({
@@ -2003,6 +2062,25 @@ export function ContentEditor({
                                 </span>
                               </div>
                             </div>
+                            <div className="publish-field">
+                              <span className="publish-label">Language</span>
+                              <div className="publish-value">
+                                <select
+                                  aria-label="Language"
+                                  value={effectiveLanguage}
+                                  onChange={(event) => setLanguage(event.target.value)}
+                                  disabled={!editable}
+                                >
+                                  {[...new Set([...languages.enabled, effectiveLanguage])].map(
+                                    (code) => (
+                                      <option key={code} value={code}>
+                                        {languageLabel(code)} ({code})
+                                      </option>
+                                    ),
+                                  )}
+                                </select>
+                              </div>
+                            </div>
                             <PingsField />
                             <div className="publish-field">
                               <span className="publish-label">Notes email</span>
@@ -2148,6 +2226,23 @@ export function ContentEditor({
                                 <span className="editor-link-value">Open</span>
                               </div>
                             </div>
+                            <div className="publish-field">
+                              <span className="publish-label">Language</span>
+                              <div className="publish-value">
+                                <select
+                                  aria-label="Language"
+                                  value={language}
+                                  onChange={(event) => setLanguage(event.target.value)}
+                                  disabled={!editable}
+                                >
+                                  {languages.enabled.map((code) => (
+                                    <option key={code} value={code}>
+                                      {languageLabel(code)} ({code})
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
                             <PingsField />
                             <div className="publish-field">
                               <span className="publish-label">Notes email</span>
@@ -2214,6 +2309,98 @@ export function ContentEditor({
                       </>
                     )}
                   </section>
+
+                  {post ? (
+                    <section className="editor-panel" aria-label="Translations">
+                      <details
+                        className="translation-details"
+                        onToggle={(event) => setTranslationsOpen(event.currentTarget.open)}
+                      >
+                        <summary>
+                          <h3>Translations</h3>
+                        </summary>
+                        {translations.length === 0 ? (
+                          <p className="field-help">No translations yet.</p>
+                        ) : (
+                          <ul className="translation-list">
+                            {translations.map((translation) => (
+                              <li key={translation.id}>
+                                <div className="translation-meta">
+                                  <strong>{languageLabel(translation.language)}</strong>{' '}
+                                  <code>{translation.language}</code>
+                                  <span
+                                    className={`translation-status is-${translation.status.toLowerCase()}`}
+                                  >
+                                    {translation.status}
+                                  </span>
+                                </div>
+                                <p className="translation-title">{translation.title}</p>
+                                <button
+                                  type="button"
+                                  className="button-link"
+                                  onClick={() =>
+                                    navigate(editContentPath(translation.type, translation.id))
+                                  }
+                                >
+                                  Edit translation
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {languages.enabled.filter(
+                          (code) =>
+                            code !== effectiveLanguage &&
+                            !translations.some((translation) => translation.language === code),
+                        ).length > 0 ? (
+                          <div className="translation-add">
+                            <label htmlFor="translation-language">Add translation</label>
+                            <select
+                              id="translation-language"
+                              aria-label="Add translation"
+                              value={translationChoice}
+                              onChange={(event) => setTranslationChoice(event.target.value)}
+                              disabled={translationBusy}
+                            >
+                              <option value="">— Select —</option>
+                              {languages.enabled
+                                .filter(
+                                  (code) =>
+                                    code !== effectiveLanguage &&
+                                    !translations.some(
+                                      (translation) => translation.language === code,
+                                    ),
+                                )
+                                .map((code) => (
+                                  <option key={code} value={code}>
+                                    {languageLabel(code)} ({code})
+                                  </option>
+                                ))}
+                            </select>
+                            <button
+                              type="button"
+                              className="button secondary-button"
+                              onClick={() => void addTranslation()}
+                              disabled={translationBusy || translationChoice === ''}
+                            >
+                              {translationBusy ? 'Creating…' : 'Create draft'}
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="field-help">Every enabled language has a translation.</p>
+                        )}
+                        {translationError ? (
+                          <p className="form-error" role="alert">
+                            {translationError}
+                          </p>
+                        ) : null}
+                        <p className="field-help">
+                          Translations are drafts until published; they share this document&apos;s
+                          translation group and appear under their language prefix.
+                        </p>
+                      </details>
+                    </section>
+                  ) : null}
 
                   {!hiddenPanels.has('categoriesTags') ? (
                     <section className="editor-panel" aria-label="Taxonomies">

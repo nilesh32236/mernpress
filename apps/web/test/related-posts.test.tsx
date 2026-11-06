@@ -26,6 +26,7 @@ const basePost: PublicPost = {
   sticky: false,
   passwordProtected: false,
   format: 'standard',
+  language: 'en',
   updatedAt: '2026-01-01T00:00:00.000Z',
   terms: {
     categories: [{ id: 'c1', name: 'Cat', slug: 'cat', path: '/category/cat' }],

@@ -26,6 +26,7 @@ const basePost: PublicPost = {
   sticky: false,
   passwordProtected: true,
   format: 'standard',
+  language: 'en',
   updatedAt: '2026-01-01T00:00:00.000Z',
   terms: { categories: [], tags: [] },
   author: {

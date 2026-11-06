@@ -3,7 +3,12 @@ import { validateColors, validateCustomCss, validateMenu } from '../customizer/v
 import type { DatabaseClient, Prisma } from '@mernpress/database';
 import { ContentError } from '../content/errors.js';
 import { requireCapability } from '../auth/capabilities.js';
-import { DEFAULT_CONSENT, normalizeConsentConfig } from '@mernpress/contracts';
+import {
+  DEFAULT_CONSENT,
+  DEFAULT_LANGUAGES,
+  normalizeConsentConfig,
+  normalizeLanguageConfig,
+} from '@mernpress/contracts';
 import type { Principal } from '../content/types.js';
 import type { OptionGroup, SiteSettings, UpdateOptionsInput } from './types.js';
 
@@ -780,6 +785,16 @@ const SPECS: Record<string, OptionSpec> = {
       return normalizeConsentConfig(value);
     },
   },
+  site_languages: {
+    group: 'general',
+    defaultValue: DEFAULT_LANGUAGES,
+    validate: (value) => {
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+        throwValidation('site_languages must be an object.');
+      }
+      return normalizeLanguageConfig(value);
+    },
+  },
   customizer_colors: {
     group: 'appearance',
     defaultValue: null,
@@ -976,6 +991,7 @@ export function createOptionService(options: OptionServiceOptions) {
       'page_on_front',
       'page_for_posts',
       'consent_config',
+      'site_languages',
     ]);
     const pageIds = [values.page_on_front, values.page_for_posts].filter(
       (value): value is string => typeof value === 'string',
@@ -995,6 +1011,8 @@ export function createOptionService(options: OptionServiceOptions) {
       typeof values.page_for_posts === 'string'
         ? (pages.find((page) => page.id === values.page_for_posts) ?? null)
         : null;
+
+    const languages = normalizeLanguageConfig(values.site_languages);
 
     const consent = (() => {
       const stored = values.consent_config;
@@ -1060,6 +1078,7 @@ export function createOptionService(options: OptionServiceOptions) {
       pageOnFrontSlug: frontPage?.slug ?? null,
       pageForPostsSlug: postsPage?.slug ?? null,
       consent,
+      languages,
     };
   }
 

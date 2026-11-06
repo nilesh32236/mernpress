@@ -187,3 +187,63 @@ describe('consent contract', () => {
     expect(consentAllows({ ...config, enabled: false }, null, 'marketing')).toBe(true);
   });
 });
+
+describe('language contract', () => {
+  it('normalizes enabled languages and keeps the default', async () => {
+    const { DEFAULT_LANGUAGES, normalizeLanguageConfig, isLanguageCode, isLanguageEnabled } =
+      await import('../src/languages.js');
+
+    expect(normalizeLanguageConfig(null)).toEqual(DEFAULT_LANGUAGES);
+    expect(
+      normalizeLanguageConfig({ default: 'hi', enabled: ['hi', 'en', 'bad code', 'hi'] }),
+    ).toEqual({ default: 'hi', enabled: ['hi', 'en'] });
+    // An invalid default falls back to en, and the default is always enabled.
+    expect(normalizeLanguageConfig({ default: 'xx1', enabled: ['hi'] })).toEqual({
+      default: 'en',
+      enabled: ['en', 'hi'],
+    });
+    expect(isLanguageCode('pt-br')).toBe(true);
+    expect(isLanguageCode('e')).toBe(false);
+    expect(isLanguageEnabled({ default: 'en', enabled: ['en', 'hi'] }, 'hi')).toBe(true);
+  });
+
+  it('prefixes only non-default languages and strips prefixes safely', async () => {
+    const { languagePath, stripLanguagePrefix } = await import('../src/languages.js');
+    const config = { default: 'en', enabled: ['en', 'hi'] };
+
+    expect(languagePath(config, 'en', '/posts/hello')).toBe('/posts/hello');
+    expect(languagePath(config, 'hi', '/posts/hello')).toBe('/hi/posts/hello');
+    expect(languagePath(config, 'hi', '/')).toBe('/hi');
+    expect(stripLanguagePrefix(config, '/hi/posts/hello')).toEqual({
+      language: 'hi',
+      path: '/posts/hello',
+      prefixed: true,
+    });
+    expect(stripLanguagePrefix(config, '/posts/hello')).toEqual({
+      language: 'en',
+      path: '/posts/hello',
+      prefixed: false,
+    });
+    // A disabled language is an ordinary first segment.
+    expect(stripLanguagePrefix(config, '/fr/hello')).toEqual({
+      language: 'en',
+      path: '/fr/hello',
+      prefixed: false,
+    });
+  });
+
+  it('builds hreflang alternates with x-default', async () => {
+    const { hreflangAlternates } = await import('../src/languages.js');
+    const alternates = hreflangAlternates(
+      { default: 'en', enabled: ['en', 'hi'] },
+      [{ language: 'hi', path: '/hi/posts/hello' }],
+      { language: 'en', path: '/posts/hello' },
+      (path) => `https://example.com${path}`,
+    );
+    expect(alternates).toEqual({
+      en: 'https://example.com/posts/hello',
+      hi: 'https://example.com/hi/posts/hello',
+      'x-default': 'https://example.com/posts/hello',
+    });
+  });
+});

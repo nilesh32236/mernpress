@@ -48,6 +48,7 @@ import { SESSION_COOKIE } from './auth/cookies.js';
 import { loadEnv, type Env } from './config/env.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerContentRoutes } from './routes/content.js';
+import { registerLanguageRoutes } from './routes/languages.js';
 import { registerPublicContentRoutes } from './routes/public-content.js';
 import { registerTaxonomyRoutes } from './routes/taxonomy.js';
 import { registerUserRoutes } from './routes/users.js';
@@ -391,6 +392,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   registerAuthRoutes(app, { env, auth, passwordResets });
   registerContentRoutes(app, { env, auth, content });
+  registerLanguageRoutes(app, { env, auth, content, options: optionService });
   registerTaxonomyRoutes(app, { env, auth, taxonomy });
   registerUserRoutes(app, { env, auth, users, twoFactor });
   registerProfileRoutes(app, {

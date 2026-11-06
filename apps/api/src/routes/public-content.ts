@@ -6,7 +6,13 @@ import {
   type SiteSettings,
   type ThemeService,
 } from '@mernpress/cms-core';
-import { pagePath, postPath, termPath } from '@mernpress/contracts';
+import {
+  DEFAULT_LANGUAGES,
+  languagePath,
+  pagePath,
+  postPath,
+  termPath,
+} from '@mernpress/contracts';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { createMemoryRateLimit } from '../security/memory-rate-limit.js';
@@ -22,6 +28,11 @@ const resolveQuerySchema = z
     path: z.string().min(1).max(2048).optional(),
     p: z.string().uuid().optional(),
     slug: z.string().min(1).max(200).optional(),
+    lang: z
+      .string()
+      .regex(/^[a-z]{2,3}(?:-[a-z]{2})?$/)
+      .max(10)
+      .optional(),
   })
   .strict();
 const unlockBodySchema = z.object({ password: z.string().min(1).max(200) }).strict();
@@ -60,18 +71,28 @@ export function registerPublicContentRoutes(
    */
   function presentPost(post: PublicPost, settings: SiteSettings) {
     const categorySlug = post.terms.categories[0]?.slug ?? null;
+    const languages = settings.languages ?? DEFAULT_LANGUAGES;
+    const basePath =
+      post.type === 'page'
+        ? pagePath(post.slug)
+        : postPath(settings.permalinkPattern, {
+            id: post.id,
+            slug: post.slug,
+            publishedAt: post.publishedAt,
+            createdAt: post.publishedAt ?? post.updatedAt,
+            categorySlug,
+          });
     return {
       ...post,
-      path:
-        post.type === 'page'
-          ? pagePath(post.slug)
-          : postPath(settings.permalinkPattern, {
-              id: post.id,
-              slug: post.slug,
-              publishedAt: post.publishedAt,
-              createdAt: post.publishedAt ?? post.updatedAt,
-              categorySlug,
-            }),
+      path: languagePath(languages, post.language, basePath),
+      ...(post.translations
+        ? {
+            translations: post.translations.map((translation) => ({
+              ...translation,
+              path: languagePath(languages, translation.language, translation.path),
+            })),
+          }
+        : {}),
       terms: {
         categories: post.terms.categories.map((term) => ({
           ...term,
@@ -148,7 +169,10 @@ export function registerPublicContentRoutes(
         throw new ContentError('VALIDATION_ERROR', validationMessage(parsed.error.issues), 400);
       }
       const [page, settings] = await Promise.all([
-        content.listPublic(parsed.data),
+        content.listPublic({
+          ...parsed.data,
+          language: parsed.data.lang,
+        }),
         optionService.getPublicSettings(),
       ]);
       return { ...page, items: page.items.map((post) => presentPost(post, settings)) };
@@ -182,10 +206,11 @@ export function registerPublicContentRoutes(
       if (!query.success) {
         throw new ContentError('VALIDATION_ERROR', validationMessage(query.error.issues), 400);
       }
-      const [post, settings] = await Promise.all([
-        content.getPublicBySlug(query.data.type, params.data.slug),
-        optionService.getPublicSettings(),
-      ]);
+      const settings = await optionService.getPublicSettings();
+      const post = await content.getPublicBySlug(query.data.type, params.data.slug, {
+        language: query.data.lang,
+        permalinkPattern: settings.permalinkPattern,
+      });
       return presentPost(post, settings);
     }),
   );
@@ -224,8 +249,16 @@ export function registerPublicContentRoutes(
           ? await content.resolvePublicId(settings.permalinkPattern, parsed.data.p)
           : null
         : parsed.data.slug
-          ? await content.resolvePublicSlug(settings.permalinkPattern, parsed.data.slug)
-          : await content.resolvePublicPath(settings.permalinkPattern, parsed.data.path as string);
+          ? await content.resolvePublicSlug(
+              settings.permalinkPattern,
+              parsed.data.slug,
+              parsed.data.lang,
+            )
+          : await content.resolvePublicPath(
+              settings.permalinkPattern,
+              parsed.data.path as string,
+              parsed.data.lang,
+            );
       if (!resolved) {
         throw new ContentError('NOT_FOUND', 'Not found', 404);
       }

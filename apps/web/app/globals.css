@@ -1380,3 +1380,28 @@ html.has-public-admin-bar {
   cursor: pointer;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
+
+/* Language switcher for translated documents. */
+.language-links {
+  margin: 0 0 18px;
+  font-size: 12px;
+}
+
+.language-links ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.language-links [aria-current='true'] {
+  color: #1d2327;
+  font-weight: 600;
+}
+
+.language-links a {
+  color: #2271b1;
+  text-decoration: underline;
+}

@@ -48,6 +48,8 @@ function page(id: string, title: string): AdminPost {
     commentStatus: 'open',
     sticky: false,
     notesNotify: null,
+    language: 'en',
+    translationGroup: 'group-1',
     structureLocked: false,
     passwordProtected: false,
     isPrivate: false,

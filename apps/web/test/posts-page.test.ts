@@ -33,6 +33,7 @@ const blogPage = {
   sticky: false,
   passwordProtected: false,
   format: 'standard',
+  language: 'en',
   terms: { categories: [], tags: [] },
   featuredImage: null,
   author: null,

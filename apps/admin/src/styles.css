@@ -13309,3 +13309,89 @@ select:not([multiple]):not([size]) {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Settings → Languages. */
+.languages-intro {
+  margin: 0 0 16px;
+  max-width: 820px;
+  color: #646970;
+  font-size: 12px;
+}
+
+.languages-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.languages-custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.languages-custom input {
+  width: 120px;
+}
+
+/* Editor: translation group panel. */
+.translation-list {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.translation-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f1;
+}
+
+.translation-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.translation-meta code {
+  color: #646970;
+}
+
+.translation-status {
+  padding: 1px 6px;
+  border-radius: 2px;
+  background: #f0f0f1;
+  color: #50575e;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.translation-status.is-published {
+  background: #edfaef;
+  color: #1e7c2f;
+}
+
+.translation-status.is-draft {
+  background: #fcf9e8;
+  color: #7a5c00;
+}
+
+.translation-title {
+  margin: 4px 0;
+  font-size: 13px;
+}
+
+.translation-add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.translation-add label {
+  font-size: 12px;
+  font-weight: 600;
+}

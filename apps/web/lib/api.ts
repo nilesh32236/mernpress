@@ -73,6 +73,16 @@ export interface PublicPost {
     | 'video'
     | 'audio'
     | 'chat';
+  /** Language code for this variant. */
+  language: string;
+  /** Published translations (single-post responses). */
+  translations?: Array<{
+    language: string;
+    title: string;
+    slug: string;
+    type: ContentType;
+    path: string;
+  }>;
   updatedAt: string;
   author: PublicAuthorSummary | null;
   terms: { categories: PublicTerm[]; tags: PublicTerm[] };
@@ -150,6 +160,7 @@ export interface SiteSettings {
   showOnFront: 'posts' | 'page';
   pageOnFrontSlug: string | null;
   pageForPostsSlug: string | null;
+  languages?: { default: string; enabled: string[] };
   consent?: ConsentConfig;
   theme?: PublicTheme | null;
 }
@@ -199,6 +210,8 @@ async function apiFetch(path: string): Promise<Response> {
 }
 
 export interface PublicPostQuery {
+  /** Language filter; omitted = default language. */
+  lang?: string;
   type?: ContentType;
   search?: string;
   category?: string;
@@ -217,6 +230,7 @@ export async function listPublicPosts(query: PublicPostQuery = {}): Promise<Post
   if (query.category) params.set('category', query.category);
   if (query.tag) params.set('tag', query.tag);
   if (query.author) params.set('author', query.author);
+  if (query.lang) params.set('lang', query.lang);
   const res = await apiFetch(`/api/public/posts?${params.toString()}`);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Failed to list posts: ${res.status}`);
@@ -240,15 +254,19 @@ export async function listPublished(
   type: ContentType = 'post',
   page = 1,
   perPage = 10,
+  language?: string,
 ): Promise<PostsPage | null> {
-  return listPublicPosts({ type, page, perPage });
+  return listPublicPosts({ type, page, perPage, ...(language ? { lang: language } : {}) });
 }
 
 export async function getPublishedBySlug(
   type: ContentType,
   slug: string,
+  language?: string,
 ): Promise<PublicPost | null> {
-  const path = `/api/public/posts/${encodeURIComponent(slug)}?type=${type}`;
+  const path = `/api/public/posts/${encodeURIComponent(slug)}?type=${type}${
+    language ? `&lang=${encodeURIComponent(language)}` : ''
+  }`;
   // Privacy/password/status changes must take effect immediately; a cached
   // detail response could keep serving a post that is now private.
   const res = await fetch(`${apiUrl()}${path}`, { cache: 'no-store' });

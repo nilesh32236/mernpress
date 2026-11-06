@@ -35,6 +35,7 @@ const post: PublicPost = {
   sticky: false,
   passwordProtected: false,
   format: 'standard',
+  language: 'en',
   updatedAt: '2026-01-01T00:00:00.000Z',
   author,
   terms: { categories: [], tags: [] },

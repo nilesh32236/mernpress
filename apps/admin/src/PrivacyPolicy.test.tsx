@@ -44,6 +44,8 @@ const existingPage = {
   commentStatus: 'open' as const,
   sticky: false,
   notesNotify: null,
+  language: 'en',
+  translationGroup: 'group-1',
   structureLocked: false,
   passwordProtected: false,
   isPrivate: false,

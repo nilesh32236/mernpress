@@ -102,6 +102,10 @@ export interface AdminPost {
   isPrivate: boolean;
   /** WordPress post format. */
   format: PostFormat;
+  /** Language code of this variant; default-language posts are unprefixed. */
+  language: string;
+  /** Translation group shared by every language variant of this document. */
+  translationGroup: string;
   trashedAt: string | null;
   previousStatus: PostStatus | null;
   version: number;
@@ -192,9 +196,34 @@ export interface PublicPost {
   passwordProtected: boolean;
   /** WordPress post format. */
   format: PostFormat;
+  /** Language code of this variant; default-language posts are unprefixed. */
+  language: string;
+  /** Published translations of the same document (single-post responses only). */
+  translations?: PublicTranslation[];
   updatedAt: string;
   author: PublicAuthorSummary | null;
   terms: { categories: AdminTermSummary[]; tags: AdminTermSummary[] };
+}
+
+/** One published translation of a document. */
+export interface PublicTranslation {
+  language: string;
+  title: string;
+  slug: string;
+  type: ContentType;
+  /** Canonical path in that language (route presentation fills this in). */
+  path: string;
+}
+
+/** Admin translation sibling row. */
+export interface AdminTranslation {
+  id: string;
+  language: string;
+  title: string;
+  slug: string;
+  type: ContentType;
+  status: PostStatus;
+  updatedAt: string;
 }
 
 /**
@@ -233,6 +262,8 @@ export interface CreatePostInput {
   sticky?: boolean | undefined;
   /** Per-post editor-note mail override; null inherits the Discussion option. */
   notesNotify?: boolean | null | undefined;
+  /** Language code; defaults to the configured default language. */
+  language?: string | undefined;
 }
 
 export interface UpdatePostInput {
@@ -253,6 +284,7 @@ export interface UpdatePostInput {
   commentStatus?: 'open' | 'closed' | undefined;
   sticky?: boolean | undefined;
   notesNotify?: boolean | null | undefined;
+  language?: string | undefined;
   /** Empty string or null removes the password protection. */
   password?: string | null | undefined;
   isPrivate?: boolean | undefined;
@@ -295,6 +327,8 @@ export interface PublicListQuery {
   tag?: string | undefined;
   /** Author username filter (author archives). */
   author?: string | undefined;
+  /** Language filter; defaults to the configured default language. */
+  language?: string | undefined;
   page: number;
   perPage: number;
 }
