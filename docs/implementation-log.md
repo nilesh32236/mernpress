@@ -4881,3 +4881,27 @@ verified in production with a temporary administrator:
 - Cleanup removed the media item/files, folder, temporary administrator and
   sessions, recent audit events and analytics rows: production is back to 1
   user, 2 posts, 0 media, 0 folders, 0 analytics rows.
+
+### 2026-11-06 — Localized public comment errors
+
+- `ContentError` accepts optional, client-safe `details`; `sendRouteError`
+  includes them for responses below 500 (Zod field details unchanged, server
+  errors never echo context).
+- Comment creation now attaches a stable `details.reason`:
+  `comments_closed`, `login_required`, `name_required`, `email_invalid`,
+  `content_required`, `content_too_long` (split from the old combined
+  message), `url_invalid`, `reply_missing`, `too_fast`.
+- Nine theme strings (`commentsClosed`, `commentLoginRequired`,
+  `commentNameRequired`, `commentEmailRequired`, `commentContentRequired`,
+  `commentContentTooLong`, `commentUrlInvalid`, `commentReplyMissing`,
+  `commentTooFast`) bring the contract to 61 keys and appear in the grouped
+  Comments section automatically.
+- The public comment form maps the reason through the active language's theme
+  strings (`apps/web/lib/comment-errors.ts`) and falls back to the localized
+  generic failure for unknown/older responses; it no longer displays the API's
+  English message.
+- Tests: comment-closed and rate-limit responses assert `details.reason`; a web
+  unit test covers every reason, a language override and the unknown/absent
+  fallback.
+- Validation: 907 unit/integration tests (API 527, admin 250, web 52, contracts
+  13, block-system 65), 24 Playwright E2E tests and seven builds pass.

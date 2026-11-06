@@ -174,6 +174,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-114 | 2026-11-06 | Media drag-and-drop: grid cards and list rows are draggable; dropping on a folder tree row (or Uncategorized) assigns the dragged selection via the same per-item PATCH path as bulk move, highlighting the drop target. Bulk move stays the keyboard-accessible path. OS file drops and cross-window drags are out of scope. | accepted | [ADR 0048](docs/adr/0048-media-virtual-folders.md) |
 
+| D-115 | 2026-11-06 | Localized comment errors: `ContentError` accepts optional client-safe `details`; `sendRouteError` includes them for <500 responses. Comment create errors carry `details.reason` (`comments_closed`, `login_required`, `name_required`, `email_invalid`, `content_required`, `content_too_long`, `url_invalid`, `reply_missing`, `too_fast`) and nine per-language theme strings map them on the public site, falling back to the localized generic failure instead of the English API message. | accepted | [ADR 0052](docs/adr/0052-per-language-menus-and-theme-strings.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

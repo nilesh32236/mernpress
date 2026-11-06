@@ -141,9 +141,11 @@ describe('public comments', () => {
     await setGroup({ default_comment_status: 'closed' });
     const closed = await addComment(post.id, 'Should be rejected.');
     expect(closed.statusCode).toBe(403);
-    expect((closed.json() as { error: { message: string } }).error.message).toBe(
-      'Comments are closed.',
-    );
+    const closedBody = closed.json() as {
+      error: { message: string; details?: { reason?: string } };
+    };
+    expect(closedBody.error.message).toBe('Comments are closed.');
+    expect(closedBody.error.details?.reason).toBe('comments_closed');
 
     await setGroup({ default_comment_status: 'open', comment_previously_approved: true });
   });
@@ -153,6 +155,9 @@ describe('public comments', () => {
     expect((await addComment(post.id, 'First')).statusCode).toBe(201);
     const second = await addComment(post.id, 'Second');
     expect(second.statusCode).toBe(429);
+    expect(
+      (second.json() as { error: { details?: { reason?: string } } }).error.details?.reason,
+    ).toBe('too_fast');
   });
 });
 

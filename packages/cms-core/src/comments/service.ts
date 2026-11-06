@@ -128,17 +128,23 @@ export function createCommentService({ prisma, mail }: CommentServiceOptions) {
       setting<number>('spam_guard_moderation_threshold', 3),
     ]);
     if (defaultStatus === 'closed' || post.commentStatus === 'closed') {
-      throw new ContentError('FORBIDDEN', 'Comments are closed.', 403);
+      throw new ContentError('FORBIDDEN', 'Comments are closed.', 403, {
+        reason: 'comments_closed',
+      });
     }
     if (
       closeForOld &&
       post.publishedAt &&
       post.publishedAt.getTime() < Date.now() - closeDays * 24 * 60 * 60 * 1000
     ) {
-      throw new ContentError('FORBIDDEN', 'Comments are closed.', 403);
+      throw new ContentError('FORBIDDEN', 'Comments are closed.', 403, {
+        reason: 'comments_closed',
+      });
     }
     if (registrationRequired && !input.userId) {
-      throw new ContentError('FORBIDDEN', 'You must be logged in to comment.', 403);
+      throw new ContentError('FORBIDDEN', 'You must be logged in to comment.', 403, {
+        reason: 'login_required',
+      });
     }
     const rawName = clean(input.authorName);
     const rawEmail = clean(input.authorEmail).toLowerCase();
@@ -147,16 +153,29 @@ export function createCommentService({ prisma, mail }: CommentServiceOptions) {
     const content = clean(input.content);
     const authorUrl = input.authorUrl ? clean(input.authorUrl) : null;
     if (!authorName || authorName.length > MAX_NAME) {
-      throw new ContentError('VALIDATION_ERROR', 'Name is required.', 400);
+      throw new ContentError('VALIDATION_ERROR', 'Name is required.', 400, {
+        reason: 'name_required',
+      });
     }
     if (!validEmail(authorEmail)) {
-      throw new ContentError('VALIDATION_ERROR', 'A valid email is required.', 400);
+      throw new ContentError('VALIDATION_ERROR', 'A valid email is required.', 400, {
+        reason: 'email_invalid',
+      });
     }
-    if (!content || content.length > MAX_CONTENT) {
-      throw new ContentError('VALIDATION_ERROR', 'Comment is required.', 400);
+    if (!content) {
+      throw new ContentError('VALIDATION_ERROR', 'Comment is required.', 400, {
+        reason: 'content_required',
+      });
+    }
+    if (content.length > MAX_CONTENT) {
+      throw new ContentError('VALIDATION_ERROR', 'Comment is too long.', 400, {
+        reason: 'content_too_long',
+      });
     }
     if (authorUrl && (!validUrl(authorUrl) || authorUrl.length > MAX_URL)) {
-      throw new ContentError('VALIDATION_ERROR', 'Website must be a valid URL.', 400);
+      throw new ContentError('VALIDATION_ERROR', 'Website must be a valid URL.', 400, {
+        reason: 'url_invalid',
+      });
     }
     if (input.parentId) {
       const parent = await prisma.comment.findFirst({
@@ -168,6 +187,7 @@ export function createCommentService({ prisma, mail }: CommentServiceOptions) {
           'VALIDATION_ERROR',
           'The comment you replied to was not found.',
           400,
+          { reason: 'reply_missing' },
         );
       }
     }
@@ -178,7 +198,9 @@ export function createCommentService({ prisma, mail }: CommentServiceOptions) {
       },
     });
     if (flood > 0) {
-      throw new ContentError('VALIDATION_ERROR', 'You are posting comments too quickly.', 429);
+      throw new ContentError('VALIDATION_ERROR', 'You are posting comments too quickly.', 429, {
+        reason: 'too_fast',
+      });
     }
     const linkCount = (content.match(/https?:\/\//gi) ?? []).length;
     const normalized = content.toLowerCase();

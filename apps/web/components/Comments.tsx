@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { DEFAULT_THEME_STRINGS, type ThemeStrings } from '@mernpress/contracts';
+import { commentErrorMessage } from '@/lib/comment-errors';
 
 interface PublicComment {
   id: string;
@@ -167,7 +168,7 @@ export default function Comments({
       });
       const body = await response.json().catch(() => null);
       if (!response.ok) {
-        throw new Error(body?.error?.message ?? strings.commentFailed);
+        throw new Error(commentErrorMessage(strings, body?.error?.details?.reason));
       }
       if (body.status === 'APPROVED') {
         setComments((current) => [...current, body as PublicComment]);

@@ -40,11 +40,19 @@ export type ContentErrorCode =
 export class ContentError extends Error {
   readonly code: ContentErrorCode;
   readonly statusCode: number;
+  /** Optional machine-readable context (never secrets or internal identifiers). */
+  readonly details: Record<string, unknown> | undefined;
 
-  constructor(code: ContentErrorCode, message: string, statusCode: number) {
+  constructor(
+    code: ContentErrorCode,
+    message: string,
+    statusCode: number,
+    details?: Record<string, unknown>,
+  ) {
     super(message);
     this.name = 'ContentError';
     this.code = code;
     this.statusCode = statusCode;
+    this.details = details;
   }
 }

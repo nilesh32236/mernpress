@@ -37,5 +37,15 @@ export function sendRouteError(
   const message =
     statusCode >= 500 ? 'Internal server error' : (domainError.message ?? 'Request rejected');
 
-  return reply.code(statusCode).send({ error: { code, message, requestId: request.id } });
+  const details = (error as { details?: unknown }).details;
+  return reply.code(statusCode).send({
+    error: {
+      code,
+      message,
+      requestId: request.id,
+      // Client-safe context (e.g. a stable reason code for localization).
+      // Never echo details for server failures.
+      ...(statusCode < 500 && details !== undefined ? { details } : {}),
+    },
+  });
 }

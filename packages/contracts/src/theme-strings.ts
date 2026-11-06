@@ -66,6 +66,60 @@ export const THEME_STRING_KEYS = [
     max: 120,
   },
   {
+    key: 'commentsClosed',
+    label: 'Comment error: comments closed',
+    fallback: 'Comments are closed.',
+    max: 120,
+  },
+  {
+    key: 'commentLoginRequired',
+    label: 'Comment error: login required',
+    fallback: 'You must be logged in to comment.',
+    max: 120,
+  },
+  {
+    key: 'commentNameRequired',
+    label: 'Comment error: name required',
+    fallback: 'Please enter your name.',
+    max: 120,
+  },
+  {
+    key: 'commentEmailRequired',
+    label: 'Comment error: email invalid',
+    fallback: 'Please enter a valid email address.',
+    max: 120,
+  },
+  {
+    key: 'commentContentRequired',
+    label: 'Comment error: comment required',
+    fallback: 'Please write a comment.',
+    max: 120,
+  },
+  {
+    key: 'commentContentTooLong',
+    label: 'Comment error: comment too long',
+    fallback: 'Your comment is too long.',
+    max: 120,
+  },
+  {
+    key: 'commentUrlInvalid',
+    label: 'Comment error: website invalid',
+    fallback: 'Please enter a valid website URL.',
+    max: 120,
+  },
+  {
+    key: 'commentReplyMissing',
+    label: 'Comment error: reply target missing',
+    fallback: 'The comment you replied to is no longer available.',
+    max: 160,
+  },
+  {
+    key: 'commentTooFast',
+    label: 'Comment error: posting too quickly',
+    fallback: 'You are posting comments too quickly. Please wait a moment.',
+    max: 160,
+  },
+  {
     key: 'commentFailed',
     label: 'Comment failure fallback',
     fallback: 'We could not post your comment.',
@@ -120,7 +174,7 @@ export const THEME_STRING_KEYS = [
 export type ThemeStringKey = (typeof THEME_STRING_KEYS)[number]['key'];
 
 /**
- * Presentation groups for the 52 theme strings. Kept next to the keys so the
+ * Presentation groups for the 61 theme strings. Kept next to the keys so the
  * admin and any future editor share one grouping instead of maintaining a
  * second hand-written list.
  */
@@ -177,6 +231,15 @@ export const THEME_STRING_GROUPS = [
       'commentPosted',
       'commentPending',
       'commentFailed',
+      'commentsClosed',
+      'commentLoginRequired',
+      'commentNameRequired',
+      'commentEmailRequired',
+      'commentContentRequired',
+      'commentContentTooLong',
+      'commentUrlInvalid',
+      'commentReplyMissing',
+      'commentTooFast',
     ],
   },
   {
