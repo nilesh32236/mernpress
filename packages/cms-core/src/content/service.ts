@@ -21,6 +21,7 @@ import {
 } from '../auth/capabilities.js';
 import { hashPassword, verifyPassword } from '../auth/password.js';
 import { ContentError } from './errors.js';
+import { searchPostIds } from './search.js';
 import {
   captureRevision,
   findPostRevision,
@@ -488,6 +489,17 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     return value;
   }
 
+  /** Fetch rows for ranked ids while preserving the SQL order. */
+  async function loadPostsInOrder(ids: string[]): Promise<PostWithTerms[]> {
+    if (ids.length === 0) return [];
+    const rows = await prisma.post.findMany({
+      where: { id: { in: ids } },
+      include: WITH_TERMS,
+    });
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    return ids.map((id) => byId.get(id)).filter((row): row is PostWithTerms => row !== undefined);
+  }
+
   async function resolveLanguage(requested: string | undefined): Promise<string> {
     const config = await languageConfig();
     if (requested === undefined) return config.default;
@@ -950,6 +962,42 @@ export function createContentService(options: ContentServiceOptions): ContentSer
   async function listAdmin(principal: Principal, query: AdminListQuery): Promise<Paged<AdminPost>> {
     requireCapability(principal, 'content.read.any');
 
+    if (query.search) {
+      let monthStart: Date | undefined;
+      let monthEnd: Date | undefined;
+      if (query.month && /^\d{4}-\d{2}$/.test(query.month)) {
+        const [year, month] = query.month.split('-').map(Number);
+        monthStart = new Date(Date.UTC(year ?? 1970, (month ?? 1) - 1, 1));
+        monthEnd = new Date(Date.UTC(year ?? 1970, month ?? 1, 1));
+      }
+      const { ids, total } = await searchPostIds(prisma, {
+        search: query.search,
+        type: query.type,
+        status: query.status,
+        categoryId: query.category,
+        tagId: query.tag,
+        authorId: query.author,
+        monthStart,
+        monthEnd,
+        limitedToUserId: FULL_VISIBILITY_ROLES.has(principal.role) ? undefined : principal.userId,
+        order: 'relevance',
+        sort: query.sort,
+        direction: query.order,
+        page: query.page,
+        perPage: query.perPage,
+      });
+      const rows = await loadPostsInOrder(ids);
+      return {
+        items: rows.map((row) => toAdmin(row)),
+        pagination: {
+          page: query.page,
+          perPage: query.perPage,
+          total,
+          totalPages: Math.ceil(total / query.perPage),
+        },
+      };
+    }
+
     // Build the filter as a list of AND conditions so the role-specific
     // visibility predicate (below) composes with the user's type/status/search
     // filters without overwriting them.
@@ -959,14 +1007,6 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     }
     if (query.status) {
       conditions.push({ status: query.status });
-    }
-    if (query.search) {
-      conditions.push({
-        OR: [
-          { title: { contains: query.search, mode: 'insensitive' } },
-          { excerpt: { contains: query.search, mode: 'insensitive' } },
-        ],
-      });
     }
     if (query.category) {
       conditions.push({ terms: { some: { termId: query.category } } });
@@ -1585,6 +1625,33 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     // Archives and the home feed are default-language surfaces; translated
     // posts are reachable through their language-prefixed URLs and hreflang.
     const defaultLanguage = query.language ?? (await languageConfig()).default;
+    if (query.search) {
+      const { ids, total } = await searchPostIds(prisma, {
+        search: query.search,
+        type: query.type,
+        publicOnly: true,
+        publishedBefore: current,
+        language: defaultLanguage,
+        categorySlug: query.category,
+        tagSlug: query.tag,
+        authorUsername: query.author,
+        order: 'sticky',
+        direction: 'desc',
+        page: query.page,
+        perPage: query.perPage,
+      });
+      const rows = await loadPostsInOrder(ids);
+      return {
+        items: rows.map((row) => toPublic(row, options.logger)),
+        pagination: {
+          page: query.page,
+          perPage: query.perPage,
+          total,
+          totalPages: Math.ceil(total / query.perPage),
+        },
+      };
+    }
+
     const where: Prisma.PostWhereInput = {
       status: 'PUBLISHED',
       isPrivate: false,
@@ -1595,15 +1662,6 @@ export function createContentService(options: ContentServiceOptions): ContentSer
       where.type = query.type;
     }
     const filters: Prisma.PostWhereInput[] = [];
-    if (query.search) {
-      filters.push({
-        OR: [
-          { title: { contains: query.search, mode: 'insensitive' } },
-          { excerpt: { contains: query.search, mode: 'insensitive' } },
-          { content: { contains: query.search, mode: 'insensitive' } },
-        ],
-      });
-    }
     if (query.category) {
       filters.push({
         terms: { some: { term: { taxonomy: 'category', slug: query.category } } },

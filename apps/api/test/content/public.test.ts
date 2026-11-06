@@ -179,6 +179,88 @@ describe('public search and term archives', () => {
     expect(excerptBody.items.map((item) => item.title).sort()).toEqual(['Alpha Title', 'Beta']);
   });
 
+  it('ranks title matches above body-only matches and keeps substring search', async () => {
+    await publish(
+      await createPost({
+        type: 'post',
+        title: 'Orchid care guide',
+        content: '<!-- wp:paragraph --><p>General notes.</p><!-- /wp:paragraph -->',
+      }),
+    );
+    await publish(
+      await createPost({
+        type: 'post',
+        title: 'Garden notebook',
+        content: '<!-- wp:paragraph --><p>Orchid tips for spring.</p><!-- /wp:paragraph -->',
+      }),
+    );
+
+    const ranked = await app.inject({ method: 'GET', url: '/api/public/posts?search=orchid' });
+    expect(ranked.statusCode).toBe(200);
+    expect((ranked.json() as Paged<PublicPost>).items.map((item) => item.title)).toEqual([
+      'Orchid care guide',
+      'Garden notebook',
+    ]);
+
+    // A lexeme-only search would miss the partial word; the ILIKE fallback keeps it.
+    const partial = await app.inject({ method: 'GET', url: '/api/public/posts?search=orch' });
+    expect(partial.statusCode).toBe(200);
+    expect((partial.json() as Paged<PublicPost>).pagination.total).toBe(2);
+  });
+
+  it('composes ranked search with a category filter', async () => {
+    const category = await createTerm({ taxonomy: 'category', name: 'Search Cat' });
+    const matching = await createPost({ type: 'post', title: 'Searchable orchid' });
+    const other = await createPost({ type: 'post', title: 'Searchable orchid other' });
+    for (const post of [matching, other]) {
+      const assigned = await app.inject({
+        method: 'PUT',
+        url: `/api/admin/posts/${post.id}/terms`,
+        headers,
+        payload: { baseVersion: post.version, categoryIds: [category.id], tagIds: [] },
+      });
+      expect(assigned.statusCode).toBe(200);
+      await publish(assigned.json() as AdminPost);
+    }
+    await publish(await createPost({ type: 'post', title: 'Searchable orchid elsewhere' }));
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/public/posts?search=orchid&category=${category.slug}`,
+    });
+    expect(response.statusCode).toBe(200);
+    const body = response.json() as Paged<PublicPost>;
+    expect(body.pagination.total).toBe(2);
+    expect(body.items.map((item) => item.title).sort()).toEqual([
+      'Searchable orchid',
+      'Searchable orchid other',
+    ]);
+  });
+
+  it('supports quoted phrases and treats LIKE wildcards literally', async () => {
+    await publish(
+      await createPost({
+        type: 'post',
+        title: 'Phrase check',
+        content: '<!-- wp:paragraph --><p>green orchid tips</p><!-- /wp:paragraph -->',
+      }),
+    );
+
+    const phrase = await app.inject({
+      method: 'GET',
+      url: `/api/public/posts?search=${encodeURIComponent('"orchid tips"')}`,
+    });
+    expect(phrase.statusCode).toBe(200);
+    expect((phrase.json() as Paged<PublicPost>).items.map((item) => item.title)).toEqual([
+      'Phrase check',
+    ]);
+
+    // A raw '%' would otherwise turn the ILIKE fallback into "match everything".
+    const wildcard = await app.inject({ method: 'GET', url: '/api/public/posts?search=%25' });
+    expect(wildcard.statusCode).toBe(200);
+    expect((wildcard.json() as Paged<PublicPost>).pagination.total).toBe(0);
+  });
+
   it('filters category and tag archives by slug', async () => {
     const category = await createTerm({ taxonomy: 'category', name: 'Archive Cat' });
     const tag = await createTerm({ taxonomy: 'tag', name: 'Archive Tag' });

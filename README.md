@@ -283,6 +283,7 @@ Start here, then follow the links.
 | [docs/architecture/theme-packages.md](docs/architecture/theme-packages.md) | Theme package manifest, tokens and layout variants |
 | [docs/architecture/permalinks.md](docs/architecture/permalinks.md) | Shared permalink pattern rules, routing and resolver flow |\n| [docs/architecture/customizer.md](docs/architecture/customizer.md) | Appearance → Customize data, validation and rendering |
 | [docs/architecture/media.md](docs/architecture/media.md) | Media storage, WebP/AVIF derivatives and bulk regeneration |
+| [docs/architecture/search.md](docs/architecture/search.md) | Ranked PostgreSQL full-text search, ranking, filters and limits |
 | [docs/architecture/analytics.md](docs/architecture/analytics.md) | Privacy-first local analytics: data, beacon and dashboard |
 | [docs/architecture/consent.md](docs/architecture/consent.md) | Cookie consent: configuration, banner, storage and gating |
 | [docs/architecture/i18n.md](docs/architecture/i18n.md) | Multilingual content: languages, translation groups, prefixed paths and hreflang |

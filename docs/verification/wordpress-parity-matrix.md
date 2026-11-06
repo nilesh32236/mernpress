@@ -61,6 +61,7 @@ owner decision.
 | Settings → Connectors | D/P | Encrypted provider credentials, masked state |
 | Updates | D/P | Version report, "Check again", manifest checks |
 | Public: home/blog/single/page/archives/search/404/author/feed/sitemap | D/P | Twenty Twenty-Five geometry, comments, pagination |
+| Public/admin search | D/P | Ranked PostgreSQL FTS (title A / excerpt B / body C, GIN) with quoted phrases, `-exclusion`, substring fallback and composable filters (status, language, category/tag, author, month, role visibility). WordPress core is a `LIKE` scan; users install Relevanssi (100k+) for relevance |
 
 ## Verification evidence
 

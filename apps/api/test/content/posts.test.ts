@@ -326,6 +326,51 @@ describe('admin content: posts', () => {
       expect(titles).toEqual(['Alpha news', 'Beta news']);
     });
 
+    it('ranks search matches and composes with status filters', async () => {
+      const published = await app.inject({
+        method: 'POST',
+        url: '/api/admin/posts',
+        headers: adminHeaders(),
+        payload: { type: 'post', title: 'Orchid handbook' },
+      });
+      const publishedPost = published.json() as AdminPostShape;
+      await app.inject({
+        method: 'POST',
+        url: `/api/admin/posts/${publishedPost.id}/publish`,
+        headers: adminHeaders(),
+        payload: { baseVersion: publishedPost.version },
+      });
+      await app.inject({
+        method: 'POST',
+        url: '/api/admin/posts',
+        headers: adminHeaders(),
+        payload: {
+          type: 'post',
+          title: 'Field notes',
+          content: '<!-- wp:paragraph --><p>An orchid appears here.</p><!-- /wp:paragraph -->',
+        },
+      });
+
+      const all = await app.inject({
+        method: 'GET',
+        url: '/api/admin/posts?search=orchid',
+        headers: { cookie: cookieHeader },
+      });
+      expect((all.json() as AdminListShape).items.map((item) => item.title)).toEqual([
+        'Orchid handbook',
+        'Field notes',
+      ]);
+
+      const drafts = await app.inject({
+        method: 'GET',
+        url: '/api/admin/posts?search=orchid&status=DRAFT',
+        headers: { cookie: cookieHeader },
+      });
+      const draftBody = drafts.json() as AdminListShape;
+      expect(draftBody.pagination.total).toBe(1);
+      expect(draftBody.items.map((item) => item.title)).toEqual(['Field notes']);
+    });
+
     it('paginates with page/perPage', async () => {
       const page1 = await app.inject({
         method: 'GET',

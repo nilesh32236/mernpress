@@ -4922,3 +4922,27 @@ verified in production with a temporary administrator:
   Production is back to 1 user, 2 posts, 0 comments, 0 analytics rows and no
   language/menu/theme-string overrides; `/`, `/admin/`, `/api/health`,
   `/posts/testcom` and `/sitemap.xml` return 200.
+
+### 2026-11-06 — Ranked PostgreSQL full-text search
+
+- Migration `20261106150500_add_post_search_vector`: generated
+  `posts.search_vector` (title A, excerpt B, tag-stripped block body C,
+  `simple` config) and a GIN index. No backfill is needed; the column is
+  recomputed by PostgreSQL on every write.
+- New `packages/cms-core/src/content/search.ts` builds parameterised SQL for
+  search requests: `search_vector @@ websearch_to_tsquery` **or** LIKE-escaped
+  title/excerpt/content substring, composable type/status/language/
+  category/tag/author/month/public/role-visibility filters, `ts_rank_cd`
+  first ordering (public then sticky + published; admin then the whitelisted
+  column), and a `count(*)::int` total. The service loads ids in order with
+  Prisma so relations and DTO mapping are unchanged; non-search lists keep the
+  Prisma query builder.
+- Public and admin search now rank title matches above body-only matches,
+  support quoted phrases and `-exclusion`, keep partial-word results, treat
+  `%`/`_` literally, and compose with existing filters/visibility.
+- Docs: ADR 0053, `docs/architecture/search.md`, D-116, README, parity matrix,
+  research roadmap.
+- Tests: public ranking, partial word, quoted phrase, literal `%`, search +
+  category; admin ranking + status; existing search/visibility/term/date suites.
+- Validation: 911 unit/integration tests (API 531, admin 250, web 52, contracts
+  13, block-system 65), 24 Playwright E2E tests and seven builds pass.

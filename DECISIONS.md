@@ -176,6 +176,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-115 | 2026-11-06 | Localized comment errors: `ContentError` accepts optional client-safe `details`; `sendRouteError` includes them for <500 responses. Comment create errors carry `details.reason` (`comments_closed`, `login_required`, `name_required`, `email_invalid`, `content_required`, `content_too_long`, `url_invalid`, `reply_missing`, `too_fast`) and nine per-language theme strings map them on the public site, falling back to the localized generic failure instead of the English API message. | accepted | [ADR 0052](docs/adr/0052-per-language-menus-and-theme-strings.md) |
 
+| D-116 | 2026-11-06 | Ranked full-text search: migration `20261106150500` adds a generated weighted `posts.search_vector` (title A, excerpt B, tag-stripped body C, `simple` config) + GIN index. `packages/cms-core/src/content/search.ts` builds parameterized SQL matching `@@ websearch_to_tsquery` OR LIKE-escaped substring, applies the same visibility/filters and orders by `ts_rank_cd` first (public: sticky/published; admin: whitelisted sort). Search paths return ordered ids + count, then Prisma loads relations. Non-search lists keep Prisma. No stemming/synonyms/typos; ILIKE fallback may scan. | accepted | [ADR 0053](docs/adr/0053-ranked-full-text-search.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.
