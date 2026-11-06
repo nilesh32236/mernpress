@@ -4467,3 +4467,22 @@ temporary administrator:
   translated text and aria labels plus the absence of English defaults.
 - Validation: 882 unit/integration tests (API 521, admin 240, web 43, contracts
   13, block-system 65), 24 Playwright E2E tests and seven builds pass.
+
+**Deployment (component strings):** release `20261106T113132Z-56792a9`
+(current), no schema change. Production verification with a temporary
+administrator:
+- Saved Hindi component strings (post meta, author box, comments, pagination
+  labels, language switcher) and default-language search overrides.
+- `/hi/posts/prod-component-strings-hi` returned 200 and contained `लेखक`,
+  `मिनट पढ़ें`, `लेखक के बारे में`, `टिप्पणियाँ`, `उत्तर दें`, `टिप्पणी भेजें`,
+  `पोस्ट नेविगेशन` and `भाषाएँ`; it contained none of “Written by”, “Leave a
+  Reply” or “Post Comment”.
+- `/posts/prod-component-strings` returned 200 with “Written by”; `/search?q=prod`
+  used the default-language overrides (`Search the site...`, `Find`).
+- Settings → Languages showed all 48 string inputs for Hindi with `लेखक` and
+  `टिप्पणी भेजें` populated.
+- Cleanup removed both posts, the `site_languages`, `theme_strings` and
+  `customizer_menus` options, verification analytics rows, recent audit events
+  and the temporary administrator; production is back to 1 user, 2 posts, 0
+  analytics rows and default English-only chrome, with `/`, `/admin/`,
+  `/admin/settings/languages`, `/api/health` and `/posts/testcom` at 200.
