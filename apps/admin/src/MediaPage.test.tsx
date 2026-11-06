@@ -602,4 +602,30 @@ describe('media library page', () => {
       ),
     );
   });
+  it('moves selected media into a folder in bulk', async () => {
+    vi.mocked(listMediaFolders).mockResolvedValue([
+      {
+        id: 'f1',
+        name: 'Travel',
+        parentId: null,
+        itemCount: 0,
+        createdAt: '2026-11-06T10:00:00.000Z',
+        updatedAt: '2026-11-06T10:00:00.000Z',
+      },
+    ]);
+    render(<MediaPage user={admin} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Bulk select' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Select sunset.png' }));
+    await waitFor(() => expect(screen.getByLabelText('Move selected to folder')).toBeDefined());
+
+    fireEvent.change(screen.getByLabelText('Move selected to folder'), {
+      target: { value: 'f1' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^Move selected/ }));
+
+    await waitFor(() =>
+      expect(vi.mocked(updateMedia)).toHaveBeenCalledWith('m1', { folderId: 'f1' }),
+    );
+    expect(await screen.findByText(/Moved 1 media item/)).toBeDefined();
+  });
 });

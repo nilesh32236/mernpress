@@ -4818,3 +4818,22 @@ administrator:
   back to 1 user, 2 posts, 0 media, 0 folders, 0 analytics rows and no
   language/menu overrides; all public and admin routes (including the languages
   screen and sitemap) return 200.
+
+### 2026-11-06 — Media bulk move into folders
+
+- The grid selection toolbar gains a **Move selected to folder** select
+  (“Move to folder…”, Uncategorized, indented tree) and a **Move selected**
+  button; the list view gains a **Move to folder** bulk action with the same
+  target select, and Apply stays disabled until an action (and, for move, a
+  target) is chosen.
+- Moving calls the existing single-item `PATCH /api/admin/media/:id` once per
+  selected item, so authorization/audit behaviour is unchanged; on success it
+  clears the selection, refetches folder counts/list and reports “Moved N media
+  item(s) to …”. Partial failures surface the error and refetch so the grid
+  matches the server.
+- Filter changes still clear the selection and the bulk action/target.
+- Tests: grid bulk select → choose folder → Move selected asserts the
+  `{ folderId }` PATCH and success notice; existing single-item, folder-aware
+  upload and list Apply coverage remains.
+- Validation: 903 unit/integration tests (API 527, admin 248, web 50, contracts
+  13, block-system 65), 24 Playwright E2E tests and seven builds pass.

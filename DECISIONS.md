@@ -170,6 +170,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-112 | 2026-11-06 | Analytics screen: the 7/30-day period is stored in `?days=` (bookmarkable, read on load), switching keeps the existing data visible with `aria-busy` and an “Updating…” status, the daily chart spans the full width with `align-items: start` panels, top paths/referrer hosts are links when safe, numbers use `toLocaleString`, dates use `Intl` UTC formatting, tables have captions, and each panel uses one empty-state sentence. | accepted | [ADR 0049](docs/adr/0049-privacy-first-analytics.md) |
 
+| D-113 | 2026-11-06 | Media bulk folder move: grid selection toolbar and list-view “Move to folder” action assign every selected item to a chosen folder or Uncategorized via the existing single-item PATCH (authorization/audit path unchanged), then refetch the list and folder counts. Partial failures show the error and refetch so the grid matches the server. Drag-and-drop remains out of scope. | accepted | [ADR 0048](docs/adr/0048-media-virtual-folders.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

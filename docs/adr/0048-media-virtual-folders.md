@@ -33,7 +33,10 @@ existing URLs, the derivative paths and the immutable-cache headers.
    create a cycle and duplicate/case-variant names cannot race the uniqueness
    check. `P2002`/`P2003` from the database are mapped to
    `409 FOLDER_EXISTS` / `400 FOLDER_PARENT_INVALID` instead of a 500.
-   Drag-and-drop and bulk move are not built.
+   Bulk move is built: the selection toolbar (grid) and the list-view
+   “Move to folder” action move every selected item, one authorized PATCH per
+   item, into the chosen folder or Uncategorized, then refetch the grid and
+   folder counts. Drag-and-drop is not built.
 3. **Case-insensitive unique names.** The service trims the name, requires
    1–100 characters and rejects a duplicate (case-insensitive) with
    `409 FOLDER_EXISTS`. The database unique index is a final guard. Names are

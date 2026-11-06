@@ -682,6 +682,7 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
   const showDate = !hiddenColumns.has('date');
   const [bulkSelect, setBulkSelect] = useState(false);
   const [bulkAction, setBulkAction] = useState('');
+  const [bulkFolder, setBulkFolder] = useState('');
   const [bulkBusy, setBulkBusy] = useState(false);
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
   // Media → Add New deep link opens the file picker once on mount.
@@ -778,6 +779,8 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
   useEffect(() => {
     setSelectedIds(new Set());
     setBulkSelect(false);
+    setBulkAction('');
+    setBulkFolder('');
   }, [folderFilter, search, monthFilter]);
 
   // WordPress Media Library grid view scrolls into the next page.
@@ -799,6 +802,38 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
     observer.observe(node);
     return () => observer.disconnect();
   }, [view, infiniteScroll, loading, data, page]);
+
+  async function moveSelected(): Promise<void> {
+    if (selectedIds.size === 0 || bulkFolder === '') return;
+    const folderId = bulkFolder === 'none' ? null : bulkFolder;
+    const targetName =
+      folderId === null
+        ? 'Uncategorized'
+        : (folders.find((folder) => folder.id === folderId)?.name ?? 'the selected folder');
+    setBulkBusy(true);
+    setNotice(null);
+    try {
+      // One PATCH per item keeps the existing single-item authorization and
+      // audit path; a partial failure refetches so the grid matches the server.
+      await Promise.all([...selectedIds].map((id) => updateMedia(id, { folderId })));
+      setNotice({
+        tone: 'success',
+        text: `Moved ${selectedIds.size} media item(s) to “${targetName}”.`,
+      });
+      setSelectedIds(new Set());
+      setBulkSelect(false);
+      setBulkAction('');
+      setBulkFolder('');
+      void refreshFolders();
+      setReloadKey((value) => value + 1);
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+      void refreshFolders();
+      setReloadKey((value) => value + 1);
+    } finally {
+      setBulkBusy(false);
+    }
+  }
 
   async function deleteSelected(): Promise<void> {
     if (selectedIds.size === 0) return;
@@ -1288,14 +1323,38 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
             </button>
           )}
           {selectedIds.size > 0 ? (
-            <button
-              type="button"
-              className="button button-link-delete"
-              disabled={bulkBusy}
-              onClick={() => void deleteSelected()}
-            >
-              {bulkBusy ? 'Deleting…' : `Delete selected (${selectedIds.size})`}
-            </button>
+            <>
+              <select
+                aria-label="Move selected to folder"
+                value={bulkFolder}
+                onChange={(event) => setBulkFolder(event.target.value)}
+                disabled={bulkBusy || folders.length === 0}
+              >
+                <option value="">Move to folder…</option>
+                <option value="none">Uncategorized</option>
+                {folderTree(folders).map(({ folder, depth }) => (
+                  <option key={folder.id} value={folder.id}>
+                    {indentedFolder(folder.name, depth)}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="button secondary-button"
+                disabled={bulkBusy || bulkFolder === ''}
+                onClick={() => void moveSelected()}
+              >
+                {bulkBusy ? 'Moving…' : `Move selected (${selectedIds.size})`}
+              </button>
+              <button
+                type="button"
+                className="button button-link-delete"
+                disabled={bulkBusy}
+                onClick={() => void deleteSelected()}
+              >
+                {bulkBusy ? 'Deleting…' : `Delete selected (${selectedIds.size})`}
+              </button>
+            </>
           ) : null}
         </div>
         <div className="media-toolbar-primary search-form">
@@ -1428,14 +1487,40 @@ export function MediaPage({ user: _user }: { user: AuthUser }) {
                     onChange={(event) => setBulkAction(event.target.value)}
                   >
                     <option value="">Bulk actions</option>
+                    <option value="move">Move to folder</option>
                     <option value="delete">Delete permanently</option>
                   </select>
+                  {bulkAction === 'move' ? (
+                    <>
+                      <label htmlFor="media-bulk-folder" className="screen-reader-text">
+                        Move selected to folder
+                      </label>
+                      <select
+                        id="media-bulk-folder"
+                        className="bulk-select"
+                        value={bulkFolder}
+                        onChange={(event) => setBulkFolder(event.target.value)}
+                        disabled={bulkBusy || folders.length === 0}
+                      >
+                        <option value="">Move to folder…</option>
+                        <option value="none">Uncategorized</option>
+                        {folderTree(folders).map(({ folder, depth }) => (
+                          <option key={folder.id} value={folder.id}>
+                            {indentedFolder(folder.name, depth)}
+                          </option>
+                        ))}
+                      </select>
+                    </>
+                  ) : null}
                   <button
                     type="button"
                     className="button secondary-button bulk-apply"
-                    disabled={bulkBusy || bulkAction === ''}
+                    disabled={
+                      bulkBusy || bulkAction === '' || (bulkAction === 'move' && bulkFolder === '')
+                    }
                     onClick={() => {
                       if (bulkAction === 'delete') void deleteSelected();
+                      if (bulkAction === 'move') void moveSelected();
                     }}
                   >
                     {bulkBusy ? 'Applying…' : 'Apply'}

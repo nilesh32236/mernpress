@@ -63,8 +63,10 @@ New subfolder / Rename / Move / Delete actions (wrapping on mobile). Uploads
 accept an optional `folderId` multipart field and go into the browsed folder;
 the grid inserts them locally only when they match the current filters. Filter
 changes clear the bulk selection, and list-view Apply requires selecting an
-action. Limits: one folder per item, globally unique names, the folder filter
-and counts show direct items only, no bulk move and no drag-and-drop.
+action. Selected items can be moved in bulk from the grid selection toolbar or
+the list-view “Move to folder” action (one authorized PATCH per item, then a
+refetch). Limits: one folder per item, globally unique names, the folder filter
+and counts show direct items only, and no drag-and-drop.
 
 ## Bulk regeneration
 
