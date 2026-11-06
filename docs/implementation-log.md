@@ -5324,3 +5324,15 @@ administrator:
 - Docs: design audit remaining-routes section.
 - Validation: 933 unit/integration tests (API 546, admin 257, web 52, contracts
   13, block-system 65), 31 Playwright E2E tests and seven builds pass.
+
+**Deployment (remaining admin routes, release `20261106T184620Z-5456726`):**
+verified in production with a temporary administrator:
+- Add Plugins at 375px: scrollWidth = innerWidth = 375, Installed table 355px
+  (was 582px).
+- Add User at 375px: scrollWidth = innerWidth = 375, password row and input
+  345px (was 433px).
+- Themes at 1440px: heading “Themes”, scrollWidth = innerWidth = 1440.
+- The 13-route desktop/mobile measured test is part of the 31-test E2E suite.
+- Cleanup removed analytics rows, the temporary administrator/sessions and
+  recent audit events; production is back to 1 user, 2 posts, 0 media, 0
+  analytics rows and sampled routes return 200.
