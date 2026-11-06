@@ -4771,3 +4771,28 @@ verified in production with a temporary administrator:
   rows: production is back to 1 user, 2 posts, 0 media, 0 folders and 0
   analytics rows; `/`, `/admin/`, `/admin/media`, `/api/health` and
   `/posts/testcom` return 200.
+
+### 2026-11-06 — Languages admin grouping/reordering and Analytics screen polish
+
+- **Theme strings** are grouped into five sections owned by
+  `THEME_STRING_GROUPS` in `@mernpress/contracts` (header/navigation,
+  posts/author, comments, archives/search/pagination, not found), with a find
+  box that filters by label, key or group and keeps edits when cleared. The
+  help copy now says the strings are used by the public theme, not just the
+  header/footer.
+- **Per-language menus** gain keyboard **Move up/Move down** controls, use
+  “Navigation label”/“URL” instead of numbered labels, and remove actions are
+  labelled by the item text. Menu save errors render in the menu panel instead
+  of only inside the theme-strings form.
+- **Analytics**: the period is mirrored in `?days=30` and read on load;
+  switching windows keeps the previous numbers visible with `aria-busy` and an
+  “Updating…” status (skeleton only on first load, full error state only when
+  no data exists); the daily chart spans the full grid width with
+  `align-items: start`; top paths and referrer hosts link when safe; values use
+  `toLocaleString`, days use `Intl` UTC labels; tables have captions; each
+  panel uses one consistent empty state.
+- Tests: theme-string grouping/filter and menu reordering (two rows, move up,
+  saved order) in the admin suite; analytics initial 7-day window, 30-day
+  switch with `?days=30`, URL-provided period and the shared empty state.
+- Validation: 902 unit/integration tests (API 527, admin 247, web 50, contracts
+  13, block-system 65), 24 Playwright E2E tests and seven builds pass.

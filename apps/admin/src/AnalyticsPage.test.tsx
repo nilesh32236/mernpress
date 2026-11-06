@@ -35,6 +35,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  window.history.replaceState(null, '', '/admin/analytics');
 });
 
 describe('analytics page', () => {
@@ -42,8 +43,8 @@ describe('analytics page', () => {
     render(<AnalyticsPage />);
 
     expect(await screen.findByText('42')).toBeDefined();
-    expect(screen.getByLabelText('Pages').textContent).toContain('3');
-    expect(screen.getByLabelText('Average').textContent).toContain('6');
+    expect(screen.getByLabelText('Pages viewed').textContent).toContain('3');
+    expect(screen.getByLabelText('Daily average').textContent).toContain('6');
     expect(screen.getByText('/hello')).toBeDefined();
     expect(screen.getByText('example.com')).toBeDefined();
     expect(screen.getAllByRole('listitem').length).toBeGreaterThanOrEqual(7);
@@ -58,6 +59,29 @@ describe('analytics page', () => {
     fireEvent.change(screen.getByLabelText('Analytics period'), { target: { value: '30' } });
 
     await waitFor(() => expect(vi.mocked(fetchAnalytics)).toHaveBeenCalledWith(30));
+    expect(window.location.search).toBe('?days=30');
+  });
+
+  it('reads the period from the URL on load', async () => {
+    window.history.replaceState(null, '', '/admin/analytics?days=30');
+    render(<AnalyticsPage />);
+    await screen.findByText('42');
+    expect(vi.mocked(fetchAnalytics)).toHaveBeenCalledWith(30);
+    expect((screen.getByLabelText('Analytics period') as HTMLSelectElement).value).toBe('30');
+  });
+
+  it('uses one consistent empty state', async () => {
+    vi.mocked(fetchAnalytics).mockResolvedValue({
+      ...summary,
+      totalViews: 0,
+      uniquePaths: 0,
+      daily: summary.daily.map((entry) => ({ ...entry, views: 0 })),
+      topPaths: [],
+      topReferrers: [],
+    });
+    render(<AnalyticsPage />);
+    expect((await screen.findAllByText('No page views in this period.')).length).toBeGreaterThan(0);
+    expect(screen.getByText('No external referrers in this period.')).toBeDefined();
   });
 
   it('shows an empty state and a retry on failure', async () => {

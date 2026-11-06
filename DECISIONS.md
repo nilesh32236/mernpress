@@ -166,6 +166,10 @@ associated code changes. Superseded decisions stay visible.
 
 | D-110 | 2026-11-06 | Media folder management UI: a visible **Manage folders** panel renders the nested tree with per-folder New subfolder/Rename/Move/Delete actions (wrapping on mobile), alongside the compact filter/create bar and drawer tree. Uploads accept `folderId` (multipart) and target the browsed folder; the grid inserts locally only when the item matches the active folder/search/month filters. Filter changes clear the bulk selection, and list-view Apply requires an action (`delete`) before running. Delete confirmation includes subtree folder/item counts. | accepted | [ADR 0048](docs/adr/0048-media-virtual-folders.md) |
 
+| D-111 | 2026-11-06 | Languages admin usability: theme strings are grouped into five contract-owned sections with a find box, per-panel error regions, and nicer field copy; per-language menus gain keyboard Move up/Move down controls, shared Navigation label/URL labels and a “Remove” action labelled by item. Grouping lives in `THEME_STRING_GROUPS` (contracts) so editors share one list. | accepted | [ADR 0052](docs/adr/0052-per-language-menus-and-theme-strings.md) |
+
+| D-112 | 2026-11-06 | Analytics screen: the 7/30-day period is stored in `?days=` (bookmarkable, read on load), switching keeps the existing data visible with `aria-busy` and an “Updating…” status, the daily chart spans the full width with `align-items: start` panels, top paths/referrer hosts are links when safe, numbers use `toLocaleString`, dates use `Intl` UTC formatting, tables have captions, and each panel uses one empty-state sentence. | accepted | [ADR 0049](docs/adr/0049-privacy-first-analytics.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

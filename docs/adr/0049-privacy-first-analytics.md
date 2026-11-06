@@ -29,8 +29,11 @@ honest dashboard for a small site, not an ad-tech product.
 4. **Admin summary.** `GET /api/admin/analytics?days=7|30` (1–365 accepted)
    requires `content.read.any` and returns totals, a zero-filled daily series,
    top 10 paths and top 10 referrer hosts. The new Dashboard → Analytics screen
-   renders cards, a bar list and two tables; the period selector switches
-   7/30 days.
+   renders cards, a full-width bar list and two tables; the period selector
+   switches 7/30 days, is mirrored in `?days=30` so the view is bookmarkable,
+   keeps the previous numbers visible while a new window loads (`aria-busy` +
+   “Updating…”), links top paths and referrer hosts, and uses one empty-state
+   sentence per panel.
 5. **Configurable retention.** `analytics_retention_days` (Settings → Privacy,
    0–3650, default 90; 0 keeps rows indefinitely) bounds the table. The API
    scheduler prunes rows older than the window once a day with a boot catch-up;

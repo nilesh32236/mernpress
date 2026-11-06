@@ -119,6 +119,90 @@ export const THEME_STRING_KEYS = [
 
 export type ThemeStringKey = (typeof THEME_STRING_KEYS)[number]['key'];
 
+/**
+ * Presentation groups for the 52 theme strings. Kept next to the keys so the
+ * admin and any future editor share one grouping instead of maintaining a
+ * second hand-written list.
+ */
+export const THEME_STRING_GROUPS = [
+  {
+    label: 'Header and navigation',
+    keys: [
+      'skipToContent',
+      'search',
+      'searchPlaceholder',
+      'searchButton',
+      'blog',
+      'home',
+      'feed',
+      'primaryNav',
+      'footerNav',
+      'languagesLabel',
+    ],
+  },
+  {
+    label: 'Posts and author',
+    keys: [
+      'dateLocale',
+      'writtenBy',
+      'minRead',
+      'inCategory',
+      'uncategorized',
+      'postNavigation',
+      'aboutAuthor',
+      'visitWebsite',
+      'relatedPosts',
+      'morePosts',
+    ],
+  },
+  {
+    label: 'Comments',
+    keys: [
+      'comments',
+      'thoughtOn',
+      'thoughtsOn',
+      'loadingComments',
+      'commentsUnavailable',
+      'reply',
+      'replyTo',
+      'leaveReply',
+      'cancelReply',
+      'commentNotes',
+      'nameLabel',
+      'emailLabel',
+      'websiteLabel',
+      'commentLabel',
+      'posting',
+      'postComment',
+      'commentPosted',
+      'commentPending',
+      'commentFailed',
+    ],
+  },
+  {
+    label: 'Archives, search and pagination',
+    keys: [
+      'previousPage',
+      'nextPage',
+      'paginationLabel',
+      'noResults',
+      'searchResultsFor',
+      'searchHint',
+      'searchError',
+      'categoryArchive',
+      'tagArchive',
+      'authorArchive',
+    ],
+  },
+  {
+    label: 'Not found',
+    keys: ['notFoundTitle', 'notFoundText', 'notFoundImageAlt'],
+  },
+] as const satisfies ReadonlyArray<{
+  label: string;
+  keys: ReadonlyArray<ThemeStringKey>;
+}>;
+
 export type ThemeStrings = Record<ThemeStringKey, string>;
 
 /** Only the keys a site may override (partial, language-specific). */

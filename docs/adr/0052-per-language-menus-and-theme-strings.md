@@ -48,10 +48,16 @@ or adding a translation-file pipeline.
    default menu or English page titles: a language either has its own menu or no
    header navigation, which prevents a Hindi page linking to English labels.
 6. **Admin surface.** Settings → Languages gains two editors after the language
-   list: **Theme strings** (language select + the seven labels) and **Language
-   menu** (non-default languages; label/URL rows, add/remove, save). Endpoints:
-   `GET/PUT /api/admin/theme-strings` and `GET/PUT /api/admin/language-menus`,
-   administrator-only writes through the option service.
+   list: **Theme strings** (language select, a find box, and the 52 strings
+   grouped by where they appear — header/navigation, posts/author, comments,
+   archives/search/pagination, not found) and **Language menu** (non-default
+   languages; Navigation label/URL rows, add, remove, Move up/Move down, save).
+   Endpoints: `GET/PUT /api/admin/theme-strings` and
+   `GET/PUT /api/admin/language-menus`, administrator-only writes through the
+   option service. Menu and string errors render inside their own panel rather
+   than only in the other form. The grouping constant lives in
+   `@mernpress/contracts` next to the keys, so the admin and any future editor
+   share one source.
 7. **Public payload.** `GET /api/public/site` includes `themeStrings` and
    `languageMenus`. They contain no secrets and are safe to expose.
 8. **Component strings.** The same contract carries the visible strings for

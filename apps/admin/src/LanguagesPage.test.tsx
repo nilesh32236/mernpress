@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   fetchLanguageMenus,
@@ -129,15 +129,42 @@ describe('languages settings page', () => {
     await screen.findByRole('heading', { level: 2, name: 'Language menu' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Add menu item' }));
-    fireEvent.change(screen.getByLabelText('Label 1'), { target: { value: 'होम' } });
-    fireEvent.change(screen.getByLabelText('URL 1'), { target: { value: '/hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add menu item' }));
+    const items = document.querySelectorAll('.customize-menu-item');
+    // Reordering swaps rows by index; each row keeps its own inputs.
+    fireEvent.change(within(items[0] as HTMLElement).getByLabelText('Navigation label'), {
+      target: { value: 'होम' },
+    });
+    fireEvent.change(within(items[0] as HTMLElement).getByLabelText('URL'), {
+      target: { value: '/hi' },
+    });
+    fireEvent.change(within(items[1] as HTMLElement).getByLabelText('Navigation label'), {
+      target: { value: 'ब्लॉग' },
+    });
+    fireEvent.change(within(items[1] as HTMLElement).getByLabelText('URL'), {
+      target: { value: '/hi/posts' },
+    });
+    fireEvent.click(within(items[1] as HTMLElement).getByRole('button', { name: /^Move up/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Save menu' }));
 
     await waitFor(() =>
       expect(vi.mocked(updateLanguageMenus)).toHaveBeenCalledWith('hi', [
+        { label: 'ब्लॉग', url: '/hi/posts' },
         { label: 'होम', url: '/hi' },
       ]),
     );
     expect(await screen.findByText('Language menu saved.')).toBeDefined();
+  });
+  it('groups theme strings and filters them', async () => {
+    render(<LanguagesPage />);
+    await screen.findByRole('heading', { level: 2, name: 'Theme strings' });
+    expect(
+      await screen.findByRole('heading', { level: 3, name: /Header and navigation/ }),
+    ).toBeDefined();
+    expect(screen.getByLabelText('Blog link')).toBeDefined();
+
+    fireEvent.change(screen.getByLabelText('Find a string'), { target: { value: 'zzz' } });
+    expect(screen.queryByRole('heading', { level: 3, name: /Header and navigation/ })).toBeNull();
+    expect(screen.queryByLabelText('Blog link')).toBeNull();
   });
 });

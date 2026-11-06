@@ -436,7 +436,7 @@ describe('media library page', () => {
     await waitFor(() => expect(vi.mocked(deleteMediaFolder)).toHaveBeenCalledWith('f1'));
     expect(
       await screen.findByText(
-        'Folder deleted; child folders moved up and media items are now Uncategorized.',
+        'Folder deleted; child folders moved up. Media items directly in it are now Uncategorized.',
       ),
     ).toBeDefined();
   });

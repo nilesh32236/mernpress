@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import {
   AVAILABLE_LANGUAGES,
+  THEME_STRING_GROUPS,
   isLanguageCode,
   normalizeLanguageConfig,
   type LanguageConfig,
@@ -278,6 +279,8 @@ function LanguageExtras({
   const [menuDraft, setMenuDraft] = useState<CustomizerMenuItem[]>([]);
   const [busy, setBusy] = useState<'strings' | 'menu' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [menuError, setMenuError] = useState<string | null>(null);
+  const [stringFilter, setStringFilter] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -343,7 +346,7 @@ function LanguageExtras({
     event.preventDefault();
     if (busy || menuLanguage === '') return;
     setBusy('menu');
-    setError(null);
+    setMenuError(null);
     try {
       const cleaned = menuDraft
         .map((item) => ({ label: item.label.trim(), url: item.url.trim() }))
@@ -352,10 +355,20 @@ function LanguageExtras({
       setMenus(saved.menus ?? {});
       onNotice({ tone: 'success', text: 'Language menu saved.' });
     } catch (caught) {
-      setError(actionErrorMessage(caught));
+      setMenuError(actionErrorMessage(caught));
     } finally {
       setBusy(null);
     }
+  }
+
+  function moveMenuItem(index: number, delta: number): void {
+    setMenuDraft((current) => {
+      const target = index + delta;
+      if (target < 0 || target >= current.length) return current;
+      const next = [...current];
+      [next[index], next[target]] = [next[target]!, next[index]!];
+      return next;
+    });
   }
 
   return (
@@ -367,8 +380,8 @@ function LanguageExtras({
       >
         <h2>Theme strings</h2>
         <p className="field-help">
-          Used by the header and footer on pages in that language. Empty fields fall back to the
-          default language and then to the built-in English text.
+          Used by the public theme on pages in this language. Empty fields fall back to the default
+          language and then to the built-in English text. Grouped by where each string appears.
         </p>
         <div className="field">
           <label htmlFor="theme-strings-language">Language</label>
@@ -385,24 +398,59 @@ function LanguageExtras({
             ))}
           </select>
         </div>
-        <div className="languages-strings-grid">
-          {(payload?.keys ?? []).map((entry) => (
-            <div className="field" key={entry.key}>
-              <label htmlFor={`theme-string-${entry.key}`}>{entry.label}</label>
-              <input
-                id={`theme-string-${entry.key}`}
-                type="text"
-                maxLength={entry.max}
-                value={stringDraft[entry.key] ?? ''}
-                placeholder={payload?.defaults[entry.key] ?? entry.fallback}
-                onChange={(event) =>
-                  setStringDraft((current) => ({ ...current, [entry.key]: event.target.value }))
-                }
-                disabled={busy !== null}
-              />
-            </div>
-          ))}
+        <div className="field">
+          <label htmlFor="theme-strings-filter">Find a string</label>
+          <input
+            id="theme-strings-filter"
+            type="search"
+            value={stringFilter}
+            onChange={(event) => setStringFilter(event.target.value)}
+            disabled={busy !== null}
+          />
+          <p className="field-help">
+            Filters by label or key across all groups; edits are kept when you clear it.
+          </p>
         </div>
+        {THEME_STRING_GROUPS.map((group) => {
+          const query = stringFilter.trim().toLowerCase();
+          const entries = (payload?.keys ?? []).filter(
+            (entry) =>
+              (group.keys as readonly string[]).includes(entry.key) &&
+              (query.length === 0 ||
+                entry.label.toLowerCase().includes(query) ||
+                entry.key.toLowerCase().includes(query) ||
+                group.label.toLowerCase().includes(query)),
+          );
+          if (entries.length === 0) return null;
+          return (
+            <section className="languages-strings-group" key={group.label}>
+              <h3>
+                {group.label} <span className="field-help">({entries.length})</span>
+              </h3>
+              <div className="languages-strings-grid">
+                {entries.map((entry) => (
+                  <div className="field" key={entry.key}>
+                    <label htmlFor={`theme-string-${entry.key}`}>{entry.label}</label>
+                    <input
+                      id={`theme-string-${entry.key}`}
+                      type="text"
+                      maxLength={entry.max}
+                      value={stringDraft[entry.key] ?? ''}
+                      placeholder={payload?.defaults[entry.key] ?? entry.fallback}
+                      onChange={(event) =>
+                        setStringDraft((current) => ({
+                          ...current,
+                          [entry.key]: event.target.value,
+                        }))
+                      }
+                      disabled={busy !== null}
+                    />
+                  </div>
+                ))}
+              </div>
+            </section>
+          );
+        })}
         {error ? (
           <p className="form-error" role="alert">
             {error}
@@ -451,8 +499,28 @@ function LanguageExtras({
             <ol className="customize-menu-list">
               {menuDraft.map((item, index) => (
                 <li key={index} className="customize-menu-item">
+                  <div className="customize-menu-order">
+                    <button
+                      type="button"
+                      className="button-link"
+                      onClick={() => moveMenuItem(index, -1)}
+                      disabled={busy !== null || index === 0}
+                      aria-label={`Move up ${item.label || `menu item ${index + 1}`}`}
+                    >
+                      Move up
+                    </button>
+                    <button
+                      type="button"
+                      className="button-link"
+                      onClick={() => moveMenuItem(index, 1)}
+                      disabled={busy !== null || index === menuDraft.length - 1}
+                      aria-label={`Move down ${item.label || `menu item ${index + 1}`}`}
+                    >
+                      Move down
+                    </button>
+                  </div>
                   <div className="field">
-                    <label htmlFor={`language-menu-label-${index}`}>Label {index + 1}</label>
+                    <label htmlFor={`language-menu-label-${index}`}>Navigation label</label>
                     <input
                       id={`language-menu-label-${index}`}
                       type="text"
@@ -469,7 +537,7 @@ function LanguageExtras({
                     />
                   </div>
                   <div className="field">
-                    <label htmlFor={`language-menu-url-${index}`}>URL {index + 1}</label>
+                    <label htmlFor={`language-menu-url-${index}`}>URL</label>
                     <input
                       id={`language-menu-url-${index}`}
                       type="text"
@@ -492,8 +560,9 @@ function LanguageExtras({
                       setMenuDraft((current) => current.filter((_, position) => position !== index))
                     }
                     disabled={busy !== null}
+                    aria-label={`Remove ${item.label || `menu item ${index + 1}`}`}
                   >
-                    Remove item {index + 1}
+                    Remove
                   </button>
                 </li>
               ))}
@@ -506,6 +575,11 @@ function LanguageExtras({
             >
               Add menu item
             </button>
+            {menuError ? (
+              <p className="form-error" role="alert">
+                {menuError}
+              </p>
+            ) : null}
             <div className="field actions">
               <button type="submit" className="button primary-button" disabled={busy !== null}>
                 {busy === 'menu' ? 'Saving…' : 'Save menu'}
