@@ -5386,3 +5386,23 @@ verified against production public routes at 1440 and 375:
   baselines.
 - Validation: 933 unit/integration tests (API 546, admin 257, web 52, contracts
   13, block-system 65), 34 Playwright E2E tests and seven builds pass.
+
+**Deployment (visual baselines + empty-blog copy, release
+`20261106T192311Z-e3d812d`):** verified in production with a temporary
+administrator and public routes:
+- Settings → Languages rendered **62** string inputs in the five groups
+  `Header and navigation (10)`, `Posts and author (10)`, `Comments (28)`,
+  `Archives, search and pagination (11)`, `Not found (3)`. The new field is
+  labelled “Empty blog text” with the fallback “No posts published yet. Nothing
+  to read yet.”; filtering by “empty blog” reduced the page to that one key.
+- Public mobile titles: `/test` (page) 36px, `/posts/testcom` 36px, the
+  `/public-visual-missing` 404 36px and `/search?q=test` 36px; every route
+  measured `scrollWidth = innerWidth = 375`. The home page listed its published
+  post at 375 with no overflow.
+- The 11 screenshot baselines are environment-specific and run in the E2E
+  suite (34 tests) rather than against production; the deployed build contains
+  the same CSS/contracts, and the measured DOM contracts above confirm it.
+- Cleanup removed analytics rows, the temporary administrator/sessions and
+  recent audit events. Production is back to 1 user, 2 posts, 0 media, 0
+  analytics rows and no theme-string overrides; `/`, `/admin/`, `/api/health`,
+  `/posts/testcom` and `/test` return 200.
