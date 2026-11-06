@@ -1,6 +1,6 @@
 # ADR 0049 — Privacy-first local analytics
 
-- Status: accepted (owner scope decision, 2026-11-05)
+- Status: accepted (owner scope decision, 2026-11-05; amended 2026-11-06 — D-107 retention)
 - Implements the P2 analytics item from
   [wordpress-feature-gaps.md](../research/wordpress-feature-gaps.md)
 
@@ -31,9 +31,12 @@ honest dashboard for a small site, not an ad-tech product.
    top 10 paths and top 10 referrer hosts. The new Dashboard → Analytics screen
    renders cards, a bar list and two tables; the period selector switches
    7/30 days.
-5. **No retention job in this slice.** Rows are tiny and bounded by
-   (paths × days × referrers). A future sweep can prune old days; the summary
-   only reads the selected window.
+5. **Configurable retention.** `analytics_retention_days` (Settings → Privacy,
+   0–3650, default 90; 0 keeps rows indefinitely) bounds the table. The API
+   scheduler prunes rows older than the window once a day with a boot catch-up;
+   `pnpm --filter @mernpress/api analytics:prune [-- --days N]` covers
+   scheduler-less deployments. Pruning deletes only aggregate rows and logs a
+   count plus the cutoff day — there is no visitor data to audit.
 6. **Honest limits are documented in the UI and here.** The numbers are
    directional: bots are filtered best-effort, Do-Not-Track is client-side only,
    and there are no unique visitors, sessions, campaigns or real-time data.

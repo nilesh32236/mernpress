@@ -417,6 +417,7 @@ export {
   referrerHost,
   utcDay,
   type AnalyticsService,
+  type AnalyticsPruneResult,
   type AnalyticsServiceOptions,
   type AnalyticsSummary,
   type RecordViewInput,

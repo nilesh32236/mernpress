@@ -12,7 +12,8 @@
     "dev:create-test-account": "NODE_OPTIONS=--conditions=development tsx src/cli/create-test-account.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "notes:purge-trash": "NODE_OPTIONS=--conditions=development tsx src/cli/purge-notes-trash.ts"
+    "notes:purge-trash": "NODE_OPTIONS=--conditions=development tsx src/cli/purge-notes-trash.ts",
+    "analytics:prune": "NODE_OPTIONS=--conditions=development tsx src/cli/prune-analytics.ts"
   },
   "dependencies": {
     "@fastify/cookie": "11.1.3",

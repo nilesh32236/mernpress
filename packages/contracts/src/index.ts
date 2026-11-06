@@ -11,3 +11,4 @@ export * from './screen-options.js';
 export * from './consent.js';
 export * from './languages.js';
 export * from './theme-strings.js';
+export * from './retention.js';

@@ -40,10 +40,27 @@ Routes (`apps/api/src/routes/analytics.ts`):
 `usePathname()` change and skips Do-Not-Track and admin/API paths. The admin UI
 is `apps/admin/src/AnalyticsPage.tsx` on Dashboard → Analytics.
 
+## Retention
+
+`analytics_retention_days` (option group `privacy`, default 90; 0 disables)
+keeps the last N calendar days including today. `AnalyticsService.prune(days)`
+deletes older rows with a single `deleteMany`, returning
+`{ pruned, retentionDays, cutoffDay }`; no visitor data exists to report.
+
+- The API scheduler runs the sweep every 24 hours with a 15-second boot
+  catch-up when `SCHEDULER_ENABLED=true`, reading the option each run (invalid
+  or missing → 90) and logging `{pruned, retentionDays, cutoffDay}` only when
+  rows were removed.
+- Operator CLI: `pnpm --filter @mernpress/api analytics:prune`
+  (`-- --days 30` overrides; `--days 0` is a no-op).
+- Settings → Privacy exposes the number field with help text; Dashboard →
+  Analytics notes that old rows are pruned.
+
 ## Limits and next steps
 
 - Directional counts only: no unique visitors, sessions, campaigns, events or
   real-time view.
 - Bots are filtered by user-agent heuristics; a spoofed client is counted.
-- No retention sweep yet; pruning old days is a small future job.
+- Retention deletes whole days at a time (no partial-day sampling); sessions,
+  unique visitors and campaigns remain deliberately absent.
 - Query strings are deliberately discarded, so UTM reporting is not available.

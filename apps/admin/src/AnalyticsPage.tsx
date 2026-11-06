@@ -56,7 +56,8 @@ export function AnalyticsPage() {
       />
       <p className="analytics-privacy">
         Aggregate only: no cookies, no visitor identifiers and no stored IP addresses. API, admin
-        and static-file requests are not recorded, and Do-Not-Track is honoured by the beacon.
+        and static-file requests are not recorded, and Do-Not-Track is honoured by the beacon. Old
+        aggregate rows may be pruned according to Settings → Privacy.
       </p>
 
       {loading ? (

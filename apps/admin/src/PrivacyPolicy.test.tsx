@@ -1,6 +1,12 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createPrivacyPolicyPage, fetchOptions, fetchPosts, setPrivacyPolicyPage } from './api.js';
+import {
+  createPrivacyPolicyPage,
+  fetchOptions,
+  fetchPosts,
+  setPrivacyPolicyPage,
+  updateOptions,
+} from './api.js';
 import { OptionGroupForm } from './OptionGroupForm.js';
 import type { AdminPost } from './api.js';
 
@@ -61,7 +67,10 @@ const existingPage = {
 };
 
 beforeEach(() => {
-  vi.mocked(fetchOptions).mockResolvedValue({ wp_page_for_privacy_policy: null });
+  vi.mocked(fetchOptions).mockResolvedValue({
+    wp_page_for_privacy_policy: null,
+    analytics_retention_days: 90,
+  });
   vi.mocked(fetchPosts).mockResolvedValue(
     paged([
       existingPage,
@@ -116,5 +125,26 @@ describe('privacy policy helpers', () => {
     expect(screen.getByRole('link', { name: 'Edit page' }).getAttribute('href')).toBe(
       '/admin/pages/p2/edit',
     );
+  });
+  it('exposes and saves the analytics retention window', async () => {
+    vi.mocked(updateOptions).mockImplementation(async (_group, values) => values);
+    render(<OptionGroupForm group="privacy" />);
+    const input = (await screen.findByLabelText(
+      'Keep aggregated analytics for this many days (including today)',
+    )) as HTMLInputElement;
+    expect(input.value).toBe('90');
+    expect(screen.getByText(/Only aggregate counts are stored/)).toBeDefined();
+    expect(screen.getByText(/last N calendar days including today/)).toBeDefined();
+
+    fireEvent.change(input, { target: { value: '30' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() =>
+      expect(vi.mocked(updateOptions)).toHaveBeenCalledWith(
+        'privacy',
+        expect.objectContaining({ analytics_retention_days: 30 }),
+      ),
+    );
+    expect(await screen.findByText('Settings saved.')).toBeDefined();
   });
 });

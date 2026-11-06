@@ -9,6 +9,8 @@ import type { DatabaseClient, Prisma } from '@mernpress/database';
 import { ContentError } from '../content/errors.js';
 import { requireCapability } from '../auth/capabilities.js';
 import {
+  ANALYTICS_RETENTION_DEFAULT_DAYS,
+  ANALYTICS_RETENTION_MAX_DAYS,
   DEFAULT_CONSENT,
   DEFAULT_LANGUAGES,
   normalizeConsentConfig,
@@ -873,6 +875,21 @@ const SPECS: Record<string, OptionSpec> = {
         ['admin', 'api', 'author', 'category', 'feed', 'preview', 'search', 'tag'].includes(value)
       ) {
         throwValidation('permalink_base must be a short URL slug.');
+      }
+      return value;
+    },
+  },
+  analytics_retention_days: {
+    group: 'privacy',
+    defaultValue: ANALYTICS_RETENTION_DEFAULT_DAYS,
+    validate: (value) => {
+      if (
+        typeof value !== 'number' ||
+        !Number.isInteger(value) ||
+        value < 0 ||
+        value > ANALYTICS_RETENTION_MAX_DAYS
+      ) {
+        throwValidation(`analytics_retention_days must be 0-${ANALYTICS_RETENTION_MAX_DAYS}.`);
       }
       return value;
     },

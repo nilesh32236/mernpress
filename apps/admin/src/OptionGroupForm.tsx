@@ -10,6 +10,7 @@ import {
   type OptionValues,
 } from './api.js';
 import { Notice, type NoticeMessage } from './components.js';
+import { ANALYTICS_RETENTION_MAX_DAYS } from '@mernpress/contracts';
 import { navigate } from './router.js';
 
 type FieldType = 'text' | 'number' | 'checkbox' | 'select' | 'textarea' | 'page';
@@ -249,6 +250,16 @@ const MEDIA_FIELDS: Field[] = [
 ];
 
 const PRIVACY_FIELDS: Field[] = [
+  {
+    key: 'analytics_retention_days',
+    section: 'Analytics',
+    label: 'Keep aggregated analytics for this many days (including today)',
+    type: 'number',
+    min: 0,
+    max: ANALYTICS_RETENTION_MAX_DAYS,
+    width: 80,
+    help: 'The last N calendar days including today are kept; older rows are pruned. 0 keeps rows indefinitely. The daily scheduler runs the sweep, and the analytics:prune CLI runs it on demand. Only aggregate counts are stored — no cookies, visitor ids or IP addresses.',
+  },
   {
     key: 'wp_page_for_privacy_policy',
     label: 'Privacy Policy page',

@@ -319,7 +319,10 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   app.decorate('spamGuard', spamGuard);
   const notes = createNoteService({ prisma: database, mail });
   app.decorate('notes', notes);
-  const analytics = createAnalyticsService({ prisma: database });
+  const analytics = createAnalyticsService({
+    prisma: database,
+    ...(options.now === undefined ? {} : { now: options.now }),
+  });
   app.decorate('analytics', analytics);
   const consent = createConsentService({ prisma: database });
   app.decorate('consent', consent);
@@ -433,7 +436,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerPublicCommentRoutes(app, { comments, auth });
 
   if (env.SCHEDULER_ENABLED) {
-    startSchedulers(app, { schedule, notes, prisma: database });
+    startSchedulers(app, { schedule, notes, analytics, prisma: database });
   }
 
   app.get('/api/health', async () => ({

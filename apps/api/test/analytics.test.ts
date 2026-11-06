@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { createAnalyticsService } from '@mernpress/cms-core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   ADMIN_ORIGIN,
@@ -120,5 +121,87 @@ describe('privacy-first analytics', () => {
     const empty = await beacon({ path: '' });
     expect(empty.statusCode).toBe(204);
     expect((await summary()).json()).toMatchObject({ totalViews: 0, topPaths: [] });
+  });
+  it('prunes aggregate rows outside the retention window', async () => {
+    const day = (offset: number) => {
+      const now = new Date();
+      return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - offset));
+    };
+    await app.database.analyticsDaily.createMany({
+      data: [
+        { day: day(0), path: '/today', referrerHost: '', views: 2 },
+        { day: day(5), path: '/five', referrerHost: '', views: 1 },
+        { day: day(10), path: '/ten', referrerHost: '', views: 1 },
+      ],
+    });
+
+    const seven = await app.analytics.prune(7);
+    expect(seven).toMatchObject({ pruned: 1, retentionDays: 7 });
+    expect(seven.cutoffDay).toEqual(expect.any(String));
+    let rows = await app.database.analyticsDaily.findMany({ orderBy: { path: 'asc' } });
+    expect(rows.map((row) => row.path)).toEqual(['/five', '/today']);
+
+    // 0 disables the sweep.
+    expect((await app.analytics.prune(0)).pruned).toBe(0);
+    expect(await app.database.analyticsDaily.count()).toBe(2);
+
+    // Keeping only today removes everything older.
+    expect((await app.analytics.prune(1)).pruned).toBe(1);
+    rows = await app.database.analyticsDaily.findMany();
+    expect(rows.map((row) => row.path)).toEqual(['/today']);
+  });
+
+  it('validates the retention option and stores a valid window', async () => {
+    const session = await loginAs(app, ADMIN_USERNAME, ADMIN_PASSWORD);
+    const headers = {
+      origin: ADMIN_ORIGIN,
+      cookie: session.cookieHeader,
+      'x-csrf-token': session.csrfToken,
+      'content-type': 'application/json',
+    };
+    const valid = await app.inject({
+      method: 'PUT',
+      url: '/api/options',
+      headers,
+      payload: { group: 'privacy', values: { analytics_retention_days: 30 } },
+    });
+    expect(valid.statusCode).toBe(200);
+    expect((valid.json() as { analytics_retention_days: number }).analytics_retention_days).toBe(
+      30,
+    );
+
+    for (const value of [-1, 3651, 1.5, 'x']) {
+      const invalid = await app.inject({
+        method: 'PUT',
+        url: '/api/options',
+        headers,
+        payload: { group: 'privacy', values: { analytics_retention_days: value } },
+      });
+      expect(invalid.statusCode, JSON.stringify(value)).toBe(400);
+    }
+  });
+  it('keeps exactly the last N calendar days with an injected clock', async () => {
+    const fixed = new Date('2026-11-06T12:00:00.000Z');
+    const analytics = createAnalyticsService({
+      prisma: app.database,
+      now: () => fixed,
+    });
+    const day = (offset: number) => new Date(Date.UTC(2026, 10, 6 - offset));
+    await app.database.analyticsDaily.createMany({
+      data: [
+        { day: day(0), path: '/today', referrerHost: '', views: 1 },
+        { day: day(6), path: '/boundary-kept', referrerHost: '', views: 1 },
+        { day: day(7), path: '/boundary-old', referrerHost: '', views: 1 },
+      ],
+    });
+
+    const result = await analytics.prune(7);
+    expect(result).toEqual({
+      pruned: 1,
+      retentionDays: 7,
+      cutoffDay: '2026-10-31',
+    });
+    const rows = await app.database.analyticsDaily.findMany({ orderBy: { path: 'asc' } });
+    expect(rows.map((row) => row.path)).toEqual(['/boundary-kept', '/today']);
   });
 });

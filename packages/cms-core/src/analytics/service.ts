@@ -26,6 +26,14 @@ export interface RecordViewInput {
   now?: Date;
 }
 
+export interface AnalyticsPruneResult {
+  pruned: number;
+  /** Effective retention window (0 = disabled). */
+  retentionDays: number;
+  /** First day kept (`YYYY-MM-DD`), or null when disabled. */
+  cutoffDay: string | null;
+}
+
 export interface AnalyticsSummary {
   days: number;
   totalViews: number;
@@ -128,7 +136,34 @@ export function createAnalyticsService({
     };
   }
 
-  return { record, summary };
+  /**
+   * Retention sweep: delete aggregate rows older than the window. `days` is the
+   * number of calendar days to keep including today (1 = today only; 0 or a
+   * negative value disables the sweep). Only counts are returned/logged; the
+   * table holds no visitor identifiers, so there is nothing else to report.
+   */
+  async function prune(retentionDays: number): Promise<AnalyticsPruneResult> {
+    if (!Number.isFinite(retentionDays)) {
+      return { pruned: 0, retentionDays: 0, cutoffDay: null };
+    }
+    // Keep the invariant in one place even for programmatic callers.
+    const days = Math.min(3650, Math.trunc(retentionDays));
+    if (days <= 0) {
+      return { pruned: 0, retentionDays: days, cutoffDay: null };
+    }
+    const today = utcDay(now());
+    const cutoff = new Date(today.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
+    const result = await prisma.analyticsDaily.deleteMany({
+      where: { day: { lt: cutoff } },
+    });
+    return {
+      pruned: result.count,
+      retentionDays: days,
+      cutoffDay: cutoff.toISOString().slice(0, 10),
+    };
+  }
+
+  return { record, summary, prune };
 }
 
 export type AnalyticsService = ReturnType<typeof createAnalyticsService>;
