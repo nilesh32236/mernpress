@@ -4837,3 +4837,17 @@ administrator:
   upload and list Apply coverage remains.
 - Validation: 903 unit/integration tests (API 527, admin 248, web 50, contracts
   13, block-system 65), 24 Playwright E2E tests and seven builds pass.
+
+**Deployment (media bulk move, release `20261106T142843Z-8dd74bf`):** verified
+in production with a temporary administrator:
+- Uploaded `audit-image.png` while browsing “All folders”, selected it in grid
+  bulk mode, chose the new **Bulk Target** folder and pressed **Move selected**.
+  The API then returned the item under `?folder=<Bulk Target>` with folder
+  count 1, and the notice read “Moved 1 media item(s) to “Bulk Target”.”.
+- Switched to list view, selected the row, chose **Move to folder**; **Apply**
+  was disabled until a target was picked. Choosing **Uncategorized** and
+  applying set `folderId: null`, returned the folder count to 0 and showed
+  “Moved 1 media item(s) to “Uncategorized”.”.
+- Cleanup removed the media item and its files, the folder, the temporary
+  administrator/sessions, recent audit events and analytics rows; production is
+  back to 1 user, 2 posts, 0 media, 0 folders, 0 analytics rows.
