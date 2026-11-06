@@ -5206,3 +5206,20 @@ verified in production with a temporary administrator:
 - Docs: ADR 0034 amendment, D-119, parity matrix.
 - Validation: 927 unit/integration tests (API 541, admin 256, web 52, contracts
   13, block-system 65), 28 Playwright E2E tests and seven builds pass.
+
+**Deployment (durable backup jobs, release `20261106T174730Z-20d1dc1`):**
+verified in production with a temporary administrator:
+- Tools → Backups **Create backup** returned immediately with “Backup queued.
+  The background worker will create it shortly.”, the job badge `pending`,
+  attempts `0/2` and the button disabled as “Backup queued…”.
+- A second `POST /api/admin/backups` at that moment returned `409` with
+  `BACKUP_IN_PROGRESS`.
+- Within the next worker tick the page polled to `completed`, showed
+  “Backup created: mernpress-backup-20261106T174922Z.tar.gz.” and listed the
+  63 KB archive; `GET /api/admin/jobs?search=backup.create` reported
+  `COMPLETED`, attempts `1`, no error.
+- Cleanup deleted the archive through the admin API (`200`, zero remaining),
+  then analytics rows, the temporary administrator/sessions and recent audit
+  events. Production is back to 1 user, 2 posts, 0 media, 0 folders, 0
+  analytics rows (queue history remains); `/`, `/admin/`, `/admin/tools/backups`,
+  `/api/health` and `/posts/testcom` return 200.
