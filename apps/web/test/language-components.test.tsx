@@ -68,6 +68,7 @@ function post(overrides: Partial<PublicPost> = {}): PublicPost {
     passwordProtected: false,
     format: 'standard',
     language: 'hi',
+    translationGroup: 'group-1',
     updatedAt: '2026-11-06T00:00:00.000Z',
     author: {
       id: 'u1',

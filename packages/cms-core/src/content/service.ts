@@ -435,6 +435,7 @@ function toPublic(row: PostWithTerms, logger?: ContentServiceOptions['logger']):
       ? (row.format as PostFormat)
       : 'standard',
     language: row.language,
+    translationGroup: row.translationGroup,
     updatedAt: row.updatedAt.toISOString(),
     author: row.author
       ? {

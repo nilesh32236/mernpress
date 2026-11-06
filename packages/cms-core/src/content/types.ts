@@ -198,6 +198,8 @@ export interface PublicPost {
   format: PostFormat;
   /** Language code of this variant; default-language posts are unprefixed. */
   language: string;
+  /** Opaque group id shared by every language variant (used for sitemap alternates). */
+  translationGroup: string;
   /** Published translations of the same document (single-post responses only). */
   translations?: PublicTranslation[];
   updatedAt: string;

@@ -41,6 +41,7 @@ const post: PublicPost = {
   passwordProtected: false,
   format: 'standard',
   language: 'en',
+  translationGroup: 'group-1',
   updatedAt: '2026-01-02T00:00:00.000Z',
   terms: {
     categories: [{ id: 'c1', name: 'News', slug: 'news', path: '/category/news' }],

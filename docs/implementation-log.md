@@ -4556,3 +4556,24 @@ administrator:
   2 posts, 0 analytics rows and default English-only chrome, with `/`,
   `/admin/`, `/admin/settings/languages`, `/api/health` and `/posts/testcom` at
   200.
+
+### 2026-11-06 — Sitemap xhtml:link alternates
+
+- `PublicPost` now exposes the opaque `translationGroup` so the web layer can
+  group variants without extra queries; `toPublic` fills it.
+- New `apps/web/lib/sitemap.ts` (`buildPostSitemapEntries`) deduplicates
+  collected documents, groups by translation group and attaches
+  `alternates.languages` (every published language plus `x-default`) to each
+  entry. Single-language documents get no alternates; when a group has no
+  default-language variant, `x-default` points at the home page. Image sitemap
+  entries and last-modified dates are preserved.
+- `app/sitemap.ts` collects posts/pages for every enabled language, passes the
+  documents to the helper and appends the grouped entries after the static
+  home/blog URLs. Verifying exposed a stale-cache defect: `revalidate = 3600`
+  served the build-time sitemap (and its old documents) for an hour, so the
+  route is now `force-dynamic`; newly published translations appear on the next
+  request.
+- Tests: new `apps/web/test/sitemap.test.ts` covers two-language post/page
+  groups, `x-default`, deduplication, single-language entries and image data.
+- Validation: 888 unit/integration tests (API 521, admin 240, web 49, contracts
+  13, block-system 65), 24 Playwright E2E tests and seven builds pass.

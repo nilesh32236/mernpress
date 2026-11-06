@@ -75,6 +75,8 @@ export interface PublicPost {
     | 'chat';
   /** Language code for this variant. */
   language: string;
+  /** Opaque group id shared by every language variant. */
+  translationGroup: string;
   /** Published translations (single-post responses). */
   translations?: Array<{
     language: string;

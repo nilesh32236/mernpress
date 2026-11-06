@@ -34,6 +34,7 @@ const blogPage = {
   passwordProtected: false,
   format: 'standard',
   language: 'en',
+  translationGroup: 'group-1',
   terms: { categories: [], tags: [] },
   featuredImage: null,
   author: null,

@@ -154,6 +154,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-104 | 2026-11-06 | Per-language 404 copy: `theme_strings` gains `notFoundTitle` (120), `notFoundText` (300) and `notFoundImageAlt` (160) with English fallbacks. `app/not-found.tsx` renders them through `requestThemeStrings()`, so `/hi/<missing>` keeps the Hindi chrome and 404 copy (middleware preserves `x-mn-language`). | accepted | [ADR 0052](docs/adr/0052-per-language-menus-and-theme-strings.md) |
 
+| D-105 | 2026-11-06 | Sitemap translation alternates: `PublicPost` exposes the opaque `translationGroup`; `apps/web/lib/sitemap.ts` groups collected variants and adds `alternates.languages` (every published language + `x-default`, falling back to the home page when the default variant is unpublished) to each entry. Documents with one language get no alternates block. `app/sitemap.ts` collects posts/pages per enabled language, deduplicates and emits the grouped entries after the static home/blog URLs. No schema/API-route change. | accepted | [ADR 0051](docs/adr/0051-multilingual-content-model.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

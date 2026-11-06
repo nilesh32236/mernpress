@@ -27,6 +27,7 @@ const basePost: PublicPost = {
   passwordProtected: true,
   format: 'standard',
   language: 'en',
+  translationGroup: 'group-1',
   updatedAt: '2026-01-01T00:00:00.000Z',
   terms: { categories: [], tags: [] },
   author: {

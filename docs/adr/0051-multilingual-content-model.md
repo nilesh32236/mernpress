@@ -58,8 +58,11 @@ existing feature working.
 7. **SEO.** Single post/page responses include published translations with
    their language paths; `generateMetadata` emits `alternates.languages` for
    every variant plus `x-default` (the default-language variant). The sitemap
-   loops every enabled language and lists each variant at its own URL. The post
-   page renders a language switcher (`LanguageLinks`).
+   loops every enabled language, lists each variant at its own URL and groups
+   them by `translationGroup` so every translated document also carries
+   `xhtml:link` alternates (with `x-default`; the home page when the
+   default-language variant is unpublished). The post page renders a language
+   switcher (`LanguageLinks`).
 8. **Archives stay default-language.** The home feed, category/tag/author
    archives, search and pagination read the default language only; a translated
    post is not duplicated into the default feed. This is a deliberate scope
@@ -77,7 +80,7 @@ existing feature working.
 - Plain permalinks (`?p=<id>`) carry no language context; translated variants
   are addressed through their language-prefixed page URL only when a structured
   permalink is configured.
-- No per-language menus/widgets/theme strings, no automatic machine
-  translation, no language negotiation by `Accept-Language`/geo, and no
-  sitemap `xhtml:link` alternates in this slice. The hreflang data is in the
-  page `<head>` and each variant is listed in the sitemap.
+- No automatic machine translation or language negotiation by
+  `Accept-Language`/geo. Per-language menus/theme strings and sitemap
+  `xhtml:link` alternates are implemented (ADR 0052 and the sitemap helper);
+  the hreflang data is in both the page `<head>` and the sitemap.
