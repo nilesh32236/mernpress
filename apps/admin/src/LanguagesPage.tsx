@@ -311,6 +311,10 @@ function LanguageExtras({
     if (!config.enabled.includes(stringLanguage)) setStringLanguage(config.default);
     if (menuLanguage !== '' && !config.enabled.includes(menuLanguage)) {
       setMenuLanguage(config.enabled.find((code) => code !== config.default) ?? '');
+    } else if (menuLanguage === '' && nonDefault.length > 0) {
+      // Enabling the first extra language after mount must select it, otherwise
+      // the menu form looks active but saves nothing.
+      setMenuLanguage(nonDefault[0] ?? '');
     }
   }, [config]);
 

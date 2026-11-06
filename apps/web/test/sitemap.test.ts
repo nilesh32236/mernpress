@@ -139,4 +139,23 @@ describe('sitemap translation alternates', () => {
       'x-default': 'https://example.com/about',
     });
   });
+  it('omits noindex, password-protected and off-site canonical documents', () => {
+    const entries = buildPostSitemapEntries('https://example.com', 'en', [
+      post({ id: 'ok' }),
+      post({ id: 'noindex', slug: 'noindex', path: '/posts/noindex', robots: 'noindex, follow' }),
+      post({
+        id: 'password',
+        slug: 'secret',
+        path: '/posts/secret',
+        passwordProtected: true,
+      }),
+      post({
+        id: 'canonical',
+        slug: 'canonical',
+        path: '/posts/canonical',
+        canonicalUrl: 'https://elsewhere.example/original',
+      }),
+    ]);
+    expect(entries.map((entry) => entry.url)).toEqual(['https://example.com/posts/hello']);
+  });
 });

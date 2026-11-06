@@ -2310,7 +2310,7 @@ export function ContentEditor({
                     )}
                   </section>
 
-                  {post ? (
+                  {post && languages.enabled.length > 1 ? (
                     <section className="editor-panel" aria-label="Translations">
                       <details
                         className="translation-details"

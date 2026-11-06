@@ -245,6 +245,16 @@ describe('language contract', () => {
       hi: 'https://example.com/hi/posts/hello',
       'x-default': 'https://example.com/posts/hello',
     });
+
+    // When the default-language variant is unpublished, x-default is the site
+    // root (matching the sitemap helper) rather than an arbitrary variant.
+    const noDefault = hreflangAlternates(
+      { default: 'en', enabled: ['en', 'hi'] },
+      [{ language: 'hi', path: '/hi/posts/hello' }],
+      { language: 'hi', path: '/hi/posts/hello' },
+      (path) => `https://example.com${path}`,
+    );
+    expect(noDefault['x-default']).toBe('https://example.com/');
   });
 });
 

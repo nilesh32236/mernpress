@@ -43,7 +43,7 @@ export async function GET(): Promise<Response> {
     <title>${escapeXml(siteTitle)}</title>
     <link>${escapeXml(base)}</link>
     <description>${escapeXml(description)}</description>
-    <language>en-US</language>
+    <language>${escapeXml(settings?.languages?.default ?? 'en')}</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
 ${entries}
   </channel>

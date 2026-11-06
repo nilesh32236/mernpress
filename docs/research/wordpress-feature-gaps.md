@@ -73,10 +73,10 @@ project does not claim to know the whole market.
 | --- | --- | --- | --- |
 | P0 | Keep the implemented parity surface green | Tests/E2E/builds are the guardrail | Ongoing |
 | P1 | **Bulk regenerate image sizes/derivatives** | Core explicitly does not do it; existing media can be stale after settings changes or imports; we already own the pipeline | **Implemented now** |
-| P1 | Media library virtual folders/collections | Largest unimplemented media demand (390k+ installs across three plugins) | **Implemented now** (ADR 0048): flat virtual folders, one per item, filter/create/rename/delete + drawer assignment |
+| P1 | Media library virtual folders/collections | Largest unimplemented media demand (390k+ installs across three plugins) | **Implemented now** (ADR 0048, D-106): nested virtual folders, indented tree, create/rename/cycle-safe move/delete with child reparenting, drawer assignment. No drag-drop/bulk move; names globally unique |
 | P2 | Cookie consent manager | 1M+ installs; privacy tooling already exists | **Implemented now** (ADR 0050): local banner/config and `ConsentGate` |
-| P2 | Multilingual content model | 900k+ installs; Gutenberg phase 4 | **Implemented now** (ADR 0051, smallest complete slice): languages, translation groups, prefixed URLs, hreflang and sitemap variants. No menus/theme strings or language negotiation |
-| P2 | Privacy-first analytics | 5M+ analytics installs; self-hosted counters avoid third-party embeds | **Implemented now** (ADR 0049): local aggregate beacon + Dashboard → Analytics |
+| P2 | Multilingual content model | 900k+ installs; Gutenberg phase 4 | **Implemented now** (ADR 0051–0052, D-100–D-105): languages/translation groups, prefixed URLs, hreflang, sitemap `xhtml:link` alternates, per-language menus and component/theme strings, date locales and 404 copy. No language negotiation or machine translation |
+| P2 | Privacy-first analytics | 5M+ analytics installs; self-hosted counters avoid third-party embeds | **Implemented now** (ADR 0049, D-107): local aggregate beacon, Dashboard → Analytics, configurable retention sweep + CLI. No unique visitors/sessions/campaigns (privacy choice) |
 | P2 | Page/object cache integration | 7M+ cache plugin installs; operational rather than editorial | Deferred to deployment docs |
 | — | Forms, e-commerce, CRM, marketplaces | Explicitly out of scope in AGENTS §12 | Not built |
 | — | SMTP credentials | Owner-only secret | Blocked on the owner |
@@ -132,3 +132,30 @@ converted/regenerated without a third-party plugin.
 - https://wordpress.org/plugins/polylang/ (900,000+ active)
 - https://wordpress.org/plugins/google-site-kit/ (5+ million active)
 - https://wordpress.org/plugins/wordfence/ (5+ million active)
+
+## 7. 2026 update — additional gaps and direct user requests
+
+Research date: 2026-11-06. Stable core is WordPress 7.1.4; 7.2 is in beta
+([Make/Core](https://make.wordpress.org/core/)). Install counts below are the
+official WordPress.org directory figures read on that date. These rows are
+additive to §2 and do not repeat SMTP/2FA/backups/SEO/media/consent/multilingual.
+
+| Gap | Core status | Demand evidence | MERNPress decision |
+| --- | --- | --- | --- |
+| **Real-time co-editing (RTC)** | Not shipped. Removed from the 7.0 release over race conditions, server load and fuzz-test bugs; still R&D ([removal post](https://make.wordpress.org/core/2026/05/08/rtc-removed-from-7-0/), [sync-engine guide](https://make.wordpress.org/core/2026/10/14/real-time-collaboration-a-guide-to-sync-engines/)) | Direct user requests in the removal post: teams editing one post simultaneously, or round-tripping through Google Docs. VIP beta feedback: [early user feedback](https://make.wordpress.org/core/2025/12/16/real-time-collaboration-early-user-feedback/) | **P2** after the revision/conflict model; core itself judged the current design not robust enough to ship. |
+| **AI content features** | Core ships the AI Client + Settings → Connectors only; user-facing AI is a separate plugin ([AI plugin](https://wordpress.org/plugins/ai/)) | Official **AI** plugin: **60,000+** active, v1.5.0 (2026-10-30) | **P2** opt-in with owner-supplied provider keys and a privacy/cost ADR; same stance as SMTP. |
+| **Prerender speculative loading + settings UI** | Core 6.8 ships `prefetch` only, conservative eagerness, off for logged-in users; a UI is explicitly out of core scope ([dev note](https://make.wordpress.org/core/2025/03/06/speculative-loading-in-6-8/)) | **Speculative Loading** plugin: **70,000+** active, adds `prerender`/`moderate` + Reading UI | **P2** — Next already prefetches; add prerender only where field data justifies it. |
+| **Field Core Web Vitals / INP monitoring** | Site Health checks configuration, not field performance ([Site Health docs](https://wordpress.org/documentation/article/site-health-screen/)) | **Site Kit** PageSpeed report: **5+ million** active; **Performance Lab**: **100,000+** | **P2** — add a Vitals panel from first-party beacon data instead of a Google embed. |
+| **Deterministic background jobs / queue** | WP-Cron is request-triggered (“only triggered on page load”) ([cron docs](https://developer.wordpress.org/plugins/cron/)) | **Action Scheduler**: **20,000+**; **WP Crontrol**: **300,000+** active | **P1** — mail, backups, scheduled publish and media regeneration would benefit from a real job table; current schedulers are in-process. |
+| **Relevant full-text search** | Core search is a `LIKE` scan; Relevanssi exists to replace it ([plugin](https://wordpress.org/plugins/relevanssi/)) | **Relevanssi**: **100,000+** active, v4.28.8 (2026-10-30) | **P2** — already tracked as Postgres FTS; current filtered search covers the MVP. |
+| **Broken-link detection** | Not in core; no link checker in the official features list ([features](https://wordpress.org/about/features/)) | **Broken Link Checker**: **500,000+** active (2026-10-13) | **P2** — additive to redirects + 404 log; not blocking. |
+| **Staging / clone / push-to-live** | Not in core; provided by plugins ([WP Staging](https://wordpress.org/plugins/wp-staging/)) | **WP Staging**: **100,000+** active, v4.20.0 (2026-11-06) | **Out of scope** — deployment/ops boundary; backups + CLI restore cover recovery. |
+| **SQLite / single-file database** | Core requires MySQL/MariaDB; SQLite is a feature plugin that starts empty ([plugin](https://wordpress.org/plugins/sqlite-database-integration/)) | **5,000+** active, v3.1.3 (2026-11-03) | **Out of scope** — AGENTS §6 mandates PostgreSQL and forbids a second production schema path. |
+| **Export Site Editor design to a theme package** | Core keeps edited templates/styles in the DB; export is a plugin feature ([Create Block Theme](https://wordpress.org/plugins/create-block-theme/)) | **Create Block Theme**: **20,000+** active, v2.10.2 (2026-10-01) | **P2** — MERNPress themes are code packages; only relevant if DB-backed templates ship. |
+| **Builder migration / structured “data liberation”** | Core path is WXR/legacy importers; Data Liberation phases are ongoing ([project](https://wordpress.org/data-liberation/)) | **Unverified** demand for builder migration; official **WordPress Importer**: **2,000,000+** (import demand only) ([plugin](https://wordpress.org/plugins/wordpress-importer/)) | **P2** — WXR import ships; builder migration needs measured demand first. |
+| **Classic / plain-writing editor** | Block editor is core; classic editing is the official Classic Editor plugin ([plugin](https://wordpress.org/plugins/classic-editor/)) | **Classic Editor**: **8,000,000+** active, v1.7.0 (2026-05-28) | **Out of scope** as a second editor (breaks one registry/schema); read the 8M installs as a UX warning about writing speed, not a feature request. |
+
+Sources: the linked primary sources above plus the WordPress.org plugin API
+(`active_installs`, versions, last-updated) read on 2026-11-06. Quotes from the
+RTC post are user comments (anecdotal, not a survey); builder-migration demand
+is explicitly unverified.

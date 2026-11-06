@@ -23,9 +23,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const documents: PublicPost[] = [];
   for (const type of ['post', 'page'] as const) {
     for (const language of languages) {
+      let page = 1;
+      let totalPages = 1;
       try {
-        const data = await listPublished(type, 1, 100, language, true);
-        documents.push(...(data?.items ?? []));
+        // Page through the public list instead of silently dropping everything
+        // after the first 100 documents; 50 pages is a safety cap.
+        while (page <= totalPages && page <= 50) {
+          const data = await listPublished(type, page, 100, language, true);
+          documents.push(...(data?.items ?? []));
+          totalPages = data?.pagination.totalPages ?? 1;
+          page += 1;
+        }
       } catch {
         // Ignore API failures during sitemap generation.
       }

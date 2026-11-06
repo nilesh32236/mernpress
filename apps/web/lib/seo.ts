@@ -17,6 +17,7 @@ export function entityId(base: string, fragment: string): string {
 export function websiteSchema(
   base: string,
   site: { title: string; tagline: string | null },
+  language = 'en',
 ): JsonLd {
   return {
     '@type': 'WebSite',
@@ -24,7 +25,7 @@ export function websiteSchema(
     url: base,
     name: site.title,
     description: site.tagline ?? undefined,
-    inLanguage: 'en',
+    inLanguage: language,
     publisher: { '@id': entityId(base, 'organization') },
   };
 }
@@ -39,10 +40,14 @@ export function organizationSchema(base: string, site: { title: string }): JsonL
   };
 }
 
-export function siteGraph(base: string, site: { title: string; tagline: string | null }): JsonLd {
+export function siteGraph(
+  base: string,
+  site: { title: string; tagline: string | null },
+  language = 'en',
+): JsonLd {
   return {
     '@context': 'https://schema.org',
-    '@graph': [organizationSchema(base, site), websiteSchema(base, site)],
+    '@graph': [organizationSchema(base, site), websiteSchema(base, site, language)],
   };
 }
 
@@ -95,7 +100,7 @@ export function articleSchema(base: string, post: PublicPost): JsonLd {
     description,
     url,
     mainEntityOfPage: { '@id': url },
-    inLanguage: 'en',
+    inLanguage: post.language,
     isPartOf: { '@id': entityId(base, 'website') },
     ...(post.author
       ? {

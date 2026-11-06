@@ -120,10 +120,14 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <style id="customizer-css" dangerouslySetInnerHTML={{ __html: settings.customCss }} />
         ) : null}
         <JsonLd
-          data={siteGraph(siteUrl(), {
-            title: siteTitle,
-            tagline: settings?.tagline ?? null,
-          })}
+          data={siteGraph(
+            siteUrl(),
+            {
+              title: siteTitle,
+              tagline: settings?.tagline ?? null,
+            },
+            defaultLanguage,
+          )}
         />
         <PublicAdminBar siteTitle={siteTitle} />
         <a href="#main-content" className="skip-link">

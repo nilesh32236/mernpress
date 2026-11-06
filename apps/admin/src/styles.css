@@ -13429,3 +13429,79 @@ select:not([multiple]):not([size]) {
 .media-folder-move select {
   max-width: 200px;
 }
+
+/* Review hardening: base control sizing for list/folder/analytics selects.
+   Bare selects previously rendered at native 17px height in these bars. */
+.media-folder-bar select,
+.media-folder-inline select,
+.analytics-range select {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 24px 0 8px;
+}
+
+.media-folder-bar,
+.media-folder-inline {
+  flex-wrap: wrap;
+}
+
+/* Global text-action reset: these render as native grey buttons otherwise. */
+button.button-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  min-height: 24px;
+  color: var(--wp-blue);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.button-link:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+button.button-link:disabled {
+  color: #a7aaad;
+  cursor: not-allowed;
+}
+
+button.button-link.is-danger {
+  color: #b32d2e;
+}
+
+/* Settings → Languages: the enabled fieldset must not inherit the two-column
+   settings grid (that squeezed every checkbox into the 210px label column). */
+.languages-enabled {
+  display: block;
+}
+
+.languages-enabled .checkbox-row {
+  min-height: 24px;
+  padding: 3px 0;
+}
+
+/* Editor → Translations disclosure, matching the taxonomy panels. */
+.translation-details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  list-style: none;
+}
+
+.translation-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.translation-details summary h3 {
+  margin: 0;
+}
+
+/* Media regeneration reads as a secondary action, not a label. */
+.media-regenerate {
+  border-color: var(--wp-button);
+  background: transparent;
+  color: var(--wp-button);
+}

@@ -501,13 +501,18 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     return requested;
   }
 
-  /** Validate and normalize a language filter used by public resolution. */
+  /**
+   * Resolve a public language filter. An absent value means the default; a
+   * present but disabled/malformed code is not silently swapped for the default
+   * (that would serve the wrong language under a canonical URL).
+   */
   async function resolvePublicLanguage(requested: string | undefined): Promise<string> {
     const config = await languageConfig();
     if (requested === undefined) return config.default;
-    return isLanguageCode(requested) && config.enabled.includes(requested)
-      ? requested
-      : config.default;
+    if (!isLanguageCode(requested) || !config.enabled.includes(requested)) {
+      throw new ContentError('NOT_FOUND', 'Not found', 404);
+    }
+    return requested;
   }
 
   async function applyFilter(
@@ -1656,6 +1661,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     languageOptions: { language?: string | undefined; permalinkPattern?: string | undefined } = {},
   ): Promise<PublicPost> {
     const current = now();
+    const config = await languageConfig();
     const language = await resolvePublicLanguage(languageOptions.language);
     const row = await prisma.post.findFirst({
       where: {
@@ -1676,6 +1682,7 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     const siblings = await prisma.post.findMany({
       where: {
         translationGroup: row.translationGroup,
+        language: { in: config.enabled },
         status: 'PUBLISHED',
         isPrivate: false,
         publishedAt: { lte: current },
@@ -1703,9 +1710,11 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     translationGroup: string;
     language: string;
   }): Promise<PublicTranslation[]> {
+    const config = await languageConfig();
     const rows = await prisma.post.findMany({
       where: {
         translationGroup: post.translationGroup,
+        language: { in: config.enabled },
         status: 'PUBLISHED',
         isPrivate: false,
         publishedAt: { lte: now() },

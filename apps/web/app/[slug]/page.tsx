@@ -143,7 +143,7 @@ export async function generateMetadata({
   const title = post.seoTitle ?? post.title;
   const description = fallbackDescription(post);
   const languages =
-    settings?.languages && post.translations
+    settings?.languages && post.translations && post.translations.length > 0
       ? hreflangAlternates(
           settings.languages,
           post.translations,

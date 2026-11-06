@@ -115,21 +115,37 @@ async function resolvePost(query: string): Promise<ResolvedPost | null> {
  */
 const INTERNAL_ORIGIN = `http://127.0.0.1:${process.env.PORT ?? '3000'}`;
 
-function headersWithLanguage(request: NextRequest, language: string) {
+function headersWithLanguage(
+  request: NextRequest,
+  language: string,
+  enabled: readonly string[],
+  markInternal: boolean,
+) {
   const headers = new Headers(request.headers);
-  // The rewritten internal path passes through the middleware a second time;
-  // keep the language resolved on the first hop instead of resetting it to the
-  // default.
-  if (!headers.has('x-mn-language')) headers.set('x-mn-language', language);
+  // The rewritten internal path passes through the middleware a second time.
+  // `x-mn-language` is only trusted on that internal hop: on the outer request
+  // a client could forge it, so the URL-resolved value always wins there.
+  const internalHop = request.headers.get('x-mn-internal') === '1';
+  if (markInternal || internalHop) headers.set('x-mn-internal', '1');
+  const existing = headers.get('x-mn-language');
+  headers.set(
+    'x-mn-language',
+    internalHop && existing && enabled.includes(existing) ? existing : language,
+  );
   return headers;
 }
 
-function rewriteTo(request: NextRequest, pathname: string, language?: string) {
+function rewriteTo(
+  request: NextRequest,
+  pathname: string,
+  language: string | undefined,
+  enabled: readonly string[],
+) {
   const target = new URL(pathname, INTERNAL_ORIGIN);
   if (language) target.searchParams.set('lang', language);
   // The root layout reads this header to pick per-language menus/strings.
   return NextResponse.rewrite(target, {
-    request: { headers: headersWithLanguage(request, language ?? 'en') },
+    request: { headers: headersWithLanguage(request, language ?? 'en', enabled, true) },
   });
 }
 
@@ -141,10 +157,31 @@ function redirectTo(request: NextRequest, pathname: string) {
   );
 }
 
-function withPathHeader(request: NextRequest, path: string, language = 'en') {
-  const requestHeaders = headersWithLanguage(request, language);
+function withPathHeader(
+  request: NextRequest,
+  path: string,
+  language: string,
+  enabled: readonly string[],
+) {
+  const requestHeaders = headersWithLanguage(request, language, enabled, false);
   requestHeaders.set('x-mn-path', path);
   return NextResponse.next({ request: { headers: requestHeaders } });
+}
+
+/** Default-language-only surfaces; a language prefix redirects to the plain URL. */
+function isArchivePath(pathname: string): boolean {
+  return (
+    pathname === '/' ||
+    pathname === '/posts' ||
+    pathname === '/search' ||
+    pathname.startsWith('/search/') ||
+    pathname === '/feed' ||
+    pathname === '/llms.txt' ||
+    pathname.startsWith('/category/') ||
+    pathname.startsWith('/tag/') ||
+    pathname.startsWith('/author/') ||
+    pathname.startsWith('/preview/')
+  );
 }
 
 /**
@@ -182,16 +219,49 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
   } = stripLanguagePrefix(settings.languages, path);
   const langQuery = languagePrefixed ? language : undefined;
 
+  // A `?lang=` on a public URL is a duplicate of the language-prefixed canonical.
+  // Redirect it (but not on the internal rewrite hop) so crawlers see one URL.
+  const queryLanguage = request.nextUrl.searchParams.get('lang');
+  const internalRequest = request.headers.get('x-mn-internal') === '1';
+  if (
+    !languagePrefixed &&
+    !internalRequest &&
+    queryLanguage &&
+    queryLanguage !== settings.languages.default &&
+    settings.languages.enabled.includes(queryLanguage)
+  ) {
+    if (pathname.startsWith('/posts/')) {
+      const slug = decodeURIComponent(pathname.slice('/posts/'.length));
+      if (slug && !slug.includes('/')) {
+        const resolved = await resolvePost(
+          `slug=${encodeURIComponent(slug)}&lang=${encodeURIComponent(queryLanguage)}`,
+        );
+        if (resolved) {
+          return redirectTo(request, `/${queryLanguage}${normalize(resolved.canonicalPath)}`);
+        }
+      }
+    } else if (isArchivePath(path)) {
+      return redirectTo(request, path);
+    } else if (path !== '/' && path.split('/').filter(Boolean).length === 1) {
+      return redirectTo(request, `/${queryLanguage}${path}`);
+    }
+  }
+
   // Plain permalinks: /?p=<id> renders through the internal post route.
   if (settings.structure === 'plain') {
     const id = request.nextUrl.searchParams.get('p');
     if (id) {
       const resolved = await resolvePost(`p=${encodeURIComponent(id)}`);
       if (resolved) {
-        return rewriteTo(request, `/posts/${encodeURIComponent(resolved.slug)}`, langQuery);
+        return rewriteTo(
+          request,
+          `/posts/${encodeURIComponent(resolved.slug)}`,
+          langQuery,
+          settings.languages.enabled,
+        );
       }
     }
-    return withPathHeader(request, path, language);
+    return withPathHeader(request, path, language, settings.languages.enabled);
   }
 
   // Custom category/tag bases are rewritten onto the existing archive routes.
@@ -200,7 +270,12 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     if (path.startsWith(prefix) && path.slice(prefix.length).split('/').length === 1) {
       const slug = path.slice(prefix.length);
       if (slug) {
-        return rewriteTo(request, `/category/${encodeURIComponent(slug)}`, language);
+        return rewriteTo(
+          request,
+          `/category/${encodeURIComponent(slug)}`,
+          language,
+          settings.languages.enabled,
+        );
       }
     }
   }
@@ -209,13 +284,24 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     if (path.startsWith(prefix) && path.slice(prefix.length).split('/').length === 1) {
       const slug = path.slice(prefix.length);
       if (slug) {
-        return rewriteTo(request, `/tag/${encodeURIComponent(slug)}`, language);
+        return rewriteTo(
+          request,
+          `/tag/${encodeURIComponent(slug)}`,
+          language,
+          settings.languages.enabled,
+        );
       }
     }
   }
 
   // Internal renderer and known routes never need post resolution.
   const matched = matchPostPath(settings.pattern, localizedPath);
+  // Archives, search and feeds are default-language surfaces. A prefixed URL
+  // redirects to the plain one instead of rendering default content in foreign
+  // chrome (or 404ing, depending on the path).
+  if (languagePrefixed && !matched && isArchivePath(localizedPath)) {
+    return redirectTo(request, localizedPath);
+  }
   // `/posts/...` is reserved for the internal renderer only in the default
   // language; a prefixed structured URL must still be resolved and rewritten.
   const reserved =
@@ -229,29 +315,35 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     localizedPath.startsWith('/search/') ||
     localizedPath === '/feed' ||
     localizedPath === '/llms.txt';
-  if (reserved && !(languagePrefixed && matched)) return withPathHeader(request, path, language);
+  if (reserved && !(languagePrefixed && matched))
+    return withPathHeader(request, path, language, settings.languages.enabled);
 
   if (!matched) {
     // Language-prefixed pages: /<lang>/<slug> renders the page route with a
     // language hint. Archives and the home page stay default-language only.
     const segments = localizedPath.split('/').filter(Boolean);
     if (languagePrefixed && segments.length === 1) {
-      return rewriteTo(request, localizedPath, language);
+      return rewriteTo(request, localizedPath, language, settings.languages.enabled);
     }
-    return withPathHeader(request, path, language);
+    return withPathHeader(request, path, language, settings.languages.enabled);
   }
 
   const query = languagePrefixed
     ? `path=${encodeURIComponent(localizedPath)}&lang=${encodeURIComponent(language)}`
     : `path=${encodeURIComponent(localizedPath)}`;
   const resolved = await resolvePost(query);
-  if (!resolved) return withPathHeader(request, path, language);
+  if (!resolved) return withPathHeader(request, path, language, settings.languages.enabled);
 
   const canonical = resolved.canonicalPath === '/' ? '/' : normalize(resolved.canonicalPath);
   if (canonical !== localizedPath) {
     return redirectTo(request, languagePrefixed ? `/${language}${canonical}` : canonical);
   }
-  return rewriteTo(request, `/posts/${encodeURIComponent(resolved.slug)}`, langQuery);
+  return rewriteTo(
+    request,
+    `/posts/${encodeURIComponent(resolved.slug)}`,
+    langQuery,
+    settings.languages.enabled,
+  );
 }
 
 export const config = {

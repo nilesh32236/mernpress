@@ -4645,3 +4645,50 @@ Production verification with a temporary administrator:
 - Cleanup deleted the upload, all folders and the temporary administrator;
   production is back to 1 user, 2 posts, 0 media and 0 folders, with `/`,
   `/admin/`, `/admin/media`, `/api/health` and `/posts/testcom` at 200.
+
+### 2026-11-06 — Analytics retention policy
+
+- `analytics_retention_days` (privacy option, 0–3650, default 90; 0 keeps rows
+  indefinitely). `AnalyticsService.prune(days)` deletes `analytics_daily` rows
+  older than the last N calendar days (today included) and returns
+  `{ pruned, retentionDays, cutoffDay }`; only counts are logged.
+- Scheduler: a third sweep runs every 24 hours with a 15-second boot catch-up,
+  reading the option each run (invalid/missing → 90) and logging
+  `{pruned, retentionDays, cutoffDay}` only when rows were removed.
+- Operator CLI `pnpm --filter @mernpress/api analytics:prune` with
+  `-- --days N` and `--help`; `--days 0` is a no-op.
+- Settings → Privacy gains the number field with help text and Dashboard →
+  Analytics notes that old rows are pruned.
+- Tests: service cutoff semantics (keep today + N−1 days), `0` no-op, keeping
+  only today, and option validation (`30` accepted; `-1`, `3651`, `1.5`, `"x"`
+  rejected); admin field default/save and help text.
+- Validation: 896 unit/integration tests (API 526, admin 242, web 50, contracts
+  13, block-system 65), 24 Playwright E2E tests and seven builds pass.
+
+### 2026-11-06 — Review hardening (media concurrency + multilingual correctness)
+
+- Media folders: create/rename/move/delete now serialize on a
+  transaction-scoped `pg_advisory_xact_lock` before name/parent/cycle checks and
+  writes, closing the concurrent-move cycle race and case-variant duplicate
+  race; `P2002`/`P2003` map to `FOLDER_EXISTS`/`FOLDER_PARENT_INVALID`. The
+  attachment drawer uses the same indented tree; direct-only counts documented.
+  Added tests for root-delete promotion and global name uniqueness.
+- Multilingual: prefixed archives/search/feed redirect to the plain URL;
+  duplicate public `?lang=` URLs redirect to the prefixed canonical (internal
+  hop marked with `x-mn-internal`, header trusted only there and only for an
+  enabled language); disabled-language siblings are filtered from switchers and
+  hreflang, and detail/resolve requests for a disabled language return 404;
+  sitemap excludes password/noindex/off-site-canonical documents and pages
+  through the full list; hreflang alternates are omitted for single-language
+  documents and `x-default` falls back to the home page consistently; JSON-LD
+  uses the document language and the feed the default language; reserved slugs
+  now include `posts/author/category/tag/llms`; theme-string PUT accepts empty
+  values to clear a key.
+- Analytics retention review fixes: query failure skips the sweep instead of
+  pruning with the default (notes sweep too), the service clamps programmatic
+  windows to 3650, the scheduler logs the effective retention, `buildApp`'s
+  injected clock reaches the analytics service, the admin copy says “Keep the
+  last N days including today” / “may be pruned”, and the CLI distinguishes a
+  `--days 0` override.
+- Validation: targeted API/media/contracts/sitemap tests pass; full gates: 896 unit/integration tests (API 526, admin 242, web 50, contracts
+  13, block-system 65), 24 Playwright E2E tests and seven builds pass.

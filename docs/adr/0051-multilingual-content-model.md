@@ -65,8 +65,27 @@ existing feature working.
    switcher (`LanguageLinks`).
 8. **Archives stay default-language.** The home feed, category/tag/author
    archives, search and pagination read the default language only; a translated
-   post is not duplicated into the default feed. This is a deliberate scope
-   limit, not an accident.
+   post is not duplicated into the default feed. A prefixed archive URL
+   (`/hi/posts`, `/hi/search`, `/hi/category/...`) redirects 301 to the plain
+   default-language URL instead of rendering default content in foreign chrome.
+9. **One canonical URL per variant.** A public `?lang=<enabled non-default>` is
+   a duplicate: the middleware redirects `/posts/<slug>?lang=hi` (and
+   `/<page>?lang=hi`) to the language-prefixed canonical and drops `lang` from
+   archive URLs. The internal rewrite hop carries an `x-mn-internal` marker;
+   `x-mn-language` is trusted only on that hop and only for an enabled code.
+   A disabled language never silently falls back to the default on detail or
+   resolve requests (404).
+10. **Index hygiene.** The sitemap excludes password-protected documents,
+    non-empty canonical overrides and `noindex` robots values, pages through
+    the public list instead of truncating at 100, and only emits alternates for
+    groups with more than one published language. `x-default` points at the
+    home page when the default-language variant is unpublished, matching the
+    page head. JSON-LD uses the document language and the feed uses the default
+    language; page slugs reserved by the router (`posts`, `author`, `category`,
+    `tag`, `llms`) are rejected.
+11. **Convergence.** Language settings are cached for ~10 s and resolutions for
+    ~30 s; URL/canonical changes after disabling a language or changing the
+    default appear within that window.
 
 ## Consequences
 
@@ -83,4 +102,5 @@ existing feature working.
 - No automatic machine translation or language negotiation by
   `Accept-Language`/geo. Per-language menus/theme strings and sitemap
   `xhtml:link` alternates are implemented (ADR 0052 and the sitemap helper);
-  the hreflang data is in both the page `<head>` and the sitemap.
+  the hreflang data is in both the page `<head>` and the sitemap. Plain
+  permalinks still carry no language context (documented above).

@@ -215,6 +215,13 @@ describe('multilingual content', () => {
     });
     expect(wrongLanguage.statusCode).toBe(404);
 
+    // A disabled language is not silently swapped for the default.
+    const disabledLanguage = await app.inject({
+      method: 'GET',
+      url: `/api/public/posts/${english.slug}?type=post&lang=fr`,
+    });
+    expect(disabledLanguage.statusCode).toBe(404);
+
     const resolved = await app.inject({
       method: 'GET',
       url: `/api/public/resolve?path=${encodeURIComponent(`/posts/${hindi.slug}`)}&lang=hi`,
@@ -360,6 +367,18 @@ describe('multilingual content', () => {
       payload: { language: 'hi', strings: { bogus: 'x' } },
     });
     expect(unknownKey.statusCode).toBe(400);
+
+    // An empty value clears a key instead of rejecting the request.
+    const cleared = await app.inject({
+      method: 'PUT',
+      url: '/api/admin/theme-strings',
+      headers: adminHeaders,
+      payload: { language: 'hi', strings: { blog: '', home: 'होम' } },
+    });
+    expect(cleared.statusCode).toBe(200);
+    expect(
+      (cleared.json() as { strings: Record<string, Record<string, string>> }).strings.hi,
+    ).toEqual({ home: 'होम' });
     const disabled = await app.inject({
       method: 'PUT',
       url: '/api/admin/theme-strings',

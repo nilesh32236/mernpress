@@ -19,6 +19,12 @@ export function buildPostSitemapEntries(
   const seen = new Set<string>();
 
   for (const post of posts) {
+    // Indexable, public, self-canonical documents only. Password-protected
+    // posts withhold their body; noindex/robots overrides and off-site canonicals
+    // must not be advertised in the sitemap.
+    if (post.passwordProtected) continue;
+    if (post.canonicalUrl) continue;
+    if (post.robots && /\bnoindex\b/i.test(post.robots)) continue;
     const key = `${post.translationGroup}:${post.language}`;
     if (seen.has(key)) continue;
     seen.add(key);

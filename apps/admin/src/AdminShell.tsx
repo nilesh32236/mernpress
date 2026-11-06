@@ -897,7 +897,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       icon: <span className="dashicons dashicons-dashboard" />,
       subs: [
         { label: 'Home', to: '/', active: route.name === 'dashboard' },
-        ...(canReadContent(user)
+        ...(isAdmin
           ? [{ label: 'Analytics', to: '/analytics', active: route.name === 'analytics' }]
           : []),
         ...(isAdmin
@@ -1755,7 +1755,7 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
                   <p className="command-heading">Quick navigation</p>
                   {[
                     { label: 'Dashboard', to: '/admin' },
-                    { label: 'Analytics', to: '/analytics' },
+                    ...(isAdmin ? [{ label: 'Analytics', to: '/analytics' }] : []),
                     { label: 'All Posts', to: '/posts' },
                     { label: 'Add New Post', to: '/posts/new' },
                     { label: 'Media Library', to: '/media' },

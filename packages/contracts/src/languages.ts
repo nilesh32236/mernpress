@@ -128,6 +128,6 @@ export function hreflangAlternates(
     map[entry.language] = absolute(entry.path);
   }
   const defaultEntry = [self, ...translations].find((entry) => entry.language === config.default);
-  map['x-default'] = absolute(defaultEntry?.path ?? self.path);
+  map['x-default'] = defaultEntry ? absolute(defaultEntry.path) : absolute('/');
   return map;
 }

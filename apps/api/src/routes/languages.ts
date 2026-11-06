@@ -121,9 +121,23 @@ export function registerLanguageRoutes(app: FastifyInstance, options: LanguageRo
       if (!config.enabled.includes(body.language)) {
         throw new ContentError('LANGUAGE_NOT_ENABLED', 'That language is not enabled.', 400);
       }
+      const allowedKeys = new Set<string>(THEME_STRING_KEYS.map((entry) => entry.key));
+      const unknown = Object.keys(body.strings).filter((key) => !allowedKeys.has(key));
+      if (unknown.length > 0) {
+        throw new ContentError('VALIDATION_ERROR', `Unknown theme-string key: ${unknown[0]}`, 400);
+      }
+      // An empty value clears that key (the PUT replaces the language's map).
       const normalized = normalizeThemeStringOverrides(body.strings);
-      if (Object.keys(normalized).length !== Object.keys(body.strings).length) {
-        throw new ContentError('VALIDATION_ERROR', 'Unknown or empty theme-string keys.', 400);
+      const invalidValue = Object.entries(body.strings).find(
+        ([key, value]) =>
+          value.trim().length > 0 && !Object.prototype.hasOwnProperty.call(normalized, key),
+      );
+      if (invalidValue) {
+        throw new ContentError(
+          'VALIDATION_ERROR',
+          `Invalid theme-string value for ${invalidValue[0]}.`,
+          400,
+        );
       }
       const values = await optionService.getOptions(ctx.principal, { group: 'appearance' });
       const map = normalizeThemeStringsByLanguage(values['theme_strings']);
