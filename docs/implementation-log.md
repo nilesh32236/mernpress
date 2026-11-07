@@ -5856,3 +5856,10 @@ verified in production with a temporary administrator:
   (Analytics → Core Web Vitals by template).
 - Closes the "Page/object cache integration" roadmap item as a deployment
   concern; no runtime change.
+
+### 2026-11-07 — Research roadmap consistency pass
+
+- Updated the §2 decision table in `wordpress-feature-gaps.md` so the four
+  implemented gaps (media folders, cookie consent, multilingual, analytics)
+  and the documented cache item no longer read as "not built / P2 candidate".
+- No behaviour change.
