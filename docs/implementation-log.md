@@ -5646,3 +5646,11 @@ verified in production with a temporary administrator:
   `speculation_mode` to `off` (no rules tag in HTML). Production is back to
   1 user, 2 posts, 0 vitals/analytics rows; `/`, `/admin/`, `/api/health`,
   `/api/public/vitals-summary` and `/posts/testcom` return 200.
+### 2026-11-07 — Visual baselines for Languages, Consent, Fonts and Reading
+
+- Added six baselines (43 total): Settings → Languages and Consent at desktop
+  and mobile, Fonts and Settings → Reading at desktop.
+- The Reading capture pins the new gated Speculative loading control at its
+  Off default; Languages/Consent captures pin the grouped string/filter layout
+  and the consent banner form.
+- The suite passes twice in a row against the committed baselines.
