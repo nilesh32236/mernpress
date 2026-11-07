@@ -573,6 +573,37 @@ test('Analytics, Languages, Backups and the Media folder manager keep the contro
     { stdio: 'pipe' },
   );
 
+  // Populated personal-data state: one export request renders in the list
+  // with its email and status. (Empty state is covered elsewhere.)
+  execFileSync(
+    'psql',
+    [
+      testDatabaseUrl,
+      '-c',
+      `INSERT INTO data_requests (id, type, email, user_id, status, requested_by, created_at)
+       SELECT gen_random_uuid(), 'EXPORT', 'parity-request@example.com', id, 'PENDING', id, now() - interval '6 hours'
+       FROM users WHERE username = '${adminUsername}' LIMIT 1;`,
+    ],
+    { stdio: 'pipe' },
+  );
+  await page.goto('http://127.0.0.1:5173/admin/tools/export-personal-data');
+  await expect(page.getByRole('heading', { name: 'Export Personal Data' })).toBeVisible();
+  await expect(page.getByText('parity-request@example.com').first()).toBeVisible();
+  const personalPopulated = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    innerWidth: window.innerWidth,
+  }));
+  expect(personalPopulated.scrollWidth).toBeLessThanOrEqual(personalPopulated.innerWidth);
+  execFileSync(
+    'psql',
+    [
+      testDatabaseUrl,
+      '-c',
+      "DELETE FROM data_requests WHERE email = 'parity-request@example.com';",
+    ],
+    { stdio: 'pipe' },
+  );
+
   // Mobile pass for the same four screens: no horizontal overflow, and the
   // media folder controls stay on the 32px touch target.
   await page.setViewportSize({ width: 375, height: 812 });

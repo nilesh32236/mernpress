@@ -5911,3 +5911,9 @@ covered by sanitizer + golden + E2E tests locally.
 - `admin-parity.spec.ts` now creates a second user (per-run unique username)
   via the Add User form and asserts creation, then cleans up.
   Previously only the single-admin list was covered.
+
+### 2026-11-07 — Populated Personal Data DOM contract
+
+- `admin-parity.spec.ts` now seeds one export request and asserts the
+  populated Export Personal Data list (email, no overflow). Previously
+  only the empty state was covered.
