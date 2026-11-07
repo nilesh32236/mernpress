@@ -5928,3 +5928,14 @@ covered by sanitizer + golden + E2E tests locally.
   tokens exposed publicly.
 - Validation: 975 unit/integration tests (API 561, admin 258, web 62,
   contracts 26, block-system 68), 35 Playwright E2E tests and seven builds pass.
+
+**Deployment (MERNPress Minimal theme, release `20261107T114051Z-38db619`):**
+- The theme store only seeds once, so the new package was copied to
+  `/opt/mernpress/themes/minimal` (chown `mernpress:mernpress`) and the API
+  restarted; `GET /api/admin/themes` then listed 3 packages.
+- `POST /api/admin/themes/minimal/activate` returned 200 with `active:
+  minimal`; `/api/public/site` exposed `theme.id: minimal` with background
+  `#ffffff`, and the homepage HTML contained the 620px measure.
+- Cleanup restored `active_theme` to `mernpress`, deleted the temporary
+  administrator/sessions and recent audit events, and revalidated the public
+  cache. Production is back to 1 user, 2 posts; `/` and `/api/health` return 200.
