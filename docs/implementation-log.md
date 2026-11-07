@@ -5718,3 +5718,10 @@ verified in production with a temporary administrator:
 - Added three mobile baselines (67 total) for the Dashboard, Appearance →
   Customize and Design (Site Editor) at 375.
 - The suite passes twice in a row against the committed baselines.
+### 2026-11-07 — Visual baseline for the block editor (New post)
+
+- Added the New post editor baseline (68 total), the last major admin surface
+  without pixel coverage: top bar (Save draft/Publish), document pill, title
+  placeholder, canvas skeleton and Post inspector (Status/Publish/Slug/Author/
+  Discussion/Language/Pings).
+- The suite passes twice in a row against the committed baselines.

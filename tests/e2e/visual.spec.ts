@@ -195,6 +195,7 @@ test('admin visual baselines', async ({ page }) => {
     ['jobs', '/admin/tools/jobs', 'Scheduled Actions', 'No scheduled actions match this filter.'],
     ['redirects', '/admin/tools/redirects', 'Redirects', 'Broken links (0 broken, 0 checked)'],
     ['dashboard', '/admin/', 'Dashboard', 'At a Glance'],
+    ['editor', '/admin/posts/new', 'New post', 'Publish'],
     ['plugins', '/admin/plugins', 'Plugins', 'Auto Excerpt'],
     ['tags', '/admin/terms?taxonomy=tag', 'Tags', 'Add Tag'],
     ['site-editor', '/admin/site-editor', 'Design', 'Identity'],
