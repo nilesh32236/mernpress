@@ -5574,3 +5574,16 @@ administrator and public routes:
   analytics rows; the pre-existing 404 traffic log is retained. `/`,
   `/admin/`, `/admin/tools/redirects`, `/api/health` and `/posts/testcom`
   return 200.
+### 2026-11-07 — Visual baselines extended to the remaining admin screens
+
+- `tests/e2e/visual.spec.ts` now captures **34 baselines** (was 20): the 10
+  previously uncovered admin screens at desktop — Posts, Pages, Media, Comments,
+  Users, Settings → General, Tools, Backups, Scheduled Actions and Redirects
+  (including the Broken links empty state) — plus Posts/Media/Comments/Tools at
+  375.
+- Fixtures are deterministic: demo publish times and the `visual_admin` account
+  are pinned to 2026-11-06, and the spec clears jobs, redirects, 404s, link
+  checks and media left by other suites, so empty-state captures do not depend
+  on test order. Analytics is intentionally left to DOM assertions because its
+  rolling 7-day labels change daily.
+- The suite passes twice in a row against the committed baselines.

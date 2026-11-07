@@ -297,10 +297,10 @@ disabled, the caret hidden, fonts awaited and images settled first.
 | --- | --- |
 | Public desktop | Home, Blog, Single post, Search, About, 404 |
 | Public mobile | Home, Blog, Single post, Search, About, 404 |
-| Admin desktop | Themes, Add Plugins, Add User, Connectors, Mail delivery |
-| Admin mobile | Themes, Add Plugins, Add User |
+| Admin desktop | Posts, Pages, Media, Comments, Users, Settings, Tools, Backups, Scheduled Actions, Redirects, Themes, Add Plugins, Add User, Connectors, Mail delivery |
+| Admin mobile | Posts, Media, Comments, Tools, Themes, Add Plugins, Add User |
 
-20 baselines in total. The diff budget is `maxDiffPixelRatio: 0.001`
+34 baselines in total. The admin additions were chosen for deterministic state: the spec pins demo timestamps and the `visual_admin` account, and clears `jobs`, redirects, 404s, link checks and media from unrelated suites before capturing, so empty-state pages (media/comments/backups/jobs/redirects) are stable regardless of test order. The diff budget is `maxDiffPixelRatio: 0.001`
 (0.1% of the viewport) after an earlier 1% budget silently tolerated two real
 changes: the Next dev indicator badge and a dangling “Written by ·” label are
 each smaller than 1% of the frame. `settle()` also injects

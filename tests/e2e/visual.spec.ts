@@ -70,6 +70,23 @@ test.beforeAll(() => {
     env,
     stdio: 'pipe',
   });
+  // Tables the reset script does not truncate can hold rows from earlier suites;
+  // start the captures from the same empty state every run.
+  execFileSync(
+    'psql',
+    [
+      testDatabaseUrl,
+      '-c',
+      `UPDATE users SET created_at = '2026-11-06T12:00:00Z', updated_at = '2026-11-06T12:00:00Z' WHERE username = '${adminUsername}';
+       DELETE FROM link_checks;
+       DELETE FROM jobs;
+       DELETE FROM redirects;
+       DELETE FROM not_found_entries;
+       DELETE FROM media_items;
+       DELETE FROM media_folders;`,
+    ],
+    { stdio: 'pipe' },
+  );
   const published = execFileSync(
     'psql',
     [testDatabaseUrl, '-t', '-A', '-c', "SELECT count(*) FROM posts WHERE status = 'PUBLISHED';"],
@@ -164,16 +181,29 @@ test('public visual baselines', async ({ page }) => {
 test('admin visual baselines', async ({ page }) => {
   await login(page);
 
-  const desktopScreens: Array<[string, string, string]> = [
+  const desktopScreens: Array<[string, string, string, string?]> = [
+    ['posts', '/admin/posts', 'Posts', 'Welcome to MERNPress'],
+    ['pages', '/admin/pages', 'Pages', 'About'],
+    ['media', '/admin/media', 'Media Library', 'No media yet'],
+    ['comments', '/admin/comments', 'Comments', 'No comments found'],
+    ['users', '/admin/users', 'Users', 'visual_admin'],
+    ['settings', '/admin/settings', 'General Settings', 'Site Title'],
+    ['tools', '/admin/tools', 'Tools', 'Open Backups'],
+    ['backups', '/admin/tools/backups', 'Backups', 'Stored backups (0)'],
+    ['jobs', '/admin/tools/jobs', 'Scheduled Actions', 'No scheduled actions match this filter.'],
+    ['redirects', '/admin/tools/redirects', 'Redirects', 'Broken links (0 broken, 0 checked)'],
     ['themes', '/admin/themes', 'Themes'],
     ['add-plugins', '/admin/plugins/new', 'Add Plugins'],
     ['add-user', '/admin/users?action=add', 'Add User'],
     ['connectors', '/admin/settings/connectors', 'Connectors'],
     ['mail-delivery', '/admin/settings#discussion', 'Discussion Settings'],
   ];
-  for (const [name, route, heading] of desktopScreens) {
+  for (const [name, route, heading, readyText] of desktopScreens) {
     await page.goto(`http://127.0.0.1:5173${route}`, { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+    if (readyText) {
+      await expect(page.getByText(readyText, { exact: false }).first()).toBeVisible();
+    }
     if (name === 'connectors') {
       await expect(page.getByText('OpenAI', { exact: true })).toBeVisible();
     }
@@ -191,6 +221,10 @@ test('admin visual baselines', async ({ page }) => {
 
   await page.setViewportSize({ width: 375, height: 812 });
   for (const [name, route, heading] of [
+    ['posts', '/admin/posts', 'Posts'],
+    ['media', '/admin/media', 'Media Library'],
+    ['comments', '/admin/comments', 'Comments'],
+    ['tools', '/admin/tools', 'Tools'],
     ['themes', '/admin/themes', 'Themes'],
     ['add-plugins', '/admin/plugins/new', 'Add Plugins'],
     ['add-user', '/admin/users?action=add', 'Add User'],
