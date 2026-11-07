@@ -5708,3 +5708,8 @@ verified in production with a temporary administrator:
 - Raised the file timeout to 180s so the enlarged admin capture test does not
   time out.
 - The suite passes twice in a row against the committed baselines.
+### 2026-11-07 — Visual baselines for Plugins, Tags and Site Editor
+
+- Added three baselines (64 total): Plugins list, Tags and Design (Site
+  Editor) at desktop.
+- The suite passes twice in a row against the committed baselines.
