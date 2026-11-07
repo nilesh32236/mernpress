@@ -355,6 +355,7 @@ test('admin visual baselines', async ({ page }) => {
     ['export', '/admin/tools?section=export', 'Export', 'Choose what to export'],
     ['add-themes', '/admin/themes/new', 'Add Themes', 'Popular'],
     ['connectors', '/admin/settings/connectors', 'Connectors', 'OpenAI'],
+    ['mail-delivery', '/admin/settings#discussion', 'Discussion Settings', 'Transport:'],
     [
       'export-personal-data',
       '/admin/tools/export-personal-data',

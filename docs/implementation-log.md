@@ -5982,3 +5982,10 @@ covered by sanitizer + golden + E2E tests locally.
   block-editor variants (New post, Edit post, New page).
 - The suite passes consecutively against the committed baselines (two
   editor-screenshot flakes resolved on rerun).
+
+### 2026-11-07 — Mobile baseline for Mail delivery
+
+- Added the Mail delivery (Discussion) mobile baseline (102 total),
+  completing the mobile matrix alongside the existing Discussion capture.
+- The suite passes consecutively against the committed baselines (two
+  customize-mobile flakes resolved on rerun under host load).
