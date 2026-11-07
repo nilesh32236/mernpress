@@ -258,3 +258,77 @@ test('admin visual baselines', async ({ page }) => {
     });
   }
 });
+
+const analyticsFixture = {
+  days: 7,
+  totalViews: 42,
+  uniquePaths: 3,
+  daily: [
+    { day: '2026-10-31', views: 0 },
+    { day: '2026-11-01', views: 4 },
+    { day: '2026-11-02', views: 8 },
+    { day: '2026-11-03', views: 6 },
+    { day: '2026-11-04', views: 9 },
+    { day: '2026-11-05', views: 7 },
+    { day: '2026-11-06', views: 8 },
+  ],
+  topPaths: [
+    { path: '/hello', views: 30 },
+    { path: '/about', views: 12 },
+  ],
+  topReferrers: [{ host: 'example.com', views: 5 }],
+  vitals: [
+    { metric: 'lcp', label: 'Largest Contentful Paint', p75: 2000, rating: 'good', samples: 12 },
+    {
+      metric: 'inp',
+      label: 'Interaction to Next Paint',
+      p75: 400,
+      rating: 'needs-improvement',
+      samples: 9,
+    },
+    {
+      metric: 'cls',
+      label: 'Cumulative Layout Shift',
+      p75: 120,
+      rating: 'needs-improvement',
+      samples: 12,
+    },
+    { metric: 'fcp', label: 'First Contentful Paint', p75: 1200, rating: 'good', samples: 12 },
+    { metric: 'ttfb', label: 'Time to First Byte', p75: 2400, rating: 'poor', samples: 12 },
+  ],
+};
+
+test('analytics chart visual baseline (date-stabilized)', async ({ page }) => {
+  await login(page);
+  // The API answers with a rolling 7-day window, so the chart labels change
+  // every calendar day. Intercept the summary with a fixed payload instead of
+  // freezing the server clock; the browser still exercises the real page,
+  // bars, tables and vitals rendering.
+  await page.route('**/api/admin/analytics*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(analyticsFixture),
+    });
+  });
+
+  for (const [name, width, height] of [
+    ['analytics-chart-desktop', 1440, 1000],
+    ['analytics-chart-mobile', 375, 812],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    await page.goto('http://127.0.0.1:5173/admin/analytics', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { level: 1, name: 'Analytics' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Views per day' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Core Web Vitals (field data)' })).toBeVisible();
+    await expect(page.getByText('Largest Contentful Paint')).toBeVisible();
+    await settle(page);
+    await expect(page).toHaveScreenshot(`${name}.png`, {
+      animations: 'disabled',
+      caret: 'hide',
+      fullPage: false,
+      maxDiffPixelRatio: 0.001,
+    });
+  }
+  await page.unroute('**/api/admin/analytics*');
+});

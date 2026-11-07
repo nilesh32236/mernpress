@@ -5601,3 +5601,11 @@ administrator and public routes:
   chart remains covered by DOM assertions in `admin-parity.spec.ts`.
 - Validation: 955 unit/integration tests (API 556, admin 258, web 59, contracts
   17, block-system 65), 34 Playwright E2E tests and seven builds pass.
+### 2026-11-07 — Analytics chart baseline with date stabilization
+
+- Added full-screen Analytics baselines (desktop + mobile, 37 total) by
+  intercepting `GET /api/admin/analytics` with a fixed payload (7 fixed days,
+  fixed cards, tables and vitals rows). The rolling 7-day window no longer
+  makes the capture fail on the next calendar day; the browser still exercises
+  the real bars, tables and rating badges.
+- The suite passes twice in a row against the committed baselines.

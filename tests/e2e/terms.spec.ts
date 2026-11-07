@@ -76,7 +76,8 @@ test('editor can create, rename and delete a category', async ({ page }) => {
   await page.goto(`${ADMIN_URL}terms?taxonomy=category`);
   await expect(page.getByRole('heading', { name: 'Categories', exact: true })).toBeVisible();
 
-  await page.getByLabel('Name').fill(termName);
+  // Sort buttons share the accessible name substring; target the form field exactly.
+  await page.getByLabel('Name', { exact: true }).fill(termName);
   await page
     .getByRole('form', { name: 'Create Category' })
     .getByRole('button', { name: 'Add Category' })
