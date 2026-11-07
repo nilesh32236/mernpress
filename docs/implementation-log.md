@@ -5905,3 +5905,9 @@ covered by sanitizer + golden + E2E tests locally.
 - `admin-parity.spec.ts` now seeds one broken link-check row and asserts
   the populated Broken links panel (source, URL, no overflow). Previously
   only the empty ("0 broken, 0 checked") state was covered.
+
+### 2026-11-07 — Populated Users DOM contract
+
+- `admin-parity.spec.ts` now creates a second user (per-run unique username)
+  via the Add User form and asserts creation, then cleans up.
+  Previously only the single-admin list was covered.

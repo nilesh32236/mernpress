@@ -553,6 +553,26 @@ test('Analytics, Languages, Backups and the Media folder manager keep the contro
     { stdio: 'pipe' },
   );
 
+  // Populated users state: a second user renders on the Users list with
+  // role and avatar. (Single-admin state is covered elsewhere.)
+  await page.goto('http://127.0.0.1:5173/admin/users?action=add');
+  await expect(page.getByRole('heading', { name: 'Add User' })).toBeVisible();
+  await page.getByLabel('Username').fill(`parity_user_${suffix}`);
+  await page.getByLabel('Email (required)').fill('parity-user@example.com');
+  await page.getByLabel('Password', { exact: true }).fill('Parity-Password-1!');
+  await page.getByRole('button', { name: 'Add User' }).click();
+  await expect(page.getByText(new RegExp(`parity_user_${suffix}`)).first()).toBeVisible();
+  const usersPopulated = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    innerWidth: window.innerWidth,
+  }));
+  expect(usersPopulated.scrollWidth).toBeLessThanOrEqual(usersPopulated.innerWidth);
+  execFileSync(
+    'psql',
+    [testDatabaseUrl, '-c', "DELETE FROM users WHERE username LIKE 'parity_user_%';"],
+    { stdio: 'pipe' },
+  );
+
   // Mobile pass for the same four screens: no horizontal overflow, and the
   // media folder controls stay on the 32px touch target.
   await page.setViewportSize({ width: 375, height: 812 });
