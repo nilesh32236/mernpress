@@ -5671,3 +5671,19 @@ verified in production with a temporary administrator:
   guards), API template aggregation/cleanup, admin breakdown rendering.
 - Validation: 965 unit/integration tests (API 558, admin 258, web 62, contracts
   22, block-system 65), 35 Playwright E2E tests and seven builds pass.
+
+**Deployment (per-template vitals, release `20261107T060608Z-5683b5a`):**
+- Migration `20261107120000_add_vitals_template` applied to production
+  (`All migrations have been successfully applied`); API and web restarted.
+- Sent 14 samples through the beacon (LCP post/page/home, INP archive, CLS
+  post); the table held only template kinds (`home/post/page/archive`), never
+  full paths.
+- `GET /api/admin/analytics` returned overall p75s plus `byTemplate`:
+  Home LCP 1.5 s (2), Post LCP 3 s (4) + CLS 0.15 (2), Page LCP 5 s (4),
+  Archive INP 200 ms (2). The dashboard rendered the “By template” table with
+  those four rows and no overflow at 1440 or 375.
+- Cleanup deleted the 6 vitals rows, analytics rows, the temporary
+  administrator/sessions and recent audit events, then revalidated the public
+  cache. Production is back to 1 user, 2 posts, 0 vitals/analytics rows;
+  `/`, `/admin/`, `/admin/analytics`, `/api/health` and `/posts/testcom`
+  return 200.
