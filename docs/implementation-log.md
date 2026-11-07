@@ -5713,3 +5713,8 @@ verified in production with a temporary administrator:
 - Added three baselines (64 total): Plugins list, Tags and Design (Site
   Editor) at desktop.
 - The suite passes twice in a row against the committed baselines.
+### 2026-11-07 — Mobile baselines for Dashboard, Customize and Site Editor
+
+- Added three mobile baselines (67 total) for the Dashboard, Appearance →
+  Customize and Design (Site Editor) at 375.
+- The suite passes twice in a row against the committed baselines.
