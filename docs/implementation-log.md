@@ -5873,3 +5873,10 @@ verified in production with a temporary administrator:
 - Tests: sanitizer rel hardening (add, merge, untouched schemes).
 - Validation: 975 unit/integration tests (API 561, admin 258, web 62,
   contracts 26, block-system 68), 35 Playwright E2E tests and seven builds pass.
+
+**Deployment (external rel hardening, release `20261107T101729Z-9146d40`):**
+API and web restarted; `/`, `/posts/testcom` and `/api/health` return 200.
+Production content currently has no absolute outbound links, so the live
+check is a no-regression render (homepage rel attributes are the expected
+chrome set: alternate/icon/preload/stylesheet). The render-time hardening is
+covered by sanitizer + golden + E2E tests locally.
