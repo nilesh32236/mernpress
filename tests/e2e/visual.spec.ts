@@ -344,6 +344,12 @@ test('admin visual baselines', async ({ page }) => {
     ['reading', '/admin/settings#reading', 'Reading Settings', 'Speculative loading'],
     ['pages', '/admin/pages', 'Pages', 'About'],
     ['editor', '/admin/posts/new', 'New post', 'Publish'],
+    ['users', '/admin/users', 'Users', 'Add User'],
+    ['plugins', '/admin/plugins', 'Plugins', 'Inactive'],
+    ['permalinks', '/admin/settings#permalinks', 'Permalink Settings', 'Common Settings'],
+    ['export', '/admin/tools?section=export', 'Export', 'Choose what to export'],
+    ['add-themes', '/admin/themes/new', 'Add Themes', 'Popular'],
+    ['connectors', '/admin/settings/connectors', 'Connectors', 'OpenAI'],
   ];
   for (const [name, route, heading, readyText] of mobileScreens) {
     await page.goto(`http://127.0.0.1:5173${route}`, { waitUntil: 'domcontentloaded' });

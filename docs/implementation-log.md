@@ -5768,3 +5768,11 @@ verified in production with a temporary administrator:
   actions, document pill, Add title placeholder, canvas skeleton and Post
   inspector strip.
 - The suite passes twice in a row against the committed baselines.
+
+### 2026-11-07 — Mobile baselines for Users, Plugins, Permalinks, Export, Add Themes and Connectors
+
+- Added six mobile baselines (91 total): Users, Plugins, Permalinks,
+  Export, Add Themes and Connectors at 375. Users waits on the visible
+  Add User control (the Howdy greeting is hidden at mobile width) and
+  Plugins waits on the Inactive tab (plugin names hide at mobile width).
+- The suite passes twice in a row against the committed baselines.
