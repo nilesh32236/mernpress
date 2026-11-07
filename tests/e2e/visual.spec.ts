@@ -199,6 +199,7 @@ test('admin visual baselines', async ({ page }) => {
     ['redirects', '/admin/tools/redirects', 'Redirects', 'Broken links (0 broken, 0 checked)'],
     ['dashboard', '/admin/', 'Dashboard', 'At a Glance'],
     ['editor', '/admin/posts/new', 'New post', 'Publish'],
+    ['editor-page', '/admin/pages/new', 'New page', 'Publish'],
     ['editor-edit', '/admin/posts/__EDIT_ID__/edit', 'Edit post', 'Welcome to MERNPress'],
     ['plugins', '/admin/plugins', 'Plugins', 'Auto Excerpt'],
     ['tags', '/admin/terms?taxonomy=tag', 'Tags', 'Add Tag'],

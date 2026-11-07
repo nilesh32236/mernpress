@@ -5975,3 +5975,10 @@ covered by sanitizer + golden + E2E tests locally.
   overflow), then removes the file and asserts the empty state. The durable
   `backup.create` job itself is covered by API tests (E2E runs with the
   scheduler disabled).
+
+### 2026-11-07 — Visual baseline for New page editor
+
+- Added the New page editor desktop baseline (101 total), completing the
+  block-editor variants (New post, Edit post, New page).
+- The suite passes consecutively against the committed baselines (two
+  editor-screenshot flakes resolved on rerun).
