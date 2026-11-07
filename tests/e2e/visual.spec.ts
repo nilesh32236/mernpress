@@ -196,6 +196,7 @@ test('admin visual baselines', async ({ page }) => {
     ['redirects', '/admin/tools/redirects', 'Redirects', 'Broken links (0 broken, 0 checked)'],
     ['dashboard', '/admin/', 'Dashboard', 'At a Glance'],
     ['editor', '/admin/posts/new', 'New post', 'Publish'],
+    ['editor-edit', '/admin/posts/__EDIT_ID__/edit', 'Edit post', 'Welcome to MERNPress'],
     ['plugins', '/admin/plugins', 'Plugins', 'Auto Excerpt'],
     ['tags', '/admin/terms?taxonomy=tag', 'Tags', 'Add Tag'],
     ['site-editor', '/admin/site-editor', 'Design', 'Identity'],
@@ -234,9 +235,28 @@ test('admin visual baselines', async ({ page }) => {
     ['connectors', '/admin/settings/connectors', 'Connectors'],
     ['mail-delivery', '/admin/settings#discussion', 'Discussion Settings'],
   ];
+  // Resolve the seeded demo post for the edit-editor capture.
+  const editResponse = await page.request.get(
+    `${SITE}/api/public/posts/welcome-to-mernpress?type=post`,
+  );
+  const editBody = (await editResponse.json()) as { id: string };
+  for (const entry of desktopScreens) {
+    if (entry[1].includes('__EDIT_ID__')) {
+      entry[1] = entry[1].replace('__EDIT_ID__', editBody.id);
+    }
+  }
+
   for (const [name, route, heading, readyText] of desktopScreens) {
     await page.goto(`http://127.0.0.1:5173${route}`, { waitUntil: 'domcontentloaded' });
-    await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+    if (name === 'editor-edit') {
+      // The edit screen loads async and its h1 is screen-reader-only; the
+      // Save action appears once the post is ready.
+      await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeVisible({
+        timeout: 15000,
+      });
+    } else {
+      await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+    }
     if (readyText) {
       await expect(page.getByText(readyText, { exact: false }).first()).toBeVisible();
     }

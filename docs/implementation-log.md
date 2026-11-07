@@ -5725,3 +5725,11 @@ verified in production with a temporary administrator:
   placeholder, canvas skeleton and Post inspector (Status/Publish/Slug/Author/
   Discussion/Language/Pings).
 - The suite passes twice in a row against the committed baselines.
+### 2026-11-07 — Visual baseline for the existing-post editor
+
+- Added the Edit post editor baseline (69 total), resolving the seeded
+  `welcome-to-mernpress` id at runtime (the admin edit route is
+  `/posts/:id/edit`). The capture shows the Published state, word count,
+  Publish/Slug/Author/Discussion rows and the relative last-edited text,
+  which stays under the 0.1% diff budget as hours tick.
+- The suite passes twice in a row against the committed baselines.
