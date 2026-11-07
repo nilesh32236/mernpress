@@ -443,7 +443,7 @@ describe('rendered public content (ADR 0007)', () => {
   it('returns sanitized renderedContent and a TOC alongside the raw source', async () => {
     const content =
       '<!-- wp:heading -->\n<h2>Rendered Section</h2>\n<!-- /wp:heading -->\n' +
-      '<!-- wp:paragraph -->\n<p>Body with <a href="https://example.com">a link</a>.</p>\n<!-- /wp:paragraph -->';
+      '<!-- wp:paragraph -->\n<p>Body with <a href="https://example.com" rel="external noopener nofollow">a link</a>.</p>\n<!-- /wp:paragraph -->';
     const post = await publish(await createPost({ type: 'post', title: 'Rendered', content }));
 
     const response = await app.inject({
@@ -456,7 +456,9 @@ describe('rendered public content (ADR 0007)', () => {
     expect(body.content).toBe(content);
     // …but the render path is sanitized and anchor-augmented.
     expect(body.renderedContent).toContain('<h2 id="rendered-section">Rendered Section</h2>');
-    expect(body.renderedContent).toContain('<a href="https://example.com">a link</a>');
+    expect(body.renderedContent).toContain(
+      '<a href="https://example.com" rel="external noopener nofollow">a link</a>',
+    );
     expect(body.renderedContent).not.toContain('<!--');
     expect(body.toc).toEqual([{ level: 2, id: 'rendered-section', text: 'Rendered Section' }]);
   });

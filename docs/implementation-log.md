@@ -5863,3 +5863,13 @@ verified in production with a temporary administrator:
   implemented gaps (media folders, cookie consent, multilingual, analytics)
   and the documented cache item no longer read as "not built / P2 candidate".
 - No behaviour change.
+
+### 2026-11-07 — External links get rel hardening at render time (ADR 0063)
+
+- The server sanitizer (DOMPurify `uponSanitizeElement` hook) adds
+  `rel="external noopener nofollow"` to absolute http(s) links, merging
+  existing tokens; relative/fragment/mailto/tel links are untouched.
+- Stored markup unchanged; golden fixtures updated.
+- Tests: sanitizer rel hardening (add, merge, untouched schemes).
+- Validation: 975 unit/integration tests (API 561, admin 258, web 62,
+  contracts 26, block-system 68), 35 Playwright E2E tests and seven builds pass.

@@ -224,6 +224,24 @@ interface PurifyWindow {
 function createPurify(): PurifyWindow {
   const window = new JSDOM('').window;
   const purify = createDOMPurify(window as unknown as Parameters<typeof createDOMPurify>[0]);
+  // External links get rel="external noopener nofollow" at render time
+  // (WordPress link blocks do the same for outbound URLs). Relative and
+  // mailto/tel links are untouched; existing rel tokens are preserved.
+  purify.addHook('uponSanitizeElement', (node: unknown) => {
+    const el = node as {
+      tagName?: string;
+      getAttribute?: (name: string) => string | null;
+      setAttribute?: (name: string, value: string) => void;
+    };
+    if (!el || el.tagName !== 'A' || typeof el.getAttribute !== 'function') return;
+    const href = el.getAttribute('href') ?? '';
+    if (!/^https?:\/\//i.test(href)) return;
+    const tokens = new Set((el.getAttribute('rel') ?? '').split(/\s+/).filter(Boolean));
+    tokens.add('external');
+    tokens.add('noopener');
+    tokens.add('nofollow');
+    el.setAttribute?.('rel', [...tokens].join(' '));
+  });
   purify.addHook('uponSanitizeAttribute', (node, data) => {
     if (typeof data.attrValue !== 'string') {
       return;

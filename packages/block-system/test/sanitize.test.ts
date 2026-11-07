@@ -23,7 +23,7 @@ describe('sanitizeHtml — script and event-handler payloads', () => {
     );
     expect(sanitizeHtml('<p onclick="alert(1)">hi</p>')).toBe('<p>hi</p>');
     expect(sanitizeHtml('<a href="https://example.com" onmouseover="alert(1)">x</a>')).toBe(
-      '<a href="https://example.com">x</a>',
+      '<a href="https://example.com" rel="external noopener nofollow">x</a>',
     );
   });
 
@@ -82,7 +82,7 @@ describe('sanitizeHtml — URL payloads', () => {
 
   it('keeps http/https/mailto/tel and relative URLs', () => {
     expect(sanitizeHtml('<a href="https://example.com/p">x</a>')).toBe(
-      '<a href="https://example.com/p">x</a>',
+      '<a href="https://example.com/p" rel="external noopener nofollow">x</a>',
     );
     expect(sanitizeHtml('<a href="mailto:a@example.com">x</a>')).toBe(
       '<a href="mailto:a@example.com">x</a>',
@@ -211,5 +211,24 @@ describe('sanitizeHtml — allowed MVP markup survives intact', () => {
     ).toBe(
       '<blockquote class="wp-block-quote"><p>Q</p><cite>C</cite></blockquote><pre class="wp-block-code"><code>const a = 1;</code></pre>',
     );
+  });
+});
+
+describe('sanitizeHtml — external link rel hardening', () => {
+  it('adds external noopener nofollow to absolute http(s) links', () => {
+    expect(sanitizeHtml('<a href="http://example.com/">x</a>')).toContain(
+      'rel="external noopener nofollow"',
+    );
+  });
+
+  it('merges with existing rel tokens without duplicating', () => {
+    const out = sanitizeHtml('<a href="https://example.com/" rel="sponsored noopener">x</a>');
+    expect(out).toContain('rel="sponsored noopener external nofollow"');
+  });
+
+  it('leaves relative, fragment, mailto and tel links untouched', () => {
+    expect(sanitizeHtml('<a href="/about">x</a>')).toBe('<a href="/about">x</a>');
+    expect(sanitizeHtml('<a href="#s">x</a>')).toBe('<a href="#s">x</a>');
+    expect(sanitizeHtml('<a href="mailto:a@b.c">x</a>')).toBe('<a href="mailto:a@b.c">x</a>');
   });
 });
