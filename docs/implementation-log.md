@@ -5945,3 +5945,14 @@ covered by sanitizer + golden + E2E tests locally.
 - `admin-parity.spec.ts` now seeds a completed `backup.create` job and
   asserts the history row (hook + completed) in Tools → Scheduled Actions.
   Previously only empty/pending states were covered.
+
+### 2026-11-07 — Title Case plugin (specific use case)
+
+- New `plugins/title-case` package: normalizes post/page titles to title case
+  on create/update (small words stay lowercase unless first/last, all-caps
+  acronyms preserved, SEO title untouched). WordPress has no title-casing
+  control; editors hand-fix capitalization on every post.
+- Tests: listing (4 packages), activation behaviour, deactivation restores
+  verbatim titles.
+- Validation: 976 unit/integration tests (API 562, admin 258, web 62,
+  contracts 26, block-system 68), 35 Playwright E2E tests and seven builds pass.

@@ -1,0 +1,8 @@
+{
+  "id": "title-case",
+  "name": "Title Case",
+  "version": "1.0.0",
+  "author": "MERNPress",
+  "description": "Normalizes post and page titles to title case on create and update: first letters are capitalized, small words stay lowercase unless first or last, and all-caps acronyms are preserved. The SEO title is untouched.",
+  "details": "Filters content.post.create and content.post.update; no external requests."
+}

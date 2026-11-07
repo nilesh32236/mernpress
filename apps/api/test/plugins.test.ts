@@ -45,9 +45,13 @@ describe('plugins api', () => {
       plugins: Array<{ id: string; active: boolean; name: string }>;
       counts: { all: number; active: number; inactive: number };
     };
-    expect(body.plugins).toHaveLength(3);
+    expect(body.plugins).toHaveLength(4);
     expect(body.plugins.find((plugin) => plugin.id === 'hello-mernpress')).toMatchObject({
       active: false,
+    });
+    expect(body.plugins.find((plugin) => plugin.id === 'title-case')).toMatchObject({
+      id: 'title-case',
+      name: 'Title Case',
     });
     expect(body.plugins.find((plugin) => plugin.id === 'auto-excerpt')).toMatchObject({
       active: false,
@@ -55,7 +59,7 @@ describe('plugins api', () => {
     expect(body.plugins.find((plugin) => plugin.id === 'seo-fallback')).toMatchObject({
       active: false,
     });
-    expect(body.counts).toEqual({ all: 3, active: 0, inactive: 3 });
+    expect(body.counts).toEqual({ all: 4, active: 0, inactive: 4 });
   });
 
   it('activates and deactivates a plugin and exposes its toolbar message', async () => {
@@ -194,8 +198,9 @@ describe('plugins api', () => {
     expect(body.plugins.map((plugin) => (plugin as { id: string }).id)).toEqual([
       'auto-excerpt',
       'seo-fallback',
+      'title-case',
     ]);
-    expect(body.counts).toEqual({ all: 2, active: 0, inactive: 2 });
+    expect(body.counts).toEqual({ all: 3, active: 0, inactive: 3 });
 
     const toolbar = await app.inject({
       method: 'GET',
@@ -222,19 +227,28 @@ describe('plugins api', () => {
         'auto-excerpt',
         'hello-mernpress',
         'seo-fallback',
+        'title-case',
       ]);
       expect(existsSync(path.join(pluginDir, 'hello-mernpress', 'plugin.json'))).toBe(true);
 
       await service.activate(principal, 'hello-mernpress');
       await service.deactivate(principal, 'hello-mernpress');
       const removed = await service.remove(principal, 'hello-mernpress');
-      expect(removed.plugins.map((plugin) => plugin.id)).toEqual(['auto-excerpt', 'seo-fallback']);
+      expect(removed.plugins.map((plugin) => plugin.id)).toEqual([
+        'auto-excerpt',
+        'seo-fallback',
+        'title-case',
+      ]);
       expect(existsSync(path.join(pluginDir, 'hello-mernpress'))).toBe(false);
 
       // A new service process (or a restart) must not re-seed a deleted package.
       const restarted = createPluginService({ prisma: app.database, pluginDir, seedDir });
       const after = await restarted.list(principal);
-      expect(after.plugins.map((plugin) => plugin.id)).toEqual(['auto-excerpt', 'seo-fallback']);
+      expect(after.plugins.map((plugin) => plugin.id)).toEqual([
+        'auto-excerpt',
+        'seo-fallback',
+        'title-case',
+      ]);
       const toolbar = await restarted.toolbar(principal);
       expect(toolbar).toEqual({ message: null });
     } finally {
@@ -341,6 +355,55 @@ describe('plugins api', () => {
       await service.deactivate(principal, 'seo-fallback');
       const after = await app.contentHooks.applyFilters('content.post.create', draft);
       expect(after.seoDescription).toBeNull();
+    } finally {
+      await app.contentHooks.dispose();
+      rmSync(pluginDir, { recursive: true, force: true });
+    }
+  });
+
+  it('normalizes titles to title case on create and update', async () => {
+    const pluginDir = mkdtempSync(path.join(tmpdir(), 'mernpress-title-case-plugin-'));
+    const seedDir = fileURLToPath(new URL('../../../plugins', import.meta.url));
+    const principal = { userId: '00000000-0000-7000-8000-000000000000', role: 'administrator' };
+    try {
+      const service = createPluginService({
+        prisma: app.database,
+        pluginDir,
+        seedDir,
+        hooks: app.contentHooks,
+      });
+      await service.activate(principal, 'title-case');
+      const created = await app.contentHooks.applyFilters('content.post.create', {
+        type: 'post' as const,
+        title: 'a guide to SEO and MERNPress',
+        slug: 'guide',
+        excerpt: null,
+        content: '',
+        seoTitle: 'custom seo title',
+        seoDescription: null,
+        canonicalUrl: null,
+        robots: null,
+        ogTitle: null,
+        ogDescription: null,
+      });
+      expect(created.title).toBe('A Guide to SEO and Mernpress');
+      expect(created.seoTitle).toBe('custom seo title');
+
+      await service.deactivate(principal, 'title-case');
+      const after = await app.contentHooks.applyFilters('content.post.create', {
+        type: 'post' as const,
+        title: 'a guide to SEO',
+        slug: 'guide',
+        excerpt: null,
+        content: '',
+        seoTitle: null,
+        seoDescription: null,
+        canonicalUrl: null,
+        robots: null,
+        ogTitle: null,
+        ogDescription: null,
+      });
+      expect(after.title).toBe('a guide to SEO');
     } finally {
       await app.contentHooks.dispose();
       rmSync(pluginDir, { recursive: true, force: true });
