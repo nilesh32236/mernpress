@@ -159,6 +159,7 @@ export function createExternalLinkFetcher(options: ExternalFetcherOptions = {}) 
       const headers: Record<string, string> = {
         'User-Agent': 'MERNPress linkcheck/1.0',
         Accept: '*/*',
+        Host: url.port ? `${hostname}:${url.port}` : hostname,
       };
       let outcome: { status: number; location: string | null };
       try {
