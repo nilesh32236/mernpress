@@ -5733,3 +5733,10 @@ verified in production with a temporary administrator:
   Publish/Slug/Author/Discussion rows and the relative last-edited text,
   which stays under the 0.1% diff budget as hours tick.
 - The suite passes twice in a row against the committed baselines.
+### 2026-11-07 — Mobile baselines for Backups, Jobs, Redirects, Updates and Fonts
+
+- Added five mobile baselines (74 total) for Tools → Backups and Scheduled
+  Actions, Redirects, Updates and Fonts at 375.
+- Jobs mobile keeps Hook/Status/Actions plus the filter (the earlier
+  mobile fix); no new layout defects appeared.
+- The suite passes twice in a row against the committed baselines.
