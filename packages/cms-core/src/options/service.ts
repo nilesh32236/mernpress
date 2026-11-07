@@ -305,6 +305,14 @@ const SPECS: Record<string, OptionSpec> = {
       return value;
     },
   },
+  external_link_check: {
+    group: 'reading',
+    defaultValue: false,
+    validate: (value) => {
+      if (typeof value !== 'boolean') throwValidation('external_link_check must be a boolean.');
+      return value;
+    },
+  },
   rss_use_excerpt: {
     group: 'reading',
     defaultValue: false,

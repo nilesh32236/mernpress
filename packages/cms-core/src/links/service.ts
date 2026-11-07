@@ -8,6 +8,11 @@ import type { DatabaseClient } from '@mernpress/database';
 import { requireCapability } from '../auth/capabilities.js';
 import { ContentError } from '../content/errors.js';
 import type { Principal } from '../content/types.js';
+import {
+  createExternalLinkFetcher,
+  ExternalFetchError,
+  type ExternalLinkFetcher,
+} from './external-fetch.js';
 
 /**
  * Broken-link detection (ADR 0058).
@@ -70,6 +75,8 @@ export interface LinkCheckServiceOptions {
   prisma: DatabaseClient;
   logger?: ((message: string, meta?: Record<string, unknown>) => void) | undefined;
   now?: (() => Date) | undefined;
+  /** Injectable for tests; the production default performs pinned fetches. */
+  externalFetcher?: ExternalLinkFetcher | undefined;
 }
 
 const MAX_URLS_PER_POST = 1000;
@@ -137,6 +144,7 @@ function normalizePathname(pathname: string): string {
 }
 
 interface CheckContext {
+  externalCheck: boolean;
   postSlugs: Map<string, Set<string>>;
   postIds: Set<string>;
   pageSlugs: Set<string>;
@@ -369,7 +377,9 @@ export function createLinkCheckService({
   prisma,
   logger,
   now = () => new Date(),
+  externalFetcher,
 }: LinkCheckServiceOptions) {
+  const fetcher = externalFetcher ?? createExternalLinkFetcher();
   async function loadContext(): Promise<CheckContext> {
     const [posts, terms, users, redirects, media, options] = await Promise.all([
       prisma.post.findMany({
@@ -390,6 +400,7 @@ export function createLinkCheckService({
               'category_base',
               'tag_base',
               'site_languages',
+              'external_link_check',
             ],
           },
         },
@@ -475,6 +486,7 @@ export function createLinkCheckService({
     }
 
     return {
+      externalCheck: parse('external_link_check') === true,
       postSlugs,
       postIds,
       pageSlugs,
@@ -557,6 +569,7 @@ export function createLinkCheckService({
     let broken = 0;
     let external = 0;
     let lastId: string | null = null;
+    let externalBudget = 100;
     const checkedAt = now();
 
     for (const row of rows) {
@@ -564,8 +577,42 @@ export function createLinkCheckService({
       const urls = extractLinks(row.content);
       const seenForSource = new Set<string>();
       for (const url of urls) {
-        const { outcome, ignore } = resolveUrl(url, context);
+        const resolved = resolveUrl(url, context);
+        let { outcome } = resolved;
+        const ignore = resolved.ignore;
         if (ignore) continue;
+        if (context.externalCheck && outcome.status === 'external' && externalBudget > 0) {
+          externalBudget -= 1;
+          try {
+            const result = await fetcher.fetchExternal(url);
+            const ok = result.httpStatus >= 200 && result.httpStatus < 400;
+            outcome = {
+              kind: 'external',
+              status: ok ? 'ok' : 'broken',
+              httpStatus: result.httpStatus,
+              redirectTo: null,
+              normalizedPath: null,
+            };
+          } catch (error) {
+            if (error instanceof ExternalFetchError && error.reason === 'blocked') {
+              outcome = {
+                kind: 'external',
+                status: 'broken',
+                httpStatus: null,
+                redirectTo: null,
+                normalizedPath: null,
+              };
+            } else {
+              outcome = {
+                kind: 'external',
+                status: 'broken',
+                httpStatus: null,
+                redirectTo: null,
+                normalizedPath: null,
+              };
+            }
+          }
+        }
         seenForSource.add(url);
         links += 1;
         if (outcome.status === 'broken') broken += 1;

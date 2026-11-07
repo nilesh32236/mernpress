@@ -188,6 +188,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
   const [postsPerRss, setPostsPerRss] = useState('10');
   const [rssUseExcerpt, setRssUseExcerpt] = useState<'full' | 'excerpt'>('full');
   const [speculationMode, setSpeculationMode] = useState<'off' | 'prefetch' | 'prerender'>('off');
+  const [externalLinkCheck, setExternalLinkCheck] = useState(false);
   const [blogPublic, setBlogPublic] = useState(true);
   const [, setReadingDirty] = useState(false);
 
@@ -263,6 +264,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
             ? values.speculation_mode
             : 'off',
         );
+        setExternalLinkCheck(values.external_link_check === true);
         setReadingDirty(false);
       } else {
         setDefaultCategory(textValue(values.default_post_category));
@@ -379,6 +381,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
         posts_page_id: postsPageId.trim() === '' ? null : postsPageId.trim(),
         posts_per_page: Number(postsPerPage),
         speculation_mode: speculationMode,
+        external_link_check: externalLinkCheck,
         posts_per_rss: Number(postsPerRss) || 10,
         rss_use_excerpt: rssUseExcerpt === 'excerpt',
         blog_public: blogPublic,
@@ -1034,6 +1037,26 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
                   </a>
                 </p>
               </div>
+            </div>
+            <div className="field">
+              <label htmlFor="external_link_check">
+                <input
+                  id="external_link_check"
+                  type="checkbox"
+                  checked={externalLinkCheck}
+                  onChange={(event) => {
+                    setExternalLinkCheck(event.target.checked);
+                    setReadingDirty(true);
+                  }}
+                  disabled={saving.reading}
+                />{' '}
+                Check external links (outbound)
+              </label>
+              <p className="field-help">
+                Off by default. When on, the link checker fetches external URLs with an SSRF guard
+                (https only, public DNS answers only, pinned connection, 5s timeout). Domains that
+                resolve privately are never fetched.
+              </p>
             </div>
             <div className="field">
               <label htmlFor="speculation_mode">Speculative loading</label>

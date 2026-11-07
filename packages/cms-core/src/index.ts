@@ -317,6 +317,12 @@ export {
 
 // ---- Broken-link detection (Tools → Redirects, ADR 0058) ----
 export {
+  createExternalLinkFetcher,
+  ExternalFetchError,
+  type ExternalLinkFetcher,
+  type ExternalFetcherOptions,
+} from './links/external-fetch.js';
+export {
   createLinkCheckService,
   extractLinks,
   type LinkCheckDto,

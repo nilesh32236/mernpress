@@ -5813,3 +5813,18 @@ verified in production with a temporary administrator:
   budgets and a per-scan cap exist.
 - Validation: 969 unit/integration tests (API 558, admin 258, web 62,
   contracts 26, block-system 65), 35 Playwright E2E tests and seven builds pass.
+
+### 2026-11-07 — Gated external link fetcher with DNS pinning (ADR 0062)
+
+- Reading toggle `external_link_check` (boolean, default off, validated) with
+  Settings → Reading checkbox and help text.
+- `packages/cms-core/src/links/external-fetch.ts`: per-hop guard re-check,
+  single DNS resolve (every answer public), pinned connection via custom
+  `lookup` with SNI preserved, 5s timeout, ≤3 redirects, HEAD + Range GET
+  fallback; only the final status is stored.
+- The scan fetches at most 100 external URLs per batch when the toggle is on
+  (2xx–3xx → ok, else broken); default off keeps ADR 0058 behaviour.
+- Tests: fetcher redirect chain, private-resolution/port blocking, redirect
+  cap (injectable, no network).
+- Validation: 972 unit/integration tests (API 561, admin 258, web 62,
+  contracts 26, block-system 65), 35 Playwright E2E tests and seven builds pass.
