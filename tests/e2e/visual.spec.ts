@@ -247,6 +247,17 @@ test('admin visual baselines', async ({ page }) => {
   }
 
   for (const [name, route, heading, readyText] of desktopScreens) {
+    // The public captures in this file intentionally hit the 404 route, which
+    // the site logs. Clear that log so the Redirects empty state is stable
+    // regardless of suite order.
+    if (name === 'redirects') {
+      const testDatabaseUrl = process.env['TEST_DATABASE_URL'];
+      if (testDatabaseUrl) {
+        execFileSync('psql', [testDatabaseUrl, '-c', 'DELETE FROM not_found_entries;'], {
+          stdio: 'pipe',
+        });
+      }
+    }
     await page.goto(`http://127.0.0.1:5173${route}`, { waitUntil: 'domcontentloaded' });
     if (name === 'editor-edit') {
       // The edit screen loads async and its h1 is screen-reader-only; the
@@ -277,7 +288,18 @@ test('admin visual baselines', async ({ page }) => {
 
   // Analytics is covered by element baselines, not a full page: the daily
   // chart shows a rolling 7-day window whose labels change every day, while
-  // the vitals empty state is stable.
+  // the vitals empty state is stable. Public captures above record real
+  // beacon samples now that the E2E origins allow them, so clear vitals first.
+  {
+    const testDatabaseUrl = process.env['TEST_DATABASE_URL'];
+    if (testDatabaseUrl) {
+      execFileSync(
+        'psql',
+        [testDatabaseUrl, '-c', 'DELETE FROM web_vitals_daily; DELETE FROM analytics_daily;'],
+        { stdio: 'pipe' },
+      );
+    }
+  }
   await page.goto('http://127.0.0.1:5173/admin/analytics', { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: 'Core Web Vitals (field data)' })).toBeVisible();
   await expect(page.getByText(/No field samples in this period/)).toBeVisible();
