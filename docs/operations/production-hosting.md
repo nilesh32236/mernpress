@@ -423,3 +423,66 @@ The API unit declares `ReadWritePaths=/opt/mernpress/backups`. Restore is a CLI
 procedure: [backup-restore.md](backup-restore.md). The archives contain password
 hashes and media, so keep the directory `0700`/files `0600` and copy backups to
 encrypted storage off the server.
+
+## Page and object cache (deployment guide)
+
+Status: **documented 2026-11-07**. MERNPress ships its own cache layers;
+no Redis/Memcached object cache is required for the deployed single-host
+topology. This section records what exists, what is recommended at larger
+scale, and how to verify it — it closes the "Page/object cache integration"
+roadmap item as a deployment concern (WordPress itself leaves caching to
+plugins such as LiteSpeed Cache, 7M+ installs).
+
+### What ships today
+
+| Layer | Behaviour | Invalidation |
+| --- | --- | --- |
+| Next.js `public-content` tag | Public home/blog/single/page/archive/search HTML is cached under one tag | The API calls the secret-protected `POST /api/revalidate` endpoint after content changes (ADR 0056), so published edits are visible on the next request — no repository-wide purge needed |
+| Next `<Link prefetch="auto">` | Viewport-visible links prefetch in production | Cache-tag invalidation above keeps prefetches fresh |
+| Gated speculation rules | `prefetch`/`prerender` hints only when the field-data gate passes (ADR 0060) | Rules are computed per request from `speculation_mode` + 28-day vitals |
+| Caddy static | `/admin` hashed assets are immutable and served from disk | New release = new hashes; no purge needed |
+| API responses | No per-request object cache; Postgres is the store; `GET /api/public/vitals-summary` is `no-store` | N/A |
+| Media derivatives | WebP/AVIF derivatives are generated at upload/regeneration and served as files | Overwrite on regenerate |
+
+No Redis/Memcached client is configured in the app. Adding one without a
+measured need would add a failure domain (stale objects, connection
+pooling, Docker networking) for no user-visible gain on a single host.
+
+### When to add an object cache or CDN
+
+Add a layer only when field vitals show it is needed:
+
+1. **Field data first.** Dashboard → Analytics → Core Web Vitals (by template)
+   shows whether LCP/TTFB p75 is `needs-improvement`/`poor` on a template.
+   Do not add cache to fix a content or image problem.
+2. **Edge CDN (preferred first step).** Put Cloudflare (free tier) in front of
+   `mernpress.duckdns.org` and cache HTML for anonymous visitors only:
+   - Bypass cache for `/admin*`, `/api/*`, `/preview/*` and any request with
+     `Cookie` or `Authorization` headers.
+   - Cache `text/html` for `GET /` and public post/page paths with a short
+     TTL (60s) and let the app's webhook be the primary invalidation; a
+     "Purge everything" is the emergency lever, not the workflow.
+   - Keep `MERNPRESS_SITE_URL` on the canonical host so origin redirects
+     never leak the CDN hostname into canonical/OG URLs.
+3. **Origin page cache (alternative).** If a CDN is not acceptable, run the
+   Caddy cache plugin (`caddy-cache`) in front of Next only (not the API),
+   with the same bypass rules and 60s TTL. Never cache `/api/*` admin
+   responses.
+4. **Object cache (last).** Only if Postgres CPU saturates under read load:
+   add Redis for rate-limit/session-adjacent reads behind an env flag, with
+   cache-aside reads and explicit invalidation on write. Session and CSRF
+   tokens stay in Postgres (hashed, per the security rules) — do not move
+   them to a cache that logs payloads.
+
+### Verification
+
+```bash
+# Cache is serving fresh content after an edit (no stale snapshot):
+curl -s https://mernpress.duckdns.org/posts/testcom | grep -c speculationrules
+# Field vitals after the change (Dashboard → Analytics, By template):
+curl -s https://mernpress.duckdns.org/api/public/vitals-summary
+```
+
+A new deployment must not bake stale URLs into the cache: release builds set
+`MERNPRESS_SITE_URL` and `MERNPRESS_API_URL` at build time (see Release
+above), and the E2E suite asserts the same-origin proxy behaviour.

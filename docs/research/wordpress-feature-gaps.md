@@ -77,7 +77,7 @@ project does not claim to know the whole market.
 | P2 | Cookie consent manager | 1M+ installs; privacy tooling already exists | **Implemented now** (ADR 0050): local banner/config and `ConsentGate` |
 | P2 | Multilingual content model | 900k+ installs; Gutenberg phase 4 | **Implemented now** (ADR 0051–0052, D-100–D-105): languages/translation groups, prefixed URLs, hreflang, sitemap `xhtml:link` alternates, per-language menus and component/theme strings, date locales and 404 copy. No language negotiation or machine translation |
 | P2 | Privacy-first analytics | 5M+ analytics installs; self-hosted counters avoid third-party embeds | **Implemented now** (ADR 0049, D-107): local aggregate beacon, Dashboard → Analytics, configurable retention sweep + CLI. No unique visitors/sessions/campaigns (privacy choice) |
-| P2 | Page/object cache integration | 7M+ cache plugin installs; operational rather than editorial | Deferred to deployment docs |
+| P2 | Page/object cache integration | 7M+ cache plugin installs; operational rather than editorial | **Documented** (production-hosting.md): tagged Next cache + webhook invalidation shipped; CDN/object-cache guidance with bypass rules and field-data triggers |
 | — | Forms, e-commerce, CRM, marketplaces | Explicitly out of scope in AGENTS §12 | Not built |
 | — | SMTP credentials | Owner-only secret | Blocked on the owner |
 | — | Firewall/malware scanning | Operator boundary (threat model) | Not built |

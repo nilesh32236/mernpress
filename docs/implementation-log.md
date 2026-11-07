@@ -5846,3 +5846,13 @@ verified in production with a temporary administrator:
   events, then revalidated the public cache. Production is back to 1 user,
   2 posts, 0 link checks; `/`, `/admin/tools/redirects`, `/api/health`
   return 200.
+
+### 2026-11-07 — Page/object cache deployment guide
+
+- Documented the shipped cache layers (tagged `public-content` Next cache +
+  API webhook invalidation, Caddy static, no API object cache) and the
+  recommended CDN/object-cache path with bypass rules (never cache
+  `/admin`, `/api`, `/preview`, cookies or auth) and field-data triggers
+  (Analytics → Core Web Vitals by template).
+- Closes the "Page/object cache integration" roadmap item as a deployment
+  concern; no runtime change.
