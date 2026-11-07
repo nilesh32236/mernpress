@@ -5696,3 +5696,8 @@ verified in production with a temporary administrator:
 - Dashboard uses the pinned demo dates and the scheduler-disabled E2E state,
   so At a Glance, Activity and Site Health cards are stable.
 - The suite passes twice in a row against the committed baselines.
+### 2026-11-07 — Visual baselines for Profile, Personal Data, Writing and Permalinks
+
+- Added six baselines (55 total): Profile at desktop and mobile, Export and
+  Erase Personal Data, Writing and Permalinks at desktop.
+- The suite passes twice in a row against the committed baselines.
