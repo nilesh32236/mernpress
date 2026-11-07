@@ -604,6 +604,27 @@ test('Analytics, Languages, Backups and the Media folder manager keep the contro
     { stdio: 'pipe' },
   );
 
+  // Populated job history: a completed backup job renders in Scheduled
+  // Actions with its hook, status and attempts. (Empty state is covered
+  // elsewhere.)
+  execFileSync(
+    'psql',
+    [
+      testDatabaseUrl,
+      '-c',
+      "INSERT INTO jobs (id, type, payload, status, priority, attempts, max_attempts, scheduled_at, completed_at, created_at, updated_at) VALUES (gen_random_uuid(), 'backup.create', '{}', 'COMPLETED', 0, 1, 3, now() - interval '1 day', now() - interval '1 day', now() - interval '1 day', now() - interval '1 day');",
+    ],
+    { stdio: 'pipe' },
+  );
+  await page.goto('http://127.0.0.1:5173/admin/tools/jobs');
+  await expect(page.getByRole('heading', { name: 'Scheduled Actions' })).toBeVisible();
+  const jobRow = page.locator('.jobs-table tbody tr', { hasText: 'backup.create' }).first();
+  await expect(jobRow).toBeVisible();
+  await expect(jobRow).toContainText('completed');
+  execFileSync('psql', [testDatabaseUrl, '-c', "DELETE FROM jobs WHERE type = 'backup.create';"], {
+    stdio: 'pipe',
+  });
+
   // Mobile pass for the same four screens: no horizontal overflow, and the
   // media folder controls stay on the 32px touch target.
   await page.setViewportSize({ width: 375, height: 812 });

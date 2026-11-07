@@ -5939,3 +5939,9 @@ covered by sanitizer + golden + E2E tests locally.
 - Cleanup restored `active_theme` to `mernpress`, deleted the temporary
   administrator/sessions and recent audit events, and revalidated the public
   cache. Production is back to 1 user, 2 posts; `/` and `/api/health` return 200.
+
+### 2026-11-07 — Populated Scheduled Actions history contract
+
+- `admin-parity.spec.ts` now seeds a completed `backup.create` job and
+  asserts the history row (hook + completed) in Tools → Scheduled Actions.
+  Previously only empty/pending states were covered.
