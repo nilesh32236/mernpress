@@ -5587,3 +5587,17 @@ administrator and public routes:
   on test order. Analytics is intentionally left to DOM assertions because its
   rolling 7-day labels change daily.
 - The suite passes twice in a row against the committed baselines.
+### 2026-11-07 — Speculative prerender evaluated; Analytics vitals baseline
+
+- Reviewed the field CWV data (production: 1 LCP sample, 1 page view) against
+  web.dev guidance (28-day window, many samples for a reliable p75). With
+  Next already prefetching in production (`auto`) and the tagged cache making
+  navigations fresh, prerendering would multiply renders for ~1 visitor and
+  risk stale snapshots, so it is **deferred** in ADR 0059 with explicit
+  revisit triggers (100+ samples/metric over 28 days AND LCP/INP p75
+  needs-improvement on a high-traffic template). No code or setting shipped.
+- Added an Analytics element baseline for the Core Web Vitals empty state
+  (invariants hold without a daily-rolling full-page capture). The full-page
+  chart remains covered by DOM assertions in `admin-parity.spec.ts`.
+- Validation: 955 unit/integration tests (API 556, admin 258, web 59, contracts
+  17, block-system 65), 34 Playwright E2E tests and seven builds pass.

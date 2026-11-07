@@ -300,7 +300,7 @@ disabled, the caret hidden, fonts awaited and images settled first.
 | Admin desktop | Posts, Pages, Media, Comments, Users, Settings, Tools, Backups, Scheduled Actions, Redirects, Themes, Add Plugins, Add User, Connectors, Mail delivery |
 | Admin mobile | Posts, Media, Comments, Tools, Themes, Add Plugins, Add User |
 
-34 baselines in total. The admin additions were chosen for deterministic state: the spec pins demo timestamps and the `visual_admin` account, and clears `jobs`, redirects, 404s, link checks and media from unrelated suites before capturing, so empty-state pages (media/comments/backups/jobs/redirects) are stable regardless of test order. The diff budget is `maxDiffPixelRatio: 0.001`
+35 baselines in total. Analytics is represented by a stable element baseline for the Core Web Vitals panel instead of a full-page capture, because its daily chart shows a rolling 7-day window whose labels change daily. The admin additions were chosen for deterministic state: the spec pins demo timestamps and the `visual_admin` account, and clears `jobs`, redirects, 404s, link checks and media from unrelated suites before capturing, so empty-state pages (media/comments/backups/jobs/redirects) are stable regardless of test order. The diff budget is `maxDiffPixelRatio: 0.001`
 (0.1% of the viewport) after an earlier 1% budget silently tolerated two real
 changes: the Next dev indicator badge and a dangling “Written by ·” label are
 each smaller than 1% of the frame. `settle()` also injects

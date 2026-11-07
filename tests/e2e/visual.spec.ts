@@ -79,6 +79,8 @@ test.beforeAll(() => {
       '-c',
       `UPDATE users SET created_at = '2026-11-06T12:00:00Z', updated_at = '2026-11-06T12:00:00Z' WHERE username = '${adminUsername}';
        DELETE FROM link_checks;
+       DELETE FROM web_vitals_daily;
+       DELETE FROM analytics_daily;
        DELETE FROM jobs;
        DELETE FROM redirects;
        DELETE FROM not_found_entries;
@@ -218,6 +220,22 @@ test('admin visual baselines', async ({ page }) => {
       maxDiffPixelRatio: 0.001,
     });
   }
+
+  // Analytics is covered by element baselines, not a full page: the daily
+  // chart shows a rolling 7-day window whose labels change every day, while
+  // the vitals empty state is stable.
+  await page.goto('http://127.0.0.1:5173/admin/analytics', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('heading', { name: 'Core Web Vitals (field data)' })).toBeVisible();
+  await expect(page.getByText(/No field samples in this period/)).toBeVisible();
+  await settle(page);
+  await expect(page.locator('[aria-labelledby="analytics-vitals-heading"]')).toHaveScreenshot(
+    'analytics-vitals-desktop.png',
+    {
+      animations: 'disabled',
+      caret: 'hide',
+      maxDiffPixelRatio: 0.001,
+    },
+  );
 
   await page.setViewportSize({ width: 375, height: 812 });
   for (const [name, route, heading] of [

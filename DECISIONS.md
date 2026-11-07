@@ -194,6 +194,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-124 | 2026-11-06 | Broken-link detection: published posts/pages are crawled in batches; internal links resolve against slugs (permalink pattern), terms, authors, redirects and media without HTTP, external links are stored unchecked and absolute same-host URLs count as internal. Results land in `link_checks`, with a durable `linkcheck.scan` job (manage_options, 409 on duplicate), list/dismiss API and a Tools → Redirects panel with Check now, Scheduled Actions link, Add redirect and Dismiss. No outbound fetch of authored URLs (SSRF policy); menus/comments/settings are out of scope. | accepted | [ADR 0058](docs/adr/0058-broken-link-detection.md) |
 
+| D-125 | 2026-11-07 | Speculative prerender evaluated with field CWV data (production: 1 sample) and deferred: keep Next prefetch=auto; no speculation rules or settings UI until 100+ samples per metric over 28 days AND LCP/INP p75 is needs-improvement on a high-traffic template, then prerender the next likely post link only (same-origin, exclude logged-in/DNT). | accepted | [ADR 0059](docs/adr/0059-speculative-prerender-evaluation.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.
