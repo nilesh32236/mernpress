@@ -5880,3 +5880,10 @@ Production content currently has no absolute outbound links, so the live
 check is a no-regression render (homepage rel attributes are the expected
 chrome set: alternate/icon/preload/stylesheet). The render-time hardening is
 covered by sanitizer + golden + E2E tests locally.
+
+### 2026-11-07 — Populated Media Library DOM contract
+
+- `admin-parity.spec.ts` now inserts one media row (`parity-hero`) and
+  asserts the populated state: grid tile alt text, list-view file name
+  (`parity-hero.png`) and no horizontal overflow. Previously only the empty
+  ("No media yet") and folder states were covered.

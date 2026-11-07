@@ -435,6 +435,36 @@ test('Analytics, Languages, Backups and the Media folder manager keep the contro
   expect(media.actionsWrap).toBe('wrap');
   expect(media.toolbarWrap).toBe('wrap');
 
+  // Populated media state: one row renders in the list with its file name,
+  // checkbox and date. The file itself is not fetched for the list contract.
+  execFileSync(
+    'psql',
+    [
+      testDatabaseUrl,
+      '-c',
+      `INSERT INTO media_items (id, file_name, original_name, mime_type, size_bytes, width, height, alt_text, caption, description, storage_path, derivatives, created_at, updated_at)
+       VALUES (gen_random_uuid(), 'parity-hero.webp', 'parity-hero.png', 'image/png', 12345, 800, 600, 'Parity hero', '', '', '2026/11/parity-hero.webp', '{"300": "2026/11/parity-hero-300.webp"}'::jsonb, now() - interval '3 days', now() - interval '3 days')
+       RETURNING id;`,
+    ],
+    { stdio: 'pipe' },
+  );
+  await page.goto('http://127.0.0.1:5173/admin/media');
+  // Grid view shows the item as a tile (alt text); list view shows the file
+  // name. Both surfaces prove the row rendered.
+  await expect(page.locator('img[alt="Parity hero"]').first()).toBeVisible();
+  await page.getByRole('button', { name: /list view/i }).click();
+  await expect(page.getByText('parity-hero.png').first()).toBeVisible();
+  const populated = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    innerWidth: window.innerWidth,
+  }));
+  expect(populated.scrollWidth).toBeLessThanOrEqual(populated.innerWidth);
+  execFileSync(
+    'psql',
+    [testDatabaseUrl, '-c', "DELETE FROM media_items WHERE file_name = 'parity-hero.webp';"],
+    { stdio: 'pipe' },
+  );
+
   // Mobile pass for the same four screens: no horizontal overflow, and the
   // media folder controls stay on the 32px touch target.
   await page.setViewportSize({ width: 375, height: 812 });
