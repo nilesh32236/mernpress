@@ -5791,3 +5791,9 @@ verified in production with a temporary administrator:
   (not Publish) and hides the document pill, so the capture waits on Save
   and skips the title ready-text.
 - The suite passes twice in a row against the committed baselines.
+
+### 2026-11-07 — Public baselines for Category, Tag and Author archives
+
+- Added six public baselines (100 total): Category (News), Tag (Demo) and
+  Author (visual_admin) at desktop and mobile.
+- The suite passes twice in a row against the committed baselines.

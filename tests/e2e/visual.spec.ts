@@ -151,6 +151,9 @@ const publicScreens: Array<[string, string, string | RegExp]> = [
   ['search', '/search?q=mernpress', /Search results for/],
   ['about', '/about', 'About'],
   ['404', '/public-visual-missing', 'Page not found'],
+  ['category', '/category/news', 'News'],
+  ['tag', '/tag/demo', 'Demo'],
+  ['author', '/author/visual_admin', 'visual_admin'],
 ];
 
 test('public visual baselines', async ({ page }) => {
