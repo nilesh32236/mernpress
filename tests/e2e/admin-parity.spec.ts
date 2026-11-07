@@ -625,6 +625,37 @@ test('Analytics, Languages, Backups and the Media folder manager keep the contro
     stdio: 'pipe',
   });
 
+  // Populated backups state: one archive file renders in Stored backups.
+  // (The durable backup.create job is covered by API tests; here we seed
+  // the file the list reads.)
+  const backupDir = path.join(repoRoot, '.data', 'backups');
+  await import('node:fs').then((fs) => fs.mkdirSync(backupDir, { recursive: true }));
+  const backupName = 'mernpress-backup-20261107T000000Z.tar.gz';
+  await import('node:fs').then((fs) =>
+    fs.writeFileSync(path.join(backupDir, backupName), 'parity'),
+  );
+  await page.goto('http://127.0.0.1:5173/admin/tools/backups');
+  await expect(page.getByRole('heading', { name: /Stored backups \(1\)/ })).toBeVisible();
+  await expect(page.getByText(backupName).first()).toBeVisible();
+  const backupsPopulated = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    innerWidth: window.innerWidth,
+    rows: document.querySelectorAll('.backups-table tbody tr').length,
+  }));
+  expect(backupsPopulated.rows).toBe(1);
+  expect(backupsPopulated.scrollWidth).toBeLessThanOrEqual(backupsPopulated.innerWidth);
+  await page.getByRole('button', { name: 'Delete', exact: true }).click();
+  await page.waitForTimeout(1000);
+  await import('node:fs').then((fs) => {
+    try {
+      fs.rmSync(path.join(backupDir, backupName), { force: true });
+    } catch {
+      // Ignore missing file.
+    }
+  });
+  await page.reload();
+  await expect(page.getByRole('heading', { name: /Stored backups \(0\)/ })).toBeVisible();
+
   // Mobile pass for the same four screens: no horizontal overflow, and the
   // media folder controls stay on the 32px touch target.
   await page.setViewportSize({ width: 375, height: 812 });

@@ -5967,3 +5967,11 @@ covered by sanitizer + golden + E2E tests locally.
 - Cleanup removed the temporary administrator/sessions and recent audit
   events and revalidated the public cache. Production: 1 user, 2 posts;
   `/`, `/api/health` return 200.
+
+### 2026-11-07 — Populated Backups DOM contract
+
+- `admin-parity.spec.ts` now seeds one archive file in the backup directory
+  and asserts the populated Stored backups table (file name, one row, no
+  overflow), then removes the file and asserts the empty state. The durable
+  `backup.create` job itself is covered by API tests (E2E runs with the
+  scheduler disabled).
