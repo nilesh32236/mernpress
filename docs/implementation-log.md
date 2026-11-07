@@ -5783,3 +5783,11 @@ verified in production with a temporary administrator:
   at 375, waiting on the Add Data Export/Erasure Request headings.
 - The suite passes consecutively against the committed baselines (one
   site-editor desktop capture flaked once at 1% then passed twice).
+
+### 2026-11-07 — Mobile baseline for the Edit post editor
+
+- Added the Edit post editor mobile baseline (94 total) at 375, resolving
+  the seeded demo post id at runtime. The mobile edit screen shows Save
+  (not Publish) and hides the document pill, so the capture waits on Save
+  and skips the title ready-text.
+- The suite passes twice in a row against the committed baselines.

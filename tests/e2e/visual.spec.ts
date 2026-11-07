@@ -344,6 +344,7 @@ test('admin visual baselines', async ({ page }) => {
     ['reading', '/admin/settings#reading', 'Reading Settings', 'Speculative loading'],
     ['pages', '/admin/pages', 'Pages', 'About'],
     ['editor', '/admin/posts/new', 'New post', 'Publish'],
+    ['editor-edit', '/admin/posts/__EDIT_ID__/edit', 'Edit post', 'Welcome to MERNPress'],
     ['users', '/admin/users', 'Users', 'Add User'],
     ['plugins', '/admin/plugins', 'Plugins', 'Inactive'],
     ['permalinks', '/admin/settings#permalinks', 'Permalink Settings', 'Common Settings'],
@@ -363,10 +364,21 @@ test('admin visual baselines', async ({ page }) => {
       'Add Data Erasure Request',
     ],
   ];
+  for (const mobileEntry of mobileScreens) {
+    if (mobileEntry[1].includes('__EDIT_ID__')) {
+      mobileEntry[1] = mobileEntry[1].replace('__EDIT_ID__', editBody.id);
+    }
+  }
   for (const [name, route, heading, readyText] of mobileScreens) {
     await page.goto(`http://127.0.0.1:5173${route}`, { waitUntil: 'domcontentloaded' });
-    await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
-    if (readyText) {
+    if (name === 'editor-edit') {
+      await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeVisible({
+        timeout: 15000,
+      });
+    } else {
+      await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+    }
+    if (readyText && name !== 'editor-edit') {
       await expect(page.getByText(readyText, { exact: false }).first()).toBeVisible();
     }
     await settle(page);
