@@ -5551,3 +5551,26 @@ administrator and public routes:
 - Docs: ADR 0058, D-124, parity matrix, research roadmap.
 - Validation: 954 unit/integration tests (API 556, admin 258, web 59, contracts
   17, block-system 65), 34 Playwright E2E tests and seven builds pass.
+
+**Deployment (broken-link detection, release `20261107T044347Z-d88b2f4`):**
+- Migration `20261106220000_add_link_checks` applied to production
+  (`All migrations have been successfully applied`), then the API and web
+  services were restarted; `/`, `/admin/` and `/api/health` returned 200.
+- With a temporary administrator, published `Link Probe 1794026745815` with
+  `/posts/testcom` (ok), `/missing-probe-link` (broken), `/old-probe`
+  (redirect to `/posts/testcom`) and an external URL.
+- Tools → Redirects initially showed “Broken links (0 broken, 0 checked)”.
+  **Check links now** showed “Link check queued…”, the job badge `Job pending ·
+  attempts 0/2`, and a second POST returned `409 LINK_CHECK_IN_PROGRESS`.
+- The worker completed within one poll interval and the panel showed “Broken
+  links (1 broken, 4 checked)” with one broken (404), one redirect (301 to
+  `/posts/testcom`), one ok and one external (not fetched). The API summary
+  matched: 4 total, 1 ok, 1 broken, 1 redirect, 1 external, 1 source, with a
+  `lastCheckedAt` timestamp. At 375px the heading and rows stayed at
+  scrollWidth = innerWidth = 375.
+- Cleanup deleted the probe post, its 4 link checks, the `/old-probe` redirect,
+  analytics rows, the temporary administrator/sessions and recent audit events
+  via SQL. Production is back to 1 user, 2 posts, 0 link checks, 0 media and 0
+  analytics rows; the pre-existing 404 traffic log is retained. `/`,
+  `/admin/`, `/admin/tools/redirects`, `/api/health` and `/posts/testcom`
+  return 200.
