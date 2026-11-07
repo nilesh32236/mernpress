@@ -5956,3 +5956,14 @@ covered by sanitizer + golden + E2E tests locally.
   verbatim titles.
 - Validation: 976 unit/integration tests (API 562, admin 258, web 62,
   contracts 26, block-system 68), 35 Playwright E2E tests and seven builds pass.
+
+**Deployment (Title Case plugin, release `20261107T120855Z-29682e3`):**
+- The plugin store seeds once, so `title-case` was copied to
+  `/opt/mernpress/plugins/title-case` (`mernpress:mernpress`) and the API
+  restarted.
+- `GET /api/admin/plugins` listed 4 packages
+  (`auto-excerpt`, `hello-mernpress`, `seo-fallback`, `title-case`) with
+  counts all 4 / active 3 / inactive 1 (title-case inactive by default).
+- Cleanup removed the temporary administrator/sessions and recent audit
+  events and revalidated the public cache. Production: 1 user, 2 posts;
+  `/`, `/api/health` return 200.
