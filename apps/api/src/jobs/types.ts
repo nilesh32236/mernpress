@@ -6,6 +6,7 @@ export const JOB_TYPES = {
   backupCreate: 'backup.create',
   mediaRegenerate: 'media.regenerate',
   mailSend: 'mail.send',
+  linkCheck: 'linkcheck.scan',
 } as const;
 
 export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];

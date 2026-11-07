@@ -1691,6 +1691,65 @@ export async function deleteRedirect(id: string): Promise<RedirectListResult> {
   return readJson<RedirectListResult>(response);
 }
 
+// ---- Tools: broken-link detection (ADR 0058) ----
+export interface LinkCheckItem {
+  id: string;
+  sourcePostId: string;
+  sourceTitle: string;
+  sourceSlug: string;
+  url: string;
+  normalizedPath: string | null;
+  kind: 'internal' | 'external';
+  status: 'ok' | 'broken' | 'redirect' | 'external';
+  httpStatus: number | null;
+  redirectTo: string | null;
+  checkedAt: string;
+}
+
+export interface LinkCheckSummary {
+  total: number;
+  ok: number;
+  broken: number;
+  redirect: number;
+  external: number;
+  sources: number;
+  lastCheckedAt: string | null;
+}
+
+export interface LinkCheckListResult {
+  links: LinkCheckItem[];
+  summary: LinkCheckSummary;
+}
+
+export async function fetchLinkChecks(): Promise<LinkCheckListResult> {
+  const response = await fetch('/api/admin/links', {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json' },
+  });
+  return readJson<LinkCheckListResult>(response);
+}
+
+export async function queueLinkCheck(): Promise<{ job: ScheduledJob }> {
+  const response = await fetch('/api/admin/links/check', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  return readJson<{ job: ScheduledJob }>(response);
+}
+
+export async function dismissLinkCheck(id: string): Promise<LinkCheckListResult> {
+  const response = await fetch(`/api/admin/links/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { accept: 'application/json', ...csrfHeader() },
+  });
+  return readJson<LinkCheckListResult>(response);
+}
+
 export async function dismissNotFound(id: string): Promise<RedirectListResult> {
   const response = await fetch(`/api/admin/redirects/not-found/${encodeURIComponent(id)}`, {
     method: 'DELETE',

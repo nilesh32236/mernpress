@@ -14080,3 +14080,19 @@ button.button-link.is-danger {
     justify-self: end;
   }
 }
+
+/* Tools → Redirects: broken-link checks. */
+.link-check-status {
+  margin-left: 10px;
+  color: #646970;
+  font-size: 12px;
+}
+
+.redirect-source-slug {
+  color: #646970;
+  font-size: 12px;
+}
+
+.redirect-target {
+  color: #646970;
+}

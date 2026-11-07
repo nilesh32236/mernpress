@@ -5521,3 +5521,33 @@ administrator and public routes:
 - Cleanup removed every web-vital and analytics row plus the temporary
   administrator/sessions and recent audit events. Production is back to 1 user,
   2 posts, 0 vitals rows and 0 analytics rows; sampled routes return 200.
+
+### 2026-11-06 — Broken-link detection (internal-only, SSRF-safe)
+
+- Migration `20261106220000_add_link_checks` adds `link_checks` with a unique
+  `(source_post_id, url)` key; rows store source title/slug, verbatim URL, kind,
+  status, HTTP status, redirect target and checked time.
+- New `packages/cms-core/src/links/service.ts` extracts `href`/`src`/`srcset`
+  URLs (capped at 1000/post), classifies them and resolves internal paths
+  against published posts/pages (permalink pattern via `matchPostPath`), terms
+  (configured bases), authors, redirects, media files (including derivatives),
+  language prefixes and static routes. No HTTP is performed.
+- External URLs are stored as unchecked; absolute URLs matching the configured
+  `site_url` host are treated as internal. Fragment-only and non-navigational
+  schemes are ignored. Stale rows are deleted per source, and unpublished
+  sources are purged after a full scan.
+- Durable `linkcheck.scan` job (manage_options, 409 on duplicate, maxAttempts 2)
+  with `POST /api/admin/links/check` returning 202; worker loops 20-post
+  batches. `GET /api/admin/links` returns rows plus a summary; dismiss deletes
+  a row until the next scan.
+- Tools → Redirects gains a “Broken links” panel: counts, last checked time,
+  Check links now with 2s job polling and a Scheduled Actions link, plus
+  per-row Add redirect (prefills the form) and Dismiss. No outbound fetch of
+  authored URLs was added.
+- Tests: API scan (ok/broken/redirect/external, term/author/media shapes,
+  dedupe/upsert, draft exclusion, stale-link cleanup, orphan purge, 401/403/409,
+  extraction order/dedupe), job queue → worker → completed, dismiss 403/404;
+  admin list/queue/prefill.
+- Docs: ADR 0058, D-124, parity matrix, research roadmap.
+- Validation: 954 unit/integration tests (API 556, admin 258, web 59, contracts
+  17, block-system 65), 34 Playwright E2E tests and seven builds pass.

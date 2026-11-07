@@ -35,7 +35,8 @@ export type ContentErrorCode =
   | 'JOB_RUNNING'
   | 'JOB_NOT_CANCELLABLE'
   | 'BACKUP_IN_PROGRESS'
-  | 'MEDIA_REGENERATE_IN_PROGRESS';
+  | 'MEDIA_REGENERATE_IN_PROGRESS'
+  | 'LINK_CHECK_IN_PROGRESS';
 
 /**
  * Typed domain error for content/taxonomy. Routes map `statusCode` + `code` to

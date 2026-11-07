@@ -51,7 +51,7 @@ owner decision.
 | SEO / metadata | D/P | Per-post SEO fields, JSON-LD (BlogPosting/WebPage/Breadcrumb/Collection/Profile), Twitter cards, image sitemap, /llms.txt; WordPress needs plugins for all of this |
 | Tools → Backups | D/P | Queued durable backup job with live status, database + media archive, retention, admin download/delete and documented CLI restore; WordPress needs a plugin |
 | Tools → Scheduled Actions | D/P | Durable PostgreSQL job queue with SKIP LOCKED claims, exponential retries, stale-worker recovery, daily retention sweeps and admin Run now/Cancel. WordPress core WP-Cron fires on page loads; Action Scheduler adds the durable queue |
-| Tools → Redirects | D/P | Admin-managed 301/302 redirects applied by public middleware, loop rejection, aggregated 404 log with Redirect/Dismiss; WordPress needs a plugin |
+| Tools → Redirects | D/P | Admin-managed 301/302 redirects applied by public middleware, loop rejection, aggregated 404 log and a broken-link scan (internal links resolved without fetching; external listed unchecked) with Redirect/Dismiss; WordPress needs a plugin |
 | Tools → Available Tools / Export / Site Health | D/P | Cards; WordPress WXR export with All/Posts/Pages/Media scopes and author, date-range, status and category filters; health checks |
 | Tools → Import | D/P | WordPress importer order, real WXR import, unavailable importers stated, closing marketplace note |
 | Tools → Export/Erase Personal Data | D/P | Request queue, JSON export, anonymising erasure |

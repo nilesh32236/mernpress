@@ -5,6 +5,7 @@ import type {
   AuthService,
   AutosaveService,
   ExportService,
+  LinkCheckService,
   RedirectService,
   BackupService,
   BulkService,
@@ -39,6 +40,7 @@ declare module 'fastify' {
     notes: NoteService;
     exports: ExportService;
     redirects: RedirectService;
+    linkChecks: LinkCheckService;
     backups: BackupService;
     autosave: AutosaveService;
     analytics: AnalyticsService;

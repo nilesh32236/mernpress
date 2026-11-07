@@ -1110,6 +1110,7 @@ describe('admin media library', () => {
           jobs,
           backups: app.backups,
           media: app.media,
+          linkChecks: (app as { linkChecks: unknown }).linkChecks as never,
           mail: app.mail,
           mailSecret: 'test-only-auth-hash-pepper-2026-10-25-0123456789',
         }),

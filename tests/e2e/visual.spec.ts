@@ -50,7 +50,9 @@ test.beforeAll(() => {
     [
       testDatabaseUrl,
       '-c',
-      "UPDATE posts SET status = 'PUBLISHED', published_at = now(), updated_at = now() WHERE slug IN ('welcome-to-mernpress', 'about');",
+      // Fixed timestamps keep the baselines independent of the run date; the
+      // demo post shows its published date on home/blog/search captures.
+      "UPDATE posts SET status = 'PUBLISHED', published_at = '2026-11-06T12:00:00Z', updated_at = '2026-11-06T12:00:00Z' WHERE slug IN ('welcome-to-mernpress', 'about');",
     ],
     { stdio: 'pipe' },
   );

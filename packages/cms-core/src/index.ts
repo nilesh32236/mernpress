@@ -315,6 +315,19 @@ export {
   type RedirectServiceOptions,
 } from './redirects/service.js';
 
+// ---- Broken-link detection (Tools → Redirects, ADR 0058) ----
+export {
+  createLinkCheckService,
+  extractLinks,
+  type LinkCheckDto,
+  type LinkCheckListResult,
+  type LinkCheckService,
+  type LinkCheckServiceOptions,
+  type LinkCheckSummary,
+  type ScanBatchInput,
+  type ScanBatchResult,
+} from './links/service.js';
+
 // ---- Backup packages (Tools → Backups) ----
 export {
   createBackupService,

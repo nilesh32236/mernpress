@@ -1,6 +1,7 @@
 import { openMailMessage } from '@mernpress/cms-core';
 import type {
   AnalyticsService,
+  LinkCheckService,
   BackupService,
   JobHandler,
   JobQueueService,
@@ -24,6 +25,7 @@ interface HandlerOptions {
   jobs: JobQueueService;
   backups: BackupService;
   media: MediaService;
+  linkChecks: LinkCheckService;
   mail: MailService;
   /** Secret used to open the sealed mail payload (AUTH_HASH_PEPPER). */
   mailSecret: string;
@@ -56,7 +58,8 @@ async function optionNumber(
 
 /** Handlers registered with the durable worker (ADR 0054). */
 export function createJobHandlers(options: HandlerOptions): Record<string, JobHandler> {
-  const { prisma, notes, analytics, jobs, backups, media, mail, mailSecret, logger } = options;
+  const { prisma, notes, analytics, jobs, backups, media, linkChecks, mail, mailSecret, logger } =
+    options;
 
   return {
     [JOB_TYPES.mailSend]: async (payload) => {
@@ -66,6 +69,19 @@ export function createJobHandlers(options: HandlerOptions): Record<string, JobHa
         throw new Error(`Mail delivery failed: ${result.reason ?? 'unknown'}`);
       }
       logger?.info({ to: message.to, subject: message.subject }, 'queued mail delivered');
+    },
+    [JOB_TYPES.linkCheck]: async () => {
+      const result = await linkChecks.checkAllSystem();
+      logger?.info(
+        {
+          processed: result.processed,
+          links: result.links,
+          broken: result.broken,
+          external: result.external,
+          purged: result.purged,
+        },
+        'link check complete',
+      );
     },
     [JOB_TYPES.backupCreate]: async () => {
       const result = await backups.createSystem();

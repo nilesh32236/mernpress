@@ -31,6 +31,7 @@ function handlers(queue: ReturnType<typeof createJobQueueService>, mail: typeof 
     jobs: queue,
     backups: app.backups,
     media: app.media,
+    linkChecks: app.linkChecks,
     mail,
     mailSecret: SECRET,
   });

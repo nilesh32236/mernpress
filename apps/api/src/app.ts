@@ -34,6 +34,7 @@ import {
   createMailService,
   createPasswordResetService,
   createExportService,
+  createLinkCheckService,
   createRedirectService,
   createBackupService,
   createJobQueueService,
@@ -86,6 +87,7 @@ import { startJobWorker } from './jobs/worker.js';
 import { createRevalidator, registerRevalidation } from './revalidate.js';
 import { JOB_TYPES } from './jobs/types.js';
 import { registerRedirectRoutes, registerPublicRedirectRoutes } from './routes/redirects.js';
+import { registerLinkRoutes } from './routes/links.js';
 import { registerAdminHealthRoutes } from './routes/admin-health.js';
 import { startSchedulers } from './scheduler.js';
 import { resolveRequestId } from './http/request-id.js';
@@ -377,6 +379,12 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   redirectsForSlugs = redirects;
   app.decorate('redirects', redirects);
 
+  const linkChecks = createLinkCheckService({
+    prisma: database,
+    logger: (message, meta) => app.log.info({ ...meta }, message),
+  });
+  app.decorate('linkChecks', linkChecks);
+
   const backups = createBackupService({
     mediaRoot: env.MEDIA_STORAGE_DIR,
     backupDir: env.BACKUP_STORAGE_DIR,
@@ -471,6 +479,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerAnalyticsRoutes(app, { env, auth, analytics });
   registerConsentRoutes(app, { env, auth, consent });
   registerRedirectRoutes(app, { env, auth, redirects });
+  registerLinkRoutes(app, { env, auth, linkChecks, jobs });
   registerBackupRoutes(app, { env, auth, backups, jobs });
   registerJobRoutes(app, { env, auth, jobs });
   registerPublicRedirectRoutes(app, { redirects });
@@ -487,6 +496,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
         jobs,
         backups,
         media,
+        linkChecks,
         mail,
         mailSecret: env.AUTH_HASH_PEPPER,
         logger: app.log,

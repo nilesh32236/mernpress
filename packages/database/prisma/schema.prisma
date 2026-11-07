@@ -120,6 +120,29 @@ model Redirect {
 }
 
 /// Aggregated 404s for the Redirects screen. Only the path is stored (no PII).
+/// Result of one published-content link (ADR 0058). One row per
+/// (source post, verbatim URL); internal links are resolved against published
+/// content without any HTTP fetch, external links are stored unchecked.
+model LinkCheck {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  sourcePostId  String   @map("source_post_id") @db.Uuid
+  sourceTitle   String   @map("source_title") @db.VarChar(300)
+  sourceSlug    String   @map("source_slug") @db.VarChar(200)
+  url           String   @db.VarChar(2048)
+  kind          String   @db.VarChar(16)
+  status        String   @db.VarChar(16)
+  httpStatus    Int?     @map("http_status")
+  redirectTo    String?  @map("redirect_to") @db.VarChar(2048)
+  checkedAt     DateTime @map("checked_at") @db.Timestamptz(6)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([sourcePostId, url])
+  @@index([status])
+  @@index([checkedAt])
+  @@map("link_checks")
+}
+
 model NotFoundEntry {
   id          String   @id @default(uuid(7)) @db.Uuid
   path        String   @unique @db.VarChar(2048)

@@ -192,6 +192,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-123 | 2026-11-06 | Field Core Web Vitals: `web_vitals_daily(day, metric, bucket, count)` histogram + unique key; contracts own the five metrics, web.dev thresholds, buckets, p75 and formatting; `POST /api/public/vitals` validates/ignores DNT+bots and always 204s; `WebVitals` observes LCP/INP(p98)/CLS/FCP/TTFB in memory and sends once per metric at pagehide/visibilitychange, gated by DNT + analytics consent; Dashboard → Analytics shows p75/rating/samples; the analytics retention sweep prunes vitals too (`vitalsPruned`). No path/device breakdown, no third-party RUM. | accepted | [ADR 0057](docs/adr/0057-field-core-web-vitals.md) |
 
+| D-124 | 2026-11-06 | Broken-link detection: published posts/pages are crawled in batches; internal links resolve against slugs (permalink pattern), terms, authors, redirects and media without HTTP, external links are stored unchecked and absolute same-host URLs count as internal. Results land in `link_checks`, with a durable `linkcheck.scan` job (manage_options, 409 on duplicate), list/dismiss API and a Tools → Redirects panel with Check now, Scheduled Actions link, Add redirect and Dismiss. No outbound fetch of authored URLs (SSRF policy); menus/comments/settings are out of scope. | accepted | [ADR 0058](docs/adr/0058-broken-link-detection.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

@@ -3,13 +3,22 @@ import {
   actionErrorMessage,
   createRedirect,
   deleteRedirect,
+  dismissLinkCheck,
   dismissNotFound,
+  fetchJob,
+  fetchJobs,
+  fetchLinkChecks,
   fetchRedirects,
+  queueLinkCheck,
   updateRedirect,
+  type LinkCheckItem,
+  type LinkCheckListResult,
   type NotFoundEntry,
   type RedirectItem,
   type RedirectListResult,
+  type ScheduledJob,
 } from './api.js';
+import { navigate } from './router.js';
 import { ErrorState, Notice, PageHeader, Skeleton, type NoticeMessage } from './components.js';
 import { formatDateTime } from './format.js';
 
@@ -29,6 +38,26 @@ export function RedirectsPage() {
   const [fromPath, setFromPath] = useState('');
   const [toPath, setToPath] = useState('');
   const [statusCode, setStatusCode] = useState<'301' | '302'>('301');
+  const [linkChecks, setLinkChecks] = useState<LinkCheckListResult | null>(null);
+  const [linkError, setLinkError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [checkJob, setCheckJob] = useState<ScheduledJob | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetchLinkChecks()
+      .then((result) => {
+        if (!active) return;
+        setLinkChecks(result);
+      })
+      .catch((caught) => {
+        if (!active) return;
+        setLinkError(actionErrorMessage(caught));
+      });
+    return () => {
+      active = false;
+    };
+  }, [reloadKey]);
 
   useEffect(() => {
     let active = true;
@@ -61,6 +90,114 @@ export function RedirectsPage() {
     setFromPath(item.fromPath);
     setToPath(item.toPath);
     setStatusCode(item.statusCode === 302 ? '302' : '301');
+  }
+
+  const checkJobId = checkJob?.id ?? null;
+  const checkJobStatus = checkJob?.status ?? null;
+
+  useEffect(() => {
+    if (!checkJobId || (checkJobStatus !== 'PENDING' && checkJobStatus !== 'RUNNING')) return;
+    let cancelled = false;
+    let inFlight = false;
+    const timer = window.setInterval(() => {
+      if (inFlight) return;
+      inFlight = true;
+      fetchJob(checkJobId)
+        .then(async (next) => {
+          if (cancelled) return;
+          if (next.status === 'COMPLETED' || next.status === 'FAILED') {
+            const result = await fetchLinkChecks();
+            if (cancelled) return;
+            setLinkChecks(result);
+            setChecking(false);
+            setNotice({
+              tone: next.status === 'COMPLETED' ? 'success' : 'error',
+              text:
+                next.status === 'COMPLETED'
+                  ? 'Link check complete.'
+                  : (next.lastError ?? 'Link check failed.'),
+            });
+            setCheckJob(next);
+            return;
+          }
+          setCheckJob(next);
+        })
+        .catch((caught) => {
+          if (!cancelled) setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+        })
+        .finally(() => {
+          inFlight = false;
+        });
+    }, 2000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [checkJobId, checkJobStatus]);
+
+  useEffect(() => {
+    // Rediscover an active linkcheck.scan after a reload.
+    if (checkJobId) return;
+    let active = true;
+    fetchJobs({ search: 'linkcheck.scan', perPage: 1 })
+      .then((jobs) => {
+        if (!active) return;
+        const current = jobs.items.find(
+          (entry) => entry.status === 'PENDING' || entry.status === 'RUNNING',
+        );
+        if (current) {
+          setCheckJob(current);
+          setChecking(true);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [checkJobId]);
+
+  async function checkLinks() {
+    if (checking) return;
+    setChecking(true);
+    setNotice(null);
+    try {
+      const result = await queueLinkCheck();
+      setCheckJob(result.job);
+      setNotice({
+        tone: 'success',
+        text: 'Link check queued. The background worker will scan published content shortly.',
+      });
+    } catch (caught) {
+      setChecking(false);
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    }
+  }
+
+  async function dismissLink(item: LinkCheckItem) {
+    if (busy) return;
+    setBusy(true);
+    setNotice(null);
+    try {
+      const result = await dismissLinkCheck(item.id);
+      setLinkChecks(result);
+      setNotice({ tone: 'success', text: 'Link check dismissed.' });
+    } catch (caught) {
+      setNotice({ tone: 'error', text: actionErrorMessage(caught) });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function redirectBroken(item: LinkCheckItem) {
+    setEditingId(null);
+    setFromPath(item.url);
+    setToPath(item.redirectTo ?? '');
+    setStatusCode('301');
+    setNotice({
+      tone: 'success',
+      text: `Add a redirect for ${item.url}, then save it above.`,
+    });
+    document.getElementById('redirect-from')?.focus();
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -305,6 +442,136 @@ export function RedirectsPage() {
                             className="button-link is-danger"
                             onClick={() => void dismiss(entry)}
                             disabled={busy}
+                          >
+                            Dismiss
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          <section className="settings-panel" aria-labelledby="broken-links-heading">
+            <h2 id="broken-links-heading">
+              Broken links ({linkChecks?.summary.broken ?? 0} broken,{' '}
+              {linkChecks?.summary.total ?? 0} checked)
+            </h2>
+            <p className="field-help">
+              Checks internal links in published posts and pages against live content, terms,
+              authors, redirects and media. External links are never fetched (SSRF protection), so
+              they are listed as unchecked. Progress runs as a durable
+              <code>linkcheck.scan</code> job.
+              {linkChecks?.summary.lastCheckedAt
+                ? ` Last checked ${formatDateTime(linkChecks.summary.lastCheckedAt)}.`
+                : ''}{' '}
+              {linkChecks
+                ? `${linkChecks.summary.redirect} redirect(s), ${linkChecks.summary.external} external not checked, across ${linkChecks.summary.sources} source(s).`
+                : ''}
+            </p>
+            <p className="field-actions">
+              <button
+                type="button"
+                className="button primary-button"
+                onClick={() => void checkLinks()}
+                disabled={checking}
+                aria-busy={checking}
+              >
+                {checking ? 'Link check running…' : 'Check links now'}
+              </button>
+              {checking || checkJob ? (
+                <button
+                  type="button"
+                  className="button-link"
+                  onClick={() => navigate('/tools/jobs')}
+                >
+                  View in Scheduled Actions
+                </button>
+              ) : null}
+              {checkJob ? (
+                <span className="link-check-status" role="status">
+                  Job {checkJob.status.toLowerCase()} · attempts {checkJob.attempts}/
+                  {checkJob.maxAttempts}
+                </span>
+              ) : null}
+            </p>
+            {linkError ? <p className="form-error">{linkError}</p> : null}
+            {!linkChecks ? (
+              linkError ? null : (
+                <p className="redirect-empty">Loading link checks…</p>
+              )
+            ) : linkChecks.links.length === 0 ? (
+              <p className="redirect-empty">
+                No link checks yet. Publish content, then run a check.
+              </p>
+            ) : (
+              <div className="table-scroll">
+                <table className="content-table widefat fixed striped redirects-table">
+                  <caption className="screen-reader-text">Broken links</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Source</th>
+                      <th scope="col">Link</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Checked</th>
+                      <th scope="col">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {linkChecks.links.map((item) => (
+                      <tr key={item.id}>
+                        <td>
+                          {item.sourceTitle}
+                          <span className="redirect-source-slug"> {item.sourceSlug}</span>
+                        </td>
+                        <td>
+                          <code>{item.url}</code>
+                          {item.status === 'redirect' && item.redirectTo ? (
+                            <span className="redirect-target"> → {item.redirectTo}</span>
+                          ) : null}
+                        </td>
+                        <td>
+                          <span
+                            className={`job-status ${
+                              item.status === 'broken'
+                                ? 'is-failed'
+                                : item.status === 'ok'
+                                  ? 'is-completed'
+                                  : item.status === 'redirect'
+                                    ? 'is-pending'
+                                    : 'is-cancelled'
+                            }`}
+                          >
+                            {item.status}
+                          </span>
+                          {item.kind === 'external' ? (
+                            <span className="field-help"> not fetched</span>
+                          ) : null}
+                        </td>
+                        <td>{formatDateTime(item.checkedAt)}</td>
+                        <td className="redirect-actions">
+                          {item.status === 'broken' && item.url.startsWith('/') ? (
+                            <>
+                              <button
+                                type="button"
+                                className="button-link"
+                                onClick={() => redirectBroken(item)}
+                                disabled={busy}
+                                aria-label={`Add redirect for ${item.url}`}
+                              >
+                                Add redirect
+                              </button>
+                              <span aria-hidden="true"> | </span>
+                            </>
+                          ) : null}
+                          <button
+                            type="button"
+                            className="button-link is-danger"
+                            onClick={() => void dismissLink(item)}
+                            disabled={busy}
+                            aria-label={`Dismiss ${item.url}`}
                           >
                             Dismiss
                           </button>

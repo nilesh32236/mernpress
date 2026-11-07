@@ -207,6 +207,9 @@ describe('durable job queue', () => {
       analytics: analytics as never,
       jobs: { pruneHistory: async () => 0 } as never,
       backups: { createSystem: async () => ({ backups: [], retention: 5 }) } as never,
+      linkChecks: {
+        checkAllSystem: async () => ({ processed: 0, links: 0, broken: 0, external: 0, purged: 0 }),
+      } as never,
       media: {
         regenerateDerivativesSystem: async () => ({
           processed: 0,

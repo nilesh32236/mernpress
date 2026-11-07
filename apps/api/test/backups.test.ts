@@ -74,6 +74,7 @@ describe('backup packages', () => {
         jobs,
         backups: app.backups,
         media: app.media,
+        linkChecks: app.linkChecks,
         mail: app.mail,
         mailSecret: 'test-only-auth-hash-pepper-2026-10-25-0123456789',
       }),
