@@ -5748,3 +5748,11 @@ verified in production with a temporary administrator:
   thumbnail size, privacy heading) instead of the heading alone, so the
   skeleton cannot be captured on slow runs.
 - The suite passes twice in a row against the committed baselines.
+
+### 2026-11-07 — E2E public-beacon origin fix
+
+- `playwright.config.ts` now allows the public site origins (`127.0.0.1:3000`
+  and `localhost:3000`) in `CORS_ORIGINS`. Without them the API correctly
+  rejects browser beacons (views/vitals) as `ORIGIN_NOT_ALLOWED`, which made
+  `placeholders.spec.ts` fail intermittently depending on when
+  `pagehide` fired. Full E2E passes on rerun.

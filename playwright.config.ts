@@ -12,7 +12,10 @@ const apiPort = Number(process.env['E2E_API_PORT'] ?? 4000);
 // port needs an override when another service owns :4000.
 const adminUrl = 'http://127.0.0.1:5173';
 const apiUrl = `http://127.0.0.1:${apiPort}`;
-const e2eOrigins = `${adminUrl},http://localhost:5173`;
+// Public beacons (views/vitals) POST from the web origin; without it the
+// API correctly rejects them as ORIGIN_NOT_ALLOWED and the placeholders
+// console-error check flakes depending on pagehide timing.
+const e2eOrigins = `${adminUrl},http://localhost:5173,http://127.0.0.1:3000,http://localhost:3000`;
 // Shared between the web route handler and the API notifier during E2E.
 export const E2E_REVALIDATE_SECRET = 'e2e-revalidate-secret-2026-11-06';
 
