@@ -5761,3 +5761,10 @@ verified in production with a temporary administrator:
 - Added three mobile baselines (84 total): Settings → General, Settings →
   Reading and Pages at 375, with loaded-field waits.
 - The suite passes twice in a row against the committed baselines.
+
+### 2026-11-07 — Mobile baseline for the block editor (New post)
+
+- Added the New post editor mobile baseline (85 total) at 375: topbar
+  actions, document pill, Add title placeholder, canvas skeleton and Post
+  inspector strip.
+- The suite passes twice in a row against the committed baselines.

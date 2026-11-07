@@ -343,6 +343,7 @@ test('admin visual baselines', async ({ page }) => {
     ['general', '/admin/settings', 'General Settings', 'Site Title'],
     ['reading', '/admin/settings#reading', 'Reading Settings', 'Speculative loading'],
     ['pages', '/admin/pages', 'Pages', 'About'],
+    ['editor', '/admin/posts/new', 'New post', 'Publish'],
   ];
   for (const [name, route, heading, readyText] of mobileScreens) {
     await page.goto(`http://127.0.0.1:5173${route}`, { waitUntil: 'domcontentloaded' });
