@@ -5828,3 +5828,21 @@ verified in production with a temporary administrator:
   cap (injectable, no network).
 - Validation: 972 unit/integration tests (API 561, admin 258, web 62,
   contracts 26, block-system 65), 35 Playwright E2E tests and seven builds pass.
+
+**Deployment (gated external-link fetcher, release `20261107T094912Z-1219a72`):**
+verified in production with a temporary administrator:
+- Published `Ext Probe …` with `https://example.com/` (ok),
+  `https://httpbin.org/status/404` (gone) and
+  `https://example.com:8443/x` (non-default port).
+- With `external_link_check: false` the scan stored all 3 as
+  `external / not fetched` (httpStatus null).
+- After saving `true` (200) and queueing (202), the worker completed and the
+  list showed: example.com **ok 200**, httpbin **broken 404**, bad port
+  **broken null** (guard-blocked). The first attempt returned 403 for
+  example.com because the pinned connection sent the IP as Host; the fix
+  (`1219a72`) sends the original hostname and the rerun returned 200.
+- Cleanup disabled the toggle, deleted the probe post + 3 link checks,
+  analytics rows, the temporary administrator/sessions and recent audit
+  events, then revalidated the public cache. Production is back to 1 user,
+  2 posts, 0 link checks; `/`, `/admin/tools/redirects`, `/api/health`
+  return 200.
