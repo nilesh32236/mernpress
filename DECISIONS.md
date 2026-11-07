@@ -198,7 +198,7 @@ associated code changes. Superseded decisions stay visible.
 
 | D-126 | 2026-11-07 | Gated speculative prerender (supersedes ADR 0059 deferral): Reading setting `speculation_mode`; web layout emits same-origin speculation rules (`prefetch` moderate; `prerender` conservative on `a[href^="/posts/"]` only when the public 28-day vitals gate passes: 100+ LCP+INP samples and either needs-improvement/poor, else prefetch fallback). Public `GET /api/public/vitals-summary` exposes aggregates only. Default off. | accepted | [ADR 0060](docs/adr/0060-gated-speculative-prerender.md) |
 
-## Proposed / unresolved
+| D-127 | 2026-11-07 | External link checking evaluated (ADR 0061): pure SSRF guard shipped in contracts (scheme/credentials/default-port/host + DNS-answers public) with unit tests; outbound fetching stays off until operator opt-in, DNS pinning, per-hop re-check, 5s timeout, ≤3 redirects and a per-scan budget exist. Internal-only checks (ADR 0058) unchanged. | accepted | [ADR 0061](docs/adr/0061-external-link-check-evaluation.md) |\n\n## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.
 

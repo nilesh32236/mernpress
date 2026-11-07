@@ -5797,3 +5797,19 @@ verified in production with a temporary administrator:
 - Added six public baselines (100 total): Category (News), Tag (Demo) and
   Author (visual_admin) at desktop and mobile.
 - The suite passes twice in a row against the committed baselines.
+
+### 2026-11-07 — External link checking evaluated; SSRF guard shipped
+
+- Evaluated outbound external link checking (ADR 0061, D-127): the value is
+  real (dead vendor links) but a naive HEAD fetch is an SSRF primitive and
+  check-then-fetch without DNS pinning is rebinding-vulnerable.
+- Shipped the pure guard in contracts (`checkExternalUrl`,
+  `isPublicResolution`): http/https only, no credentials, default ports
+  only, no localhost/private/loopback/link-local literals, and every DNS
+  answer must be public. Unit-tested (scheme, credentials, port, host,
+  rebinding).
+- No fetcher shipped: `linkcheck.scan` still stores external links as
+  unchecked until opt-in, DNS pinning, per-hop re-check, timeout/redirect
+  budgets and a per-scan cap exist.
+- Validation: 969 unit/integration tests (API 558, admin 258, web 62,
+  contracts 26, block-system 65), 35 Playwright E2E tests and seven builds pass.

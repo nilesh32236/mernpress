@@ -38,3 +38,5 @@ export {
   type SpeculationRules,
   type SpeculationVitalsEntry,
 } from './speculation.js';
+
+export { checkExternalUrl, isPublicResolution, type ExternalUrlVerdict } from './external-link.js';
