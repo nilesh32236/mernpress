@@ -5740,3 +5740,11 @@ verified in production with a temporary administrator:
 - Jobs mobile keeps Hook/Status/Actions plus the filter (the earlier
   mobile fix); no new layout defects appeared.
 - The suite passes twice in a row against the committed baselines.
+### 2026-11-07 — Mobile baselines for remaining settings and tools screens
+
+- Added seven mobile baselines (81 total): Settings → Writing, Discussion,
+  Media, Privacy; Tags; Site Health and Import.
+- Mobile captures now wait for the loaded field (category/format, pings,
+  thumbnail size, privacy heading) instead of the heading alone, so the
+  skeleton cannot be captured on slow runs.
+- The suite passes twice in a row against the committed baselines.
