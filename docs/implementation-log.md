@@ -5917,3 +5917,14 @@ covered by sanitizer + golden + E2E tests locally.
 - `admin-parity.spec.ts` now seeds one export request and asserts the
   populated Export Personal Data list (email, no overflow). Previously
   only the empty state was covered.
+
+### 2026-11-07 — Third theme: MERNPress Minimal
+
+- Added `themes/minimal/theme.json` (high-contrast black/white, system sans,
+  narrow measure, left-aligned header) reusing the journal layout, plus a
+  preview screenshot (`theme-minimal.svg`). It seeds like the other packages
+  and activates through Appearance → Themes with no rebuild.
+- Tests: themes API now lists 3 packages and activates `minimal` with its
+  tokens exposed publicly.
+- Validation: 975 unit/integration tests (API 561, admin 258, web 62,
+  contracts 26, block-system 68), 35 Playwright E2E tests and seven builds pass.

@@ -1,0 +1,24 @@
+{
+  "id": "minimal",
+  "name": "MERNPress Minimal",
+  "version": "1.0.0",
+  "author": { "name": "MERNPress", "url": null },
+  "description": "A stark, high-contrast theme for focus: black-and-white palette, system sans-serif typography, narrow measure and generous whitespace. It reuses the journal layout so it renders the same block content with a different voice; switching is instant and nothing is rebuilt.",
+  "tags": ["Minimal", "One Column", "High Contrast", "Sans Serif", "Accessibility Ready"],
+  "screenshot": "/theme-minimal.svg",
+  "layout": "journal",
+  "features": ["High-contrast palette", "System sans-serif", "Narrow measure", "Threaded comments"],
+  "fonts": [{ "family": "Inter", "weights": [400, 600, 700], "source": "system" }],
+  "tokens": {
+    "background": "#ffffff",
+    "surface": "#ffffff",
+    "text": "#000000",
+    "muted": "#595959",
+    "accent": "#0000ee",
+    "headingFont": "system-ui, -apple-system, 'Segoe UI', sans-serif",
+    "bodyFont": "system-ui, -apple-system, 'Segoe UI', sans-serif",
+    "contentWidth": "620px",
+    "radius": "0px",
+    "headerAlign": "left"
+  }
+}

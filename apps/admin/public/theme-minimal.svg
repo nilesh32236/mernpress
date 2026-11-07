@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" role="img" aria-label="MERNPress Minimal theme preview">
+  <rect width="1200" height="900" fill="#ffffff"/>
+  <rect x="0" y="0" width="1200" height="120" fill="#ffffff"/>
+  <text x="100" y="80" font-family="system-ui, sans-serif" font-size="42" font-weight="bold" fill="#000000">MERNPress Minimal</text>
+  <rect x="100" y="140" width="1200" height="2" fill="#000000"/>
+  <text x="100" y="280" font-family="system-ui, sans-serif" font-size="60" font-weight="bold" fill="#000000">Less, but better.</text>
+  <text x="100" y="340" font-family="system-ui, sans-serif" font-size="24" fill="#595959">A stark, high-contrast theme for focus</text>
+  <rect x="100" y="420" width="620" height="12" fill="#e0e0e0"/>
+  <rect x="100" y="452" width="620" height="12" fill="#e0e0e0"/>
+  <rect x="100" y="484" width="520" height="12" fill="#e0e0e0"/>
+  <text x="100" y="580" font-family="system-ui, sans-serif" font-size="20" fill="#0000ee">November 7, 2026 · 3 minute read</text>
+  <text x="100" y="680" font-family="system-ui, sans-serif" font-size="36" font-weight="bold" fill="#000000">A second field note</text>
+  <text x="100" y="730" font-family="system-ui, sans-serif" font-size="22" fill="#333333">Black and white, system type, narrow measure.</text>
+</svg>

@@ -41,7 +41,7 @@ describe('appearance themes api', () => {
       themes: Array<{ id: string; active: boolean; name: string; tags: string[] }>;
     };
     expect(body.active).toBe('mernpress');
-    expect(body.themes).toHaveLength(2);
+    expect(body.themes).toHaveLength(3);
     expect(body.themes.find((theme) => theme.id === 'mernpress')).toMatchObject({
       active: true,
       name: 'MERNPress',
@@ -49,6 +49,10 @@ describe('appearance themes api', () => {
     expect(body.themes.find((theme) => theme.id === 'journal')).toMatchObject({
       active: false,
       name: 'MERNPress Journal',
+    });
+    expect(body.themes.find((theme) => theme.id === 'minimal')).toMatchObject({
+      active: false,
+      name: 'MERNPress Minimal',
     });
     expect(body.themes[0]!.tags.length).toBeGreaterThan(3);
   });
@@ -72,16 +76,25 @@ describe('appearance themes api', () => {
     expect(journal.statusCode).toBe(200);
     expect((journal.json() as { active: string }).active).toBe('journal');
 
+    const minimal = await app.inject({
+      method: 'POST',
+      url: '/api/admin/themes/minimal/activate',
+      headers: noBody,
+    });
+    expect(minimal.statusCode).toBe(200);
+    expect((minimal.json() as { active: string }).active).toBe('minimal');
+
     // The public settings expose the active theme tokens only.
     const site = await app.inject({ method: 'GET', url: '/api/public/site' });
     expect(site.statusCode).toBe(200);
     const publicTheme = (site.json() as { theme: { id: string; layout: string; tokens: unknown } })
       .theme;
-    expect(publicTheme).toMatchObject({ id: 'journal', layout: 'journal' });
+    // Journal was activated first, then minimal superseded it.
+    expect(publicTheme).toMatchObject({ id: 'minimal', layout: 'journal' });
     expect(publicTheme.tokens).toMatchObject({
-      background: '#f7f2e8',
-      headingFont: "Georgia, 'Times New Roman', serif",
-      headerAlign: 'center',
+      background: '#ffffff',
+      headingFont: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+      headerAlign: 'left',
     });
 
     const missing = await app.inject({
