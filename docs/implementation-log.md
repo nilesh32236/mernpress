@@ -5654,3 +5654,20 @@ verified in production with a temporary administrator:
   Off default; Languages/Consent captures pin the grouped string/filter layout
   and the consent banner form.
 - The suite passes twice in a row against the committed baselines.
+
+### 2026-11-07 — Per-template field vitals breakdown
+
+- `templateForPath` (contracts) classifies a pathname into
+  home/post/page/archive/search/other without storing it; language prefixes
+  are stripped and unknown/static routes map to `other`.
+- Migration `20261107120000_add_vitals_template` adds `template` to
+  `web_vitals_daily` (existing rows move to `other`; unique key becomes
+  `(day, template, metric, bucket)`).
+- The `WebVitals` beacon reports only the template; the API summary returns
+  `byTemplate` (p75/rating per metric for templates with samples), and
+  Dashboard → Analytics renders a “By template” table (LCP/INP/CLS p75 +
+  sample count). The 28-day speculation gate still uses 28-day totals.
+- Tests: contracts template classification (including tag/category route
+  guards), API template aggregation/cleanup, admin breakdown rendering.
+- Validation: 965 unit/integration tests (API 558, admin 258, web 62, contracts
+  22, block-system 65), 35 Playwright E2E tests and seven builds pass.

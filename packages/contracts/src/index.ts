@@ -24,6 +24,10 @@ export {
   type WebVitalDefinition,
   type WebVitalMetric,
   type WebVitalRating,
+  type WebVitalTemplate,
+  WEB_VITAL_TEMPLATES,
+  WEB_VITAL_TEMPLATE_LABELS,
+  templateForPath,
 } from './web-vitals.js';
 
 export {

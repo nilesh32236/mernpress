@@ -1,7 +1,10 @@
 import {
   WEB_VITALS,
   WEB_VITAL_ORDER,
+  WEB_VITAL_TEMPLATES,
+  WEB_VITAL_TEMPLATE_LABELS,
   histogramP75,
+  type WebVitalTemplate,
   webVitalBucket,
   webVitalRating,
   type WebVitalMetric,
@@ -39,6 +42,8 @@ export interface RecordVitalInput {
   metric: WebVitalMetric;
   /** Raw value: milliseconds, or the CLS score (scaled to milli-score here). */
   value: number;
+  /** Route template only (never a full path); defaults to `other`. */
+  template?: WebVitalTemplate | undefined;
   userAgent?: string | null | undefined;
   now?: Date | undefined;
 }
@@ -62,6 +67,13 @@ export interface AnalyticsPruneResult {
   cutoffDay: string | null;
 }
 
+export interface TemplateVitalsEntry {
+  template: WebVitalTemplate;
+  label: string;
+  vitals: VitalsSummaryEntry[];
+  samples: number;
+}
+
 export interface AnalyticsSummary {
   days: number;
   totalViews: number;
@@ -72,6 +84,8 @@ export interface AnalyticsSummary {
   topReferrers: Array<{ host: string; views: number }>;
   /** One entry per metric, in display order; `p75` is null with no samples. */
   vitals: VitalsSummaryEntry[];
+  /** Per-template breakdown (templates with samples only, total view order). */
+  byTemplate: TemplateVitalsEntry[];
 }
 
 export interface AnalyticsServiceOptions {
@@ -127,7 +141,7 @@ export function createAnalyticsService({
 
   /**
    * Record one field Core Web Vitals sample into its daily histogram. The
-   * beacon never sends a path or identifier, so the row is (day, metric, bucket).
+   * beacon never sends a path or identifier, so the row is (day, template, metric, bucket).
    */
   async function recordVital(input: RecordVitalInput): Promise<boolean> {
     if (input.userAgent && BOT_AGENT.test(input.userAgent)) return false;
@@ -140,9 +154,12 @@ export function createAnalyticsService({
     if (stored > definition.max) return false;
     const bucket = webVitalBucket(input.metric, stored);
     const day = utcDay(input.now ?? now());
+    const template = (WEB_VITAL_TEMPLATES as readonly string[]).includes(input.template ?? '')
+      ? (input.template as WebVitalTemplate)
+      : 'other';
     await prisma.webVitalDaily.upsert({
-      where: { day_metric_bucket: { day, metric: input.metric, bucket } },
-      create: { day, metric: input.metric, bucket, count: 1 },
+      where: { day_template_metric_bucket: { day, template, metric: input.metric, bucket } },
+      create: { day, template, metric: input.metric, bucket, count: 1 },
       update: { count: { increment: 1 } },
     });
     return true;
@@ -196,7 +213,7 @@ export function createAnalyticsService({
     });
     const vitalRows = await prisma.webVitalDaily.findMany({
       where: { day: { gte: start } },
-      select: { metric: true, bucket: true, count: true },
+      select: { template: true, metric: true, bucket: true, count: true },
     });
 
     const daily = new Map<string, number>();
@@ -221,12 +238,24 @@ export function createAnalyticsService({
       [...map.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 10);
 
     const byMetric = new Map<WebVitalMetric, Array<{ bucket: number; count: number }>>();
+    const byTemplateMetric = new Map<
+      WebVitalTemplate,
+      Map<WebVitalMetric, Array<{ bucket: number; count: number }>>
+    >();
     for (const row of vitalRows) {
       if (!(row.metric in WEB_VITALS)) continue;
       const metric = row.metric as WebVitalMetric;
       const list = byMetric.get(metric) ?? [];
       list.push({ bucket: row.bucket, count: row.count });
       byMetric.set(metric, list);
+      const tpl = (
+        (WEB_VITAL_TEMPLATES as readonly string[]).includes(row.template) ? row.template : 'other'
+      ) as WebVitalTemplate;
+      const perMetric = byTemplateMetric.get(tpl) ?? new Map();
+      const tplList = perMetric.get(metric) ?? [];
+      tplList.push({ bucket: row.bucket, count: row.count });
+      perMetric.set(metric, tplList);
+      byTemplateMetric.set(tpl, perMetric);
     }
     const vitals: VitalsSummaryEntry[] = WEB_VITAL_ORDER.map((metric) => {
       const counts = byMetric.get(metric) ?? [];
@@ -240,6 +269,27 @@ export function createAnalyticsService({
         samples,
       };
     });
+    const byTemplate: TemplateVitalsEntry[] = WEB_VITAL_TEMPLATES.map((template) => {
+      const perMetric = byTemplateMetric.get(template);
+      const entries = WEB_VITAL_ORDER.map((metric) => {
+        const counts = perMetric?.get(metric) ?? [];
+        const samples = counts.reduce((sum, entry) => sum + entry.count, 0);
+        const p75 = histogramP75(counts);
+        return {
+          metric,
+          label: WEB_VITALS[metric].label,
+          p75,
+          rating: p75 === null ? null : webVitalRating(metric, p75),
+          samples,
+        };
+      });
+      return {
+        template,
+        label: WEB_VITAL_TEMPLATE_LABELS[template],
+        vitals: entries,
+        samples: entries.reduce((sum, entry) => sum + entry.samples, 0),
+      };
+    }).filter((entry) => entry.samples > 0);
 
     return {
       days: windowDays,
@@ -249,6 +299,7 @@ export function createAnalyticsService({
       topPaths: rank(paths).map(([path, views]) => ({ path, views })),
       topReferrers: rank(referrers).map(([host, views]) => ({ host, views })),
       vitals,
+      byTemplate,
     };
   }
 

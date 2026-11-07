@@ -283,6 +283,7 @@ const analyticsFixture = {
     { path: '/about', views: 12 },
   ],
   topReferrers: [{ host: 'example.com', views: 5 }],
+  byTemplate: [],
   vitals: [
     { metric: 'lcp', label: 'Largest Contentful Paint', p75: 2000, rating: 'good', samples: 12 },
     {

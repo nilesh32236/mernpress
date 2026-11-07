@@ -1086,6 +1086,13 @@ export interface AnalyticsVitalEntry {
   samples: number;
 }
 
+export interface AnalyticsTemplateVitals {
+  template: string;
+  label: string;
+  vitals: AnalyticsVitalEntry[];
+  samples: number;
+}
+
 export interface AnalyticsSummary {
   days: number;
   totalViews: number;
@@ -1094,6 +1101,7 @@ export interface AnalyticsSummary {
   topPaths: Array<{ path: string; views: number }>;
   topReferrers: Array<{ host: string; views: number }>;
   vitals: AnalyticsVitalEntry[];
+  byTemplate: AnalyticsTemplateVitals[];
 }
 
 export async function fetchAnalytics(days = 7): Promise<AnalyticsSummary> {

@@ -125,3 +125,83 @@ export function histogramP75(
   }
   return sorted[sorted.length - 1]?.bucket ?? null;
 }
+
+/**
+ * Route-template breakdown for field vitals (ADR 0057 amendment).
+ *
+ * Full paths are never stored (privacy); only the template that produced the
+ * sample is kept, so editors learn whether posts, pages or archives are slow
+ * without correlating a visitor to a URL.
+ */
+export const WEB_VITAL_TEMPLATES = ['home', 'post', 'page', 'archive', 'search', 'other'] as const;
+
+export type WebVitalTemplate = (typeof WEB_VITAL_TEMPLATES)[number];
+
+export const WEB_VITAL_TEMPLATE_LABELS: Record<WebVitalTemplate, string> = {
+  home: 'Home',
+  post: 'Post',
+  page: 'Page',
+  archive: 'Archive',
+  search: 'Search',
+  other: 'Other',
+};
+
+/**
+ * Classify a public pathname into a template. Language prefixes
+ * (`/<lang>/...`) are stripped first; anything unrecognised is `other`.
+ */
+export function templateForPath(pathname: string): WebVitalTemplate {
+  let path = pathname.split(/[?#]/)[0] ?? '';
+  if (!path.startsWith('/')) return 'other';
+  path = path.replace(/\/{2,}/g, '/');
+  if (path.length > 1) path = path.replace(/\/+$/, '');
+  if (path === '') return 'home';
+  const segments = path.split('/').filter(Boolean);
+  // Strip a two/three-letter language prefix when more segments follow. Route
+  // prefixes never double as languages, so check them first (tag/category).
+  const routePrefixes = new Set([
+    'posts',
+    'category',
+    'tag',
+    'author',
+    'search',
+    'feed',
+    'api',
+    'admin',
+    'archives',
+  ]);
+  if (
+    segments.length > 1 &&
+    !routePrefixes.has(segments[0]!.toLowerCase()) &&
+    /^[a-z]{2,3}(-[a-z]{2})?$/i.test(segments[0]!) &&
+    segments[0]!.length <= 5
+  ) {
+    segments.shift();
+    path = `/${segments.join('/')}`;
+  }
+  if (path === '/' || path === '') return 'home';
+  if (
+    path === '/feed' ||
+    path === '/feed.xml' ||
+    path === '/sitemap.xml' ||
+    path === '/robots.txt'
+  ) {
+    return 'other';
+  }
+  if (path === '/search' || path.startsWith('/search/') || path === '/posts') {
+    return path === '/posts' ? 'archive' : 'search';
+  }
+  if (path.startsWith('/posts/')) return 'post';
+  if (
+    path.startsWith('/category/') ||
+    path.startsWith('/tag/') ||
+    path.startsWith('/author/') ||
+    path.startsWith('/archives/')
+  ) {
+    return 'archive';
+  }
+  if (!path.includes('/')) return 'page';
+  // Unknown multi-segment paths are archives/other public surfaces.
+  if (segments.length === 1) return 'page';
+  return 'other';
+}

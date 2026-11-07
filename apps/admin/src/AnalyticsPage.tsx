@@ -250,6 +250,54 @@ export function AnalyticsPage() {
                       </li>
                     ))}
                   </ul>
+                  {data.byTemplate.length > 0 ? (
+                    <>
+                      <h3 className="vitals-breakdown-heading">By template</h3>
+                      <div className="table-scroll">
+                        <table className="analytics-table vitals-breakdown">
+                          <caption className="screen-reader-text">
+                            Core Web Vitals p75 by route template
+                          </caption>
+                          <thead>
+                            <tr>
+                              <th scope="col">Template</th>
+                              <th scope="col">LCP</th>
+                              <th scope="col">INP</th>
+                              <th scope="col">CLS</th>
+                              <th scope="col">Samples</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {data.byTemplate.map((row) => {
+                              const valueFor = (metric: string) =>
+                                row.vitals.find((entry) => entry.metric === metric)?.p75 ?? null;
+                              return (
+                                <tr key={row.template}>
+                                  <th scope="row">{row.label}</th>
+                                  <td>
+                                    {valueFor('lcp') === null
+                                      ? '—'
+                                      : formatWebVital('lcp', valueFor('lcp')!)}
+                                  </td>
+                                  <td>
+                                    {valueFor('inp') === null
+                                      ? '—'
+                                      : formatWebVital('inp', valueFor('inp')!)}
+                                  </td>
+                                  <td>
+                                    {valueFor('cls') === null
+                                      ? '—'
+                                      : formatWebVital('cls', valueFor('cls')!)}
+                                  </td>
+                                  <td>{row.samples.toLocaleString()}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  ) : null}
                 </>
               )}
             </section>

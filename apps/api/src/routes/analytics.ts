@@ -16,6 +16,7 @@ const vitalSchema = z
   .object({
     metric: z.enum(['lcp', 'inp', 'cls', 'fcp', 'ttfb']),
     value: z.number().finite().min(0).max(600000),
+    template: z.enum(['home', 'post', 'page', 'archive', 'search', 'other']).optional(),
   })
   .strict();
 
@@ -62,6 +63,7 @@ export function registerAnalyticsRoutes(
         await analytics.recordVital({
           metric: body.metric,
           value: body.value,
+          ...(body.template === undefined ? {} : { template: body.template }),
           userAgent: request.headers['user-agent'] ?? null,
         });
       }

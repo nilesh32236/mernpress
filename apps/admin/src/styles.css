@@ -14096,3 +14096,13 @@ button.button-link.is-danger {
 .redirect-target {
   color: #646970;
 }
+
+.vitals-breakdown-heading {
+  margin: 16px 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.vitals-breakdown tbody th {
+  font-weight: 600;
+}

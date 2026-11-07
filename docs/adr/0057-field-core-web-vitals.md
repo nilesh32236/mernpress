@@ -71,3 +71,17 @@ Vitals gives editors real field data without an external embed.
 - CLS is reported as 0 for pages with no shifts, which is a valid measurement.
 - No new secret or external service; retention, consent and DNT behaviour match
   the page-view beacon.
+## Amendment 2026-11-07 — Per-template breakdown
+
+Full paths are never stored, but the route that produced a sample is useful:
+editors need to know whether posts or pages are slow. `templateForPath`
+(contracts) classifies a pathname into `home`, `post`, `page`, `archive`,
+`search` or `other` (language prefixes stripped; unknown routes are `other`),
+and the beacon reports only that template.
+
+`web_vitals_daily` gained a `template` column (migration
+`20261107120000_add_vitals_template`; existing rows move to `other` and the
+unique key becomes `(day, template, metric, bucket)`). The summary gains
+`byTemplate` — templates with samples only, each with its own p75/rating per
+metric — and Dashboard → Analytics renders a “By template” table (LCP/INP/CLS
+p75 + sample count). The 28-day speculation gate still uses the totals.

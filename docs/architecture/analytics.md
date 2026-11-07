@@ -97,3 +97,9 @@ samples }]`. The same `analytics_retention_days` sweep removes old web-vital
 rows together with page views; `AnalyticsPruneResult` reports `vitalsPruned`.
 The public data has no path, referrer, cookie, user agent or IP, so there is
 nothing else to erase.
+Per-template breakdown: the beacon also sends the route template
+(`home/post/page/archive/search/other`, classified by `templateForPath` in
+contracts — never the full path), and `web_vitals_daily` stores one row per
+`(day, template, metric, bucket)`. The admin summary returns `byTemplate`
+with p75/rating per metric for every template that has samples; the
+speculation gate continues to use the 28-day totals.

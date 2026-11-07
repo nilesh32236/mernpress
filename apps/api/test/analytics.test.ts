@@ -25,6 +25,12 @@ interface SummaryShape {
     rating: string | null;
     samples: number;
   }>;
+  byTemplate: Array<{
+    template: string;
+    label: string;
+    samples: number;
+    vitals: Array<{ metric: string; p75: number | null; rating: string | null; samples: number }>;
+  }>;
 }
 
 describe('privacy-first analytics', () => {
@@ -234,7 +240,7 @@ describe('privacy-first analytics', () => {
     // CLS arrives as a unitless score and is stored as milli-score; three small
     // shifts plus one large one still put p75 in the good bucket.
     for (const value of [0.05, 0.05, 0.05, 0.32]) {
-      await vitalBeacon({ metric: 'cls', value });
+      await vitalBeacon({ metric: 'cls', value, template: 'post' });
     }
 
     // Malformed, unknown and out-of-range samples are ignored.
@@ -282,6 +288,37 @@ describe('privacy-first analytics', () => {
       rating: 'needs-improvement',
       samples: 8,
     });
+  });
+
+  it('aggregates vitals by route template without storing full paths', async () => {
+    await vitalBeacon({ metric: 'lcp', value: 2100, template: 'post' });
+    await vitalBeacon({ metric: 'lcp', value: 2600, template: 'post' });
+    await vitalBeacon({ metric: 'lcp', value: 4500, template: 'page' });
+    await vitalBeacon({ metric: 'lcp', value: 4600, template: 'page' });
+    await vitalBeacon({ metric: 'lcp', value: 1500, template: 'home' });
+
+    const data = (await summary()).json() as SummaryShape;
+    const byTemplate = new Map(data.byTemplate.map((entry) => [entry.template, entry]));
+    expect(byTemplate.get('post')?.samples).toBe(2);
+    expect(byTemplate.get('post')?.vitals.find((entry) => entry.metric === 'lcp')).toMatchObject({
+      p75: 3000,
+      rating: 'needs-improvement',
+      samples: 2,
+    });
+    expect(byTemplate.get('page')?.vitals.find((entry) => entry.metric === 'lcp')).toMatchObject({
+      p75: 5000,
+      rating: 'poor',
+      samples: 2,
+    });
+    expect(byTemplate.get('home')?.samples).toBe(1);
+    expect(byTemplate.has('archive')).toBe(false);
+    // Overall totals include every template.
+    expect(data.vitals.find((entry) => entry.metric === 'lcp')?.samples).toBe(5);
+    // The stored rows contain template kinds only, never a full path.
+    const stored = await app.database.webVitalDaily.findMany({
+      select: { template: true },
+    });
+    expect(new Set(stored.map((row) => row.template))).toEqual(new Set(['post', 'page', 'home']));
   });
 
   it('prunes web-vital buckets with the same retention window', async () => {

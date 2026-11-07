@@ -26,6 +26,32 @@ const summary: AnalyticsSummary = {
     { path: '/about', views: 12 },
   ],
   topReferrers: [{ host: 'example.com', views: 5 }],
+  byTemplate: [
+    {
+      template: 'post',
+      label: 'Post',
+      samples: 24,
+      vitals: [
+        {
+          metric: 'lcp',
+          label: 'Largest Contentful Paint',
+          p75: 3000,
+          rating: 'needs-improvement',
+          samples: 12,
+        },
+        {
+          metric: 'inp',
+          label: 'Interaction to Next Paint',
+          p75: 200,
+          rating: 'good',
+          samples: 12,
+        },
+        { metric: 'cls', label: 'Cumulative Layout Shift', p75: null, rating: null, samples: 0 },
+        { metric: 'fcp', label: 'First Contentful Paint', p75: null, rating: null, samples: 0 },
+        { metric: 'ttfb', label: 'Time to First Byte', p75: null, rating: null, samples: 0 },
+      ],
+    },
+  ],
   vitals: [
     { metric: 'lcp', label: 'Largest Contentful Paint', p75: 2000, rating: 'good', samples: 12 },
     {
@@ -74,6 +100,8 @@ describe('analytics page', () => {
     expect(screen.getAllByText('needs improvement').length).toBe(2);
     expect(screen.getByText('poor')).toBeDefined();
     expect(screen.getAllByText('12 samples').length).toBeGreaterThan(0);
+    expect(screen.getByRole('heading', { name: 'By template' })).toBeDefined();
+    expect(screen.getByText('3 s')).toBeDefined();
     expect(screen.getAllByRole('listitem').length).toBeGreaterThanOrEqual(7);
     expect(screen.getByText(/no cookies, no visitor identifiers/i)).toBeDefined();
     expect(vi.mocked(fetchAnalytics)).toHaveBeenCalledWith(7);

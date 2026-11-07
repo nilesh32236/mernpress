@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import type { ConsentConfig } from '@mernpress/contracts';
+import { templateForPath, type ConsentConfig } from '@mernpress/contracts';
 import { hasConsent } from '../lib/consent';
 
 /**
@@ -34,12 +34,12 @@ export function shouldTrackVitals(
   return true;
 }
 
-function send(metric: Metric, value: number): void {
+function send(metric: Metric, value: number, template: ReturnType<typeof templateForPath>): void {
   if (!Number.isFinite(value) || value < 0) return;
   void fetch('/api/public/vitals', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ metric, value }),
+    body: JSON.stringify({ metric, value, template }),
     keepalive: true,
     cache: 'no-store',
   }).catch(() => {
@@ -103,12 +103,14 @@ export function WebVitals({ consent }: { consent?: ConsentConfig }) {
       sent = true;
       for (const observer of observers) observer.disconnect();
       const inp = interactionPercentile(interactions);
-      if (lcp !== null) send('lcp', lcp);
-      if (inp !== null) send('inp', inp);
+      // Only the route template is reported, never the full path.
+      const template = templateForPath(window.location.pathname);
+      if (lcp !== null) send('lcp', lcp, template);
+      if (inp !== null) send('inp', inp, template);
       // CLS is 0 for a page with no shifts; that is a valid measurement.
-      send('cls', cls);
-      if (fcp !== null) send('fcp', fcp);
-      if (ttfb !== null && ttfb > 0) send('ttfb', ttfb);
+      send('cls', cls, template);
+      if (fcp !== null) send('fcp', fcp, template);
+      if (ttfb !== null && ttfb > 0) send('ttfb', ttfb, template);
     };
 
     const onVisibility = () => {

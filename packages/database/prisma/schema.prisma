@@ -533,14 +533,17 @@ model Job {
 model WebVitalDaily {
   id        String   @id @default(uuid(7)) @db.Uuid
   day       DateTime @db.Date
+  /// Route template only (home/post/page/archive/search/other); never a full path.
+  template  String   @default("other") @db.VarChar(16)
   metric    String   @db.VarChar(16)
   bucket    Int
   count     Int      @default(0)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  @@unique([day, metric, bucket])
+  @@unique([day, template, metric, bucket])
   @@index([day])
+  @@index([template])
   @@map("web_vitals_daily")
 }
 
