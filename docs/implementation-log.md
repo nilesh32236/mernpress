@@ -5687,3 +5687,12 @@ verified in production with a temporary administrator:
   cache. Production is back to 1 user, 2 posts, 0 vitals/analytics rows;
   `/`, `/admin/`, `/admin/analytics`, `/api/health` and `/posts/testcom`
   return 200.
+### 2026-11-07 — Visual baselines for Dashboard, Terms, Import, Site Health and Updates
+
+- Added six baselines (49 total): Dashboard, Terms (Categories), Import,
+  Site Health and Updates at desktop, plus Terms at 375.
+- The Terms ready check targets the Add Category heading (the Name label also
+  matches sortable column buttons once the table renders).
+- Dashboard uses the pinned demo dates and the scheduler-disabled E2E state,
+  so At a Glance, Activity and Site Health cards are stable.
+- The suite passes twice in a row against the committed baselines.
