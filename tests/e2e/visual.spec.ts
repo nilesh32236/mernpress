@@ -26,7 +26,7 @@ const ADMIN_URL = 'http://127.0.0.1:5173/admin/';
 const adminUsername = 'visual_admin';
 const password = 'Visual-E2E-2026-strong!';
 
-test.describe.configure({ mode: 'serial', retries: 0 });
+test.describe.configure({ mode: 'serial', retries: 0, timeout: 180_000 });
 
 test.beforeAll(() => {
   const testDatabaseUrl = process.env['TEST_DATABASE_URL'];
@@ -196,6 +196,12 @@ test('admin visual baselines', async ({ page }) => {
     ['redirects', '/admin/tools/redirects', 'Redirects', 'Broken links (0 broken, 0 checked)'],
     ['dashboard', '/admin/', 'Dashboard', 'At a Glance'],
     ['profile', '/admin/profile', 'Profile', 'Personal Options'],
+    ['customize', '/admin/themes/customize', 'Customizing: MERNPress', 'Site Identity'],
+    ['add-themes', '/admin/themes/new', 'Add Themes', 'Popular'],
+    ['export', '/admin/tools?section=export', 'Export', 'Choose what to export'],
+    ['media-settings', '/admin/settings#media', 'Media Settings', 'Thumbnail size'],
+    ['discussion', '/admin/settings#discussion', 'Discussion Settings', 'Pings'],
+    ['privacy', '/admin/settings#privacy', 'Privacy', 'Privacy Settings'],
     [
       'export-personal-data',
       '/admin/tools/export-personal-data',

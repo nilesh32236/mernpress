@@ -5701,3 +5701,10 @@ verified in production with a temporary administrator:
 - Added six baselines (55 total): Profile at desktop and mobile, Export and
   Erase Personal Data, Writing and Permalinks at desktop.
 - The suite passes twice in a row against the committed baselines.
+### 2026-11-07 — Visual baselines for Customize, Add Themes, Export and remaining Settings tabs
+
+- Added six baselines (61 total): Appearance → Customize and Add Themes,
+  Export, Media Settings, Discussion and Privacy at desktop.
+- Raised the file timeout to 180s so the enlarged admin capture test does not
+  time out.
+- The suite passes twice in a row against the committed baselines.
