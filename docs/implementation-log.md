@@ -5776,3 +5776,10 @@ verified in production with a temporary administrator:
   Add User control (the Howdy greeting is hidden at mobile width) and
   Plugins waits on the Inactive tab (plugin names hide at mobile width).
 - The suite passes twice in a row against the committed baselines.
+
+### 2026-11-07 — Mobile baselines for Export and Erase Personal Data
+
+- Added two mobile baselines (93 total): Export and Erase Personal Data
+  at 375, waiting on the Add Data Export/Erasure Request headings.
+- The suite passes consecutively against the committed baselines (one
+  site-editor desktop capture flaked once at 1% then passed twice).

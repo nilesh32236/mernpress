@@ -350,6 +350,18 @@ test('admin visual baselines', async ({ page }) => {
     ['export', '/admin/tools?section=export', 'Export', 'Choose what to export'],
     ['add-themes', '/admin/themes/new', 'Add Themes', 'Popular'],
     ['connectors', '/admin/settings/connectors', 'Connectors', 'OpenAI'],
+    [
+      'export-personal-data',
+      '/admin/tools/export-personal-data',
+      'Export Personal Data',
+      'Add Data Export Request',
+    ],
+    [
+      'erase-personal-data',
+      '/admin/tools/erase-personal-data',
+      'Erase Personal Data',
+      'Add Data Erasure Request',
+    ],
   ];
   for (const [name, route, heading, readyText] of mobileScreens) {
     await page.goto(`http://127.0.0.1:5173${route}`, { waitUntil: 'domcontentloaded' });
