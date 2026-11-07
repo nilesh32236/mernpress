@@ -5887,3 +5887,9 @@ covered by sanitizer + golden + E2E tests locally.
   asserts the populated state: grid tile alt text, list-view file name
   (`parity-hero.png`) and no horizontal overflow. Previously only the empty
   ("No media yet") and folder states were covered.
+
+### 2026-11-07 — Populated Comments DOM contract
+
+- `admin-parity.spec.ts` now seeds a published post + approved comment and
+  asserts the populated Comments state (author, body, no overflow).
+  Previously only the empty ("No comments found") state was covered.

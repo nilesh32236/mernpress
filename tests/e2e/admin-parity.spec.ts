@@ -465,6 +465,42 @@ test('Analytics, Languages, Backups and the Media folder manager keep the contro
     { stdio: 'pipe' },
   );
 
+  // Populated comments state: one approved comment renders on the Comments
+  // list with its author and content. (Empty state is covered elsewhere.)
+  execFileSync(
+    'psql',
+    [
+      testDatabaseUrl,
+      '-c',
+      `WITH p AS (
+         INSERT INTO posts (id, type, status, title, slug, content, created_at, updated_at)
+         VALUES (gen_random_uuid(), 'post', 'PUBLISHED', 'Parity post', 'parity-post', '<p>Parity post body.</p>', now() - interval '2 days', now() - interval '2 days')
+         RETURNING id
+       )
+       INSERT INTO comments (id, post_id, author_name, author_email, content, status, created_at, updated_at)
+       SELECT gen_random_uuid(), id, 'Parity Reader', 'reader@example.com', 'Parity comment body', 'APPROVED', now() - interval '2 days', now() - interval '2 days'
+       FROM p;`,
+    ],
+    { stdio: 'pipe' },
+  );
+  await page.goto('http://127.0.0.1:5173/admin/comments');
+  await expect(page.getByText('Parity Reader').first()).toBeVisible();
+  await expect(page.getByText('Parity comment body').first()).toBeVisible();
+  const commentsPopulated = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    innerWidth: window.innerWidth,
+  }));
+  expect(commentsPopulated.scrollWidth).toBeLessThanOrEqual(commentsPopulated.innerWidth);
+  execFileSync(
+    'psql',
+    [
+      testDatabaseUrl,
+      '-c',
+      "DELETE FROM comments WHERE author_email = 'reader@example.com'; DELETE FROM posts WHERE slug = 'parity-post';",
+    ],
+    { stdio: 'pipe' },
+  );
+
   // Mobile pass for the same four screens: no horizontal overflow, and the
   // media folder controls stay on the 32px touch target.
   await page.setViewportSize({ width: 375, height: 812 });
