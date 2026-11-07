@@ -5899,3 +5899,9 @@ covered by sanitizer + golden + E2E tests locally.
 - `admin-parity.spec.ts` now seeds one redirect (`/parity-old` → `/parity-new`)
   and asserts the populated Redirects list (from/to paths, no overflow).
   Previously only the empty state was covered.
+
+### 2026-11-07 — Populated Broken Links DOM contract
+
+- `admin-parity.spec.ts` now seeds one broken link-check row and asserts
+  the populated Broken links panel (source, URL, no overflow). Previously
+  only the empty ("0 broken, 0 checked") state was covered.

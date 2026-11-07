@@ -527,6 +527,32 @@ test('Analytics, Languages, Backups and the Media folder manager keep the contro
     { stdio: 'pipe' },
   );
 
+  // Populated broken-links state: one broken row renders in the Broken links
+  // panel with its source, URL and status. (Empty state is covered elsewhere.)
+  execFileSync(
+    'psql',
+    [
+      testDatabaseUrl,
+      '-c',
+      "INSERT INTO link_checks (id, source_post_id, source_title, source_slug, url, kind, status, http_status, redirect_to, checked_at, created_at, updated_at) VALUES (gen_random_uuid(), gen_random_uuid(), 'Parity source', 'parity-source', '/parity-missing-link', 'internal', 'broken', 404, NULL, now(), now(), now());",
+    ],
+    { stdio: 'pipe' },
+  );
+  await page.goto('http://127.0.0.1:5173/admin/tools/redirects');
+  await expect(page.getByRole('heading', { name: /Broken links \(/ })).toBeVisible();
+  await expect(page.getByText('Parity source').first()).toBeVisible();
+  await expect(page.getByText('/parity-missing-link').first()).toBeVisible();
+  const linksPopulated = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    innerWidth: window.innerWidth,
+  }));
+  expect(linksPopulated.scrollWidth).toBeLessThanOrEqual(linksPopulated.innerWidth);
+  execFileSync(
+    'psql',
+    [testDatabaseUrl, '-c', "DELETE FROM link_checks WHERE url = '/parity-missing-link';"],
+    { stdio: 'pipe' },
+  );
+
   // Mobile pass for the same four screens: no horizontal overflow, and the
   // media folder controls stay on the 32px touch target.
   await page.setViewportSize({ width: 375, height: 812 });
