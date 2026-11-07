@@ -25,3 +25,12 @@ export {
   type WebVitalMetric,
   type WebVitalRating,
 } from './web-vitals.js';
+
+export {
+  SPECULATION_MIN_SAMPLES,
+  shouldPrerender,
+  speculationRules,
+  type SpeculationMode,
+  type SpeculationRules,
+  type SpeculationVitalsEntry,
+} from './speculation.js';

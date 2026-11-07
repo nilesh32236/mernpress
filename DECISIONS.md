@@ -196,6 +196,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-125 | 2026-11-07 | Speculative prerender evaluated with field CWV data (production: 1 sample) and deferred: keep Next prefetch=auto; no speculation rules or settings UI until 100+ samples per metric over 28 days AND LCP/INP p75 is needs-improvement on a high-traffic template, then prerender the next likely post link only (same-origin, exclude logged-in/DNT). | accepted | [ADR 0059](docs/adr/0059-speculative-prerender-evaluation.md) |
 
+| D-126 | 2026-11-07 | Gated speculative prerender (supersedes ADR 0059 deferral): Reading setting `speculation_mode`; web layout emits same-origin speculation rules (`prefetch` moderate; `prerender` conservative on `a[href^="/posts/"]` only when the public 28-day vitals gate passes: 100+ LCP+INP samples and either needs-improvement/poor, else prefetch fallback). Public `GET /api/public/vitals-summary` exposes aggregates only. Default off. | accepted | [ADR 0060](docs/adr/0060-gated-speculative-prerender.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

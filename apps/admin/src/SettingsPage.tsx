@@ -187,6 +187,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
   const [postsPerPage, setPostsPerPage] = useState('10');
   const [postsPerRss, setPostsPerRss] = useState('10');
   const [rssUseExcerpt, setRssUseExcerpt] = useState<'full' | 'excerpt'>('full');
+  const [speculationMode, setSpeculationMode] = useState<'off' | 'prefetch' | 'prerender'>('off');
   const [blogPublic, setBlogPublic] = useState(true);
   const [, setReadingDirty] = useState(false);
 
@@ -257,6 +258,11 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
         setHomepageId(textValue(values.homepage_id));
         setPostsPageId(textValue(values.posts_page_id));
         setPostsPerPage(textValue(values.posts_per_page));
+        setSpeculationMode(
+          values.speculation_mode === 'prefetch' || values.speculation_mode === 'prerender'
+            ? values.speculation_mode
+            : 'off',
+        );
         setReadingDirty(false);
       } else {
         setDefaultCategory(textValue(values.default_post_category));
@@ -372,6 +378,7 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
         homepage_id: homepageId.trim() === '' ? null : homepageId.trim(),
         posts_page_id: postsPageId.trim() === '' ? null : postsPageId.trim(),
         posts_per_page: Number(postsPerPage),
+        speculation_mode: speculationMode,
         posts_per_rss: Number(postsPerRss) || 10,
         rss_use_excerpt: rssUseExcerpt === 'excerpt',
         blog_public: blogPublic,
@@ -1025,6 +1032,34 @@ export function SettingsPage({ user: _user }: { user: AuthUser }) {
                   >
                     Learn more about feeds.
                   </a>
+                </p>
+              </div>
+            </div>
+            <div className="field">
+              <label htmlFor="speculation_mode">Speculative loading</label>
+              <div>
+                <select
+                  id="speculation_mode"
+                  value={speculationMode}
+                  onChange={(event) => {
+                    setSpeculationMode(
+                      event.target.value === 'prefetch' || event.target.value === 'prerender'
+                        ? event.target.value
+                        : 'off',
+                    );
+                    setReadingDirty(true);
+                  }}
+                  disabled={saving.reading}
+                >
+                  <option value="off">Off (default)</option>
+                  <option value="prefetch">Prefetch (moderate)</option>
+                  <option value="prerender">Prerender (only with field data)</option>
+                </select>
+                <p className="field-help">
+                  Public pages already prefetch with Next.js. Prefetch adds browser speculation
+                  hints; Prerender also renders likely post links but only activates when field
+                  vitals show at least 100 LCP and INP samples with a needs-improvement rating,
+                  otherwise it falls back to prefetch.
                 </p>
               </div>
             </div>

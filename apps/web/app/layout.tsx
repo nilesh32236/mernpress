@@ -3,7 +3,8 @@ import { headers } from 'next/headers';
 import type { CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
 import { Manrope } from 'next/font/google';
-import { getSiteSettings, listPublicPosts } from '@/lib/api';
+import { getPublicVitalsSummary, getSiteSettings, listPublicPosts } from '@/lib/api';
+import SpeculationRules from '@/components/SpeculationRules';
 import './globals.css';
 import PublicAdminBar from '@/components/PublicAdminBar';
 import JsonLd from '@/components/JsonLd';
@@ -52,13 +53,16 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   let pageLinks: Array<{ id: string; title: string; slug: string }>;
   let settings = null;
+  let vitalsSummary = null;
   try {
-    const [pages, site] = await Promise.all([
+    const [pages, site, vitals] = await Promise.all([
       listPublicPosts({ type: 'page', perPage: 6 }),
       getSiteSettings(),
+      getPublicVitalsSummary(),
     ]);
     pageLinks = pages?.items ?? [];
     settings = site;
+    vitalsSummary = vitals;
   } catch {
     // The nav/footer still render when the API is unavailable.
     pageLinks = [];
@@ -118,6 +122,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body>
         <ViewTracker consent={consent} />
         <WebVitals consent={consent} />
+        <SpeculationRules
+          mode={settings?.speculationMode ?? 'off'}
+          vitals={vitalsSummary?.vitals ?? []}
+        />
         {settings?.customCss ? (
           <style id="customizer-css" dangerouslySetInnerHTML={{ __html: settings.customCss }} />
         ) : null}

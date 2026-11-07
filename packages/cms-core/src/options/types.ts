@@ -32,6 +32,7 @@ export interface SiteSettings {
   blogPublic: boolean;
   postsPerRss: number;
   rssUseExcerpt: boolean;
+  speculationMode: 'off' | 'prefetch' | 'prerender';
   /** Legacy single base; kept for clients that still read it. */
   permalinkBase: string;
   permalinkStructure: PermalinkPreset;

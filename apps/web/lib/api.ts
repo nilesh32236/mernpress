@@ -150,6 +150,7 @@ export interface SiteSettings {
   blogPublic: boolean;
   postsPerRss: number;
   rssUseExcerpt: boolean;
+  speculationMode?: 'off' | 'prefetch' | 'prerender';
   permalinkBase: string;
   permalinkStructure: 'plain' | 'day' | 'month' | 'numeric' | 'postname' | 'custom';
   permalinkPattern: string;
@@ -263,6 +264,28 @@ export async function listPublishedPosts(page = 1, perPage = 10): Promise<PostsP
 }
 
 /** Backwards-compatible alias used by sitemap generation. */
+export interface PublicVitalsSummary {
+  days: number;
+  vitals: Array<{
+    metric: 'lcp' | 'inp' | 'cls' | 'fcp' | 'ttfb';
+    label: string;
+    p75: number | null;
+    rating: 'good' | 'needs-improvement' | 'poor' | null;
+    samples: number;
+  }>;
+}
+
+/** 28-day field vitals for the speculation gate. No paths or identifiers. */
+export async function getPublicVitalsSummary(): Promise<PublicVitalsSummary | null> {
+  try {
+    const res = await fetch(`${apiUrl()}/api/public/vitals-summary`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    return (await res.json()) as PublicVitalsSummary;
+  } catch {
+    return null;
+  }
+}
+
 export async function getSiteSettings(): Promise<SiteSettings> {
   // Site settings include the active theme and reading visibility; a stale
   // cache would keep serving the previous theme for up to a minute.

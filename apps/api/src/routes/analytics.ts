@@ -71,6 +71,12 @@ export function registerAnalyticsRoutes(
     return reply.code(204).send();
   });
 
+  // Aggregated field vitals only (p75/rating/samples). No paths, hosts,
+  // cookies or identifiers, so it is safe to expose for the speculation gate.
+  app.get('/api/public/vitals-summary', async (_request, reply) => {
+    return reply.header('Cache-Control', 'no-store').send(await analytics.vitalsSummary());
+  });
+
   app.get('/api/admin/analytics', async (request, reply) => {
     const ctx = await requireAdmin(request as FastifyRequest, reply as FastifyReply, {
       env,

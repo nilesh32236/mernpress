@@ -148,6 +148,43 @@ export function createAnalyticsService({
     return true;
   }
 
+  /**
+   * Public-safe field vitals for the speculation gate: aggregated p75/rating/
+   * samples over the last 28 days, with no paths, hosts or identifiers.
+   */
+  async function vitalsSummary(): Promise<{ days: number; vitals: VitalsSummaryEntry[] }> {
+    const days = 28;
+    const today = utcDay(now());
+    const start = new Date(today.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
+    const vitalRows = await prisma.webVitalDaily.findMany({
+      where: { day: { gte: start } },
+      select: { metric: true, bucket: true, count: true },
+    });
+    const byMetric = new Map<WebVitalMetric, Array<{ bucket: number; count: number }>>();
+    for (const row of vitalRows) {
+      if (!(row.metric in WEB_VITALS)) continue;
+      const metric = row.metric as WebVitalMetric;
+      const list = byMetric.get(metric) ?? [];
+      list.push({ bucket: row.bucket, count: row.count });
+      byMetric.set(metric, list);
+    }
+    return {
+      days,
+      vitals: WEB_VITAL_ORDER.map((metric) => {
+        const counts = byMetric.get(metric) ?? [];
+        const samples = counts.reduce((sum, entry) => sum + entry.count, 0);
+        const p75 = histogramP75(counts);
+        return {
+          metric,
+          label: WEB_VITALS[metric].label,
+          p75,
+          rating: p75 === null ? null : webVitalRating(metric, p75),
+          samples,
+        };
+      }),
+    };
+  }
+
   async function summary(principal: Principal, days = 7): Promise<AnalyticsSummary> {
     requireCapability(principal, 'content.read.any');
     const windowDays = Math.min(365, Math.max(1, Math.trunc(days)));
@@ -244,7 +281,7 @@ export function createAnalyticsService({
     };
   }
 
-  return { record, recordVital, summary, prune };
+  return { record, recordVital, vitalsSummary, summary, prune };
 }
 
 export type AnalyticsService = ReturnType<typeof createAnalyticsService>;

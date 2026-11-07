@@ -5609,3 +5609,22 @@ administrator and public routes:
   makes the capture fail on the next calendar day; the browser still exercises
   the real bars, tables and rating badges.
 - The suite passes twice in a row against the committed baselines.
+
+### 2026-11-07 — Gated speculative prerender (ADR 0060)
+
+- Reading setting `speculation_mode` (`off` default, `prefetch`, `prerender`)
+  with server validation and public exposure; Settings → Reading explains the
+  gate in the help text.
+- `packages/contracts/src/speculation.ts` owns the gate (≥100 LCP and INP
+  samples in 28 days **and** either needs-improvement/poor) and the rules
+  builder; prerender without data falls back to prefetch rules.
+- New public `GET /api/public/vitals-summary` returns aggregated 28-day
+  p75/rating/samples with no paths, hosts or identifiers.
+- The web root layout emits at most one `<script type="speculationrules">`:
+  prefetch moderate, or conservative prerender for `a[href^="/posts/"]` when
+  gated. Default `off` renders nothing (Next prefetch unchanged).
+- Tests: contracts gate/rules (thresholds, fallback, off); web component
+  (off empty, prefetch rules, prerender gate); API summary shape, site-settings
+  exposure, reading save and invalid-mode rejection.
+- Validation: 962 unit/integration tests (API 557, admin 258, web 62, contracts
+  20, block-system 65), 35 Playwright E2E tests and seven builds pass.

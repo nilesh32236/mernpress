@@ -295,6 +295,16 @@ const SPECS: Record<string, OptionSpec> = {
       return value;
     },
   },
+  speculation_mode: {
+    group: 'reading',
+    defaultValue: 'off',
+    validate: (value) => {
+      if (value !== 'off' && value !== 'prefetch' && value !== 'prerender') {
+        throwValidation("speculation_mode must be 'off', 'prefetch' or 'prerender'.");
+      }
+      return value;
+    },
+  },
   rss_use_excerpt: {
     group: 'reading',
     defaultValue: false,
@@ -1016,6 +1026,7 @@ export function createOptionService(options: OptionServiceOptions) {
       'blog_public',
       'posts_per_rss',
       'rss_use_excerpt',
+      'speculation_mode',
       'permalink_base',
       'permalink_structure',
       'permalink_pattern',
@@ -1079,6 +1090,10 @@ export function createOptionService(options: OptionServiceOptions) {
           ? values.posts_per_rss
           : 10,
       rssUseExcerpt: values.rss_use_excerpt === true,
+      speculationMode:
+        values.speculation_mode === 'prefetch' || values.speculation_mode === 'prerender'
+          ? values.speculation_mode
+          : 'off',
       permalinkBase:
         typeof values.permalink_base === 'string' && values.permalink_base
           ? values.permalink_base
