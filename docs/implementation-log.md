@@ -5893,3 +5893,9 @@ covered by sanitizer + golden + E2E tests locally.
 - `admin-parity.spec.ts` now seeds a published post + approved comment and
   asserts the populated Comments state (author, body, no overflow).
   Previously only the empty ("No comments found") state was covered.
+
+### 2026-11-07 — Populated Redirects DOM contract
+
+- `admin-parity.spec.ts` now seeds one redirect (`/parity-old` → `/parity-new`)
+  and asserts the populated Redirects list (from/to paths, no overflow).
+  Previously only the empty state was covered.

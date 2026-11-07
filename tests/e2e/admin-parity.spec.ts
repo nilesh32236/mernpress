@@ -501,6 +501,32 @@ test('Analytics, Languages, Backups and the Media folder manager keep the contro
     { stdio: 'pipe' },
   );
 
+  // Populated redirects state: one redirect renders on the Redirects list
+  // with its from/to paths. (Empty state is covered elsewhere.)
+  execFileSync(
+    'psql',
+    [
+      testDatabaseUrl,
+      '-c',
+      "INSERT INTO redirects (id, from_path, to_path, status_code, hits, created_at, updated_at) VALUES (gen_random_uuid(), '/parity-old', '/parity-new', 301, 3, now() - interval '1 day', now() - interval '1 day');",
+    ],
+    { stdio: 'pipe' },
+  );
+  await page.goto('http://127.0.0.1:5173/admin/tools/redirects');
+  await expect(page.getByRole('heading', { name: /Redirects \(/ })).toBeVisible();
+  await expect(page.getByText('/parity-old').first()).toBeVisible();
+  await expect(page.getByText('/parity-new').first()).toBeVisible();
+  const redirectsPopulated = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    innerWidth: window.innerWidth,
+  }));
+  expect(redirectsPopulated.scrollWidth).toBeLessThanOrEqual(redirectsPopulated.innerWidth);
+  execFileSync(
+    'psql',
+    [testDatabaseUrl, '-c', "DELETE FROM redirects WHERE from_path = '/parity-old';"],
+    { stdio: 'pipe' },
+  );
+
   // Mobile pass for the same four screens: no horizontal overflow, and the
   // media folder controls stay on the 32px touch target.
   await page.setViewportSize({ width: 375, height: 812 });
