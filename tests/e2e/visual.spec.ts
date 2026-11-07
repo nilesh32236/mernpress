@@ -228,7 +228,6 @@ test('admin visual baselines', async ({ page }) => {
     ['languages', '/admin/settings/languages', 'Languages', 'Theme strings'],
     ['consent', '/admin/settings/consent', 'Consent', 'Preview'],
     ['fonts', '/admin/fonts', 'Fonts', 'Install Fonts'],
-    ['reading', '/admin/settings#reading', 'Reading Settings', 'Speculative loading'],
     ['themes', '/admin/themes', 'Themes'],
     ['add-plugins', '/admin/plugins/new', 'Add Plugins'],
     ['add-user', '/admin/users?action=add', 'Add User'],
@@ -341,6 +340,9 @@ test('admin visual baselines', async ({ page }) => {
     ['tags', '/admin/terms?taxonomy=tag', 'Tags', 'Add Tag'],
     ['site-health', '/admin/tools?section=health', 'Site Health', 'Database connection'],
     ['import', '/admin/tools/import', 'Import', 'Blogger'],
+    ['general', '/admin/settings', 'General Settings', 'Site Title'],
+    ['reading', '/admin/settings#reading', 'Reading Settings', 'Speculative loading'],
+    ['pages', '/admin/pages', 'Pages', 'About'],
   ];
   for (const [name, route, heading, readyText] of mobileScreens) {
     await page.goto(`http://127.0.0.1:5173${route}`, { waitUntil: 'domcontentloaded' });

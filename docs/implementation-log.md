@@ -5756,3 +5756,8 @@ verified in production with a temporary administrator:
   rejects browser beacons (views/vitals) as `ORIGIN_NOT_ALLOWED`, which made
   `placeholders.spec.ts` fail intermittently depending on when
   `pagehide` fired. Full E2E passes on rerun.
+### 2026-11-07 — Mobile baselines for General, Reading and Pages
+
+- Added three mobile baselines (84 total): Settings → General, Settings →
+  Reading and Pages at 375, with loaded-field waits.
+- The suite passes twice in a row against the committed baselines.
