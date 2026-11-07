@@ -5628,3 +5628,21 @@ administrator and public routes:
   exposure, reading save and invalid-mode rejection.
 - Validation: 962 unit/integration tests (API 557, admin 258, web 62, contracts
   20, block-system 65), 35 Playwright E2E tests and seven builds pass.
+
+**Deployment (gated speculative prerender, release `20261107T053630Z-3278011`):**
+verified in production with a temporary administrator:
+- Default `speculation_mode: off` (public site settings) rendered no
+  `<script type="speculationrules">` on the homepage.
+- Saving `prefetch` through the Reading API (200) immediately changed the
+  homepage to `{"prefetch":[{"eagerness":"moderate"}]}`.
+- Saving `prerender` with only 1 field sample changed the homepage to the same
+  prefetch rules (no prerender) — the gate fell back instead of prerendering.
+- Seeded 120 LCP + 120 INP samples through the public beacon (204 each);
+  `GET /api/public/vitals-summary` reported LCP p75 5000/poor (121) and INP
+  p75 1000/poor (120). The homepage and `/posts/testcom` then rendered
+  `{"prerender":[{"selector":"a[href^=\"/posts/\"]","eagerness":"conservative"}]}`.
+- Cleanup deleted the 241 vitals rows, analytics rows, the temporary
+  administrator/sessions and recent audit events, and reset
+  `speculation_mode` to `off` (no rules tag in HTML). Production is back to
+  1 user, 2 posts, 0 vitals/analytics rows; `/`, `/admin/`, `/api/health`,
+  `/api/public/vitals-summary` and `/posts/testcom` return 200.
