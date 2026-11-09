@@ -6,6 +6,7 @@ export default async function NotFound() {
   const strings = await requestThemeStrings();
   return (
     <main id="main-content" className="site-main not-found-main">
+      <meta name="robots" content="noindex, follow" />
       <NotFoundLog />
       <div className="not-found-columns">
         <figure className="not-found-image">

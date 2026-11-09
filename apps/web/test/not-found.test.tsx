@@ -22,6 +22,8 @@ describe('not-found page', () => {
     expect(html).toContain('यह पृष्ठ मौजूद नहीं है');
     expect(html).toContain('alt="पहाड़ी पर छोटा पेड़"');
     expect(html).toContain('class="search-form"');
+    expect(html).toContain('name="robots"');
+    expect(html).toContain('noindex');
     expect(html).not.toContain('Page not found');
     expect(html).not.toContain('The page you are looking for');
   });
