@@ -409,4 +409,43 @@ describe('plugins api', () => {
       rmSync(pluginDir, { recursive: true, force: true });
     }
   });
+
+  it('treats a repeated activation as idempotent (one handler set)', async () => {
+    const pluginDir = mkdtempSync(path.join(tmpdir(), 'mernpress-repeat-plugin-'));
+    const seedDir = fileURLToPath(new URL('../../../plugins', import.meta.url));
+    const principal = { userId: '00000000-0000-7000-8000-000000000000', role: 'administrator' };
+    const draft = {
+      type: 'post' as const,
+      title: 'Repeat title',
+      slug: 'repeat-title',
+      excerpt: null,
+      content: '<!-- wp:paragraph --><p>word word word</p><!-- /wp:paragraph -->',
+      seoTitle: null,
+      seoDescription: null,
+      canonicalUrl: null,
+      robots: null,
+      ogTitle: null,
+      ogDescription: null,
+    };
+    try {
+      const service = createPluginService({
+        prisma: app.database,
+        pluginDir,
+        seedDir,
+        hooks: app.contentHooks,
+      });
+      await service.activate(principal, 'auto-excerpt');
+      await service.activate(principal, 'auto-excerpt');
+      const filtered = await app.contentHooks.applyFilters('content.post.create', draft);
+      expect(filtered.excerpt).not.toBeNull();
+
+      // One deactivation must remove every handler the plugin registered.
+      await service.deactivate(principal, 'auto-excerpt');
+      const after = await app.contentHooks.applyFilters('content.post.create', draft);
+      expect(after.excerpt).toBeNull();
+    } finally {
+      await app.contentHooks.dispose();
+      rmSync(pluginDir, { recursive: true, force: true });
+    }
+  });
 });

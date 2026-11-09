@@ -1,4 +1,4 @@
-import { createBlock, parse, serialize } from '@wordpress/blocks';
+import { createBlock, getBlockType, parse, serialize } from '@wordpress/blocks';
 import type { Block } from '@wordpress/blocks';
 
 /**
@@ -8,13 +8,27 @@ import type { Block } from '@wordpress/blocks';
  * serializer is the only writer: we never hand-build block comments.
  */
 
-/** Blocks the editor can load. Empty content starts with one empty paragraph. */
+/** Thrown when stored markup cannot be parsed. Callers must not overwrite it. */
+export class ContentParseError extends Error {
+  constructor(message = 'The stored block markup could not be parsed.') {
+    super(message);
+    this.name = 'ContentParseError';
+  }
+}
+
+/**
+ * Blocks the editor can load. Empty content starts with one empty paragraph.
+ *
+ * A parse failure throws instead of returning a blank document: silently
+ * substituting an empty paragraph means the first keystroke would save over
+ * content the parser could not read.
+ */
 export function blocksFromContent(content: string): Array<Block<Record<string, unknown>>> {
   let parsed: Array<Block<Record<string, unknown>>>;
   try {
     parsed = parse(content) as Array<Block<Record<string, unknown>>>;
-  } catch {
-    parsed = [];
+  } catch (error) {
+    throw new ContentParseError(error instanceof Error ? error.message : undefined);
   }
   if (parsed.length === 0) {
     return [createBlock('core/paragraph')];
@@ -50,6 +64,10 @@ function plainText(html: string): string {
  * True when the document has no authored content. A single empty paragraph is
  * the editor's blank state, not content: serializing it would make a brand-new
  * post look dirty before the author typed anything.
+ *
+ * "Blank" is strict: a paragraph carrying any block attribute (alignment,
+ * colour, class…) or any inline HTML beyond `<br>` counts as authored, so a
+ * media-only paragraph (`<img>`) is never dropped on save.
  */
 export function isBlankBlocks(blocks: Array<Block<Record<string, unknown>>>): boolean {
   if (blocks.length === 0) {
@@ -59,8 +77,30 @@ export function isBlankBlocks(blocks: Array<Block<Record<string, unknown>>>): bo
     if (block.name !== 'core/paragraph' || block.innerBlocks.length > 0) {
       return false;
     }
-    // Parsed paragraph content is a RichTextData object, not a plain string.
-    return plainText(attributeHtml(block.attributes['content'])) === '';
+    // Parsed blocks are filled with defaults (paragraph `dropCap: false`), so
+    // only a meaningful setting (alignment, colour, class, custom style) marks
+    // the paragraph as authored.
+    const meaningful = (value: unknown): boolean => {
+      if (value === undefined || value === null || value === false || value === '') return false;
+      if (typeof value === 'object' && !Array.isArray(value)) {
+        return Object.keys(value as Record<string, unknown>).length > 0;
+      }
+      return true;
+    };
+    const hasAuthoredAttribute = Object.entries(block.attributes).some(
+      ([key, value]) => key !== 'content' && meaningful(value),
+    );
+    if (hasAuthoredAttribute) {
+      return false;
+    }
+    const html = attributeHtml(block.attributes['content']);
+    if (plainText(html) !== '') {
+      return false;
+    }
+    // Text-free but marked up (image, embed, separator inside the paragraph):
+    // keep it. `<br>` and entities are the only markup that stays blank.
+    const withoutBreaks = html.replace(/<br\s*\/?>/gi, '').replace(/&nbsp;/gi, ' ');
+    return !/<[a-z!/]/i.test(withoutBreaks);
   });
 }
 

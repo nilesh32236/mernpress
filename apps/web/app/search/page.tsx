@@ -5,6 +5,8 @@ import Pagination from '@/components/Pagination';
 import MorePosts from '@/components/MorePosts';
 import SearchForm from '@/components/SearchForm';
 import { requestThemeStrings } from '@/lib/theme-strings';
+import { siteUrl } from '@/lib/api';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,4 +75,22 @@ export default async function SearchPage({
       <MorePosts posts={morePosts} strings={strings} />
     </main>
   );
+}
+
+/**
+ * Search results are thin, parameterised URLs; WordPress noindexes them and so
+ * does MERNPress. The search form stays reachable, just not indexable.
+ */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}): Promise<Metadata> {
+  const sp = await searchParams;
+  const query = (sp?.q ?? '').trim();
+  return {
+    title: query ? `Search results for "${query}"` : 'Search',
+    robots: { index: false, follow: true },
+    alternates: { canonical: `${siteUrl()}/search` },
+  };
 }

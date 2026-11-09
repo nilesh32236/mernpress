@@ -164,7 +164,7 @@ const ALLOWED_CSS_PROPERTIES: ReadonlySet<string> = new Set([
  */
 const SAFE_CSS_FUNCTION = /^(?:linear|radial|conic)-gradient\(/i;
 const FORBIDDEN_CSS_VALUE =
-  /url\s*\(|expression\s*\(|@|import|behavior\s*:|-moz-binding|javascript:|vbscript:|data:/i;
+  /url\s*\(|expression\s*\(|@|import|behavior\s*:|-moz-binding|javascript:|vbscript:|data:|\\/i;
 
 /**
  * Sanitize one inline `style` attribute value against the property allowlist.
@@ -183,6 +183,8 @@ export function sanitizeStyleAttribute(value: string): string {
     if (!ALLOWED_CSS_PROPERTIES.has(property) || rawValue.length === 0) {
       continue;
     }
+    // A backslash is rejected outright: CSS escapes (\75\72\6c\28) decode to
+    // url( and would bypass the literal checks below.
     if (FORBIDDEN_CSS_VALUE.test(rawValue)) {
       continue;
     }
@@ -234,8 +236,11 @@ function createPurify(): PurifyWindow {
       setAttribute?: (name: string, value: string) => void;
     };
     if (!el || el.tagName !== 'A' || typeof el.getAttribute !== 'function') return;
-    const href = el.getAttribute('href') ?? '';
-    if (!/^https?:\/\//i.test(href)) return;
+    const href = (el.getAttribute('href') ?? '').trim();
+    // Absolute (https://host) and protocol-relative (//host) links both leave
+    // the site; a leading backslash is normalised to // by browsers.
+    const isExternal = /^(?:https?:)?\/\//i.test(href) || /^\\\\/.test(href);
+    if (!isExternal) return;
     const tokens = new Set((el.getAttribute('rel') ?? '').split(/\s+/).filter(Boolean));
     tokens.add('external');
     tokens.add('noopener');
@@ -246,8 +251,25 @@ function createPurify(): PurifyWindow {
     if (typeof data.attrValue !== 'string') {
       return;
     }
+    if (data.attrName === 'srcset') {
+      // Every candidate must clear the scheme allowlist; a data: candidate in
+      // any position (not only the first) drops the whole attribute.
+      const candidates = data.attrValue
+        .split(',')
+        .map((part) => part.trim().split(/\s+/)[0] ?? '')
+        .filter(Boolean);
+      if (
+        candidates.length === 0 ||
+        candidates.some(
+          (candidate) => /^data:/i.test(candidate) || !ALLOWED_URI_REGEXP.test(candidate),
+        )
+      ) {
+        data.keepAttr = false;
+        return;
+      }
+    }
     if (
-      (data.attrName === 'src' || data.attrName === 'srcset' || data.attrName === 'href') &&
+      (data.attrName === 'src' || data.attrName === 'href') &&
       /^\s*data:/i.test(data.attrValue)
     ) {
       // Defense in depth for the data: exemption removal below: even if a
@@ -258,8 +280,9 @@ function createPurify(): PurifyWindow {
     }
     if (data.attrName === 'style' && data.attrValue.length > 0) {
       // A style attribute whose declarations are all rejected collapses to an
-      // empty value (harmless); DOMPurify keeps no dangerous residue either way.
+      // empty value; drop the attribute instead of emitting `style=""`.
       data.attrValue = sanitizeStyleAttribute(data.attrValue);
+      if (data.attrValue.length === 0) data.keepAttr = false;
     }
   });
   return purify as unknown as PurifyWindow;

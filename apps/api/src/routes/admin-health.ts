@@ -1,5 +1,5 @@
 import { accessSync, constants } from 'node:fs';
-import type { AuthService } from '@mernpress/cms-core';
+import { requireCapability, type AuthService } from '@mernpress/cms-core';
 import { checkDatabase, type DatabaseClient } from '@mernpress/database';
 import type { FastifyInstance } from 'fastify';
 import { requireAdmin } from '../auth/require-admin.js';
@@ -18,6 +18,9 @@ export function registerAdminHealthRoutes(
   app.get('/api/admin/health', async (request, reply) => {
     const ctx = await requireAdmin(request, reply, { env, auth });
     if (!ctx) return;
+    // Site Health is an administrator surface (WordPress gates it on
+    // view_site_health_checks); it exposes environment and filesystem state.
+    requireCapability(ctx.principal, 'manage_options');
 
     let databaseStatus: 'ok' | 'error' = 'ok';
     try {

@@ -133,7 +133,10 @@ export async function generateMetadata({
   return {
     title,
     description: description || undefined,
-    robots: post.robots ?? undefined,
+    // A per-post robots value must not re-enable indexing on a site that
+    // Settings → Reading has taken offline (blogPublic: false).
+    robots:
+      settings?.blogPublic === false ? { index: false, follow: false } : (post.robots ?? undefined),
     alternates: {
       canonical: post.canonicalUrl ?? `${siteUrl()}${post.path}`,
       ...(languages ? { languages } : {}),

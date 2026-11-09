@@ -154,7 +154,8 @@ export async function generateMetadata({
   return {
     title,
     description: description || undefined,
-    robots: post.robots ?? undefined,
+    robots:
+      settings?.blogPublic === false ? { index: false, follow: false } : (post.robots ?? undefined),
     alternates: {
       canonical: post.canonicalUrl ?? `${siteUrl()}${post.path ?? `/${post.slug}`}`,
       ...(languages ? { languages } : {}),

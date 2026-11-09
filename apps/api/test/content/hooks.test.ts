@@ -170,6 +170,37 @@ describe('content hooks (app.contentHooks)', () => {
     expect(await app.database.post.count()).toBe(0);
   });
 
+  it('contains a filter bug: a generic throw is logged and the write proceeds unfiltered', async () => {
+    app.contentHooks.addFilter('content.post.create', () => {
+      throw new Error('plugin blew up');
+    });
+
+    const response = await createPost({ type: 'post', title: 'Survives bad filter' });
+
+    expect(response.statusCode).toBe(201);
+    expect(await app.database.post.count()).toBe(1);
+  });
+
+  it('still applies later filters after one throws', async () => {
+    app.contentHooks.addFilter(
+      'content.post.create',
+      () => {
+        throw new Error('first filter is broken');
+      },
+      5,
+    );
+    app.contentHooks.addFilter(
+      'content.post.create',
+      (draft: PostFilterDraft) => ({ ...draft, excerpt: 'from healthy filter' }),
+      10,
+    );
+
+    const response = await createPost({ type: 'post', title: 'Partial filters' });
+
+    expect(response.statusCode).toBe(201);
+    expect((response.json() as { excerpt: string | null }).excerpt).toBe('from healthy filter');
+  });
+
   it('dispose() clears every handler', async () => {
     let filterCalls = 0;
     let actionCalls = 0;

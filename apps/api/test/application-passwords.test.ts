@@ -226,4 +226,21 @@ describe('profile preferences and application passwords', () => {
     expect(response.statusCode).toBe(403);
     expect((response.json() as { error: { code: string } }).error.code).toBe('CSRF_INVALID');
   });
+
+  it('throttles repeated failed application-password attempts per IP', async () => {
+    // Eleven failures from one caller: the first ten are 401, the eleventh is
+    // rate-limited before another Argon2id verify can run.
+    const statuses: number[] = [];
+    for (let attempt = 0; attempt < 11; attempt += 1) {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/profile',
+        remoteAddress: '203.0.113.9',
+        headers: basic(ADMIN_USERNAME, `wrong-${attempt}`),
+      });
+      statuses.push(response.statusCode);
+    }
+    expect(statuses.slice(0, 10).every((status) => status === 401)).toBe(true);
+    expect(statuses[10]).toBe(429);
+  });
 });

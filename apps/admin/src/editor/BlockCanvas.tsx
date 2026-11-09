@@ -199,9 +199,19 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
   },
   ref,
 ) {
-  const [blocks, setBlocks] = useState<Array<Block<Record<string, unknown>>>>(() =>
-    blocksFromContent(initialContent),
-  );
+  // Unparseable stored markup must never be replaced by a blank document: the
+  // canvas renders a blocking message and saving stays disabled.
+  const initialParse = useMemo(() => {
+    try {
+      return { blocks: blocksFromContent(initialContent), failed: false };
+    } catch {
+      return { blocks: [] as Array<Block<Record<string, unknown>>>, failed: true };
+    }
+    // Parsed once; later content arrives through the effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const [blocks, setBlocks] = useState<Array<Block<Record<string, unknown>>>>(initialParse.blocks);
+  const [parseFailed, setParseFailed] = useState(initialParse.failed);
   const blocksRef = useRef<Array<Block<Record<string, unknown>>>>(blocks);
   const [history, setHistory] = useState<HistoryState>(() => ({
     entries: [historySeed(initialContent)],
@@ -332,7 +342,14 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
     if (initialContent === lastEmitted.current) {
       return;
     }
-    const parsed = blocksFromContent(initialContent);
+    let parsed: Array<Block<Record<string, unknown>>>;
+    try {
+      parsed = blocksFromContent(initialContent);
+    } catch {
+      setParseFailed(true);
+      return;
+    }
+    setParseFailed(false);
     const normalized = serializeBlocks(parsed);
     if (normalized === lastEmitted.current) {
       lastEmitted.current = initialContent;
@@ -393,7 +410,14 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
   const applySnapshot = useCallback(
     (snapshot: string) => {
       clearTimer();
-      const parsed = blocksFromContent(snapshot);
+      let parsed: Array<Block<Record<string, unknown>>>;
+      try {
+        parsed = blocksFromContent(snapshot);
+      } catch {
+        // A snapshot that cannot parse is left alone rather than rendered as
+        // an empty document.
+        return;
+      }
       blocksRef.current = parsed;
       setBlocks(parsed);
       lastEmitted.current = snapshot;
@@ -490,6 +514,21 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
       event.preventDefault();
       handleRedo();
     }
+  }
+
+  if (parseFailed) {
+    return (
+      <div className="block-canvas-root">
+        <div className="form-error" role="alert">
+          <h2>This content could not be read</h2>
+          <p>
+            The stored block markup is not valid, so the editor will not open it. Editing is blocked
+            to protect the original content. Restore a revision from the panel, or export the post
+            to inspect the markup.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (

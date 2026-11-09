@@ -6009,3 +6009,43 @@ covered by sanitizer + golden + E2E tests locally.
   increments to 2 on revisit.
 - Data: deleted the five polluted production rows; genuine 404 rows retained.
 - Validation: 979 unit/integration tests, 36 Playwright E2E tests.
+
+### 2026-11-09 — Verification audit round 1 and hardening fixes
+
+Four read-only audit lanes covered auth/API security, editor/block pipeline,
+public SEO/i18n/caching, and plugins/themes/media/jobs; the mobile-responsive
+lane is still running. Every item below was reproduced before fixing.
+
+**Fixed**
+- 404 log: only genuine 404s are recorded (client effect; see the earlier
+  entry) — production had 200-status URLs with hundreds of hits.
+- Plugin activation is idempotent: `loadModule` returns early when the plugin is
+  already loaded, so a repeated activate cannot orphan the first disposer set.
+  Test: activate twice → deactivate once removes every handler.
+- Hook filters: a generic throw is logged and the previous value kept (the
+  write proceeds), while `HookRejectedError` still vetoes with 400. Tests cover
+  the contained failure and later filters still running.
+- Theme manifests: hex-only colours, CSS length patterns for width/radius,
+  charset-restricted font stacks, integer weights 100–900, rooted screenshot
+  paths; invalid values reject the whole manifest. Public `/api/public/site`
+  now projects `{id,name,layout,tokens}` only.
+- Store seeding writes `.initialized` only after a complete seed, so a missing
+  seed directory or failed copy is retried (plugin + theme stores).
+- Authorization: `GET/DELETE /api/admin/mail/log`, `GET /api/admin/mail/status`
+  and `GET /api/admin/health` now require `manage_options` (previously any
+  authenticated role); tests cover anonymous, editor and administrator.
+- Application-password Basic auth charges failed verifications per IP
+  (10/min → 429) to stop Argon2id amplification from unauthenticated callers.
+- Sanitizer: CSS escapes (`\75\72\6c\28`) are rejected, every `srcset`
+  candidate is scheme-checked, empty `style` attributes are dropped, and
+  protocol-relative/backslash links get `rel="external noopener nofollow"`.
+- SEO: search results and the 404 page are `noindex`; home/blog/category/tag/
+  author archives emit canonicals; a per-post `robots` value can no longer
+  re-enable indexing when Settings → Reading has the site offline.
+- Editor data loss: blank detection keeps media-only and attributed
+  paragraphs; unparseable stored markup shows a blocking “could not be read”
+  panel instead of silently becoming a blank document.
+
+**Commands**: `pnpm test` not re-run for the whole tree yet (mobile lane editing
+CSS); package-level runs: block-system 72, web 70, api (targeted files) green,
+admin editor 45.

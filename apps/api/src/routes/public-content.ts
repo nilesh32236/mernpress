@@ -133,8 +133,12 @@ export function registerPublicContentRoutes(
         themes.active().catch(() => null),
       ]);
       // Public theme data only: identity, layout variant and design tokens.
-      // Theme packages never expose storage paths or server code here.
-      return { ...settings, theme };
+      // Project explicitly so a manifest field added later cannot leak through
+      // this endpoint (author, description, screenshot, fonts, tags, version).
+      const publicTheme = theme
+        ? { id: theme.id, name: theme.name, layout: theme.layout, tokens: theme.tokens }
+        : null;
+      return { ...settings, theme: publicTheme };
     }),
   );
 

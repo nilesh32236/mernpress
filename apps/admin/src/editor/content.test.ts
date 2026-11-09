@@ -95,3 +95,25 @@ describe('editor content serialization', () => {
     expect(historySeed(seed)).toBe(seed);
   });
 });
+
+describe('editor content data-loss guards', () => {
+  it('does not treat a media-only paragraph as blank', () => {
+    const content =
+      '<!-- wp:paragraph -->\n<p><img src="/x.webp" alt="" /></p>\n<!-- /wp:paragraph -->';
+    const blocks = blocksFromContent(content);
+    expect(isBlankBlocks(blocks)).toBe(false);
+    expect(serializeBlocks(blocks)).toContain('<img src="/x.webp"');
+  });
+
+  it('does not treat an attributed empty paragraph as blank', () => {
+    const content = '<!-- wp:paragraph {"align":"center"} -->\n<p></p>\n<!-- /wp:paragraph -->';
+    const blocks = blocksFromContent(content);
+    expect(isBlankBlocks(blocks)).toBe(false);
+    expect(serializeBlocks(blocks)).toContain('"align":"center"');
+  });
+
+  it('still treats a <br>-only paragraph as blank', () => {
+    const content = '<!-- wp:paragraph -->\n<p><br></p>\n<!-- /wp:paragraph -->';
+    expect(isBlankBlocks(blocksFromContent(content))).toBe(true);
+  });
+});

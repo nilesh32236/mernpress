@@ -67,6 +67,9 @@ export function createPluginService({
 
   async function loadModule(manifest: PluginManifest): Promise<void> {
     if (injected || !hooks) return;
+    // Idempotent: a repeated activation must not register a second handler set
+    // (the first disposer array would be orphaned and survive deactivation).
+    if (loaded.has(manifest.id)) return;
     const instance = await activatePluginModule(
       {
         prisma,

@@ -7,8 +7,17 @@ import {
   SESSION_COOKIE,
 } from '../auth/cookies.js';
 import type { Env } from '../config/env.js';
+import { createMemoryRateLimit } from '../security/memory-rate-limit.js';
 
 const MUTATING = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+/**
+ * Failed application-password verifications are charged per IP. Each verify
+ * runs up to ten Argon2id hashes (64 MiB each), so an unthrottled Basic path is
+ * a CPU/memory amplification primitive for an unauthenticated caller. Ten
+ * failures a minute stops guessing without affecting legitimate clients.
+ */
+const basicFailureLimiter = createMemoryRateLimit({ max: 10, windowMs: 60 * 1000 });
 
 interface BasicCredentials {
   username: string;
@@ -99,6 +108,18 @@ export async function requireAdmin(
         principal = null;
       }
       if (!principal) {
+        const decision = basicFailureLimiter(`${request.ip}:app-password`);
+        if (!decision.allowed) {
+          reply.header('retry-after', String(decision.retryAfterSeconds));
+          sendError(
+            reply,
+            request,
+            429,
+            'RATE_LIMITED',
+            'Too many failed application-password attempts.',
+          );
+          return null;
+        }
         sendError(reply, request, 401, 'UNAUTHENTICATED', 'Not authenticated');
         return null;
       }

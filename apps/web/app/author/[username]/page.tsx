@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { listPublicPosts } from '@/lib/api';
 import type { PublicPost } from '@/lib/api';
 import PostList from '@/components/PostList';
@@ -66,4 +67,17 @@ export default async function AuthorArchive({
       </div>
     </main>
   );
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ username: string }>;
+}): Promise<Metadata> {
+  const { username } = await params;
+  return {
+    title: `Author: ${username}`,
+    description: `Posts by ${username}.`,
+    alternates: { canonical: `${siteUrl()}/author/${encodeURIComponent(username)}` },
+  };
 }

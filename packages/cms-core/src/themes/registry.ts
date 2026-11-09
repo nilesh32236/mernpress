@@ -60,6 +60,15 @@ function text(value: unknown, max: number): string | null {
     : null;
 }
 
+/** Hex colour only: #rgb, #rgba, #rrggbb, #rrggbbaa. */
+const COLOR_PATTERN = /^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+/** CSS length/percentage; `0` is also accepted. */
+const LENGTH_PATTERN = /^(?:0|\d+(?:\.\d+)?(?:px|rem|em|%))$/;
+/** Font stacks: letters, digits, spaces and the punctuation used in stacks. */
+const FONT_STACK_PATTERN = /^[A-Za-z0-9 _,'"()\-.,%]+$/;
+/** Bundled screenshot assets only: a rooted file name, no traversal or scheme. */
+const SCREENSHOT_PATTERN = /^\/[A-Za-z0-9._-]+$/;
+
 function tokenGroup(value: unknown): ThemeTokens | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
   const record = value as Record<string, unknown>;
@@ -85,6 +94,15 @@ function tokenGroup(value: unknown): ThemeTokens | null {
     !radius ||
     !headerAlign ||
     !HEADER_ALIGNMENTS.has(headerAlign)
+  ) {
+    return null;
+  }
+  // Values land in CSS custom properties; reject anything that is not a plain
+  // colour, length or font stack so a manifest cannot inject extra rules.
+  if (
+    ![background, surface, color, muted, accent].every((token) => COLOR_PATTERN.test(token)) ||
+    ![contentWidth, radius].every((token) => LENGTH_PATTERN.test(token)) ||
+    ![headingFont, bodyFont].every((token) => FONT_STACK_PATTERN.test(token))
   ) {
     return null;
   }
@@ -115,6 +133,7 @@ export function validateThemeManifest(value: unknown): ThemeManifest | null {
   if (!id || !ID_PATTERN.test(id) || !name || !version || !description || !screenshot) {
     return null;
   }
+  if (!SCREENSHOT_PATTERN.test(screenshot)) return null;
   if (!layout || !LAYOUTS.has(layout)) return null;
   const authorRaw = record['author'];
   const author =
@@ -134,22 +153,40 @@ export function validateThemeManifest(value: unknown): ThemeManifest | null {
         (feature): feature is string => typeof feature === 'string' && feature.length <= 200,
       )
     : [];
+  let invalidFont = false;
   const fonts = Array.isArray(record['fonts'])
     ? record['fonts']
         .map((font) => {
-          if (typeof font !== 'object' || font === null) return null;
+          if (typeof font !== 'object' || font === null) {
+            invalidFont = true;
+            return null;
+          }
           const entry = font as Record<string, unknown>;
           const family = text(entry['family'], 200);
           const source = entry['source'] === 'system' ? 'system' : 'theme';
-          const weights = Array.isArray(entry['weights'])
-            ? entry['weights'].filter(
-                (weight): weight is number => typeof weight === 'number' && weight >= 100,
-              )
-            : [];
+          const rawWeights = entry['weights'];
+          if (rawWeights !== undefined && !Array.isArray(rawWeights)) {
+            invalidFont = true;
+            return null;
+          }
+          const weights = Array.isArray(rawWeights) ? rawWeights : [];
+          if (
+            !weights.every(
+              (weight) =>
+                typeof weight === 'number' &&
+                Number.isInteger(weight) &&
+                weight >= 100 &&
+                weight <= 900,
+            )
+          ) {
+            invalidFont = true;
+            return null;
+          }
           return family ? { family, weights, source } : null;
         })
         .filter((font): font is ThemeFont => font !== null)
     : [];
+  if (invalidFont) return null;
   return {
     id,
     name,
@@ -185,9 +222,11 @@ export async function seedThemeStore({
   }
   await fs.mkdir(storeDir, { recursive: true });
   let entries: Dirent[] = [];
+  let complete = true;
   try {
     entries = await fs.readdir(seedDir, { withFileTypes: true });
   } catch {
+    complete = false;
     logger?.('theme seed directory is missing', { seedDir });
   }
   for (const entry of entries) {
@@ -202,12 +241,17 @@ export async function seedThemeStore({
     try {
       await fs.cp(path.join(seedDir, entry.name), destination, { recursive: true });
     } catch (error) {
+      complete = false;
       logger?.('theme seed copy failed', {
         theme: entry.name,
         error: error instanceof Error ? error.message : String(error),
       });
     }
   }
+  // Write the marker only after a complete seed so a transient failure (or a
+  // missing seed directory) is retried on the next start instead of leaving a
+  // permanently half-seeded store.
+  if (!complete) return;
   await fs.writeFile(
     path.join(storeDir, STORE_MARKER),
     `seeded ${new Date().toISOString()}\n`,

@@ -1,4 +1,4 @@
-import type { AuthService, MailService } from '@mernpress/cms-core';
+import { requireCapability, type AuthService, type MailService } from '@mernpress/cms-core';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { requireAdmin } from '../auth/require-admin.js';
 import type { Env } from '../config/env.js';
@@ -20,6 +20,7 @@ export function registerMailRoutes(app: FastifyInstance, options: MailRouteOptio
     const ctx = await guard(request, reply);
     if (!ctx) return;
     try {
+      requireCapability(ctx.principal, 'manage_options');
       return { items: await mail.log(100) };
     } catch (error) {
       return sendRouteError(reply, request, error);
@@ -30,6 +31,7 @@ export function registerMailRoutes(app: FastifyInstance, options: MailRouteOptio
     const ctx = await guard(request, reply);
     if (!ctx) return;
     try {
+      requireCapability(ctx.principal, 'manage_options');
       await mail.clearLog();
       return reply.code(204).send();
     } catch (error) {
@@ -41,6 +43,7 @@ export function registerMailRoutes(app: FastifyInstance, options: MailRouteOptio
     const ctx = await guard(request, reply);
     if (!ctx) return;
     try {
+      requireCapability(ctx.principal, 'manage_options');
       return mail.status();
     } catch (error) {
       return sendRouteError(reply, request, error);

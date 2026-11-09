@@ -8,6 +8,7 @@ import {
   createTestApp,
   loginAs,
   seedAdmin,
+  seedUser,
 } from './helpers/auth.js';
 
 interface PostShape {
@@ -319,7 +320,7 @@ describe('comment and new-user mail notifications', () => {
     });
   });
 
-  it('rejects anonymous access to the mail log', async () => {
+  it('rejects anonymous and non-administrator access to the mail log', async () => {
     const anonymous = await app.inject({ method: 'GET', url: '/api/admin/mail/log' });
     expect(anonymous.statusCode).toBe(401);
     const clear = await app.inject({
@@ -328,6 +329,37 @@ describe('comment and new-user mail notifications', () => {
       headers: { origin: ADMIN_ORIGIN },
     });
     expect(clear.statusCode).toBe(401);
+
+    // An Editor is authenticated but must not read recipients/subjects or wipe
+    // delivery history (manage_options).
+    await seedUser(app, {
+      username: 'mail-editor',
+      password: 'Mail-Editor-pass-1!',
+      role: 'editor',
+    });
+    const editor = await loginAs(app, 'mail-editor', 'Mail-Editor-pass-1!');
+    const editorHeaders = {
+      origin: ADMIN_ORIGIN,
+      cookie: editor.cookieHeader,
+      'x-csrf-token': editor.csrfToken,
+    };
+    expect(
+      (await app.inject({ method: 'GET', url: '/api/admin/mail/log', headers: editorHeaders }))
+        .statusCode,
+    ).toBe(403);
+    expect(
+      (
+        await app.inject({
+          method: 'DELETE',
+          url: '/api/admin/mail/log',
+          headers: editorHeaders,
+        })
+      ).statusCode,
+    ).toBe(403);
+    expect(
+      (await app.inject({ method: 'GET', url: '/api/admin/mail/status', headers: editorHeaders }))
+        .statusCode,
+    ).toBe(403);
   });
 
   it('emails about notes and deletions unless notes_notify is disabled', async () => {

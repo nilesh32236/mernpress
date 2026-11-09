@@ -174,10 +174,8 @@ describe('sanitizeHtml — style attribute policy', () => {
     );
   });
 
-  it('collapses a fully-rejected style attribute to empty', () => {
-    expect(sanitizeHtml('<p style="position: fixed; behavior: url(x)">x</p>')).toBe(
-      '<p style="">x</p>',
-    );
+  it('drops a fully-rejected style attribute instead of emitting an empty one', () => {
+    expect(sanitizeHtml('<p style="position: fixed; behavior: url(x)">x</p>')).toBe('<p>x</p>');
   });
 });
 
@@ -230,5 +228,35 @@ describe('sanitizeHtml — external link rel hardening', () => {
     expect(sanitizeHtml('<a href="/about">x</a>')).toBe('<a href="/about">x</a>');
     expect(sanitizeHtml('<a href="#s">x</a>')).toBe('<a href="#s">x</a>');
     expect(sanitizeHtml('<a href="mailto:a@b.c">x</a>')).toBe('<a href="mailto:a@b.c">x</a>');
+  });
+});
+
+describe('sanitizeHtml — hardening regressions', () => {
+  it('drops CSS escape sequences that could decode to url()', () => {
+    const out = sanitizeHtml(
+      '<p style="background: \\75\\72\\6c\\28https://evil.example/x\\29">x</p>',
+    );
+    expect(out).not.toContain('evil.example');
+    expect(out).not.toMatch(/style=/);
+  });
+
+  it('drops srcset when a data: candidate appears in any position', () => {
+    const out = sanitizeHtml(
+      '<img src="/ok.webp" srcset="/a.webp 1x, data:image/svg+xml;base64,PHN2Zz4= 2x" alt="a">',
+    );
+    expect(out).not.toContain('srcset');
+    expect(out).not.toContain('data:');
+  });
+
+  it('keeps a fully safe srcset', () => {
+    const out = sanitizeHtml('<img src="/ok.webp" srcset="/a.webp 1x, /b.webp 2x" alt="a">');
+    expect(out).toContain('srcset="/a.webp 1x, /b.webp 2x"');
+  });
+
+  it('hardens protocol-relative and backslash links', () => {
+    expect(sanitizeHtml('<a href="//evil.example/x">x</a>')).toContain(
+      'rel="external noopener nofollow"',
+    );
+    expect(sanitizeHtml('<a href="\\\\evil.example/x">x</a>')).toMatch(/rel="[^"]*noopener/);
   });
 });

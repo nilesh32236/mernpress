@@ -89,9 +89,11 @@ export async function seedPluginStore({
 
   await fs.mkdir(storeDir, { recursive: true });
   let entries: Dirent[] = [];
+  let complete = true;
   try {
     entries = await fs.readdir(seedDir, { withFileTypes: true });
   } catch {
+    complete = false;
     logger?.('plugin seed directory is missing', { seedDir });
   }
 
@@ -107,6 +109,7 @@ export async function seedPluginStore({
     try {
       await fs.cp(path.join(seedDir, entry.name), destination, { recursive: true });
     } catch (error) {
+      complete = false;
       logger?.('plugin seed copy failed', {
         plugin: entry.name,
         error: error instanceof Error ? error.message : String(error),
@@ -114,6 +117,8 @@ export async function seedPluginStore({
     }
   }
 
+  // Retry the whole seed next start when anything failed (see themes).
+  if (!complete) return;
   await fs.writeFile(
     path.join(storeDir, STORE_MARKER),
     `seeded ${new Date().toISOString()}\n`,

@@ -1,4 +1,5 @@
-import { listPublishedPosts } from '@/lib/api';
+import type { Metadata } from 'next';
+import { getSiteSettings, listPublishedPosts } from '@/lib/api';
 import type { PublicPost } from '@/lib/api';
 import PostList from '@/components/PostList';
 import Pagination from '@/components/Pagination';
@@ -66,4 +67,13 @@ export default async function PostsPage({
       ) : null}
     </main>
   );
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings().catch(() => null);
+  return {
+    title: `${settings?.siteTitle ?? 'MERNPress'} — Blog`,
+    description: settings?.tagline ?? undefined,
+    alternates: { canonical: `${siteUrl()}/posts` },
+  };
 }

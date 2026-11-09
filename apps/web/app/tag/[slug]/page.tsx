@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getPublicTerm, getSiteSettings, listPublicPosts } from '@/lib/api';
 import type { PublicPost, PublicTermInfo } from '@/lib/api';
@@ -95,4 +96,26 @@ export default async function TagArchive({
       />
     </main>
   );
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const [term, settings] = await Promise.all([
+    getPublicTerm('tag', slug).catch(() => null),
+    getSiteSettings().catch(() => null),
+  ]);
+  if (!term) return { title: 'Tag not found', robots: { index: false, follow: false } };
+  return {
+    title: `Tag: ${term.name}`,
+    description: term.description ?? `Posts tagged ${term.name}.`,
+    alternates: {
+      canonical: `${siteUrl()}${termPath('tag', term.slug, {
+        tagBase: settings?.tagBase ?? 'tag',
+      })}`,
+    },
+  };
 }

@@ -187,4 +187,20 @@ describe('post page', () => {
     });
     expect(meta.alternates?.canonical).toBe('http://localhost:3000/2026/01/hello-world');
   });
+
+  it('a per-post robots value cannot re-enable indexing when the site is offline', async () => {
+    const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
+    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/api/public/site')) {
+        return jsonResponse({ siteTitle: 'Site', siteUrl: '', blogPublic: false });
+      }
+      return jsonResponse(samplePost);
+    });
+    const meta = await generateMetadata({
+      params: Promise.resolve({ slug: 'hello-world' }),
+      searchParams: Promise.resolve({}),
+    });
+    expect(meta.robots).toEqual({ index: false, follow: false });
+  });
 });

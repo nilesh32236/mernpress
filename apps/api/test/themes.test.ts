@@ -91,6 +91,9 @@ describe('appearance themes api', () => {
       .theme;
     // Journal was activated first, then minimal superseded it.
     expect(publicTheme).toMatchObject({ id: 'minimal', layout: 'journal' });
+    // Only the documented public subset is exposed (no author/description/
+    // screenshot/fonts/tags/version leakage from the manifest).
+    expect(Object.keys(publicTheme).sort()).toEqual(['id', 'layout', 'name', 'tokens']);
     expect(publicTheme.tokens).toMatchObject({
       background: '#ffffff',
       headingFont: "system-ui, -apple-system, 'Segoe UI', sans-serif",

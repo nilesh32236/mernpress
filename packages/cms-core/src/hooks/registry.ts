@@ -118,6 +118,13 @@ export function createHookRegistry(options: HookRegistryOptions = {}): HookRegis
             throw new HookRejectedError(`Filter "${name}" must return a value`);
           }
           current = next;
+        } catch (error) {
+          // A veto is intentional and must stop the write. Any other throw is a
+          // plugin bug: contain it (keep the previous value, log without the
+          // payload) so one broken filter cannot turn every content write into
+          // a 500. Revalidation still runs on the surviving draft.
+          if (error instanceof HookRejectedError) throw error;
+          logger.warn(`hook filter failed: ${name}`);
         } finally {
           leave();
         }
