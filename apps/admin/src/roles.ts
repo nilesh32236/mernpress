@@ -24,6 +24,11 @@ export function canModerateComments(user: AuthUser): boolean {
  * Mirrors the server's `taxonomy.manage` capability for UI affordances only.
  * The API remains authoritative and rejects unauthorized writes.
  */
+/** Mirrors the server's `manage_options` capability (administrators only). */
+export function canManageOptions(user: AuthUser): boolean {
+  return user.role === 'administrator';
+}
+
 export function canSwitchThemes(user: AuthUser): boolean {
   return user.role === 'administrator';
 }

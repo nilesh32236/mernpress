@@ -13,6 +13,7 @@ import {
   screenHiddenColumns,
   screenPerPage,
 } from './screenOptions.js';
+import { useBodyScrollLock } from './useBodyScrollLock.js';
 import {
   actionErrorMessage,
   createMediaFolder,
@@ -159,6 +160,9 @@ function MediaDrawer({
 }: MediaDrawerProps) {
   const titleId = useId();
   const drawerRef = useRef<HTMLElement>(null);
+  // The drawer is a full overlay at every width; the library behind it must
+  // not scroll while it is open.
+  useBodyScrollLock(true);
   const [altText, setAltText] = useState(item.altText);
   const [caption, setCaption] = useState(item.caption);
   const [description, setDescription] = useState(item.description);

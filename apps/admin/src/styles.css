@@ -103,6 +103,12 @@ body {
   min-height: 100vh;
 }
 
+html {
+  /* Prevent iOS/Android text inflation in landscape. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   background: var(--wp-bg);
   color: #3c434a;
@@ -365,8 +371,8 @@ h2 {
   display: none;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border: 0;
   border-radius: 2px;
   background: transparent;
@@ -2746,7 +2752,9 @@ a.glance-chip:hover {
 
 .editor-topbar {
   position: sticky;
-  top: 0;
+  /* The shell's admin bar is sticky at the top; stick below it instead of
+     underneath it (the drawer offsets below already assume this). */
+  top: var(--wp-admin-bar-h);
   z-index: 20;
   display: flex;
   align-items: center;
@@ -3259,10 +3267,10 @@ a.glance-chip:hover {
   background: #ffffff;
   border-left: 1px solid #e0e0e0;
   min-width: 0;
-  max-height: calc(100vh - 60px);
+  max-height: calc(100vh - var(--wp-admin-bar-h) - 64px);
   overflow: hidden;
   position: sticky;
-  top: 60px;
+  top: calc(var(--wp-admin-bar-h) + 64px);
   align-self: flex-start;
 }
 
@@ -10344,12 +10352,24 @@ a.glance-chip:hover {
   }
 
   .customize-body {
-    grid-template-columns: 1fr;
+    /* The panel is taller than the fixed screen once it stacks; let the whole
+       body scroll so the preview (and every field) stays reachable. */
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
   }
 
   .customize-panel {
+    flex: 0 0 auto;
     border-right: 0;
     border-bottom: 1px solid #dcdcde;
+    overflow: visible;
+  }
+
+  .customize-preview {
+    flex: 0 0 auto;
+    height: 60vh;
+    min-height: 320px;
   }
 }
 
@@ -11648,7 +11668,9 @@ a.glance-chip:hover {
 .media-editor {
   display: flex;
   flex-direction: column;
-  width: min(1100px, 96vw);
+  /* 100% of the padded overlay: 96vw ignored the 8-24px overlay padding and
+     clipped the editor on a 320-375px viewport. */
+  width: min(1100px, 100%);
   max-height: 94vh;
   border-radius: 2px;
   background: #ffffff;
@@ -12089,8 +12111,16 @@ a.glance-chip:hover {
   background: rgba(0, 0, 0, 0.55);
 }
 
+@media (max-width: 640px) {
+  .editor-dialog-backdrop {
+    padding: 12px;
+  }
+}
+
 .editor-dialog {
-  width: min(720px, 96vw);
+  /* The backdrop already supplies the gutter; 96vw made the dialog wider than
+     the padded viewport below 400px. */
+  width: min(720px, 100%);
   max-height: 88vh;
   overflow: auto;
   padding: 20px 24px 24px;
@@ -14105,4 +14135,217 @@ button.button-link.is-danger {
 
 .vitals-breakdown tbody th {
   font-weight: 600;
+}
+
+/* ==========================================================================
+   Responsive refinement pass (320-1024px). Appended last so it wins over the
+   earlier WordPress parity passes without rewriting them.
+   ========================================================================== */
+
+/* At the 320px target a classic scrollbar leaves less than 320px of usable
+   width; allow the shell to shrink there so a horizontal scrollbar cannot
+   appear at the smallest supported viewport. */
+@media (max-width: 360px) {
+  html,
+  body {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 1023.98px) {
+  /* Prefer the dynamic viewport on mobile browsers whose URL bar collapses,
+     and keep drawer scrolling from chaining to the page behind it. */
+  .admin-sidebar {
+    height: calc(100vh - var(--wp-admin-bar-h));
+    height: calc(100dvh - var(--wp-admin-bar-h));
+    overscroll-behavior: contain;
+  }
+}
+
+@media (max-width: 782px) {
+  /* --- Form controls: WordPress raises these to 16px on phones because iOS
+     zooms the page when a focused control's text is smaller. ------------- */
+  input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']):not(
+      [type='reset']
+    ):not([type='file']),
+  select,
+  textarea,
+  .field input[type='text'],
+  .field input[type='email'],
+  .field input[type='url'],
+  .field input[type='number'],
+  .field input[type='password'],
+  .field input[type='search'],
+  .field input:not([type]),
+  .field select,
+  .field textarea,
+  .list-filters input[type='search'],
+  .search-box input[type='search'],
+  .bulk-actions select,
+  .tablenav .bulk-select,
+  .wp-list-screen .tablenav .bulk-select,
+  .wp-list-screen .tablenav select,
+  .status-filter select,
+  .media-toolbar-bar .attachment-filters,
+  .media-editor-aspect,
+  .list-top .search-form input[type='search'],
+  .settings-panel .field input:not([type='checkbox']):not([type='radio']),
+  .settings-panel .field select,
+  .settings-panel .field textarea,
+  .customize-panel .field input[type='text'],
+  .customize-panel .field input[type='url'],
+  .customize-panel .field input[type='search'],
+  .customize-panel .field input:not([type]),
+  .customize-panel .field select,
+  .customize-panel .field textarea,
+  .media-drawer-form .field > input,
+  .media-drawer-form .field > textarea,
+  .media-folder-inline input,
+  .media-folder-bar select,
+  .media-folder-inline select,
+  .analytics-range select,
+  .jobs-toolbar input[type='search'],
+  .jobs-toolbar select,
+  .editor-code-textarea,
+  .import-form-panel .field input[type='file'],
+  .personal-data-panel .field input#requester-EXPORT,
+  .personal-data-panel .field input#requester-ERASE,
+  .connector-connect input,
+  .export-filter select,
+  .export-filter input,
+  .folder-tree-editor input,
+  .folder-tree-editor select,
+  .media-editor-scale-bar input,
+  .languages-custom input,
+  .inline-fields input[type='text'] {
+    font-size: 16px;
+  }
+
+  /* WordPress keeps the login/2FA fields at 24px; 24px never triggers the
+     iOS zoom, and this restores the larger WordPress login scale. */
+  .login-card .field input {
+    font-size: 24px;
+  }
+
+  /* --- Touch targets (interactive controls >= 32px) ------------------- */
+  .admin-bar-user {
+    height: 32px;
+  }
+
+  /* Long paths/referrers in the analytics tables must scroll inside the panel
+     rather than widen the page. */
+  .analytics-panel {
+    overflow-x: auto;
+  }
+
+  .row-actions {
+    position: relative;
+    left: 0;
+  }
+
+  .row-actions .edit-link,
+  .row-actions .view-link,
+  .row-actions .delete-link,
+  .row-actions .button-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+  }
+
+  button.button-link {
+    min-height: 32px;
+  }
+
+  .icon-action {
+    width: 32px;
+    height: 32px;
+  }
+
+  .notice-dismiss {
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  .media-toolbar-bar .view-toggle-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .media-folder-inline .button {
+    min-height: 32px;
+  }
+
+  .folder-tree-editor input,
+  .folder-tree-editor select {
+    height: 32px;
+    min-height: 32px;
+  }
+
+  .site-editor-back,
+  .block-canvas-panel-close {
+    width: 32px;
+    height: 32px;
+  }
+
+  .postbox .handlediv,
+  .postbox .handle-order-higher,
+  .postbox .handle-order-lower {
+    width: 32px;
+    height: 32px;
+  }
+
+  .subsubsub-tab {
+    padding: 0.45em 0.3em;
+  }
+
+  /* --- Attachment drawer: one scrolling column on phones -------------- */
+  .media-drawer-body {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .media-drawer-preview {
+    flex: 0 0 auto;
+    height: 38vh;
+    min-height: 180px;
+    padding: 12px;
+  }
+
+  .media-drawer-sidebar {
+    flex: 0 0 auto;
+    padding: 16px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    overflow: visible;
+  }
+
+  .sidebar-footer {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Below 400px the 120px attachment-detail label column leaves too little
+   room for the control; stack the label above the field. */
+@media (max-width: 640px) {
+  .media-drawer-form .field {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .media-drawer-form .field > label {
+    grid-column: 1;
+    padding-top: 0;
+    text-align: left;
+  }
+
+  .media-drawer-form .field > input,
+  .media-drawer-form .field > textarea,
+  .media-drawer-form .field > .field-help,
+  .media-drawer-form .media-copy-button {
+    grid-column: 1;
+  }
+}
+
+/* The editor footer is fixed; keep it above the iPhone home indicator. */
+.editor-footer {
+  min-height: calc(24px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }

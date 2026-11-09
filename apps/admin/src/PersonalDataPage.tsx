@@ -165,69 +165,71 @@ export function PersonalDataPage({ type }: { type: DataRequestType }) {
           ) : requests.length === 0 ? (
             <p className="personal-data-empty">No items found.</p>
           ) : (
-            <table className="content-table widefat fixed striped">
-              <thead>
-                <tr>
-                  <th scope="col" className="column-requester">
-                    Requester
-                  </th>
-                  <th scope="col" className="column-status">
-                    Status
-                  </th>
-                  <th scope="col" className="column-requested">
-                    Requested
-                  </th>
-                  <th scope="col" className="column-next-steps">
-                    Next steps
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {requests.map((request) => (
-                  <tr key={request.id}>
-                    <td className="column-requester">{request.email}</td>
-                    <td className="column-status">
-                      {request.status === 'PENDING' ? 'Pending' : 'Completed'}
-                    </td>
-                    <td className="column-requested">{formatRequested(request.createdAt)}</td>
-                    <td className="column-next-steps">
-                      {request.status === 'COMPLETED' ? (
-                        <span className="personal-data-done">{request.note ?? 'Completed'}</span>
-                      ) : isExport ? (
-                        <>
+            <div className="table-scroll">
+              <table className="content-table widefat fixed striped">
+                <thead>
+                  <tr>
+                    <th scope="col" className="column-requester">
+                      Requester
+                    </th>
+                    <th scope="col" className="column-status">
+                      Status
+                    </th>
+                    <th scope="col" className="column-requested">
+                      Requested
+                    </th>
+                    <th scope="col" className="column-next-steps">
+                      Next steps
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {requests.map((request) => (
+                    <tr key={request.id}>
+                      <td className="column-requester">{request.email}</td>
+                      <td className="column-status">
+                        {request.status === 'PENDING' ? 'Pending' : 'Completed'}
+                      </td>
+                      <td className="column-requested">{formatRequested(request.createdAt)}</td>
+                      <td className="column-next-steps">
+                        {request.status === 'COMPLETED' ? (
+                          <span className="personal-data-done">{request.note ?? 'Completed'}</span>
+                        ) : isExport ? (
+                          <>
+                            <button
+                              type="button"
+                              className="button-link"
+                              onClick={() => void download(request)}
+                              disabled={actionId === request.id}
+                            >
+                              Download personal data
+                            </button>
+                            {' · '}
+                            <button
+                              type="button"
+                              className="button-link"
+                              onClick={() => void complete(request)}
+                              disabled={actionId === request.id}
+                            >
+                              Mark as completed
+                            </button>
+                          </>
+                        ) : (
                           <button
                             type="button"
-                            className="button-link"
-                            onClick={() => void download(request)}
-                            disabled={actionId === request.id}
-                          >
-                            Download personal data
-                          </button>
-                          {' · '}
-                          <button
-                            type="button"
-                            className="button-link"
+                            className="button-link is-danger"
                             onClick={() => void complete(request)}
                             disabled={actionId === request.id}
                           >
-                            Mark as completed
+                            Erase personal data
                           </button>
-                        </>
-                      ) : (
-                        <button
-                          type="button"
-                          className="button-link is-danger"
-                          onClick={() => void complete(request)}
-                          disabled={actionId === request.id}
-                        >
-                          Erase personal data
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

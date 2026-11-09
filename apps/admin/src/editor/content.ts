@@ -1,4 +1,4 @@
-import { createBlock, getBlockType, parse, serialize } from '@wordpress/blocks';
+import { createBlock, parse, serialize } from '@wordpress/blocks';
 import type { Block } from '@wordpress/blocks';
 
 /**

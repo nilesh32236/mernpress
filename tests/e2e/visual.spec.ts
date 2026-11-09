@@ -380,6 +380,11 @@ test('admin visual baselines', async ({ page }) => {
       await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeVisible({
         timeout: 15000,
       });
+      // The mobile editor hides the document pill, so wait for the loaded
+      // canvas text: capturing the loading skeleton was flaking at ~2%.
+      await expect(page.locator('.block-canvas-sheet')).toContainText('This is a demo post', {
+        timeout: 15000,
+      });
     } else {
       await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
     }

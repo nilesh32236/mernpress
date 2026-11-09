@@ -12,7 +12,7 @@ import {
 } from './api.js';
 import { EmptyState, ErrorState, Skeleton } from './components.js';
 import { EventsNewsWidget } from './EventsNewsWidget.js';
-import { canCreateContent, canManageTerms, canReadContent } from './roles.js';
+import { canCreateContent, canManageOptions, canManageTerms, canReadContent } from './roles.js';
 import { editContentPath, listPath, navigate, newContentPath } from './router.js';
 import {
   DASHBOARD_COLUMNS_EVENT,
@@ -264,7 +264,9 @@ export function Dashboard({ user }: { user: AuthUser }) {
   }, [allowed]);
 
   useEffect(() => {
-    if (!allowed) return;
+    // Site Health is an administrator surface (manage_options); requesting it
+    // as an editor would be a 403 in the console for no UI gain.
+    if (!allowed || !canManageOptions(user)) return;
     let active = true;
     fetchSiteHealth()
       .then((result) => {
@@ -276,7 +278,7 @@ export function Dashboard({ user }: { user: AuthUser }) {
     return () => {
       active = false;
     };
-  }, [allowed]);
+  }, [allowed, user]);
 
   function escapeHtml(value: string): string {
     return value
@@ -812,8 +814,15 @@ export function Dashboard({ user }: { user: AuthUser }) {
         <div id="dashboard-widgets-wrap">
           <div id="dashboard-widgets" className={`columns-${columns}`}>
             {(() => {
-              const visibleLeft = leftOrder.filter((key) => !hiddenWidgets.has(key));
-              const visibleRight = rightOrder.filter((key) => !hiddenWidgets.has(key));
+              // Site Health is administrator-only; hide it entirely rather than
+              // rendering a widget that never receives data.
+              const available = (key: WidgetKey) => key !== 'siteHealth' || canManageOptions(user);
+              const visibleLeft = leftOrder.filter(
+                (key) => !hiddenWidgets.has(key) && available(key),
+              );
+              const visibleRight = rightOrder.filter(
+                (key) => !hiddenWidgets.has(key) && available(key),
+              );
               const allVisible = [...visibleLeft, ...visibleRight];
               const columnWidgets: WidgetKey[][] =
                 columns === 2

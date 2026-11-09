@@ -48,6 +48,7 @@ import {
 } from './components.js';
 import { formatDateTime, formatRelativeTime } from './format.js';
 import { useUnsavedChanges } from './navigation-guard.js';
+import { useBodyScrollLock } from './useBodyScrollLock.js';
 import { useLanguages } from './languages-context.js';
 import {
   availableTransitions,
@@ -309,6 +310,9 @@ export function ContentEditor({
   const [sidebarOpen, setSidebarOpen] = useState(() =>
     typeof window === 'undefined' ? true : window.innerWidth >= 1080,
   );
+  // Below 1024px the Document panel is a fixed overlay; lock the page behind
+  // it. On desktop it is an in-flow column, so scrolling must keep working.
+  useBodyScrollLock(sidebarOpen, '(max-width: 1024px)');
   const [sideTab, setSideTab] = useState<'post' | 'block' | 'notes'>('post');
   const [revisions, setRevisions] = useState<AdminRevision[] | null>(null);
   const [revisionsError, setRevisionsError] = useState<string | null>(null);

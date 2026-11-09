@@ -86,7 +86,9 @@ export default function PublicAdminBar({ siteTitle }: { siteTitle: string }) {
       </details>
       <div className="public-admin-right">
         <a href="/admin/">Dashboard</a>
-        <a href="/admin/profile">Howdy, {user.username}</a>
+        <a className="public-admin-profile" href="/admin/profile">
+          Howdy, {user.username}
+        </a>
         <button type="button" onClick={() => void signOut()}>
           Sign out
         </button>

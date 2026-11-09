@@ -336,3 +336,41 @@ page 1 of the home, `/posts` and a page assigned as the posts index;
 `noResults` still covers search, category/tag/author archives and pages beyond
 the last page. This matches WordPress, where an empty blog and an empty search
 are different states, and it is editable per language in Settings → Languages.
+
+## Mobile responsive pass (2026-11-09)
+
+Audited 320/375/414/768/1024 plus the 1440 control on both surfaces, fixed in
+CSS with three component changes (table wrapper, class hook, scroll-lock hook).
+Baselines were regenerated afterwards (102 captures).
+
+| Area | Defect (computed from the stylesheet + existing layout contracts) | Fix |
+| --- | --- | --- |
+| Public header/footer | `nowrap` flex rows overflow at 320 with several page links / a long site title | `flex-wrap: wrap` ≤900 |
+| Public pagination | one link per page, `nowrap`, ~25px targets | wraps ≤600; 32×32 targets |
+| Single post/page | long unbroken words/URLs, tables and embeds wider than the column | `overflow-wrap` on titles/body, `anywhere` in table cells, `figure.wp-block-table` scrolls, `max-width:100%` embeds |
+| Public admin bar | fixed 32px row with greeting overflowed 375 | greeting hidden ≤782 (WordPress behaviour), 10px gaps, name capped 30vw with ellipsis |
+| Consent banner | ignored the home-indicator inset; 13px copy | `env(safe-area-inset-bottom)`, 14px copy, 32px settings pill |
+| Language switcher / comment reply | 12px links ~17–20px tall | 14px + 32px minimum |
+| Search form | desktop pill padding squeezed the input at 320 | 8px gap / 20px padding ≤360 only |
+| Admin shell | `min-width:320px` + classic scrollbar overflowed 305px viewports | `min-width:0` ≤360 |
+| Admin form controls | 13–14px inputs zoom on iOS focus | 16px ≤782 (login/2FA stay 24px) |
+| Admin touch targets | 24–28px icon buttons, postbox handles, view toggles, ~31px tabs | 32px ≤782 |
+| Admin list tables | row actions unreachable without hover at 641–782 | static/visible ≤782 |
+| Personal Data | request table 704px min-width with no scroll wrapper | wrapped in `.table-scroll` |
+| Analytics | `nowrap` path cells could widen the page | panel scrolls ≤782 |
+| Customizer | stacked rows in a fixed screen with no scroll; preview collapsed | one scrolling column; 60vh preview (min 320px) |
+| Editor top bar | sticky header slid under the sticky admin bar | `top: var(--wp-admin-bar-h)`; desktop sidebar aligned to 96px |
+| Editor/media dialogs | `96vw` inside padded overlays clipped 33–35px | `min(…, 100%)`; 12px backdrop padding ≤640 |
+| Attachment drawer | 120px labels left 158px at 320; inner scroll areas | fields stack ≤640; one scrolling column with 38vh preview + safe area |
+| Off-canvas/drawers | page scrolled behind the backdrop; `100vh` on mobile | shared `useBodyScrollLock` (media-query guarded), `overscroll-behavior: contain`, `100dvh` |
+| Editor footer | fixed 24px bar under the home indicator | `env(safe-area-inset-bottom)` |
+
+Deliberate: 13px admin body copy (WordPress parity, e2e-asserted), inline text
+links below 32px (WCAG 2.5.8 inline exception), 16px checkboxes (label is the
+target), table `nowrap` inside scroll containers, and no Tab focus trap added
+to the two drawers (scroll lock only; follow-up).
+
+Regression caught by this reconciliation: gating `/api/admin/health` on
+`manage_options` made the editor dashboard request it and log two console 403s
+(e2e `content.spec`); the dashboard now hides the Site Health widget and skips
+the request for non-administrators.

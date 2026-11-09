@@ -10,6 +10,7 @@ import {
 import type { Route } from './router.js';
 import { navigate, newContentPath } from './router.js';
 import { useNavigationGuard } from './navigation-guard.js';
+import { useBodyScrollLock } from './useBodyScrollLock.js';
 import { keyboardShortcutsEnabled } from './preferences.js';
 import { canCreateContent, canManageTerms, canReadComments, canReadContent } from './roles.js';
 import {
@@ -636,6 +637,10 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
   const sidebarRef = useRef<HTMLElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   const wasOpen = useRef(false);
+
+  // The drawer only floats over the page below 1024px; above that the sidebar
+  // is in flow, so scrolling must keep working.
+  useBodyScrollLock(mobileOpen, '(max-width: 1023.98px)');
 
   const previousPath = useRef(
     typeof window === 'undefined' ? '' : window.location.pathname + window.location.search,

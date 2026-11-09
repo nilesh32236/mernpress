@@ -6049,3 +6049,24 @@ lane is still running. Every item below was reproduced before fixing.
 **Commands**: `pnpm test` not re-run for the whole tree yet (mobile lane editing
 CSS); package-level runs: block-system 72, web 70, api (targeted files) green,
 admin editor 45.
+
+### 2026-11-09 — Mobile responsive pass (320–1024) and reconciliation
+
+- Designer lane audited both surfaces at 320/375/414/768/1024 + 1440 and fixed
+  the defects listed in the design audit's new "Mobile responsive pass"
+  section: public header/footer wrapping, pagination targets, long-word/table/
+  embed containment, public admin-bar greeting, consent safe area, language and
+  reply targets, 320px search; admin 305px overflow, 16px phone controls, 32px
+  touch targets, tablet row actions, Personal Data scroll wrapper, analytics/
+  customizer scrolling, editor sticky offset, dialog widths, drawer stacking,
+  scroll lock (`useBodyScrollLock`) and iOS safe-area footers.
+- Reconciliation caught one regression from the audit hardening: `manage_options`
+  on `/api/admin/health` made the editor dashboard log two console 403s. The
+  dashboard now hides the Site Health widget and skips the request unless the
+  user is an administrator.
+- Also stabilised the `editor-edit-mobile` capture by waiting for the loaded
+  canvas body instead of the (hidden) document pill.
+- Gates: format/lint/typecheck 0, 1002 unit/integration tests (API 572, admin
+  261, web 71, contracts 26, block-system 72), 36 Playwright E2E tests with
+  `--workers=1` (host was swap-thrashing at higher parallelism), 102 visual
+  baselines green twice, seven builds.

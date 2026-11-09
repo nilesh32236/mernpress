@@ -30,6 +30,12 @@ body {
   min-height: 100%;
 }
 
+html {
+  /* Prevent iOS/Android from inflating body text in landscape. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   background: var(--site-bg);
   color: var(--site-text);
@@ -350,7 +356,9 @@ a:hover {
 }
 
 .entry-content pre {
+  max-width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 1em;
   background: #f5f5f5;
 }
@@ -364,6 +372,43 @@ a:hover {
 .entry-content td {
   border: 1px solid var(--site-border);
   padding: 0.4em 0.6em;
+  /* Long unbroken URLs/code inside a cell must not widen the page. */
+  overflow-wrap: anywhere;
+}
+
+/* Stored WordPress markup may wrap tables/embeds in a figure or the embed
+   block wrapper; keep those inside the 645px column and scroll tables. */
+.entry-content figure,
+.entry-content figcaption,
+.entry-content .wp-block-embed__wrapper,
+.entry-content iframe,
+.entry-content video,
+.entry-content embed,
+.entry-content object {
+  max-width: 100%;
+}
+
+.entry-content figure.wp-block-table {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Long titles, search queries, tag/slug-like words and inline code wrap
+   instead of forcing the document wider than the viewport. */
+.blog-title,
+.entry-title,
+.post-title,
+.more-posts-title,
+.related-post-title,
+.comments-title,
+.comment-reply-title,
+.site-title,
+.site-footer-title,
+.post-excerpt,
+.author-box-text,
+.author-box-website,
+.entry-content {
+  overflow-wrap: break-word;
 }
 
 .entry-footer {
@@ -408,6 +453,31 @@ a:hover {
 
 .page-numbers.current {
   font-weight: 700;
+}
+
+/* Search/archive pagination can render one link per page. On a phone the row
+   must wrap and each number needs a 32px target. */
+@media (max-width: 600px) {
+  .pagination {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+
+  .pagination-numbers {
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 100%;
+  }
+
+  .pagination-arrow,
+  .page-numbers {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0 6px;
+  }
 }
 
 /* Footer. */
@@ -466,7 +536,17 @@ a:hover {
 
 @media (max-width: 900px) {
   .site-header {
+    /* Wrap the title and navigation instead of letting a long menu force a
+       horizontal scrollbar (WordPress stacks the header on small screens). */
+    flex-wrap: wrap;
     padding: 20px 24px;
+  }
+
+  /* A wrapped row keeps its 24px row gap; the navigation may itself wrap when
+     the site has several page links. */
+  .site-nav {
+    flex-wrap: wrap;
+    row-gap: 2px;
   }
 
   .site-main {
@@ -502,6 +582,12 @@ a:hover {
 
   .entry.page .entry-content {
     font-size: 20px;
+  }
+
+  /* Footer brand and the two link columns stack instead of colliding when the
+     site title is long. */
+  .site-footer-top {
+    flex-wrap: wrap;
   }
 }
 
@@ -683,6 +769,20 @@ a:hover {
   margin-top: 20px;
 }
 
+/* At 320px the fixed pill button and its 18px gap would squeeze the input to
+   a few characters; tighten only the very narrow width so 375px is unchanged. */
+@media (max-width: 360px) {
+  .search-form-button {
+    margin-left: 8px;
+    padding: 1rem 1.25rem;
+  }
+
+  .search-form-input {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
 /* WordPress Twenty Twenty-Five 404 template: two columns, image left,
    bottom-aligned copy and search on the right. */
 .not-found-main {
@@ -842,6 +942,33 @@ html.has-public-admin-bar {
   padding: 0;
 }
 
+/* WordPress hides the greeting on phones; the Dashboard and Sign out links
+   stay reachable, so the fixed 32px bar fits a 320px viewport without
+   wrapping (its height is fixed by the margin offset above). */
+@media (max-width: 782px) {
+  .public-admin-bar {
+    gap: 10px;
+    padding: 0 8px;
+  }
+
+  .public-admin-right {
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .public-admin-site {
+    max-width: 30vw;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .public-admin-profile {
+    display: none;
+  }
+}
+
 /* Twenty Twenty-Five footer bottom line: theme name left, credit right. */
 .site-footer-bottom {
   display: flex;
@@ -950,13 +1077,16 @@ html.has-public-admin-bar {
 }
 
 .comment-reply-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
   border: 0;
   background: transparent;
   color: var(--site-muted);
   font: inherit;
   text-decoration: underline;
   cursor: pointer;
-  padding: 0;
+  padding: 0 2px;
 }
 
 .comment-content {
@@ -1301,6 +1431,8 @@ html.has-public-admin-bar {
   z-index: 60;
   right: 16px;
   bottom: 16px;
+  /* Keep the banner clear of the iPhone home indicator. */
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   left: 16px;
   display: flex;
   flex-wrap: wrap;
@@ -1314,7 +1446,8 @@ html.has-public-admin-bar {
   background: #ffffff;
   color: #1d2327;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
-  font-size: 13px;
+  /* Readable body copy, not admin chrome. */
+  font-size: 14px;
   line-height: 1.5;
 }
 
@@ -1376,7 +1509,9 @@ html.has-public-admin-bar {
   position: fixed;
   z-index: 55;
   bottom: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   left: 12px;
+  min-height: 32px;
   padding: 6px 10px;
   border: 1px solid #c3c4c7;
   border-radius: 2px;
@@ -1390,7 +1525,7 @@ html.has-public-admin-bar {
 /* Language switcher for translated documents. */
 .language-links {
   margin: 0 0 18px;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .language-links ul {
@@ -1400,6 +1535,13 @@ html.has-public-admin-bar {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.language-links a,
+.language-links [aria-current='true'] {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
 }
 
 .language-links [aria-current='true'] {

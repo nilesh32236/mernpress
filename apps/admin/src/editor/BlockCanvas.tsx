@@ -208,7 +208,6 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
       return { blocks: [] as Array<Block<Record<string, unknown>>>, failed: true };
     }
     // Parsed once; later content arrives through the effect below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [blocks, setBlocks] = useState<Array<Block<Record<string, unknown>>>>(initialParse.blocks);
   const [parseFailed, setParseFailed] = useState(initialParse.failed);
