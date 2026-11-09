@@ -6070,3 +6070,17 @@ admin editor 45.
   261, web 71, contracts 26, block-system 72), 36 Playwright E2E tests with
   `--workers=1` (host was swap-thrashing at higher parallelism), 102 visual
   baselines green twice, seven builds.
+
+**Deployment (mobile pass + audit hardening, release `20261109T112600Z-cfd8992`):**
+- API and web restarted; `/api/health` 200.
+- Real-browser check at 375px: `/posts`, `/posts/testcom`, `/search?q=test` and
+  `/admin/` all had `scrollWidth === innerWidth === 375`; the 404 page served
+  `404` with `<meta name="robots" content="noindex, follow">`.
+- 404-log regression verified live: after clearing `not_found_entries`, the
+  three 200 pages and `/admin/` logged **nothing** (previously every visit
+  added a row); a browser visit to a missing path recorded it once
+  (`/verify-404-browser hits=1`). Curl alone logs nothing because logging is
+  client-side now. Probe rows deleted after verification.
+- Unauthenticated `/api/admin/health`, `/api/admin/mail/log` and
+  `/api/admin/mail/status` return 401; the mail/health/plugin/theme/sanitizer/
+  editor/SEO fixes are covered by the 1002-test suite.
