@@ -5989,3 +5989,23 @@ covered by sanitizer + golden + E2E tests locally.
   completing the mobile matrix alongside the existing Discussion capture.
 - The suite passes consecutively against the committed baselines (two
   customize-mobile flakes resolved on rerun under host load).
+
+### 2026-11-09 — Fix: 404 log recorded successful pages
+
+- Verified production: `not_found_entries` had 200-status paths logged
+  (`/posts/testcom` 115 hits, `/posts`, `/search`, `/author/admin`, `/test`)
+  while genuinely-404 paths were mixed in.
+- Cause: Next.js embeds the `not-found` boundary in the RSC payload of every
+  successful page, so `logCurrentNotFound()` ran during the server render for
+  every visited URL.
+- Fix: `apps/web/lib/not-found-log.ts` is now client-safe with
+  `shouldLogNotFound` + per-path dedupe, and `apps/web/components/NotFoundLog.tsx`
+  logs from a client effect inside `app/not-found.tsx`. The server component no
+  longer performs network side effects.
+- Tests: `apps/web/test/not-found-log.test.ts` (root/empty ignored, single
+  POST body `{path}`, failures swallowed) and a new public E2E regression
+  (`only genuine 404s are recorded in the not-found log`) that clears the log,
+  visits four 200 pages, then asserts a real 404 is recorded once and
+  increments to 2 on revisit.
+- Data: deleted the five polluted production rows; genuine 404 rows retained.
+- Validation: 979 unit/integration tests, 36 Playwright E2E tests.

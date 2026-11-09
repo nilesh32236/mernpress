@@ -175,3 +175,74 @@ test('public screens keep the Twenty Twenty-Five layout contract', async ({ page
   });
   expect(pageTitle).toBe('36px');
 });
+
+/**
+ * Regression: the 404 log must record only genuine 404s.
+ *
+ * Next.js embeds the `not-found` boundary in the RSC payload of successful
+ * pages, so a server-side logging call recorded every visited URL as a 404
+ * (production rows for `/posts`, `/posts/testcom`, `/search` and
+ * `/author/admin` had hundreds of hits). Logging now happens in a client
+ * effect, so it only runs when the 404 UI is actually mounted.
+ */
+test('only genuine 404s are recorded in the not-found log', async ({ page }) => {
+  const testDatabaseUrl = process.env['TEST_DATABASE_URL'];
+  if (!testDatabaseUrl) throw new Error('TEST_DATABASE_URL is required');
+  const clear = () =>
+    execFileSync('psql', [testDatabaseUrl, '-c', 'DELETE FROM not_found_entries;'], {
+      stdio: 'pipe',
+    });
+  const rows = () =>
+    execFileSync(
+      'psql',
+      [testDatabaseUrl, '-t', '-A', '-c', 'SELECT path FROM not_found_entries ORDER BY path;'],
+      { stdio: 'pipe' },
+    )
+      .toString()
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+  clear();
+
+  // Successful pages must not be logged, on desktop or mobile.
+  for (const path of ['/posts', '/posts/welcome-to-mernpress', '/search?q=mernpress', '/about']) {
+    const response = await page.goto(`${SITE}${path}`, { waitUntil: 'networkidle' });
+    expect(response?.status(), path).toBe(200);
+    await page.waitForTimeout(700);
+  }
+  expect(rows()).toEqual([]);
+
+  // A real 404 is recorded exactly once.
+  const missing = await page.goto(`${SITE}/public-design-missing-log`, {
+    waitUntil: 'networkidle',
+  });
+  expect(missing?.status()).toBe(404);
+  await expect
+    .poll(async () => rows(), { timeout: 10_000 })
+    .toEqual(['/public-design-missing-log']);
+
+  // Revisiting increments the counter instead of duplicating the row.
+  await page.goto(`${SITE}/public-design-missing-log`, { waitUntil: 'networkidle' });
+  await expect
+    .poll(
+      async () =>
+        execFileSync(
+          'psql',
+          [
+            testDatabaseUrl,
+            '-t',
+            '-A',
+            '-c',
+            "SELECT hits FROM not_found_entries WHERE path = '/public-design-missing-log';",
+          ],
+          { stdio: 'pipe' },
+        )
+          .toString()
+          .trim(),
+      { timeout: 10_000 },
+    )
+    .toBe('2');
+
+  clear();
+});

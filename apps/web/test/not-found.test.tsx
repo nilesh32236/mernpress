@@ -1,10 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/not-found-log', () => ({
-  logCurrentNotFound: async () => undefined,
-}));
-
 vi.mock('@/lib/theme-strings', async () => {
   const { DEFAULT_THEME_STRINGS } = await import('@mernpress/contracts');
   return {

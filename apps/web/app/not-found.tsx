@@ -1,12 +1,12 @@
+import NotFoundLog from '@/components/NotFoundLog';
 import SearchForm from '@/components/SearchForm';
-import { logCurrentNotFound } from '@/lib/not-found-log';
 import { requestThemeStrings } from '@/lib/theme-strings';
 
 export default async function NotFound() {
-  await logCurrentNotFound();
   const strings = await requestThemeStrings();
   return (
     <main id="main-content" className="site-main not-found-main">
+      <NotFoundLog />
       <div className="not-found-columns">
         <figure className="not-found-image">
           <img src="/404-tree.webp" alt={strings.notFoundImageAlt} width={1048} height={1342} />
