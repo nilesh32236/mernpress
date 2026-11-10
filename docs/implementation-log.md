@@ -6190,3 +6190,26 @@ admin editor 45.
 - The language-pair baselines are an E2E fixture, not production content, so
   production keeps a single language (`speculation_mode` and link settings
   unchanged).
+
+### 2026-11-10 — Measured WordPress side-by-side pass (typography + modals)
+
+- Started the WordPress 7.1.4 reference (`/tmp/opencode/wp-site`, PHP built-in
+  server on 8080, Twenty Twenty-Five) and measured the states the earlier audit
+  had not compared: editor Block/Notes tabs, the Shortcuts/Preferences modals,
+  a 375px admin/public pass and the language-prefixed page (which core cannot
+  serve without a plugin).
+- Fixed: public body copy was 22px while WordPress is 18px/1.4 at weight 300
+  with the same 645px measure — `body`, `.entry-content`, `.entry-page`,
+  archive description and status text now use 18px. Editor modal widths now
+  match WordPress: Preferences 750px, Keyboard shortcuts 629px.
+- Confirmed matches: 32px admin bar, 160px sidebar, 64px editor header, 280px
+  settings column, 48px post title, 46px mobile admin bar, 64px mobile editor
+  header, no overflow at 375, focus-trapped modals with Escape.
+- Documented deviations: Notes tab (addition), Welcome guide uses the shared
+  modal instead of WordPress's 312px card, and the mobile post title is a fixed
+  36px rather than a 35.13px clamp.
+- Stabilised captures the audit exposed: poll the post HTML for the language
+  switcher (10s config cache), wait for the client-side comments fetch, mask the
+  Customizer and Site Editor preview iframes.
+- Gates: format/lint/typecheck 0, 1011 unit/integration, 37 E2E, 108 baselines
+  green twice, seven builds.

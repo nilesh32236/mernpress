@@ -40,7 +40,9 @@ body {
   background: var(--site-bg);
   color: var(--site-text);
   font-family: var(--site-body-font), var(--font-manrope), Manrope, sans-serif;
-  font-size: 22px;
+  /* Twenty Twenty-Five body copy is 18px/1.4 at every width (measured against
+     WordPress 7.1.4); MERNPress used 22px. */
+  font-size: 18px;
   font-weight: 300;
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
@@ -147,7 +149,7 @@ a:hover {
 
 .archive-description {
   margin: 0 0 19px;
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 300;
   line-height: 1.4;
 }
@@ -158,7 +160,7 @@ a:hover {
 
 .status {
   margin: 0;
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 300;
 }
 
@@ -288,13 +290,13 @@ a:hover {
 }
 
 .entry-content {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 300;
   line-height: 1.4;
 }
 
 .entry.page .entry-content {
-  font-size: 22px;
+  font-size: 18px;
 }
 
 .entry-content > * {

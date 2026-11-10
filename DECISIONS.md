@@ -210,6 +210,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-135 | 2026-11-10 | Parity state matrix: 108 visual baselines now cover a language-prefixed pair (default post and its Hindi translation, with hreflang/canonical DOM assertions) and the editor inspector tabs (Block, Notes) plus the Shortcuts and Preferences dialogs. Editor dialogs reuse `useFocusTrap`. The visual fixture pins `site_languages` and a Hindi translation; it waits for the API language config (10 s cache) before capturing, which also documents that a languages change can take up to 10 s to reach public responses. | accepted | [design audit](docs/verification/design-audit-2026-11-05.md) |
 
+| D-136 | 2026-11-10 | Measured side-by-side pass against the running WordPress 7.1.4 + Twenty Twenty-Five reference for the states not previously compared (language-prefixed page, editor Block/Notes tabs, Shortcuts/Preferences modals, 375px admin/public). Fixed two real mismatches: public body copy 22px → 18px (WP is 18px/1.4, weight 300, 645px measure) and editor modal widths (Preferences 720 → 750, Keyboard shortcuts 720 → 629). Recorded matches (32/160/64/280 chrome, 48px title, 46/64 mobile), one addition (Notes tab), and two deviations (Welcome guide card width; 36px fixed mobile title vs WP clamp). | accepted | [design audit](docs/verification/design-audit-2026-11-05.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

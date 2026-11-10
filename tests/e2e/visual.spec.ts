@@ -190,7 +190,18 @@ test('public visual baselines', async ({ page }) => {
     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
     if (name === 'single' || name === 'single-hi') {
       // The language switcher proves the translation fixture is live; without
-      // this the capture could silently record the English-only state.
+      // this the capture could silently record the English-only state. The API
+      // caches the language config for 10s, so poll the HTML itself.
+      await expect
+        .poll(
+          async () => {
+            const html = await (await page.request.get(`${SITE}${route}`)).text();
+            return html.includes('language-links');
+          },
+          { timeout: 25_000, intervals: [500, 1_000, 2_000] },
+        )
+        .toBe(true);
+      await page.reload({ waitUntil: 'domcontentloaded' });
       await expect(page.locator('.language-links')).toBeVisible();
       // Comments load client-side; the placeholder vs "no comments" state was
       // flickering the capture.
@@ -467,6 +478,7 @@ test('admin visual baselines', async ({ page }) => {
       caret: 'hide',
       fullPage: false,
       maxDiffPixelRatio: 0.001,
+      ...(name === 'customize' ? { mask: [page.locator('.customize-preview-frame')] } : {}),
     });
   }
 });

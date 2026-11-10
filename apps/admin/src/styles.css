@@ -12129,6 +12129,16 @@ a.glance-chip:hover {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
+/* WordPress sizes these two modals differently: Preferences is 750px wide and
+   the Keyboard shortcuts sheet is 629px (measured on 7.1.4 at 1440px). */
+.editor-dialog.is-preferences {
+  width: min(750px, 100%);
+}
+
+.editor-dialog.is-shortcuts {
+  width: min(629px, 100%);
+}
+
 .editor-dialog-head {
   display: flex;
   align-items: center;

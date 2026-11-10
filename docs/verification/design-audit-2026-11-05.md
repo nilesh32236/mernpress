@@ -47,6 +47,37 @@ Screenshots from this pass (development, git-ignored):
 `.playwright-mcp/audit-mn-posts.png`, plus the feature screenshots referenced in
 `docs/implementation-log.md`.
 
+
+## Measured side-by-side pass — previously uncompared states (2026-11-10)
+
+Reference: WordPress 7.1.4 + Twenty Twenty-Five at `http://127.0.0.1:8080`
+(Local PHP built-in server over the local `wordpress` database; a temporary
+`audit-admin` user was created for the measurements and deleted afterwards).
+MERNPress: the live production release. Chromium 1440x1000 and 375x812.
+
+| State | WordPress 7.1.4 | MERNPress (before) | Result |
+| --- | --- | --- | --- |
+| Admin bar / sidebar (1440) | 32 px / 160 px | 32 px / 160 px | match |
+| Editor header / settings column | 64 px / 280 px | 64 px / 280 px | match |
+| Editor sidebar tabs | Post, Block | Post, Block, Notes | **addition** (internal notes, ADR 0038) |
+| Options → Preferences modal | 750 px wide, focus trapped, Escape closes, focus restored | 720 px, trapped, Escape closes | **fixed to 750 px** |
+| Options → Keyboard shortcuts modal | 629 px wide, trapped | 720 px, trapped | **fixed to 629 px** |
+| Options → Welcome guide | 312 px illustrated card | standard modal | deviation: the MERNPress guide is textual, so it uses the shared modal width |
+| Public body copy (1440) | 18 px / 1.4, weight 300, 645 px measure | 22 px / 1.4, weight 300, 645 px measure | **fixed to 18 px** (post body, page body, archive description, status text) |
+| Public post title (1440) | 48 px / 400 | 48 px / 400 | match |
+| Public body copy (375) | 18 px | 22 px | **fixed to 18 px** |
+| Public post title (375) | 35.13 px (theme clamp) | 36 px (fixed) | 0.87 px difference retained: the mobile contract asserts an explicit 36 px title |
+| Mobile admin bar / editor header | 46 px / 64 px | 46 px / 64 px | match |
+| Mobile editor overflow | scrollWidth = innerWidth = 375 | 375 = 375 | match |
+| Language-prefixed page (`/hi/…`) | not available in core (needs Polylang) | `/hi/…` + hreflang + x-default | deliberate difference: shipped in core (D-100–D-105) |
+
+Two real mismatches were fixed and captured: the public body copy size and the
+two editor modal widths. Everything else matched or is a documented addition.
+
+Baselines affected by the typography change were regenerated (108 total) and the
+customizer/site-editor preview iframes plus the post comments fetch are now
+stabilised/masked so a capture cannot silently record a half-loaded screen.
+
 ## Remaining deviations (deliberate)
 
 | Deviation | Reason |
