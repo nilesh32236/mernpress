@@ -56,6 +56,8 @@ test.beforeAll(() => {
        INSERT INTO options (key, value, "group", autoload, updated_at)
        VALUES ('site_languages', '{"default":"en","enabled":["en","hi"]}', 'general', true, now())
        ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = now();
+       DELETE FROM posts WHERE language = 'hi'
+         AND translation_group IN (SELECT translation_group FROM posts WHERE slug = 'welcome-to-mernpress');
        INSERT INTO posts (id, type, status, title, slug, excerpt, content, content_format, content_version, language, translation_group, published_at, created_at, updated_at)
        SELECT gen_random_uuid(), 'post', 'PUBLISHED', 'MERNPress में आपका स्वागत है',
               'welcome-to-mernpress-hi', 'डेमो पोस्ट।',

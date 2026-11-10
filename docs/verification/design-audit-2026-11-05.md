@@ -180,6 +180,29 @@ and a DOM contract that seeds an approved comment, asserts 18 px body / 14 px
 meta and removes it afterwards. The 768 px tablet breakpoint matches on menu
 behaviour, settings stacking and the absence of horizontal overflow.
 
+
+## Measured pass 6 — Site Editor canvas and Media decision (2026-11-10)
+
+Sixth measured run, using generic hooks (any iframe, any `[class*="sidebar"]`)
+so the two applications can be compared despite different class names.
+
+| State | WordPress 7.1.4 | MERNPress (before) | Result |
+| --- | --- | --- | --- |
+| Site Editor @1440 | sidebar **300 px**, canvas iframe **1124 x 936**, no admin menu | sidebar 300 px but canvas **932 px** (admin menu still reserved 160 px) | **fixed**: Site Editor is full-screen (admin menu hidden) and the canvas gutter is 16 px → canvas 1124 px |
+| Site Editor @768 | single-column hub: 690 px panel, no canvas iframe | stacked sidebar 768 px over a 744 px preview | interaction model differs (MERNPress is preview-first); no overflow in either — documented |
+| Media toolbar @1440 | one 80 px filter bar | folder bar 50 px + list toolbar | deliberate addition (virtual folders); controls keep the measured 40 px/14 px/2 px geometry |
+| Media toolbar @375 | one 198 px filter bar | folder bar + toolbar (130 px) | same documented addition |
+
+Decision on the remaining deviations: the Media toolbar composition stays — the
+folder bar is a shipped feature that WordPress needs three plugins for, and the
+control geometry already matches. The Site Editor was not acceptable as a
+"deviation" because it was a layout bug (admin menu reserved while hidden), so
+it is fixed and pinned by a contract.
+
+The visual fixture also now deletes any stale Hindi row before inserting the
+translation, which removed an intermittent heading mismatch in the language
+pair capture.
+
 ## Remaining deviations (deliberate)
 
 | Deviation | Reason |

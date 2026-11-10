@@ -1268,3 +1268,38 @@ test('phone-width list rows are touch-sized like WordPress', async ({ page }) =>
   expect(metrics.checkboxSize).toBe(25);
   expect(metrics.scrollWidth).toBe(metrics.innerWidth);
 });
+
+test('the Site Editor uses the full-width WordPress canvas', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await login(page);
+  await page.goto('http://127.0.0.1:5173/admin/site-editor');
+  await expect(page.getByRole('heading', { level: 1, name: 'Design' })).toBeVisible();
+
+  const metrics = await page.evaluate(() => {
+    const sidebar = document.querySelector('.site-editor-sidebar');
+    const frame = document.querySelector('.site-editor-frame iframe');
+    const adminSidebar = document.querySelector('.admin-sidebar');
+    return {
+      sidebarWidth: sidebar ? Math.round(sidebar.getBoundingClientRect().width) : null,
+      canvasWidth: frame ? Math.round(frame.getBoundingClientRect().width) : null,
+      adminSidebarVisible: Boolean(adminSidebar && adminSidebar.offsetParent),
+      scrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
+    };
+  });
+  // WordPress 7.1.4: 300px Site Editor sidebar and a ~1124px canvas at 1440,
+  // with no admin menu in the editor.
+  expect(metrics.sidebarWidth).toBe(300);
+  expect(metrics.adminSidebarVisible).toBe(false);
+  expect(metrics.canvasWidth).toBeGreaterThanOrEqual(1100);
+  expect(metrics.scrollWidth).toBe(metrics.innerWidth);
+
+  await page.setViewportSize({ width: 768, height: 1024 });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('heading', { level: 1, name: 'Design' })).toBeVisible();
+  const narrow = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    innerWidth: window.innerWidth,
+  }));
+  expect(narrow.scrollWidth).toBe(narrow.innerWidth);
+});

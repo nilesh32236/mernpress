@@ -220,6 +220,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-140 | 2026-11-10 | Measured pass 5: comments are now comparable — the reference got a post containing a `wp:comments` block (its single template renders none) plus an approved comment; body 18px, meta 14px and form text 18px match MERNPress. The 768px tablet breakpoint matches on menu folding, settings label stacking and no overflow; the WordPress Site Editor uses different internal selectors so no numeric canvas comparison was possible (documented). Added a public E2E contract that seeds an approved comment, asserts the 18/14px type scale and cleans up. | accepted | [design audit](docs/verification/design-audit-2026-11-05.md) |
 
+| D-141 | 2026-11-10 | Measured pass 6 (generic hooks): WordPress Site Editor is full-screen with a 300px sidebar and a 1124px canvas; MERNPress reserved the hidden 160px admin menu and used a 24px gutter, giving a 932px canvas. Fixed: the Site Editor now runs in the shell editor-mode (no admin menu) and uses a 16px gutter, with a contract (sidebar 300, canvas ≥1100, no admin menu, no overflow at 768). Media toolbar composition (folder bar + toolbar) is accepted and documented: it is a shipped feature with matching 40px/14px/2px control geometry. | accepted | [design audit](docs/verification/design-audit-2026-11-05.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

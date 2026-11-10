@@ -10947,7 +10947,8 @@ a.glance-chip:hover {
 .site-editor-canvas {
   flex: 1;
   min-width: 0;
-  padding: 16px 24px;
+  /* WordPress's full-screen Site Editor leaves a 16px gutter, not 24px. */
+  padding: 16px;
   overflow: auto;
 }
 
@@ -14403,4 +14404,10 @@ button.button-link.is-danger {
     line-height: 1.4;
     color: #646970;
   }
+}
+
+/* With the admin menu hidden (editor mode) the Site Editor must start at the
+   page edge, like WordPress's full-screen Site Editor. */
+.wp-shell.editor-mode .site-editor {
+  inset: var(--wp-admin-bar-h) 0 0 0;
 }

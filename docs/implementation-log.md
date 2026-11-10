@@ -6330,3 +6330,19 @@ admin editor 45.
   18px body / 14px meta scale and removes the comment afterwards.
 - No runtime change this pass, so no redeploy. Gates: format/lint/typecheck 0,
   1011 unit/integration, 40 E2E, 108 baselines unchanged, seven builds.
+
+### 2026-11-10 — Measured pass 6: Site Editor full-screen canvas
+
+- Compared the Site Editor with generic hooks: WordPress uses a 300px sidebar
+  and a 1124x936 canvas at 1440 with no admin menu; MERNPress had the same
+  300px sidebar but a 932px canvas because the shell still reserved the 160px
+  admin menu and used a 24px gutter.
+- Fixed: `/admin/site-editor` now uses the shell's editor mode (admin menu and
+  footer hidden) and a 16px canvas gutter. A contract pins sidebar 300px,
+  canvas ≥1100px, no admin menu and no overflow at 768px.
+- Media toolbar composition is accepted as a documented addition (virtual
+  folders) because the control geometry already matches.
+- The visual fixture deletes a stale Hindi row before inserting the translation,
+  removing an intermittent language-pair heading failure.
+- Gates: format/lint/typecheck 0, 1011 unit/integration, 41 E2E, 108 baselines
+  green three times, seven builds.

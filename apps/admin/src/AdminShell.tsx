@@ -762,8 +762,11 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
   }, [newMenuOpen, userMenuOpen]);
 
   // The editor is a focused workspace with its own header; a shell breadcrumb
-  // would duplicate navigation and sit behind the editor toolbar.
-  const isEditorRoute = route.name === 'new' || route.name === 'edit';
+  // would duplicate navigation and sit behind the editor toolbar. The Site
+  // Editor is full-screen in WordPress too (no admin menu), so the same shell
+  // treatment applies and the canvas gets the full width.
+  const isEditorRoute =
+    route.name === 'new' || route.name === 'edit' || route.name === 'siteEditor';
   const currentScreen = screenKey(route);
   const supportsPerPage = [
     'posts',
