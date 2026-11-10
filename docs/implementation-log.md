@@ -6346,3 +6346,12 @@ admin editor 45.
   removing an intermittent language-pair heading failure.
 - Gates: format/lint/typecheck 0, 1011 unit/integration, 41 E2E, 108 baselines
   green three times, seven builds.
+
+**Deployment (measured pass 6, release `20261110T105607Z-cb1b42a`):**
+- API and web restarted; `/api/health` 200.
+- Live Site Editor at 1440px: sidebar **300px**, canvas **1108x928**
+  (WordPress 1124x936), no admin menu rendered, no horizontal overflow; at
+  768px `scrollWidth === innerWidth === 768`.
+- Cleanup removed the temporary administrator/session and recent audit events
+  (1 user, 2 posts); the reference server was stopped and its `audit-admin`
+  user deleted; the superseded release was pruned (16 GB free).
