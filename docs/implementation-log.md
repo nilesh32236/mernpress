@@ -6111,3 +6111,16 @@ admin editor 45.
 - Gates: format/lint/typecheck 0, 1007 unit/integration tests (API 577, admin
   261, web 71, contracts 26, block-system 72),
   36 E2E with `--workers=1`, 102 baselines green twice, seven builds.
+
+**Deployment (round 2, release `20261110T044212Z-117b8f4`):**
+- API and web restarted; `/api/health`, `/` and `/admin/` return 200.
+- Atomic singleton enqueue verified live with a temporary administrator: three
+  concurrent `POST /api/admin/backups` requests returned **202, 409, 409**
+  (`BACKUP_IN_PROGRESS` on the losers) and exactly **one** PENDING job existed;
+  the worker completed it (`COMPLETED`, one archive written).
+- Cleanup removed the temporary administrator/session and recent audit events;
+  production is back to 1 user, 0 pending/running jobs. The backup archive from
+  the check is retained by the normal retention policy.
+- The remaining round-2 fixes (2FA limiter, job heartbeat, taxonomy reads,
+  import validation, autosave lock) are covered by the API suite; the 2FA
+  limiter is deliberately not exercised on the live account.
