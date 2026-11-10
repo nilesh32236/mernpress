@@ -6395,3 +6395,10 @@ admin editor 45.
   matrix (paragraph, h2, h3, quote, cite, pre/code, caption, table) is pinned.
 - Gates: format/lint/typecheck 0, 1013 unit/integration, 42 E2E, 108 baselines
   green twice, seven builds.
+
+**Deployment (h3 alignment, release `20261110T114410Z-d5ffc59`):**
+- API and web restarted; `/api/health` 200.
+- Live check on a temporary post: h3 **22px / 24.75px / weight 400** at 1440
+  (identical to WordPress 7.1.4) and **18.2172px** at 375, with the paragraph at
+  22px. The probe post was removed after measuring; production is back to
+  1 user, 2 posts.
