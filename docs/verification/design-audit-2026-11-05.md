@@ -157,6 +157,29 @@ Media remains a documented composition difference: WordPress's toolbar is a
 single 198 px filter bar, MERNPress has a folder bar plus a toolbar because it
 ships virtual folders; the grid is 2-up at phone widths in both.
 
+
+## Measured pass 5 — comments, 768px tablet, Site Editor (2026-11-10)
+
+Fifth side-by-side run. To make comments comparable, the reference got a post
+whose content contains a `wp:comments` block (the installed single template
+renders none) plus an approved comment.
+
+| State | WordPress 7.1.4 | MERNPress | Result |
+| --- | --- | --- | --- |
+| Comment body | 18 px | 18 px | match |
+| Comment name / date | 14 px | 14 px | match |
+| Comment form field text | 18 px | 18 px | match |
+| Comment avatar | none in the fixture (Gravatar disabled) | none configured | not comparable; both fall back to initials |
+| Admin at 768 px | menu auto-folds to 0 px (icon toggle), content 746 px, table 746 px, no overflow | off-canvas menu (hidden, toggle present), content 768 px including 10 px gutters (≈748 px inner), no overflow | match in behaviour and usable width |
+| Settings at 768 px | labels stack full width (746 px) | grid collapses to one 748 px column | match |
+| Site Editor at 768 px | app loads (`Editor`); internal selectors differ from MERNPress so no numeric comparison was possible | sidebar 768 px stacked, preview 744 px, no overflow | documented as not numerically comparable |
+| Public comments @375 | n/a (no comments in the reference's 375 capture) | comment body 18 px inherited | consistent with the 1440 match |
+
+Result: comment typography now has a measured match (previously unmeasurable)
+and a DOM contract that seeds an approved comment, asserts 18 px body / 14 px
+meta and removes it afterwards. The 768 px tablet breakpoint matches on menu
+behaviour, settings stacking and the absence of horizontal overflow.
+
 ## Remaining deviations (deliberate)
 
 | Deviation | Reason |

@@ -252,3 +252,50 @@ test('only genuine 404s are recorded in the not-found log', async ({ page }) => 
 
   clear();
 });
+
+/**
+ * Comment typography matches the measured WordPress reference (post body 18px,
+ * comment meta 14px). The reference theme's single template has no comments
+ * block, so the comparison was made against a post containing a comments block.
+ */
+test('comment body and meta match the WordPress type scale', async ({ page }) => {
+  const testDatabaseUrl = process.env['TEST_DATABASE_URL'];
+  if (!testDatabaseUrl) throw new Error('TEST_DATABASE_URL is required');
+  execFileSync(
+    'psql',
+    [
+      testDatabaseUrl,
+      '-c',
+      `INSERT INTO comments (id, post_id, author_name, author_email, content, status, created_at, updated_at)
+       SELECT gen_random_uuid(), id, 'Type Audit', 'type-audit@example.com', 'A comment used to measure the type scale.', 'APPROVED', now(), now()
+       FROM posts WHERE slug = 'welcome-to-mernpress' LIMIT 1;`,
+    ],
+    { stdio: 'pipe' },
+  );
+  try {
+    await revalidatePublicContent(page);
+    await page.goto(`${SITE}/posts/welcome-to-mernpress`, { waitUntil: 'domcontentloaded' });
+    const comment = page.getByText('A comment used to measure the type scale.');
+    await expect(comment).toBeVisible({ timeout: 15_000 });
+    const metrics = await page.evaluate(() => {
+      const body = document.querySelector('.comment-body p, .comment-body');
+      const meta = document.querySelector('.comment-meta, .comment-author');
+      return {
+        bodyFont: body ? getComputedStyle(body).fontSize : null,
+        metaFont: meta ? getComputedStyle(meta).fontSize : null,
+      };
+    });
+    expect(metrics.bodyFont).toBe('18px');
+    expect(metrics.metaFont).toBe('14px');
+  } finally {
+    execFileSync(
+      'psql',
+      [
+        testDatabaseUrl,
+        '-c',
+        "DELETE FROM comments WHERE author_email = 'type-audit@example.com';",
+      ],
+      { stdio: 'pipe' },
+    );
+  }
+});

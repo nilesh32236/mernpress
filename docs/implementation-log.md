@@ -6312,3 +6312,21 @@ admin editor 45.
   (1 user, 2 posts); the reference WordPress server was stopped and its
   `audit-admin` user deleted. Superseded releases were pruned, keeping the
   active release plus one rollback.
+
+### 2026-11-10 — Measured pass 5: comment typography, 768px tablet, Site Editor
+
+- Made comments comparable by adding a reference post that contains a
+  `wp:comments` block (the installed single template renders no comments) and an
+  approved comment: WordPress 18px body, 14px name/date, 18px form text —
+  MERNPress matches all three.
+- 768px tablet: WordPress auto-folds the menu to 0px with a toggle and uses a
+  746px content column; MERNPress shows an off-canvas menu with a toggle and a
+  768px column including gutters — same behaviour, no overflow. Settings labels
+  stack in both (746/748px).
+- Site Editor: WordPress loads but its internal selectors differ, so no numeric
+  canvas comparison; MERNPress stacks the sidebar (768px) over a 744px preview
+  with no overflow — documented.
+- Added a `public-design` contract that seeds an approved comment, asserts the
+  18px body / 14px meta scale and removes the comment afterwards.
+- No runtime change this pass, so no redeploy. Gates: format/lint/typecheck 0,
+  1011 unit/integration, 40 E2E, 108 baselines unchanged, seven builds.
