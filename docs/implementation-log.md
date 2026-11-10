@@ -6373,3 +6373,15 @@ admin editor 45.
   fixture post. h3 (24px vs 22px) remains a documented theme-scale difference.
 - Gates: format/lint/typecheck 0, 1013 unit/integration, 42 E2E, 108 baselines
   green twice, seven builds.
+
+**Deployment (measured pass 7, release `20261110T112810Z-3223350`):**
+- API and web restarted; `/api/health` 200.
+- Live block audit on the probe post: paragraph **22px / 30.8px**, h2 32/36,
+  blockquote 22px with **20px 30px** padding and a **2px** rule, cite **14px**,
+  pre/code **18px** with **30px** padding, figcaption **14px**; the imported
+  **table now renders** (`Header`/`Cell` cells present); at 375 the paragraph is
+  **18.2172px** (WordPress 18.2156).
+- Cleanup deleted the probe post, its comments/terms, the temporary
+  administrator/session and recent audit events (1 user, 2 posts); the
+  reference post, `audit-admin` and the reference server were removed; the
+  superseded release was pruned (16 GB free).
