@@ -214,6 +214,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-137 | 2026-11-10 | Measured pass 2 against WordPress 7.1.4: admin Posts/Pages/Users tables match (1238px, 14px head, 13px tabs, 55/56px rows), theme cards match at 379px, 375px admin lists/bar match (46px, no overflow), public meta is 14px in both. Fixed: the public post title now follows the reference clamp (`clamp(2.2rem, 1.335vw + 1.8825rem, 3rem)` → 35.13px at 375, 36.96px at 512) instead of a fixed 36px, and the Welcome guide is a 312px card like WordPress. Users rows are 2px taller (avatar padding); Media composition differs because MERNPress adds folders — both documented. | accepted | [design audit](docs/verification/design-audit-2026-11-05.md) |
 
+| D-138 | 2026-11-10 | Measured pass 3 against WordPress 7.1.4: Settings form-table geometry matches exactly (1238px table, 210px labels, 14px text, 40px controls, 2px radius, 40px submit), Tools cards match at 520px, Export Personal Data matches. Fixed the Profile submit height (32 → 40px) and the Customizer sidebar width (320 → 300px); a DOM contract pins all of these. Public comment typography could not be compared because the reference single template renders no comments block even with an approved comment (documented). | accepted | [design audit](docs/verification/design-audit-2026-11-05.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

@@ -108,6 +108,30 @@ Title curve: Twenty Twenty-Five scales the post title linearly between roughly
 36.96 px at 512 (verified in the E2E suite, which asserts the 375 value stays
 within 0.5 px of the reference).
 
+
+## Measured pass 3 — Settings, Profile, Personal Data, Customizer, Tools (2026-11-10)
+
+Third side-by-side run against WordPress 7.1.4 (same local reference; a comment
+was also created with wp-cli to exercise the public comment template).
+
+| State | WordPress 7.1.4 | MERNPress | Result |
+| --- | --- | --- | --- |
+| Settings form table (General) | 1238 px wide, 210 px label column, 14 px labels, 40 px inputs, 14 px text, 2 px radius, 40 px submit | same values | match |
+| Settings Reading/Discussion/Media/Permalinks | 210 px labels, 14 px, 40 px selects | same structure | match |
+| Settings at 375 | no overflow, labels stacked full width, 40 px inputs | 375 = 375, labels stacked, 40 px inputs | match |
+| Profile | sections Personal Options / Name / Contact Info / About Yourself / Account Management / Application Passwords; 40 px inputs; submit 40 px | same sections (+ Two-Factor Authentication), 40 px inputs | **submit fixed 32 → 40 px** |
+| Tools | one card, 520 px wide | six cards at 520 px | card width matches; MERNPress adds Redirects/Backups/Jobs/Health |
+| Export Personal Data | table 1238 px, 40 px input | table scroll-contained, 40 px input | match |
+| Customizer | sidebar **300 px**, header 46 px | sidebar **320 px** | **fixed to 300 px** |
+| Backups / Scheduled Actions | not in core | present | **addition** |
+| Public comment | approved comment exists in `wp_comments`, but the installed single template emits no comments block (verified: no `wp-block-comments` in the HTML), so body/meta/avatar metrics cannot be compared | 18 px body, 14 px meta, 32 px avatar | not measurable on the reference; documented |
+
+Two more mismatches were fixed: the Profile submit height (32 → 40 px, matching
+both WordPress and the Settings panels) and the Customizer sidebar width
+(320 → 300 px). A DOM contract in `admin-parity.spec.ts` now pins the Settings
+geometry (210/40/14/2/40), the Profile submit height and the Customizer width so
+they cannot drift.
+
 ## Remaining deviations (deliberate)
 
 | Deviation | Reason |

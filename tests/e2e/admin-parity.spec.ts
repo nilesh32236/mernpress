@@ -1170,3 +1170,70 @@ test('remaining admin routes keep the WordPress responsive contract', async ({
   expect(userPassword.row).toBeLessThanOrEqual(userPassword.innerWidth);
   expect(userPassword.input).toBeLessThanOrEqual(userPassword.innerWidth);
 });
+
+test('settings, profile and customizer keep the WordPress measurements', async ({ page }) => {
+  await login(page);
+  await page.goto('http://127.0.0.1:5173/admin/settings');
+  await expect(page.getByRole('heading', { level: 1, name: 'General Settings' })).toBeVisible();
+  // Options load asynchronously; wait until the mounted fields have geometry.
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(() => {
+          const input = document.querySelector(
+            '.settings-panel .field input[type="text"], .settings-panel .field input:not([type])',
+          );
+          return input ? Math.round(input.getBoundingClientRect().height) : 0;
+        }),
+      { timeout: 15_000 },
+    )
+    .toBeGreaterThan(0);
+  const settings = await page.evaluate(() => {
+    const field = document.querySelector('.settings-panel .field');
+    const label = field?.querySelector('label, .field-label');
+    const input = field?.querySelector('input[type="text"], input:not([type])');
+    const submit = document.querySelector('.settings-panel button[type="submit"]');
+    const style = (element: Element | null) => (element ? getComputedStyle(element) : null);
+    return {
+      labelWidth: label ? Math.round(label.getBoundingClientRect().width) : null,
+      labelFont: style(label)?.fontSize ?? null,
+      inputHeight: input ? Math.round(input.getBoundingClientRect().height) : null,
+      inputFont: style(input)?.fontSize ?? null,
+      inputRadius: style(input)?.borderRadius ?? null,
+      submitHeight: submit ? Math.round(submit.getBoundingClientRect().height) : null,
+    };
+  });
+  // WordPress 7.1.4: 210px label column, 40px controls, 14px text, 2px radius.
+  expect(settings).toEqual({
+    labelWidth: 210,
+    labelFont: '14px',
+    inputHeight: 40,
+    inputFont: '14px',
+    inputRadius: '2px',
+    submitHeight: 40,
+  });
+
+  await page.goto('http://127.0.0.1:5173/admin/profile');
+  await expect(page.getByRole('heading', { level: 1, name: 'Profile' })).toBeVisible();
+  const profileButton = page.getByRole('button', { name: 'Update Profile' });
+  await expect(profileButton).toBeVisible();
+  const profileSubmit = await profileButton.evaluate((element) =>
+    Math.round(element.getBoundingClientRect().height),
+  );
+  expect(profileSubmit).toBe(40);
+
+  await page.goto('http://127.0.0.1:5173/admin/themes/customize');
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Customizing: MERNPress' }),
+  ).toBeVisible();
+  const customizer = await page.evaluate(() => {
+    const panel = document.querySelector('.customize-panel');
+    const header = document.querySelector('.customize-header');
+    return {
+      panelWidth: panel ? Math.round(panel.getBoundingClientRect().width) : null,
+      headerHeight: header ? Math.round(header.getBoundingClientRect().height) : null,
+    };
+  });
+  // WordPress 7.1.4: 300px Customizer sidebar, 46px header.
+  expect(customizer).toEqual({ panelWidth: 300, headerHeight: 46 });
+});

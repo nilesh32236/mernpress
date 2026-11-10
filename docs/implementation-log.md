@@ -6251,3 +6251,20 @@ admin editor 45.
 - Cleanup removed both temporary MERNPress administrators/sessions and recent
   audit events (back to 1 user, 2 posts); the reference WordPress server was
   stopped and its `audit-admin` user deleted.
+
+### 2026-11-10 — Measured pass 3: Settings, Profile, Personal Data, Customizer
+
+- Side-by-side against WordPress 7.1.4: Settings matches exactly (1238px table,
+  210px label column, 14px labels/inputs, 40px controls, 2px radius, 40px
+  submit) at 1440 and 375; Tools cards match at 520px; Export Personal Data
+  matches at 40px inputs.
+- Fixed: Profile submit was 32px (WordPress and MERNPress Settings use 40px) and
+  the Customizer sidebar was 320px (WordPress 300px).
+- Added an `admin-parity` DOM contract pinning the Settings geometry, the
+  Profile submit height and the Customizer width.
+- Comments could not be compared: the reference installation has an approved
+  comment in `wp_comments`, but its single template emits no comments block
+  (verified in the HTML). MERNPress comment styles stay 18px body / 14px meta,
+  consistent with the measured post typography.
+- Gates: format/lint/typecheck 0, 1011 unit/integration, 38 E2E, 108 baselines
+  green twice, seven builds.

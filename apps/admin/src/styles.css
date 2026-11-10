@@ -5791,6 +5791,14 @@ a.glance-chip:hover {
   padding-left: 0;
 }
 
+/* WordPress renders the Update Profile / Save Changes submit at 40px; the
+   Settings panels already do, so keep the profile actions in step. */
+.profile-submit .button,
+.profile-panel form .button[type='submit'] {
+  min-height: 40px;
+  line-height: 38px;
+}
+
 .profile-panel .form-error {
   margin-left: 0;
 }
@@ -10272,7 +10280,8 @@ a.glance-chip:hover {
 
 .customize-body {
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
+  /* WordPress Customizer sidebar is 300px wide (measured on 7.1.4). */
+  grid-template-columns: 300px minmax(0, 1fr);
   flex: 1;
   min-height: 0;
 }
