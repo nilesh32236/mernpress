@@ -206,6 +206,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-133 | 2026-11-10 | Second verification round: (1) failed 2FA codes now charge the same login rate limiter as a wrong password, so a correct password cannot mint unlimited challenges; (2) running jobs refresh their lock (`touch` heartbeat) so stale-lock recovery cannot double-execute long backups/regenerations; (3) `enqueueUnique` serialises the singleton check with a per-type advisory lock (backups, media regeneration, link scans) closing the hasActive/enqueue race; (4) reading terms requires `taxonomy.assign` instead of `taxonomy.manage`, so authors/contributors can list categories in the editor; (5) WXR import validates block markup and reports skipped items; (6) autosaves run the structural validator and take a per-post advisory lock so one row per post is guaranteed. | accepted | [implementation log](docs/implementation-log.md) |
 
+| D-134 | 2026-11-10 | Focus traps for floating panels: a shared `useFocusTrap` moves focus in, cycles Tab/Shift+Tab, handles Escape and restores focus to the opener. Used by the media attachment drawer (all widths) and the editor Document panel only while it floats (≤1024px). Focus is retried briefly because a panel leaving `display:none` refuses focus on the first attempt; the Escape callback is held in a ref so inline handlers cannot tear the effect down mid-interaction. | accepted | [implementation-log](docs/implementation-log.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

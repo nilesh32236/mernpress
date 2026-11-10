@@ -100,13 +100,35 @@ test('editor can upload, browse, edit metadata and delete media', async ({ page 
     await expect(emptyState).toHaveCount(0);
   }
 
-  // Detail drawer: edit alt text and save, then close the drawer.
-  await page.getByRole('button', { name: /^View e2e-upload-/ }).click();
+  // Detail drawer: keyboard trap, Escape close with focus restoration, then
+  // the metadata edit flow.
+  const tile = page.getByRole('button', { name: /^View e2e-upload-/ });
+  await tile.click();
+  await expect(page.getByLabel('Alternative Text')).toBeVisible();
+
+  const insideDrawer = async () =>
+    page.evaluate(() => {
+      const drawer = document.querySelector('.media-drawer');
+      return Boolean(drawer && document.activeElement && drawer.contains(document.activeElement));
+    });
+  await expect.poll(insideDrawer).toBe(true);
+  for (let press = 0; press < 12; press += 1) {
+    await page.keyboard.press('Tab');
+  }
+  expect(await insideDrawer()).toBe(true);
+
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.media-drawer')).toHaveCount(0);
+  await expect(tile).toBeFocused();
+
+  // Reopen from the keyboard: the tile is a real button, not a click-only div.
+  await tile.press('Enter');
   await expect(page.getByLabel('Alternative Text')).toBeVisible();
   await page.getByLabel('Alternative Text').fill('E2E alt text');
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText(/saved/i).first()).toBeVisible({ timeout: 10_000 });
   await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page.locator('.media-drawer')).toHaveCount(0);
 
   // Search finds the item; a nonsense search empties the grid.
   await page.getByLabel('Search media').fill('e2e-upload');

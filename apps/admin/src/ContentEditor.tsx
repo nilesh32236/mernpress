@@ -49,6 +49,7 @@ import {
 import { formatDateTime, formatRelativeTime } from './format.js';
 import { useUnsavedChanges } from './navigation-guard.js';
 import { useBodyScrollLock } from './useBodyScrollLock.js';
+import { useFocusTrap } from './useFocusTrap.js';
 import { useLanguages } from './languages-context.js';
 import {
   availableTransitions,
@@ -307,12 +308,19 @@ export function ContentEditor({
   const [createdPost, setCreatedPost] = useState<AdminPost | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [contentTouched, setContentTouched] = useState(false);
+  const sidebarRef = useRef<HTMLElement>(null);
   const [sidebarOpen, setSidebarOpen] = useState(() =>
     typeof window === 'undefined' ? true : window.innerWidth >= 1080,
   );
   // Below 1024px the Document panel is a fixed overlay; lock the page behind
   // it. On desktop it is an in-flow column, so scrolling must keep working.
   useBodyScrollLock(sidebarOpen, '(max-width: 1024px)');
+  // On phones/tablets the settings panel floats over the canvas; trap Tab there
+  // and let Escape close it (the inline desktop column keeps normal tab order).
+  useFocusTrap(sidebarOpen, sidebarRef, {
+    onEscape: () => setSidebarOpen(false),
+    mediaQuery: '(max-width: 1024px)',
+  });
   const [sideTab, setSideTab] = useState<'post' | 'block' | 'notes'>('post');
   const [revisions, setRevisions] = useState<AdminRevision[] | null>(null);
   const [revisionsError, setRevisionsError] = useState<string | null>(null);
@@ -418,18 +426,6 @@ export function ContentEditor({
     window.addEventListener('resize', resizeTitle);
     return () => window.removeEventListener('resize', resizeTitle);
   }, []);
-
-  // Escape closes the settings drawer, matching the shell's mobile navigation.
-  useEffect(() => {
-    if (!sidebarOpen) return;
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setSidebarOpen(false);
-      }
-    }
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [sidebarOpen]);
 
   // Ctrl/Cmd+S saves without triggering the browser's page-save dialog. The
   // latest render's handler is kept in a ref so the listener registers once.
@@ -1706,6 +1702,8 @@ export function ContentEditor({
               id="editor-document-settings"
               className={`editor-sidebar${sidebarOpen ? ' is-open' : ''}`}
               aria-label="Document settings"
+              ref={sidebarRef}
+              tabIndex={-1}
             >
               <div className="editor-sidebar-head">
                 <div

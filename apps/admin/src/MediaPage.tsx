@@ -14,6 +14,7 @@ import {
   screenPerPage,
 } from './screenOptions.js';
 import { useBodyScrollLock } from './useBodyScrollLock.js';
+import { useFocusTrap } from './useFocusTrap.js';
 import {
   actionErrorMessage,
   createMediaFolder,
@@ -172,21 +173,12 @@ function MediaDrawer({
   const [editing, setEditing] = useState(false);
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
 
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape' && !editing) {
-        event.preventDefault();
-        onClose();
-      }
-    }
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose, editing]);
-
-  // Move focus into the panel (UsersPage dialogs behave the same way).
-  useEffect(() => {
-    drawerRef.current?.querySelector<HTMLElement>('input, textarea')?.focus();
-  }, []);
+  // Focus trap: Tab stays in the drawer, Escape closes it (but not while the
+  // image editor owns the keyboard), and focus returns to the opener.
+  useFocusTrap(true, drawerRef, {
+    onEscape: editing ? undefined : onClose,
+    initialFocus: 'input, textarea',
+  });
 
   async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

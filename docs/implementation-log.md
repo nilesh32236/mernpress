@@ -6124,3 +6124,26 @@ admin editor 45.
 - The remaining round-2 fixes (2FA limiter, job heartbeat, taxonomy reads,
   import validation, autosave lock) are covered by the API suite; the 2FA
   limiter is deliberately not exercised on the live account.
+
+### 2026-11-10 — Focus traps for the attachment drawer and editor settings panel
+
+- New shared `apps/admin/src/useFocusTrap.ts`: moves focus into the panel,
+  cycles Tab/Shift+Tab, calls `onEscape`, and restores focus to the opener.
+  Two real-world wrinkles are handled explicitly: the Escape callback lives in
+  a ref (inline arrows would re-run the effect and restore focus mid-use), and
+  the initial focus retries for ~300 ms because a panel transitioning out of
+  `display: none` silently refuses focus on the first attempt.
+- Wired into the media attachment drawer (always an overlay) and the editor
+  Document panel with a `(max-width: 1024px)` guard, so the desktop in-flow
+  column keeps its normal tab order. The previous ad-hoc Escape handlers in
+  both components were removed.
+- Tests: `useFocusTrap.test.tsx` (focus-in/restore, Tab wrap both directions,
+  Escape, media-query guard) and E2E keyboard coverage — the media test tabs 12
+  times inside the drawer, closes with Escape and asserts focus returns to the
+  tile (reopening with Enter), and the 375px editor test traps Tab in the
+  Document panel and restores focus to the Settings button.
+- Also raised the reload-canvas expectation in `editor.spec` to 20 s; the 5 s
+  default flaked on a cold dev server (passes in isolation and in the suite).
+- Gates: format/lint/typecheck 0, 1011 unit/integration (API 577, admin 265,
+  web 71, contracts 26, block-system 72), 36 E2E with `--workers=1`, seven
+  builds.

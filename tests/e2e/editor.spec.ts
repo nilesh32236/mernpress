@@ -134,8 +134,11 @@ test('creates content with paragraph, heading and list blocks and reloads it', a
   expect(content).toContain('Second list item');
 
   await page.reload();
+  // The canvas mounts after the post fetch + block bootstrap; a 5s default is
+  // not enough on a cold dev server.
   await expect(page.locator('.block-canvas-sheet')).toContainText(
     'Opening paragraph from the block editor.',
+    { timeout: 20_000 },
   );
   await expect(page.locator('.block-canvas-sheet')).toContainText('Second list item');
   await expect(page.locator('.block-canvas-sheet h2')).toHaveText('A section heading');
@@ -309,8 +312,26 @@ test('the editor stays usable at 375px with an off-canvas settings panel', async
   expect(overflow.scroll).toBeLessThanOrEqual(overflow.width + 1);
 
   await expect(page.getByRole('complementary', { name: 'Document settings' })).toBeHidden();
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  const settingsButton = page.getByRole('button', { name: 'Settings', exact: true });
+  await settingsButton.click();
   await expect(page.getByRole('complementary', { name: 'Document settings' })).toBeVisible();
-  await page.getByRole('button', { name: 'Close settings panel' }).click();
+
+  // Keyboard trap: focus starts inside the panel and Tab never leaves it.
+  const insidePanel = async () =>
+    page.evaluate(() => {
+      const panel = document.getElementById('editor-document-settings');
+      return Boolean(panel && document.activeElement && panel.contains(document.activeElement));
+    });
+  await expect.poll(insidePanel).toBe(true);
+  for (let press = 0; press < 12; press += 1) {
+    await page.keyboard.press('Tab');
+  }
+  expect(await insidePanel()).toBe(true);
+  await page.keyboard.press('Shift+Tab');
+  expect(await insidePanel()).toBe(true);
+
+  // Escape closes it and focus returns to the Settings button.
+  await page.keyboard.press('Escape');
   await expect(page.getByRole('complementary', { name: 'Document settings' })).toBeHidden();
+  expect(await settingsButton.evaluate((element) => element === document.activeElement)).toBe(true);
 });

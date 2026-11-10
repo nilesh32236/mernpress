@@ -367,8 +367,13 @@ Baselines were regenerated afterwards (102 captures).
 
 Deliberate: 13px admin body copy (WordPress parity, e2e-asserted), inline text
 links below 32px (WCAG 2.5.8 inline exception), 16px checkboxes (label is the
-target), table `nowrap` inside scroll containers, and no Tab focus trap added
-to the two drawers (scroll lock only; follow-up).
+target), and table `nowrap` inside scroll containers.
+
+Keyboard containment is now implemented (D-134): the attachment drawer and the
+floating editor Document panel move focus in, cycle Tab/Shift+Tab, close on
+Escape and restore focus to the control that opened them. Covered by
+`useFocusTrap.test.tsx` and keyboard E2E in `media.spec.ts` and
+`editor.spec.ts` (375px).
 
 Regression caught by this reconciliation: gating `/api/admin/health` on
 `manage_options` made the editor dashboard request it and log two console 403s
