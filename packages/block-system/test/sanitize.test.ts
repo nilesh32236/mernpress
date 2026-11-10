@@ -260,3 +260,25 @@ describe('sanitizeHtml — hardening regressions', () => {
     expect(sanitizeHtml('<a href="\\\\evil.example/x">x</a>')).toMatch(/rel="[^"]*noopener/);
   });
 });
+
+describe('sanitizeHtml — imported table blocks', () => {
+  it('keeps table structure and cell text (WordPress import fidelity)', () => {
+    const out = sanitizeHtml(
+      '<figure class="wp-block-table"><table><thead><tr><th scope="col">Header</th></tr></thead>' +
+        '<tbody><tr><td colspan="2">Cell</td></tr></tbody></table><figcaption>Caption</figcaption></figure>',
+    );
+    expect(out).toContain('<table>');
+    expect(out).toContain('<th scope="col">Header</th>');
+    expect(out).toContain('<td colspan="2">Cell</td>');
+    expect(out).toContain('Caption');
+  });
+
+  it('drops scripts and event handlers inside a table', () => {
+    const out = sanitizeHtml(
+      '<table><tr><td onclick="alert(1)">x<script>alert(1)</script></td></tr></table>',
+    );
+    expect(out).not.toContain('script');
+    expect(out).not.toContain('onclick');
+    expect(out).toContain('x');
+  });
+});

@@ -278,8 +278,8 @@ test('comment body and meta match the WordPress type scale', async ({ page }) =>
     const comment = page.getByText('A comment used to measure the type scale.');
     await expect(comment).toBeVisible({ timeout: 15_000 });
     const metrics = await page.evaluate(() => {
-      const body = document.querySelector('.comment-body p, .comment-body');
-      const meta = document.querySelector('.comment-meta, .comment-author');
+      const body = document.querySelector('.comment-content');
+      const meta = document.querySelector('.comment-meta');
       return {
         bodyFont: body ? getComputedStyle(body).fontSize : null,
         metaFont: meta ? getComputedStyle(meta).fontSize : null,
@@ -297,5 +297,103 @@ test('comment body and meta match the WordPress type scale', async ({ page }) =>
       ],
       { stdio: 'pipe' },
     );
+  }
+});
+
+/**
+ * Block type scale, measured against WordPress 7.1.4 default content:
+ * body 22px/1.4 at 1440 (18.2px at 375), h2 32/36, blockquote 2px rule with
+ * 20px/30px padding, pre 18px with 30px padding, captions 14px, and imported
+ * table blocks must render their cells.
+ */
+test('block rendering keeps the WordPress type scale', async ({ page }) => {
+  const testDatabaseUrl = process.env['TEST_DATABASE_URL'];
+  if (!testDatabaseUrl) throw new Error('TEST_DATABASE_URL is required');
+  const content = [
+    '<!-- wp:paragraph -->',
+    '<p>Paragraph body text for the type scale.</p>',
+    '<!-- /wp:paragraph -->',
+    '<!-- wp:heading -->',
+    '<h2 class="wp-block-heading">Heading two</h2>',
+    '<!-- /wp:heading -->',
+    '<!-- wp:quote -->',
+    '<blockquote class="wp-block-quote"><p>Quoted.</p><cite>Author</cite></blockquote>',
+    '<!-- /wp:quote -->',
+    '<!-- wp:code -->',
+    '<pre class="wp-block-code"><code>const x = 1;</code></pre>',
+    '<!-- /wp:code -->',
+    '<!-- wp:table -->',
+    '<figure class="wp-block-table"><table><thead><tr><th>Header</th></tr></thead><tbody><tr><td>Cell</td></tr></tbody></table><figcaption class="wp-element-caption">Table caption</figcaption></figure>',
+    '<!-- /wp:table -->',
+  ].join('\n');
+  const escaped = content.replace(/'/g, "''");
+  execFileSync(
+    'psql',
+    [
+      testDatabaseUrl,
+      '-c',
+      `INSERT INTO posts (id, type, status, title, slug, content, content_format, content_version, published_at, created_at, updated_at)
+       VALUES (gen_random_uuid(), 'post', 'PUBLISHED', 'Block scale', 'block-scale', '${escaped}', 'wp_block_html', 1, now(), now(), now());`,
+    ],
+    { stdio: 'pipe' },
+  );
+  try {
+    await revalidatePublicContent(page);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto(`${SITE}/posts/block-scale`, { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: 'Heading two' })).toBeVisible();
+    const desktop = await page.evaluate(() => {
+      const root = document.querySelector('.entry-content');
+      const style = (selector: string) => {
+        const el = root?.querySelector(selector);
+        return el ? getComputedStyle(el) : null;
+      };
+      const p = style('p');
+      const h2 = style('h2');
+      const quote = style('blockquote');
+      const cite = style('cite');
+      const pre = style('pre');
+      const caption = style('figcaption');
+      const cell = style('td');
+      return {
+        pFont: p?.fontSize ?? null,
+        pLine: p?.lineHeight ?? null,
+        h2Font: h2?.fontSize ?? null,
+        quotePadding: quote?.padding ?? null,
+        quoteBorder: quote?.borderLeftWidth ?? null,
+        citeFont: cite?.fontSize ?? null,
+        preFont: pre?.fontSize ?? null,
+        prePadding: pre?.padding ?? null,
+        captionFont: caption?.fontSize ?? null,
+        cellText: root?.querySelector('td')?.textContent ?? null,
+        cellFont: cell?.fontSize ?? null,
+      };
+    });
+    expect(desktop).toMatchObject({
+      pFont: '22px',
+      pLine: '30.8px',
+      h2Font: '32px',
+      quotePadding: '20px 30px',
+      quoteBorder: '2px',
+      citeFont: '14px',
+      preFont: '18px',
+      prePadding: '30px',
+      captionFont: '14px',
+      cellText: 'Cell',
+      cellFont: '22px',
+    });
+
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    const mobile = await page.evaluate(() => {
+      const p = document.querySelector('.entry-content p');
+      return p ? getComputedStyle(p).fontSize : null;
+    });
+    expect(parseFloat(mobile ?? '0')).toBeGreaterThanOrEqual(18);
+    expect(parseFloat(mobile ?? '0')).toBeLessThanOrEqual(18.5);
+  } finally {
+    execFileSync('psql', [testDatabaseUrl, '-c', "DELETE FROM posts WHERE slug = 'block-scale';"], {
+      stdio: 'pipe',
+    });
   }
 });

@@ -7,11 +7,12 @@ import { JSDOM } from 'jsdom';
  * Node-only: pulls in jsdom and must never be reachable from the isomorphic
  * contracts/parser/validate entrypoints or the admin bundle.
  *
- * The allowlist covers exactly the MVP block set
- * (docs/architecture/gutenberg-and-rendering.md §6). It is deliberately
- * tighter than the reference CMS's list: no SVG, no forms, no tables, no
- * `data-*`. Anything not listed is unwrapped (text kept); script/style
- * contents are dropped by DOMPurify itself.
+ * The allowlist covers the MVP block set
+ * (docs/architecture/gutenberg-and-rendering.md §6) plus the table element set,
+ * which imported WordPress content may use even though the editor does not
+ * offer it yet. It is deliberately tighter than the reference CMS's list: no
+ * SVG, no forms, no `data-*`. Anything not listed is unwrapped (text kept);
+ * script/style contents are dropped by DOMPurify itself.
  */
 
 export const ALLOWED_TAGS: readonly string[] = [
@@ -51,6 +52,19 @@ export const ALLOWED_TAGS: readonly string[] = [
   'kbd',
   'small',
   'button',
+  // Tables: the editor does not offer a table block yet, but imported
+  // WordPress content may contain one. Preserving its inner HTML is required
+  // (AGENTS §5) and the tag set below is inert without scripts/styles.
+  'table',
+  'thead',
+  'tbody',
+  'tfoot',
+  'tr',
+  'th',
+  'td',
+  'caption',
+  'colgroup',
+  'col',
 ];
 
 export const ALLOWED_ATTR: readonly string[] = [
@@ -79,6 +93,11 @@ export const ALLOWED_ATTR: readonly string[] = [
   'aria-label',
   'aria-describedby',
   'aria-current',
+  'colspan',
+  'rowspan',
+  'scope',
+  'span',
+  'headers',
 ];
 
 /**

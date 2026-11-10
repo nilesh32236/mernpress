@@ -6355,3 +6355,21 @@ admin editor 45.
 - Cleanup removed the temporary administrator/session and recent audit events
   (1 user, 2 posts); the reference server was stopped and its `audit-admin`
   user deleted; the superseded release was pruned (16 GB free).
+
+### 2026-11-10 — Measured pass 7: block rendering and table fidelity
+
+- Published identical block markup in WordPress 7.1.4 and MERNPress and measured
+  each block inside the content container: the reference default body is
+  **22px/1.4 at 1440** and **18.2px at 375** (the earlier 18px reading came from
+  a demo post with `has-medium-font-size`). Corrected with a fluid clamp and
+  removed the fixed 20px mobile override.
+- Aligned blockquote (20/30 padding, 2px rule), cite 14px, pre/code 18px with
+  30px padding, figcaption 14px and 8px list-item gaps.
+- Fixed a real content bug: a `core/table` block (imported WordPress content)
+  was rendered with the whole table stripped because the sanitizer allowlist had
+  no table tags. Added the inert table element set and attributes, with tests
+  that structure/text survive and scripts/handlers are still dropped.
+- New public contract pins the type scale at 1440 and 375 and cleans up its
+  fixture post. h3 (24px vs 22px) remains a documented theme-scale difference.
+- Gates: format/lint/typecheck 0, 1013 unit/integration, 42 E2E, 108 baselines
+  green twice, seven builds.

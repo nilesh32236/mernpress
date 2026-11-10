@@ -222,6 +222,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-141 | 2026-11-10 | Measured pass 6 (generic hooks): WordPress Site Editor is full-screen with a 300px sidebar and a 1124px canvas; MERNPress reserved the hidden 160px admin menu and used a 24px gutter, giving a 932px canvas. Fixed: the Site Editor now runs in the shell editor-mode (no admin menu) and uses a 16px gutter, with a contract (sidebar 300, canvas ≥1100, no admin menu, no overflow at 768). Media toolbar composition (folder bar + toolbar) is accepted and documented: it is a shipped feature with matching 40px/14px/2px control geometry. | accepted | [design audit](docs/verification/design-audit-2026-11-05.md) |
 
+| D-142 | 2026-11-10 | Measured pass 7 (block rendering): WordPress default post content is fluid 18.2px @375 → 22px @1440, not the 18px of a demo post carrying `has-medium-font-size` — corrected with `clamp(1.0553rem, calc(1.0553rem + 0.3553vw), 1.375rem)`. Aligned blockquote padding/2px rule, cite 14px, pre/code 18px with 30px padding, figcaption 14px and 8px list gaps. Fixed a content-fidelity bug: the sanitizer had no table tags, so imported table blocks were dropped — the inert table element set is now allowed (with tests). h3 stays 24px (theme scale, documented). | accepted | [design audit](docs/verification/design-audit-2026-11-05.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

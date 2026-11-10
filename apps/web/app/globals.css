@@ -40,9 +40,9 @@ body {
   background: var(--site-bg);
   color: var(--site-text);
   font-family: var(--site-body-font), var(--font-manrope), Manrope, sans-serif;
-  /* Twenty Twenty-Five body copy is 18px/1.4 at every width (measured against
-     WordPress 7.1.4); MERNPress used 22px. */
-  font-size: 18px;
+  /* Twenty Twenty-Five body copy is fluid: 18.2px at 375, 22px at 1440
+     (measured against WordPress 7.1.4 default content). */
+  font-size: clamp(1.0553rem, calc(1.0553rem + 0.3553vw), 1.375rem);
   font-weight: 300;
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
@@ -290,13 +290,13 @@ a:hover {
 }
 
 .entry-content {
-  font-size: 18px;
+  font-size: clamp(1.0553rem, calc(1.0553rem + 0.3553vw), 1.375rem);
   font-weight: 300;
   line-height: 1.4;
 }
 
 .entry.page .entry-content {
-  font-size: 18px;
+  font-size: clamp(1.0553rem, calc(1.0553rem + 0.3553vw), 1.375rem);
 }
 
 .entry-content > * {
@@ -340,10 +340,21 @@ a:hover {
   padding-left: 1.2em;
 }
 
+.entry-content li + li {
+  margin-top: 8px;
+}
+
 .entry-content blockquote {
   margin: 1em 0;
-  padding-left: 1em;
-  border-left: 1px solid var(--site-text);
+  padding: 20px 30px;
+  border-left: 2px solid var(--site-text);
+}
+
+.entry-content blockquote cite {
+  display: block;
+  margin-top: 20px;
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 .entry-content img {
@@ -354,14 +365,16 @@ a:hover {
 .entry-content code,
 .entry-content pre {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.85em;
+  /* WordPress keeps code at the body size (18px at 1440) rather than shrinking
+     it to 85%. */
+  font-size: 18px;
 }
 
 .entry-content pre {
   max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 1em;
+  padding: 30px;
   background: #f5f5f5;
 }
 
@@ -376,6 +389,13 @@ a:hover {
   padding: 0.4em 0.6em;
   /* Long unbroken URLs/code inside a cell must not widen the page. */
   overflow-wrap: anywhere;
+}
+
+/* WordPress captions (figure, table, image) are 14px. */
+.entry-content figcaption,
+.entry-content .wp-element-caption {
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 /* Stored WordPress markup may wrap tables/embeds in a figure or the embed
@@ -581,13 +601,8 @@ a:hover {
     font-size: 28px;
   }
 
-  .entry-content {
-    font-size: 20px;
-  }
-
-  .entry.page .entry-content {
-    font-size: 20px;
-  }
+  /* No fixed mobile override: the fluid clamp already yields 18.2px at 375,
+     matching Twenty Twenty-Five. */
 
   /* Footer brand and the two link columns stack instead of colliding when the
      site title is long. */
@@ -1095,6 +1110,8 @@ html.has-public-admin-bar {
 }
 
 .comment-content {
+  /* WordPress renders comment text at the medium size (18px), not the fluid
+     post-body size measured on the reference. */
   margin: 20px 0;
   font-size: 18px;
   font-weight: 300;
