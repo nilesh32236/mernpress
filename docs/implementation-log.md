@@ -6178,3 +6178,15 @@ admin editor 45.
 - Gates: format/lint/typecheck 0, 1011 unit/integration (API 577, admin 265,
   web 71, contracts 26, block-system 72), 37 E2E with `--workers=1`, 108
   baselines green twice, seven builds.
+
+**Deployment (state matrix + dialog focus, release `20261110T055931Z-4f5e864`):**
+- API and web restarted; `/api/health`, `/` and `/admin/` return 200.
+- Live dialog check with a temporary administrator (existing post at 1440px):
+  for both **Keyboard shortcuts** and **Preferences** the dialog opened with
+  focus inside (`inside: true`), eight Tab presses stayed inside, and Escape
+  closed it (`open: false`).
+- Cleanup removed the temporary administrator/session and recent audit events;
+  production is back to 1 user, 2 posts.
+- The language-pair baselines are an E2E fixture, not production content, so
+  production keeps a single language (`speculation_mode` and link settings
+  unchanged).
