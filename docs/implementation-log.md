@@ -6302,3 +6302,13 @@ admin editor 45.
   overflow at 375.
 - Gates: format/lint/typecheck 0, 1011 unit/integration, 39 E2E, 108 baselines
   green twice, seven builds.
+
+**Deployment (measured pass 4, release `20261110T102117Z-1fb8d88`):**
+- API and web restarted; `/api/health` 200.
+- Live 375px check on the production Posts list: row **66px** (WordPress 67),
+  checkbox **25px**, the new meta line reads "Published · 2026/10/29 at 9:36 am"
+  and is visible, `scrollWidth === innerWidth === 375`.
+- Cleanup removed the temporary administrator/session and recent audit events
+  (1 user, 2 posts); the reference WordPress server was stopped and its
+  `audit-admin` user deleted. Superseded releases were pruned, keeping the
+  active release plus one rollback.
