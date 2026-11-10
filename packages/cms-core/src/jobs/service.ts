@@ -74,13 +74,15 @@ export function createJobQueueService(options: JobQueueServiceOptions): JobQueue
     };
   }
 
-  async function enqueue(input: {
+  interface EnqueueInput {
     type: string;
     payload?: Record<string, unknown> | undefined;
     runAt?: Date | undefined;
     maxAttempts?: number | undefined;
     priority?: number | undefined;
-  }): Promise<JobDto> {
+  }
+
+  function validateEnqueue(input: EnqueueInput) {
     if (!TYPE_PATTERN.test(input.type)) {
       throw new ContentError('VALIDATION_ERROR', 'Invalid job type.', 400);
     }
@@ -96,6 +98,11 @@ export function createJobQueueService(options: JobQueueServiceOptions): JobQueue
     if (!Number.isInteger(priority) || priority < -100 || priority > 100) {
       throw new ContentError('VALIDATION_ERROR', 'priority must be -100-100.', 400);
     }
+    return { payload, maxAttempts, priority };
+  }
+
+  async function enqueue(input: EnqueueInput): Promise<JobDto> {
+    const { payload, maxAttempts, priority } = validateEnqueue(input);
     const row = await prisma.job.create({
       data: {
         type: input.type,
@@ -106,6 +113,36 @@ export function createJobQueueService(options: JobQueueServiceOptions): JobQueue
       },
     });
     return toDto(row);
+  }
+
+  /**
+   * Enqueue only when no job of this type is PENDING/RUNNING.
+   *
+   * A `hasActive()` check followed by `enqueue()` is a time-of-check/time-of-use
+   * race: two concurrent requests (or two API instances) both see "none active"
+   * and both insert. A per-type transaction-scoped advisory lock serialises the
+   * check and the insert, so a singleton job type cannot be duplicated.
+   * Returns null when a job is already queued or running.
+   */
+  async function enqueueUnique(input: EnqueueInput): Promise<JobDto | null> {
+    const { payload, maxAttempts, priority } = validateEnqueue(input);
+    return prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${input.type}))`;
+      const active = await tx.job.count({
+        where: { type: input.type, status: { in: ['PENDING', 'RUNNING'] } },
+      });
+      if (active > 0) return null;
+      const row = await tx.job.create({
+        data: {
+          type: input.type,
+          payload: payload as Prisma.InputJsonValue,
+          scheduledAt: input.runAt ?? now(),
+          maxAttempts,
+          priority,
+        },
+      });
+      return toDto(row);
+    });
   }
 
   async function get(principal: Principal, id: string): Promise<JobDto> {
@@ -275,6 +312,18 @@ export function createJobQueueService(options: JobQueueServiceOptions): JobQueue
     });
   }
 
+  /**
+   * Refresh a running job's lock. Long handlers (backup pg_dump + tar, large
+   * media regeneration) call this periodically so stale-lock recovery cannot
+   * requeue work that is still executing.
+   */
+  async function touch(id: string): Promise<void> {
+    await prisma.job.updateMany({
+      where: { id, status: 'RUNNING' },
+      data: { lockedAt: now() },
+    });
+  }
+
   async function recoverStuck(olderThan: Date): Promise<number> {
     const result = await prisma.job.updateMany({
       where: { status: 'RUNNING', lockedAt: { lt: olderThan } },
@@ -309,6 +358,7 @@ export function createJobQueueService(options: JobQueueServiceOptions): JobQueue
 
   return {
     enqueue,
+    enqueueUnique,
     get,
     list,
     reschedule,
@@ -317,6 +367,7 @@ export function createJobQueueService(options: JobQueueServiceOptions): JobQueue
     claimDue,
     complete,
     fail,
+    touch,
     recoverStuck,
     pruneHistory,
   };

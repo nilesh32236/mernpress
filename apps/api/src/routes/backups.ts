@@ -45,17 +45,19 @@ export function registerBackupRoutes(app: FastifyInstance, options: BackupRouteO
     if (!ctx) return;
     try {
       requireCapability(ctx.principal, 'manage_options');
-      if (await jobs.hasActive(JOB_TYPES.backupCreate)) {
+      // Atomic singleton check: a hasActive() + enqueue() pair races under
+      // concurrent requests or multiple instances.
+      const job = await jobs.enqueueUnique({
+        type: JOB_TYPES.backupCreate,
+        maxAttempts: 2,
+      });
+      if (!job) {
         throw new ContentError(
           'BACKUP_IN_PROGRESS',
           'A backup is already queued or running. Try again when it finishes.',
           409,
         );
       }
-      const job = await jobs.enqueue({
-        type: JOB_TYPES.backupCreate,
-        maxAttempts: 2,
-      });
       const list = await backups.list(ctx.principal);
       return reply.code(202).send({ job, ...list });
     } catch (error) {

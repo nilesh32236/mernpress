@@ -56,6 +56,8 @@ export interface JobQueueServiceOptions {
 
 export interface JobQueueService {
   enqueue(input: EnqueueJobInput): Promise<JobDto>;
+  /** Enqueue only when no PENDING/RUNNING job of this type exists (atomic). */
+  enqueueUnique(input: EnqueueJobInput): Promise<JobDto | null>;
   get(principal: Principal, id: string): Promise<JobDto>;
   list(principal: Principal, query: JobListQuery): Promise<Paged<JobDto>>;
   reschedule(principal: Principal, id: string): Promise<JobDto>;
@@ -64,6 +66,8 @@ export interface JobQueueService {
   claimDue(limit: number, workerId: string): Promise<ClaimedJob[]>;
   complete(id: string): Promise<void>;
   fail(job: ClaimedJob, error: string): Promise<void>;
+  /** Refresh a RUNNING job's lock while a long handler is still working. */
+  touch(id: string): Promise<void>;
   recoverStuck(olderThan: Date): Promise<number>;
   /** Delete old COMPLETED/CANCELLED (7d) and FAILED (30d) rows. */
   pruneHistory(completedDays?: number, failedDays?: number): Promise<number>;

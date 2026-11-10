@@ -1,3 +1,4 @@
+import { validateBlockMarkup } from '@mernpress/block-system/validate';
 import type { DatabaseClient } from '@mernpress/database';
 import { requireCapability } from '../auth/capabilities.js';
 import { ContentError } from '../content/errors.js';
@@ -180,6 +181,18 @@ export function createImportService({ prisma, now = () => new Date() }: ImportSe
         continue;
       }
       try {
+        // An imported document must satisfy the same structural limits as one
+        // written through the API; otherwise it renders empty and every later
+        // edit fails validation, trapping the post in the editor.
+        const blockCheck = validateBlockMarkup(item.content);
+        if (!blockCheck.ok) {
+          result.failed += 1;
+          result.errors.push({
+            title: item.title.slice(0, 120),
+            message: `Invalid block markup (${blockCheck.code}); the item was skipped.`,
+          });
+          continue;
+        }
         const slug = await uniqueSlug(item.type, item.slug);
         const published = item.status === 'publish';
         const publishedAt = published ? (item.publishedAt ?? now()) : item.publishedAt;

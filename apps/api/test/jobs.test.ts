@@ -259,4 +259,56 @@ describe('durable job queue', () => {
     expect(remaining.some((row) => row.id === oldCompleted.id)).toBe(false);
     expect(remaining.some((row) => row.id === oldFailed.id)).toBe(false);
   });
+
+  it('a heartbeat keeps a long running job from being recovered as stale', async () => {
+    const queue = createJobQueueService({ prisma: app.database, now: () => clock });
+    const job = await queue.enqueue({ type: 'backup.create' });
+    const claimed = await queue.claimDue(1, 'heartbeat-worker');
+    expect(claimed).toHaveLength(1);
+
+    // Simulate a handler that has been running for 30 minutes (lock looks old).
+    const stale = new Date(clock.getTime() - 30 * 60 * 1000);
+    await app.database.job.update({ where: { id: job.id }, data: { lockedAt: stale } });
+
+    // Without a heartbeat it is requeued…
+    expect(await queue.recoverStuck(new Date(clock.getTime() - 10 * 60 * 1000))).toBe(1);
+    const requeued = await app.database.job.findUnique({ where: { id: job.id } });
+    expect(requeued?.status).toBe('PENDING');
+
+    // …and with one (the worker refreshes the lock) it stays RUNNING.
+    await app.database.job.update({
+      where: { id: job.id },
+      data: { status: 'RUNNING', lockedAt: stale, lockedBy: 'heartbeat-worker' },
+    });
+    await queue.touch(job.id);
+    expect(await queue.recoverStuck(new Date(clock.getTime() - 10 * 60 * 1000))).toBe(0);
+    const stillRunning = await app.database.job.findUnique({ where: { id: job.id } });
+    expect(stillRunning?.status).toBe('RUNNING');
+  });
+
+  it('enqueueUnique admits exactly one concurrent job per type', async () => {
+    const queue = createJobQueueService({ prisma: app.database });
+    const results = await Promise.all([
+      queue.enqueueUnique({ type: 'backup.create', maxAttempts: 2 }),
+      queue.enqueueUnique({ type: 'backup.create', maxAttempts: 2 }),
+      queue.enqueueUnique({ type: 'backup.create', maxAttempts: 2 }),
+    ]);
+    expect(results.filter((job) => job !== null)).toHaveLength(1);
+    expect(
+      await app.database.job.count({
+        where: { type: 'backup.create', status: { in: ['PENDING', 'RUNNING'] } },
+      }),
+    ).toBe(1);
+
+    // A different type is not blocked by the lock or the existing job.
+    expect(await queue.enqueueUnique({ type: 'linkcheck.scan' })).not.toBeNull();
+
+    // Once the first job completes, a new one is admitted.
+    const admitted = results.find((job) => job !== null)!;
+    await app.database.job.update({
+      where: { id: admitted.id },
+      data: { status: 'COMPLETED', completedAt: new Date() },
+    });
+    expect(await queue.enqueueUnique({ type: 'backup.create' })).not.toBeNull();
+  });
 });

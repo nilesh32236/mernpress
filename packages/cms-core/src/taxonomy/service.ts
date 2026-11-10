@@ -33,6 +33,15 @@ export function createTaxonomyService(options: TaxonomyServiceOptions) {
     requireCapability(principal, 'taxonomy.manage');
   }
 
+  /**
+   * Reading terms only needs the capability that lets a role assign them:
+   * authors and contributors must be able to list categories/tags in the
+   * editor even though they cannot create, rename or delete them.
+   */
+  function requireRead(principal: Principal): void {
+    requireCapability(principal, 'taxonomy.assign');
+  }
+
   function assertTaxonomy(taxonomy: string): asserts taxonomy is TaxonomyType {
     if (taxonomy !== 'category' && taxonomy !== 'tag') {
       throw new ContentError('VALIDATION_ERROR', 'taxonomy must be category or tag.', 400);
@@ -249,7 +258,7 @@ export function createTaxonomyService(options: TaxonomyServiceOptions) {
   // ---- read ----
 
   async function getTerm(principal: Principal, id: string): Promise<AdminTerm> {
-    requireAdmin(principal);
+    requireRead(principal);
     const term = await prisma.term.findUnique({ where: { id }, include: includeCount });
     if (!term) {
       throw new ContentError('NOT_FOUND', 'Term not found.', 404);
@@ -442,7 +451,7 @@ export function createTaxonomyService(options: TaxonomyServiceOptions) {
     items: AdminTerm[];
     pagination: { page: number; perPage: number; total: number; totalPages: number };
   }> {
-    requireAdmin(principal);
+    requireRead(principal);
 
     const where: Prisma.TermWhereInput = {};
     if (query.taxonomy) {

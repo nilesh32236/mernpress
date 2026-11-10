@@ -280,6 +280,15 @@ test('admin visual baselines', async ({ page }) => {
     if (name === 'mail-delivery') {
       await expect(page.getByText('Transport:')).toBeVisible();
     }
+    if (name === 'editor-edit') {
+      // Desktop edit capture: wait for the loaded document (the skeleton was
+      // being captured) and hide the relative "Last edited …" line, which
+      // changes every hour and made the baseline drift.
+      await expect(page.locator('.block-canvas-sheet')).toContainText('This is a demo post', {
+        timeout: 15000,
+      });
+      await page.addStyleTag({ content: '.editor-last-edited { visibility: hidden !important; }' });
+    }
     await settle(page);
     await expect(page).toHaveScreenshot(`${name}-desktop.png`, {
       animations: 'disabled',
@@ -385,6 +394,7 @@ test('admin visual baselines', async ({ page }) => {
       await expect(page.locator('.block-canvas-sheet')).toContainText('This is a demo post', {
         timeout: 15000,
       });
+      await page.addStyleTag({ content: '.editor-last-edited { visibility: hidden !important; }' });
     } else {
       await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
     }

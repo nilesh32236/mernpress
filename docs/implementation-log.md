@@ -6084,3 +6084,30 @@ admin editor 45.
 - Unauthenticated `/api/admin/health`, `/api/admin/mail/log` and
   `/api/admin/mail/status` return 401; the mail/health/plugin/theme/sanitizer/
   editor/SEO fixes are covered by the 1002-test suite.
+
+### 2026-11-10 — Verification round 2: rate limits, job safety, taxonomy reads, import/autosave
+
+- **2FA brute force**: `completeTwoFactor` records a failed attempt against the
+  login limiter (username + IP) when the code is wrong, so five wrong codes
+  across five fresh challenges now lock the account (429 RATE_LIMITED) instead
+  of allowing unlimited guesses. Test: five challenges → sixth login 429.
+- **Stale-lock double execution**: the worker refreshes `locked_at` every
+  `stuckAfterMs / 4` while a handler runs (`queue.touch`), so a long backup or
+  regeneration is not requeued and executed twice. Test: 30-minute-old lock is
+  recovered without a heartbeat and left RUNNING after one.
+- **Duplicate singleton jobs**: new `enqueueUnique` takes a per-type
+  transaction-scoped advisory lock before checking for PENDING/RUNNING jobs, and
+  the backup/media/link routes use it (409 on the loser). Test: three concurrent
+  enqueues admit exactly one; another type is unaffected; completed → admitted.
+- **Taxonomy reads**: `listTerms`/`getTerm` require `taxonomy.assign` (authors
+  and contributors can load categories/tags in the editor) while mutations stay
+  `taxonomy.manage`. Tests: contributor and author list/read 200, create 403.
+- **WXR import**: each item runs `validateBlockMarkup`; an over-limit document is
+  counted in `failed` with a message instead of being stored unrenderable.
+- **Autosave**: snapshots run the structural validator and the delete+create
+  takes a per-post advisory lock (one row per post under concurrency).
+- Visual baselines: the edit capture now waits for the loaded canvas and hides
+  the relative "Last edited …" line, which drifted hourly.
+- Gates: format/lint/typecheck 0, 1007 unit/integration tests (API 577, admin
+  261, web 71, contracts 26, block-system 72),
+  36 E2E with `--workers=1`, 102 baselines green twice, seven builds.

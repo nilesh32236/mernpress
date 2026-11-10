@@ -348,11 +348,30 @@ export function createAuthService(options: {
         400,
       );
     }
-    const result = await twoFactor.consumeChallenge({
-      token: input.challengeToken,
-      code: input.code,
-      ip: input.ip,
-    });
+    let result: Awaited<ReturnType<typeof twoFactor.consumeChallenge>>;
+    try {
+      result = await twoFactor.consumeChallenge({
+        token: input.challengeToken,
+        code: input.code,
+        ip: input.ip,
+      });
+    } catch (error) {
+      // A wrong 2FA code must cost the same login budget as a wrong password;
+      // otherwise a correct password mints unlimited fresh challenges and the
+      // per-challenge attempt cap is meaningless. The username is charged
+      // through the same limiter the login form uses, so the account locks
+      // after the configured number of failures per window.
+      if (error instanceof AuthError && error.code === 'INVALID_TWO_FACTOR_CODE') {
+        const challenge = await prisma.twoFactorChallenge.findUnique({
+          where: { tokenHash: hashSessionToken(input.challengeToken.trim()) },
+          include: { user: { select: { username: true } } },
+        });
+        if (challenge) {
+          await rateLimiter.record(rateLimiter.keysFor(challenge.user.username, input.ip));
+        }
+      }
+      throw error;
+    }
     const user = await prisma.user.findUnique({ where: { id: result.userId } });
     if (!user || user.status !== 'active') {
       throw invalidCredentials();

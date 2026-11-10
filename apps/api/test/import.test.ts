@@ -114,6 +114,33 @@ describe('WordPress WXR import', () => {
     expect(titles).toContain('Imported post');
   });
 
+  it('skips an item whose block markup exceeds the structural limits', async () => {
+    const headers = await adminHeaders();
+    // A document over the structural ceilings must be reported, not stored:
+    // storing it would render empty and every later edit would fail validation.
+    // (Nesting is used instead of a 2 MB payload, which the body limit rejects
+    // before the importer sees it.)
+    const open = '<!-- wp:group -->\n<div class="wp-block-group">';
+    const close = '\n</div>\n<!-- /wp:group -->';
+    const deeplyNested = open.repeat(25) + '<p>x</p>' + close.repeat(25);
+    const huge = deeplyNested;
+    const wxr = WXR.replace(
+      /<content:encoded><!\[CDATA\[[\s\S]*?\]\]><\/content:encoded>/,
+      `<content:encoded><![CDATA[${huge}]]></content:encoded>`,
+    );
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/admin/import/wordpress',
+      headers,
+      payload: { content: wxr },
+    });
+    expect(response.statusCode).toBe(200);
+    const result = response.json() as { failed: number; errors: Array<{ message: string }> };
+    expect(result.failed).toBeGreaterThanOrEqual(1);
+    expect(result.errors.some((entry) => /block markup/i.test(entry.message))).toBe(true);
+    expect(await app.database.post.count({ where: { slug: 'imported-post' } })).toBe(0);
+  });
+
   it('rejects non-WXR payloads and anonymous callers', async () => {
     const headers = await adminHeaders();
     const bad = await app.inject({

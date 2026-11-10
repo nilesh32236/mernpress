@@ -202,4 +202,21 @@ describe('PUT /api/admin/posts/:id/autosave', () => {
     });
     expect(response.statusCode).toBe(400);
   });
+
+  it('rejects invalid block markup so a restore can never land broken content', async () => {
+    const post = await createPost();
+    const open = '<!-- wp:group -->\n<div class="wp-block-group">';
+    const close = '\n</div>\n<!-- /wp:group -->';
+    const deeplyNested = open.repeat(25) + '<p>x</p>' + close.repeat(25);
+    const response = await app.inject({
+      method: 'PUT',
+      url: `/api/admin/posts/${post.id}/autosave`,
+      headers,
+      payload: snapshot({ content: deeplyNested }),
+    });
+    expect(response.statusCode).toBe(400);
+    expect(
+      await app.database.postRevision.count({ where: { postId: post.id, kind: 'autosave' } }),
+    ).toBe(0);
+  });
 });

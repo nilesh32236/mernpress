@@ -204,6 +204,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-132 | 2026-11-09 | Mobile responsive contract: public header/footer wrap at ≤900, pagination wraps with 32px targets, long words/tables/embeds contained, public admin bar hides the greeting ≤782, consent respects the safe-area inset; admin controls are 16px on phones, touch targets 32px ≤782, row actions visible without hover at tablet widths, Personal Data table wrapped, Analytics/Customizer scroll, editor header offset by the admin bar, dialogs fit 100%, attachment drawer stacks, and floating overlays lock body scroll. Site Health stays administrator-only. 102 baselines regenerated. | accepted | [design audit](docs/verification/design-audit-2026-11-05.md) |
 
+| D-133 | 2026-11-10 | Second verification round: (1) failed 2FA codes now charge the same login rate limiter as a wrong password, so a correct password cannot mint unlimited challenges; (2) running jobs refresh their lock (`touch` heartbeat) so stale-lock recovery cannot double-execute long backups/regenerations; (3) `enqueueUnique` serialises the singleton check with a per-type advisory lock (backups, media regeneration, link scans) closing the hasActive/enqueue race; (4) reading terms requires `taxonomy.assign` instead of `taxonomy.manage`, so authors/contributors can list categories in the editor; (5) WXR import validates block markup and reports skipped items; (6) autosaves run the structural validator and take a per-post advisory lock so one row per post is guaranteed. | accepted | [implementation log](docs/implementation-log.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

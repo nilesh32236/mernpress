@@ -1,3 +1,4 @@
+import { validateBlockMarkup } from '@mernpress/block-system/validate';
 import type { DatabaseClient } from '@mernpress/database';
 import { ownsObject, roleHasCapability } from '../auth/capabilities.js';
 import { ContentError } from './errors.js';
@@ -70,6 +71,12 @@ function validateSnapshot(snapshot: AutosaveSnapshot): void {
   if (snapshot.content.length > 2_000_000) {
     throw new ContentError('VALIDATION_ERROR', 'Content is too large', 400);
   }
+  // Autosaves are drafts, but they must still be restorable: run the same
+  // structural check as a normal write so a restore never lands invalid markup.
+  const blockCheck = validateBlockMarkup(snapshot.content);
+  if (!blockCheck.ok) {
+    throw new ContentError('VALIDATION_ERROR', `Content is not valid block markup`, 400);
+  }
 }
 
 function toState(row: {
@@ -128,6 +135,11 @@ export function createAutosaveService(options: AutosaveServiceOptions) {
     validateSnapshot(snapshot);
     await loadEditablePost(principal, postId);
     const row = await prisma.$transaction(async (tx) => {
+      // Two concurrent autosave PUTs could both delete and then both insert,
+      // leaving two rows for one post. A per-post advisory lock makes the
+      // delete+create atomic without a schema change (a partial unique index
+      // would also constrain manual revisions stored in the same table).
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`autosave:${postId}`}))`;
       await tx.postRevision.deleteMany({ where: { postId, kind: 'autosave' } });
       return tx.postRevision.create({
         data: {

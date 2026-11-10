@@ -149,6 +149,14 @@ describe('role × capability matrix (ADR 0004)', () => {
     // Manage taxonomy: denied.
     const term = await createTermAs(contrib, 'Nope');
     expect(term.statusCode).toBe(403);
+
+    // Reading terms is allowed (the editor needs them to assign).
+    const listTerms = await app.inject({
+      method: 'GET',
+      url: '/api/admin/terms?taxonomy=category',
+      headers: readHeaders(contrib),
+    });
+    expect(listTerms.statusCode).toBe(200);
   });
 
   it('contributor cannot edit another user\u2019s draft', async () => {
@@ -274,6 +282,19 @@ describe('role × capability matrix (ADR 0004)', () => {
     const termId = (created.json() as { id: string }).id;
 
     const post = await mustCreatePostAs(author, 'Author tagged');
+    const listTerms = await app.inject({
+      method: 'GET',
+      url: '/api/admin/terms?taxonomy=category',
+      headers: readHeaders(author),
+    });
+    expect(listTerms.statusCode).toBe(200);
+    const singleTerm = await app.inject({
+      method: 'GET',
+      url: `/api/admin/terms/${termId}`,
+      headers: readHeaders(author),
+    });
+    expect(singleTerm.statusCode).toBe(200);
+
     const assign = await app.inject({
       method: 'PUT',
       url: `/api/admin/posts/${post.id}/terms`,

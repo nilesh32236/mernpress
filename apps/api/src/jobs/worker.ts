@@ -83,6 +83,13 @@ export function createJobWorker(options: JobWorkerOptions): JobWorker {
           );
           continue;
         }
+        // Keep the lock fresh while long handlers run, otherwise stale-lock
+        // recovery requeues the job and a second worker executes it again.
+        const heartbeatMs = Math.max(1_000, Math.floor(stuckAfterMs / 4));
+        const heartbeat = setInterval(() => {
+          void queue.touch(job.id).catch(() => undefined);
+        }, heartbeatMs);
+        heartbeat.unref?.();
         try {
           await handler(job.payload);
           await queue.complete(job.id);
@@ -98,6 +105,8 @@ export function createJobWorker(options: JobWorkerOptions): JobWorker {
             { jobId: job.id, type: job.type, attempts: job.attempts, err: error },
             'background job failed',
           );
+        } finally {
+          clearInterval(heartbeat);
         }
       }
       return { claimed: jobs.length, completed, failed };

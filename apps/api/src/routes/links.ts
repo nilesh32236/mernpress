@@ -42,14 +42,14 @@ export function registerLinkRoutes(app: FastifyInstance, options: LinkRouteOptio
     if (!ctx) return;
     try {
       requireCapability(ctx.principal, 'manage_options');
-      if (await jobs.hasActive(JOB_TYPES.linkCheck)) {
+      const job = await jobs.enqueueUnique({ type: JOB_TYPES.linkCheck, maxAttempts: 2 });
+      if (!job) {
         throw new ContentError(
           'LINK_CHECK_IN_PROGRESS',
           'A link check is already queued or running.',
           409,
         );
       }
-      const job = await jobs.enqueue({ type: JOB_TYPES.linkCheck, maxAttempts: 2 });
       return reply.code(202).send({ job });
     } catch (error) {
       return sendRouteError(reply, request, error);

@@ -143,6 +143,28 @@ describe('two-factor authentication', () => {
     expect(session.statusCode).toBe(200);
   });
 
+  it('charges failed 2FA codes against the login rate limit across challenges', async () => {
+    await enableTwoFactor();
+
+    // Five fresh challenges, one wrong code each. Previously the per-challenge
+    // counter reset with every correct password, so this was unlimited.
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const challenge = await login(ADMIN_USERNAME, ADMIN_PASSWORD);
+      expect(challenge.statusCode).toBe(200);
+      expect(challenge.body.twoFactorRequired).toBe(true);
+      const wrong = await completeTwoFactor(challenge.body.challengeToken!, '000000');
+      expect(wrong.statusCode).toBe(401);
+    }
+
+    // The same budget the password form uses is now exhausted: the next login
+    // is rate-limited instead of minting another challenge.
+    const blocked = await login(ADMIN_USERNAME, ADMIN_PASSWORD);
+    expect(blocked.statusCode).toBe(429);
+    expect((blocked.body as unknown as { error: { code: string } }).error.code).toBe(
+      'RATE_LIMITED',
+    );
+  });
+
   it('rejects a replayed TOTP code and accepts a single-use recovery code once', async () => {
     const enabled = await enableTwoFactor();
     const code = nextCode(enabled.secret);

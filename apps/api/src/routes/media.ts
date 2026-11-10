@@ -305,20 +305,20 @@ export function registerMediaRoutes(app: FastifyInstance, options: MediaRouteOpt
     try {
       const body = regenerateSchema.parse(request.body ?? {});
       requireCapability(ctx.principal, 'content.create');
-      if (await jobs.hasActive(JOB_TYPES.mediaRegenerate)) {
+      const payload: Record<string, unknown> = {};
+      if (body.folderId !== undefined) payload.folderId = body.folderId;
+      const job = await jobs.enqueueUnique({
+        type: JOB_TYPES.mediaRegenerate,
+        payload,
+        maxAttempts: 2,
+      });
+      if (!job) {
         throw new ContentError(
           'MEDIA_REGENERATE_IN_PROGRESS',
           'Derivative regeneration is already queued or running.',
           409,
         );
       }
-      const payload: Record<string, unknown> = {};
-      if (body.folderId !== undefined) payload.folderId = body.folderId;
-      const job = await jobs.enqueue({
-        type: JOB_TYPES.mediaRegenerate,
-        payload,
-        maxAttempts: 2,
-      });
       return reply.code(202).send({ job });
     } catch (error) {
       return sendRouteError(reply, request, error);
