@@ -224,6 +224,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-142 | 2026-11-10 | Measured pass 7 (block rendering): WordPress default post content is fluid 18.2px @375 → 22px @1440, not the 18px of a demo post carrying `has-medium-font-size` — corrected with `clamp(1.0553rem, calc(1.0553rem + 0.3553vw), 1.375rem)`. Aligned blockquote padding/2px rule, cite 14px, pre/code 18px with 30px padding, figcaption 14px and 8px list gaps. Fixed a content-fidelity bug: the sanitizer had no table tags, so imported table blocks were dropped — the inert table element set is now allowed (with tests). h3 stays 24px (theme scale, documented). | accepted | [design audit](docs/verification/design-audit-2026-11-05.md) |
 
+| D-143 | 2026-11-10 | Closed the last measured block mismatch: h3 renders at the fluid body size (18.2px @375 → 22px @1440, weight 400, line-height 1.125) as in Twenty Twenty-Five, instead of a fixed 24px. The block contract now pins h2, h3, paragraph, quote, cite, pre/code, caption and table cells at 1440 plus the 375 paragraph size. | accepted | [design audit](docs/verification/design-audit-2026-11-05.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

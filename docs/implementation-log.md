@@ -6385,3 +6385,13 @@ admin editor 45.
   administrator/session and recent audit events (1 user, 2 posts); the
   reference post, `audit-admin` and the reference server were removed; the
   superseded release was pruned (16 GB free).
+
+### 2026-11-10 — H3 aligned with WordPress; block matrix complete
+
+- The only remaining measured block mismatch was h3 (24px/30 vs WordPress
+  22px/24.75). It now uses the fluid body size with weight 400 and
+  line-height 1.125, matching Twenty Twenty-Five at 375 and 1440.
+- The public block contract asserts h3 as well, so every row of the pass-7
+  matrix (paragraph, h2, h3, quote, cite, pre/code, caption, table) is pinned.
+- Gates: format/lint/typecheck 0, 1013 unit/integration, 42 E2E, 108 baselines
+  green twice, seven builds.

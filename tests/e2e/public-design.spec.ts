@@ -316,6 +316,9 @@ test('block rendering keeps the WordPress type scale', async ({ page }) => {
     '<!-- wp:heading -->',
     '<h2 class="wp-block-heading">Heading two</h2>',
     '<!-- /wp:heading -->',
+    '<!-- wp:heading {"level":3} -->',
+    '<h3 class="wp-block-heading">Heading three</h3>',
+    '<!-- /wp:heading -->',
     '<!-- wp:quote -->',
     '<blockquote class="wp-block-quote"><p>Quoted.</p><cite>Author</cite></blockquote>',
     '<!-- /wp:quote -->',
@@ -350,6 +353,7 @@ test('block rendering keeps the WordPress type scale', async ({ page }) => {
       };
       const p = style('p');
       const h2 = style('h2');
+      const h3 = style('h3');
       const quote = style('blockquote');
       const cite = style('cite');
       const pre = style('pre');
@@ -359,6 +363,8 @@ test('block rendering keeps the WordPress type scale', async ({ page }) => {
         pFont: p?.fontSize ?? null,
         pLine: p?.lineHeight ?? null,
         h2Font: h2?.fontSize ?? null,
+        h3Font: h3?.fontSize ?? null,
+        h3Line: h3?.lineHeight ?? null,
         quotePadding: quote?.padding ?? null,
         quoteBorder: quote?.borderLeftWidth ?? null,
         citeFont: cite?.fontSize ?? null,
@@ -373,6 +379,8 @@ test('block rendering keeps the WordPress type scale', async ({ page }) => {
       pFont: '22px',
       pLine: '30.8px',
       h2Font: '32px',
+      h3Font: '22px',
+      h3Line: '24.75px',
       quotePadding: '20px 30px',
       quoteBorder: '2px',
       citeFont: '14px',

@@ -213,7 +213,7 @@ in MERNPress, measured within the post-content container at 1440 and 375.
 | --- | --- | --- | --- |
 | Paragraph | 22 px / 30.8 px, weight 300 | 18 px / 25.2 px | **fixed**: fluid clamp 18.2 px @375 → 22 px @1440 (the earlier 18 px came from a demo post carrying `has-medium-font-size`, not the default) |
 | H2 | 32 px / 36 px | 32 px / 36 px | match |
-| H3 | 22 px / 24.75 px | 24 px / 30 px | 2 px larger; kept (theme heading scale) — documented |
+| H3 | 22 px / 24.75 px | 24 px / 30 px | **fixed**: h3 now uses the fluid body size (18.2 @375 → 22 @1440), weight 400, line-height 1.125 |
 | List item | 22 px, 8 px gap | 18 px, no gap | **fixed**: body clamp + 8 px `li + li` spacing |
 | Blockquote | 22 px, padding 20/30, 2 px rule | 18 px, padding-left 18, 1 px rule | **fixed** |
 | Cite | 14 px, 20 px top margin | 18 px, no margin | **fixed** |
@@ -229,9 +229,10 @@ inert table element set (`table/thead/tbody/tfoot/tr/th/td/caption/colgroup/col`
 plus `colspan/rowspan/scope/span/headers`), with tests proving structure and
 text survive and scripts/handlers are still removed.
 
-A `public-design` contract pins the whole scale (22/30.8, h2 32/36, quote
-20/30 + 2 px, cite 14, pre 18/30, caption 14, table cell 22 at 1440; 18.2 at
-375) and removes its fixture post afterwards.
+A `public-design` contract pins the whole scale (22/30.8, h2 32/36, h3 22/24.75,
+quote 20/30 + 2 px, cite 14, pre 18/30, caption 14, table cell 22 at 1440;
+paragraph 18.2 at 375) and removes its fixture post afterwards. With h3 aligned,
+every block in the pass-7 matrix now matches the reference.
 
 ## Remaining deviations (deliberate)
 
