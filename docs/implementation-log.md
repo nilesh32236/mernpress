@@ -6268,3 +6268,21 @@ admin editor 45.
   consistent with the measured post typography.
 - Gates: format/lint/typecheck 0, 1011 unit/integration, 38 E2E, 108 baselines
   green twice, seven builds.
+
+**Deployment (measured pass 3, release `20261110T095311Z-1c13536`):**
+- Production verification after the fixes: Settings label column **210px**,
+  input **40px / 14px**, submit **40px**; Profile **Update Profile** **40px**;
+  Customizer sidebar **300px** — matching the WordPress 7.1.4 measurements.
+- Incident during the rollout: the release install failed with
+  `ENOSPC` (the disk was 100 % full; five 1.6 GB releases plus caches). The
+  symlink had already been switched, so the API and web units failed with
+  `CHDIR` until the failed release was removed. Recovery: deleted the failed
+  release and five superseded releases (freed ~17 GB), re-pointed
+  `/opt/mernpress/current` at the last good release (`3b6e238`) and restarted —
+  site, admin and `/api/health` returned 200 — then rebuilt and switched to
+  `20261110T095311Z-1c13536`. Only the current release is retained now; the
+  deploy procedure should keep one previous release for rollback and prune the
+  rest.
+- Cleanup removed the temporary administrator/session and recent audit events
+  (back to 1 user, 2 posts); the reference WordPress server was stopped and its
+  `audit-admin` user and audit comment deleted.
