@@ -6157,3 +6157,24 @@ admin editor 45.
   button (`focusRestored: true`); `scrollWidth === innerWidth === 375`.
 - Cleanup removed the temporary administrator/session and recent audit events;
   production is back to 1 user, 2 posts.
+
+### 2026-11-10 — Parity state matrix: language pair + editor tabs/dialogs
+
+- Fixture: the visual spec enables `site_languages` (`en`, `hi`) and inserts a
+  published Hindi translation of the demo post (same translation group, pinned
+  timestamps). Because the API caches the language config for 10 s and the
+  Playwright readiness probe can prime it before the fixture runs, the spec now
+  polls `/api/public/site` until `hi` is enabled before revalidating and
+  capturing — a stale-config capture silently recorded an English-only baseline.
+- Baselines: +2 for the Hindi post (desktop/mobile) and +4 element captures for
+  the editor state matrix (`editor-tab-block`, `editor-tab-notes`,
+  `editor-dialog-shortcuts`, `editor-dialog-preferences`); 108 total.
+- Contracts: the public test asserts `hreflang` in both directions, `x-default`,
+  and the `/hi/…` canonical. Editor dialogs now use `useFocusTrap` (Tab stays
+  inside, Escape closes, focus returns to the options menu) and the test asserts
+  containment for each dialog.
+- Stability: post captures wait for the client-side comments fetch; the
+  Site Editor preview iframe is masked (its own document loads asynchronously).
+- Gates: format/lint/typecheck 0, 1011 unit/integration (API 577, admin 265,
+  web 71, contracts 26, block-system 72), 37 E2E with `--workers=1`, 108
+  baselines green twice, seven builds.

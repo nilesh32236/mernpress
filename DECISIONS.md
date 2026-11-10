@@ -208,6 +208,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-134 | 2026-11-10 | Focus traps for floating panels: a shared `useFocusTrap` moves focus in, cycles Tab/Shift+Tab, handles Escape and restores focus to the opener. Used by the media attachment drawer (all widths) and the editor Document panel only while it floats (≤1024px). Focus is retried briefly because a panel leaving `display:none` refuses focus on the first attempt; the Escape callback is held in a ref so inline handlers cannot tear the effect down mid-interaction. | accepted | [implementation-log](docs/implementation-log.md) |
 
+| D-135 | 2026-11-10 | Parity state matrix: 108 visual baselines now cover a language-prefixed pair (default post and its Hindi translation, with hreflang/canonical DOM assertions) and the editor inspector tabs (Block, Notes) plus the Shortcuts and Preferences dialogs. Editor dialogs reuse `useFocusTrap`. The visual fixture pins `site_languages` and a Hindi translation; it waits for the API language config (10 s cache) before capturing, which also documents that a languages change can take up to 10 s to reach public responses. | accepted | [design audit](docs/verification/design-audit-2026-11-05.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

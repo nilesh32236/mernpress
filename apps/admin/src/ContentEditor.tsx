@@ -309,6 +309,7 @@ export function ContentEditor({
   const [reloadKey, setReloadKey] = useState(0);
   const [contentTouched, setContentTouched] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const [sidebarOpen, setSidebarOpen] = useState(() =>
     typeof window === 'undefined' ? true : window.innerWidth >= 1080,
   );
@@ -329,6 +330,10 @@ export function ContentEditor({
   const [editorDialog, setEditorDialog] = useState<
     null | 'code' | 'shortcuts' | 'welcome' | 'preferences'
   >(null);
+  // Editor dialogs are modal at every width: trap Tab and close on Escape.
+  useFocusTrap(editorDialog !== null, dialogRef, {
+    onEscape: () => setEditorDialog(null),
+  });
   const [preferences, setPreferences] = useState<EditorPreferences>(() => readEditorPreferences());
   const [previewBusy, setPreviewBusy] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<string | null>(null);
@@ -2838,6 +2843,8 @@ export function ContentEditor({
             role="dialog"
             aria-modal="true"
             aria-labelledby="editor-dialog-title"
+            ref={dialogRef}
+            tabIndex={-1}
           >
             <div className="editor-dialog-head">
               <h2 id="editor-dialog-title">

@@ -52,7 +52,18 @@ test.beforeAll(() => {
       '-c',
       // Fixed timestamps keep the baselines independent of the run date; the
       // demo post shows its published date on home/blog/search captures.
-      "UPDATE posts SET status = 'PUBLISHED', published_at = '2026-11-06T12:00:00Z', updated_at = '2026-11-06T12:00:00Z' WHERE slug IN ('welcome-to-mernpress', 'about');",
+      `UPDATE posts SET status = 'PUBLISHED', published_at = '2026-11-06T12:00:00Z', updated_at = '2026-11-06T12:00:00Z' WHERE slug IN ('welcome-to-mernpress', 'about');
+       INSERT INTO options (key, value, "group", autoload, updated_at)
+       VALUES ('site_languages', '{"default":"en","enabled":["en","hi"]}', 'general', true, now())
+       ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = now();
+       INSERT INTO posts (id, type, status, title, slug, excerpt, content, content_format, content_version, language, translation_group, published_at, created_at, updated_at)
+       SELECT gen_random_uuid(), 'post', 'PUBLISHED', 'MERNPress में आपका स्वागत है',
+              'welcome-to-mernpress-hi', 'डेमो पोस्ट।',
+              '<!-- wp:paragraph --><p>यह एक डेमो पोस्ट है। इसे संपादित करें या हटा दें।</p><!-- /wp:paragraph -->',
+              'wp_block_html', 1, 'hi', translation_group,
+              '2026-11-06T12:00:00Z', now(), '2026-11-06T12:00:00Z'
+       FROM posts WHERE slug = 'welcome-to-mernpress'
+       ON CONFLICT (translation_group, language) DO NOTHING;`,
     ],
     { stdio: 'pipe' },
   );
@@ -94,8 +105,9 @@ test.beforeAll(() => {
     [testDatabaseUrl, '-t', '-A', '-c', "SELECT count(*) FROM posts WHERE status = 'PUBLISHED';"],
     { encoding: 'utf8' },
   ).trim();
-  if (published !== '2') {
-    throw new Error(`visual fixtures: expected 2 published rows, found ${published}`);
+  // Two demo rows plus the Hindi translation of the post.
+  if (published !== '3') {
+    throw new Error(`visual fixtures: expected 3 published rows, found ${published}`);
   }
 });
 
@@ -154,14 +166,40 @@ const publicScreens: Array<[string, string, string | RegExp]> = [
   ['category', '/category/news', 'News'],
   ['tag', '/tag/demo', 'Demo'],
   ['author', '/author/visual_admin', 'visual_admin'],
+  ['single-hi', '/hi/posts/welcome-to-mernpress-hi', 'MERNPress में आपका स्वागत है'],
 ];
 
 test('public visual baselines', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
+  // The API caches the language config for 10s; a readiness probe during boot
+  // can populate it before this spec inserts the Hindi option. Wait for the
+  // live config, then flush the public-content cache.
+  await expect
+    .poll(
+      async () => {
+        const response = await page.request.get(`${SITE}/api/public/site`);
+        const body = (await response.json()) as { languages?: { enabled?: string[] } };
+        return body.languages?.enabled?.includes('hi') ?? false;
+      },
+      { timeout: 25_000 },
+    )
+    .toBe(true);
   await revalidatePublicContent(page);
   for (const [name, route, heading] of publicScreens) {
     await page.goto(`${SITE}${route}`, { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+    if (name === 'single' || name === 'single-hi') {
+      // The language switcher proves the translation fixture is live; without
+      // this the capture could silently record the English-only state.
+      await expect(page.locator('.language-links')).toBeVisible();
+      // Comments load client-side; the placeholder vs "no comments" state was
+      // flickering the capture.
+      await page
+        .waitForFunction(() => !document.body.innerText.includes('Loading comments'), null, {
+          timeout: 10_000,
+        })
+        .catch(() => undefined);
+    }
     await settle(page);
     await expect(page).toHaveScreenshot(`${name}-desktop.png`, {
       animations: 'disabled',
@@ -169,6 +207,22 @@ test('public visual baselines', async ({ page }) => {
       maxDiffPixelRatio: 0.001,
     });
   }
+
+  // Language pair contract: the default and the Hindi post advertise each
+  // other with hreflang and expose the prefixed canonical URL.
+  const enHtml = await (await page.request.get(`${SITE}/posts/welcome-to-mernpress`)).text();
+  const hiHtml = await (await page.request.get(`${SITE}/hi/posts/welcome-to-mernpress-hi`)).text();
+  // React serialises the attribute as `hrefLang`; HTML attribute names are
+  // case-insensitive, so compare the lower-cased documents.
+  const enLower = enHtml.toLowerCase();
+  const hiLower = hiHtml.toLowerCase();
+  expect(enLower).toContain('hreflang="hi"');
+  expect(enLower).toContain('/hi/posts/welcome-to-mernpress-hi');
+  expect(hiLower).toContain('hreflang="en"');
+  expect(hiLower).toContain('hreflang="hi"');
+  expect(hiLower).toMatch(
+    /rel="canonical" href="https?:\/\/[^"]+\/hi\/posts\/welcome-to-mernpress-hi"/,
+  );
 
   await page.setViewportSize({ width: 375, height: 812 });
   for (const [name, route, heading] of publicScreens) {
@@ -280,6 +334,11 @@ test('admin visual baselines', async ({ page }) => {
     if (name === 'mail-delivery') {
       await expect(page.getByText('Transport:')).toBeVisible();
     }
+    if (name === 'site-editor') {
+      // The preview iframe renders a full page of its own; mask it so the
+      // baseline measures the Design chrome, not the inner document's timing.
+      await expect(page.locator('.site-editor-frame iframe')).toBeVisible();
+    }
     if (name === 'editor-edit') {
       // Desktop edit capture: wait for the loaded document (the skeleton was
       // being captured) and hide the relative "Last edited …" line, which
@@ -295,6 +354,7 @@ test('admin visual baselines', async ({ page }) => {
       caret: 'hide',
       fullPage: false,
       maxDiffPixelRatio: 0.001,
+      ...(name === 'site-editor' ? { mask: [page.locator('.site-editor-frame iframe')] } : {}),
     });
   }
 
@@ -484,4 +544,81 @@ test('analytics chart visual baseline (date-stabilized)', async ({ page }) => {
     });
   }
   await page.unroute('**/api/admin/analytics*');
+});
+
+/**
+ * Editor state matrix: the inspector tabs and the editor dialogs were only
+ * covered by DOM assertions before, never by pixels.
+ */
+test('editor inspector tabs and dialogs', async ({ page }) => {
+  await login(page);
+  const response = await page.request.get(
+    `${SITE}/api/public/posts/welcome-to-mernpress?type=post`,
+  );
+  const demo = (await response.json()) as { id: string };
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto(`http://127.0.0.1:5173/admin/posts/${demo.id}/edit`, {
+    waitUntil: 'domcontentloaded',
+  });
+  await expect(page.locator('.block-canvas-sheet')).toContainText('This is a demo post', {
+    timeout: 20_000,
+  });
+  // On desktop (>=1080px) the Document panel starts open as an in-flow column;
+  // Settings would toggle it closed.
+  const sidebar = page.locator('#editor-document-settings');
+  await expect(sidebar.getByRole('tablist', { name: 'Document settings views' })).toBeVisible();
+
+  // Post tab is the default; Block and Notes are the other two states.
+  await expect(sidebar.getByRole('heading', { name: 'Block' })).toBeHidden();
+  await sidebar.getByRole('tab', { name: 'Block' }).click();
+  await expect(sidebar.getByRole('heading', { name: 'Block' })).toBeVisible();
+  await settle(page);
+  await expect(sidebar).toHaveScreenshot('editor-tab-block.png', {
+    animations: 'disabled',
+    caret: 'hide',
+    maxDiffPixelRatio: 0.001,
+  });
+
+  await sidebar.getByRole('tab', { name: 'Notes' }).click();
+  await expect(sidebar.getByRole('heading', { name: 'Notes' })).toBeVisible();
+  await settle(page);
+  await expect(sidebar).toHaveScreenshot('editor-tab-notes.png', {
+    animations: 'disabled',
+    caret: 'hide',
+    maxDiffPixelRatio: 0.001,
+  });
+  await page.getByRole('button', { name: 'Close settings panel' }).click();
+
+  // Shortcuts and Preferences dialogs.
+  for (const [label, file] of [
+    ['Keyboard shortcuts', 'editor-dialog-shortcuts.png'],
+    ['Preferences', 'editor-dialog-preferences.png'],
+  ] as const) {
+    // The options dropdown lives in the sticky top bar; open it and activate
+    // the entry directly so the capture does not depend on pointer geometry.
+    await page.evaluate((entry) => {
+      const details = document.querySelector<HTMLDetailsElement>('.editor-options-menu');
+      if (details) details.open = true;
+      const button = Array.from(
+        document.querySelectorAll<HTMLButtonElement>('.editor-options-panel button'),
+      ).find((candidate) => candidate.textContent?.trim() === entry);
+      button?.click();
+    }, label);
+    const dialog = page.getByRole('dialog', { name: label });
+    await expect(dialog).toBeVisible();
+    await settle(page);
+    await expect(dialog).toHaveScreenshot(file, {
+      animations: 'disabled',
+      caret: 'hide',
+      maxDiffPixelRatio: 0.001,
+    });
+    // The dialog is modal: Escape closes it and returns focus to the menu.
+    const trapped = await page.evaluate(() => {
+      const panel = document.querySelector('.editor-dialog');
+      return Boolean(panel && document.activeElement && panel.contains(document.activeElement));
+    });
+    expect(trapped).toBe(true);
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog', { name: label })).toHaveCount(0);
+  }
 });

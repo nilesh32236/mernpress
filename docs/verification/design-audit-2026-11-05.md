@@ -369,6 +369,13 @@ Deliberate: 13px admin body copy (WordPress parity, e2e-asserted), inline text
 links below 32px (WCAG 2.5.8 inline exception), 16px checkboxes (label is the
 target), and table `nowrap` inside scroll containers.
 
+Parity state matrix (2026-11-10): the baseline set now also covers a
+language-prefixed page pair (default post and its Hindi translation, 2 captures)
+and the editor inspector tabs (Block, Notes) plus the Shortcuts and Preferences
+dialogs (4 element captures) — 108 in total. The language pair is asserted for
+hreflang (both directions), x-default and the prefixed canonical URL, not only
+photographed. The editor dialogs also trap focus (D-134 extension).
+
 Keyboard containment is now implemented (D-134): the attachment drawer and the
 floating editor Document panel move focus in, cycle Tab/Shift+Tab, close on
 Escape and restore focus to the control that opened them. Covered by
