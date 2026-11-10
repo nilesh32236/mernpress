@@ -146,15 +146,20 @@ test('public screens keep the Twenty Twenty-Five layout contract', async ({ page
   expect(sitemap.headers()['content-type']).toContain('xml');
   expect(await sitemap.text()).toContain('/posts/welcome-to-mernpress');
 
-  // Mobile: 36px titles, no horizontal overflow; page titles previously kept
-  // the desktop 48px because `.entry.page .entry-title` outranked the mobile
-  // `.entry-title` rule.
+  // Mobile: the title follows Twenty Twenty-Five's viewport curve
+  // (35.13px at 375, 36.96px at 512, capped at 48px) and never overflows; page
+  // titles previously kept the desktop 48px because `.entry.page .entry-title`
+  // outranked the mobile `.entry-title` rule.
   await page.setViewportSize({ width: 375, height: 812 });
   for (const screen of screens) {
     await page.goto(`${SITE}${screen.path}`, { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { level: 1, name: screen.heading })).toBeVisible();
     const metrics = await measurements(page);
-    expect(metrics.h1?.font, `${screen.name} mobile h1`).toBe('36px');
+    // Allow the 0.2px rounding a browser applies to the clamp curve.
+    expect(parseFloat(metrics.h1?.font ?? '0'), `${screen.name} mobile h1`).toBeGreaterThanOrEqual(
+      34.9,
+    );
+    expect(parseFloat(metrics.h1?.font ?? '0')).toBeLessThanOrEqual(35.4);
     expect(metrics.scrollWidth, `${screen.name} mobile overflow`).toBeLessThanOrEqual(
       metrics.innerWidth,
     );
@@ -173,7 +178,8 @@ test('public screens keep the Twenty Twenty-Five layout contract', async ({ page
     const heading = document.querySelector('.entry.page .entry-title');
     return heading ? getComputedStyle(heading).fontSize : null;
   });
-  expect(pageTitle).toBe('36px');
+  expect(parseFloat(pageTitle ?? '0')).toBeGreaterThanOrEqual(34.9);
+  expect(parseFloat(pageTitle ?? '0')).toBeLessThanOrEqual(35.4);
 });
 
 /**

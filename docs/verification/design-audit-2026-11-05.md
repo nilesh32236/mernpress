@@ -78,6 +78,36 @@ Baselines affected by the typography change were regenerated (108 total) and the
 customizer/site-editor preview iframes plus the post comments fetch are now
 stabilised/masked so a capture cannot silently record a half-loaded screen.
 
+
+## Measured pass 2 — admin lists, themes, media, comments and the title curve (2026-11-10)
+
+Second side-by-side run against the same WordPress 7.1.4 reference (PHP server
+on 8080, temporary administrator, deleted afterwards) for the screens the first
+pass did not cover.
+
+| State | WordPress 7.1.4 | MERNPress | Result |
+| --- | --- | --- | --- |
+| Posts list (1440) | table 1238 px, th 14 px, row 55 px, tabs 13 px | 1238 px, 14 px, 56 px, 13 px | match (1 px row rounding) |
+| Pages list (1440) | 1238 / 14 / 55 / 13 | 1238 / 14 / 56 / 13 | match |
+| Users list (1440) | row 69 px, th 14 px, tabs 13 px | row 71 px, 14 px, 13 px | 2 px difference (avatar cell padding), accepted |
+| Media (1440) | filter bar 80 px, view switch present | folder bar 50 px + separate toolbar, view toggles present | different composition (MERNPress adds folders); documented |
+| Themes (1440) | card 379x304 px | card 379 px wide | match on width; height differs with screenshot aspect |
+| Analytics (1440) | not in core (plugin territory) | Dashboard → Analytics | **addition** |
+| Posts list (375) | 375 = 375, admin bar 46 px | 375 = 375, admin bar 46 px, row actions visible | match |
+| Media (375) | no overflow | 375 = 375 | match |
+| Public meta | 14 px | 14 px | match |
+| **Public title 375** | **35.13 px** | **36 px** | **fixed**: viewport curve |
+| **Public title 512** | **36.96 px** | **36 px** | **fixed**: same curve |
+| Public title 1440 | 48 px | 48 px | match |
+| Comments | reference post has no approved comment in the fixture | comment styles 14 px meta / 18 px body | meta matches; body inherits the 18 px fix from pass 1 |
+| Options → Welcome guide | 312 px card | 720 px modal | **fixed to 312 px** |
+
+Title curve: Twenty Twenty-Five scales the post title linearly between roughly
+35.1 px at 375 and 37 px at 512 before capping at 48 px. MERNPress now uses
+`clamp(2.2rem, 1.335vw + 1.8825rem, 3rem)`, which reproduces 35.13 px at 375 and
+36.96 px at 512 (verified in the E2E suite, which asserts the 375 value stays
+within 0.5 px of the reference).
+
 ## Remaining deviations (deliberate)
 
 | Deviation | Reason |

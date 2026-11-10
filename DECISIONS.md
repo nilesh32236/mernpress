@@ -212,6 +212,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-136 | 2026-11-10 | Measured side-by-side pass against the running WordPress 7.1.4 + Twenty Twenty-Five reference for the states not previously compared (language-prefixed page, editor Block/Notes tabs, Shortcuts/Preferences modals, 375px admin/public). Fixed two real mismatches: public body copy 22px → 18px (WP is 18px/1.4, weight 300, 645px measure) and editor modal widths (Preferences 720 → 750, Keyboard shortcuts 720 → 629). Recorded matches (32/160/64/280 chrome, 48px title, 46/64 mobile), one addition (Notes tab), and two deviations (Welcome guide card width; 36px fixed mobile title vs WP clamp). | accepted | [design audit](docs/verification/design-audit-2026-11-05.md) |
 
+| D-137 | 2026-11-10 | Measured pass 2 against WordPress 7.1.4: admin Posts/Pages/Users tables match (1238px, 14px head, 13px tabs, 55/56px rows), theme cards match at 379px, 375px admin lists/bar match (46px, no overflow), public meta is 14px in both. Fixed: the public post title now follows the reference clamp (`clamp(2.2rem, 1.335vw + 1.8825rem, 3rem)` → 35.13px at 375, 36.96px at 512) instead of a fixed 36px, and the Welcome guide is a 312px card like WordPress. Users rows are 2px taller (avatar padding); Media composition differs because MERNPress adds folders — both documented. | accepted | [design audit](docs/verification/design-audit-2026-11-05.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

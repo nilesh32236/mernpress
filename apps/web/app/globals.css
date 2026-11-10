@@ -560,18 +560,21 @@ a:hover {
     padding: 40px 24px;
   }
 
+  /* Twenty Twenty-Five scales the title with the viewport: 35.13px at 375,
+     36.96px at 512, capped at 48px. Reproduce that curve instead of a fixed
+     36px so the mobile and tablet titles match the reference. */
   .blog-title {
-    font-size: 36px;
+    font-size: clamp(2.2rem, 1.335vw + 1.8825rem, 3rem);
   }
 
   .entry-title {
-    font-size: 36px;
+    font-size: clamp(2.2rem, 1.335vw + 1.8825rem, 3rem);
   }
 
   /* Page titles use .entry-title; the desktop `.entry.page .entry-title`
      specificity would otherwise keep 48px on phones. */
   .entry.page .entry-title {
-    font-size: 36px;
+    font-size: clamp(2.2rem, 1.335vw + 1.8825rem, 3rem);
   }
 
   .post-title {

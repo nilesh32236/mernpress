@@ -6225,3 +6225,19 @@ admin editor 45.
 - Cleanup removed the temporary administrator/session and recent audit events;
   production is back to 1 user, 2 posts. The reference WordPress server was
   stopped and its temporary `audit-admin` user deleted.
+
+### 2026-11-10 — Measured pass 2: admin list screens, themes, title curve
+
+- Compared Posts/Pages/Users/Media/Themes/Analytics at 1440 and Posts/Media at
+  375 against the running WordPress 7.1.4 reference: table width 1238px, head
+  14px, tabs 13px, rows 55-56px (Users 69 vs 71), theme cards 379px, admin bar
+  46px at 375 with no overflow — all matches, with two documented differences
+  (Media toolbar composition because MERNPress adds folders; Analytics is a
+  MERNPress addition).
+- Fixed the mobile title: WordPress scales it 35.13px (375) → 36.96px (512) →
+  48px cap; MERNPress used a fixed 36px. Now `clamp(2.2rem, 1.335vw +
+  1.8825rem, 3rem)` for post, page and blog titles, asserted in E2E within
+  0.5px at 375.
+- Fixed the Welcome guide width to WordPress's 312px card.
+- Gates: format/lint/typecheck 0, 1011 unit/integration, 37 E2E, 108 baselines
+  green twice, seven builds.

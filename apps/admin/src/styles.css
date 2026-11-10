@@ -12139,6 +12139,11 @@ a.glance-chip:hover {
   width: min(629px, 100%);
 }
 
+/* WordPress renders the Welcome guide as a narrow card (312px on 7.1.4). */
+.editor-dialog.is-welcome {
+  width: min(312px, 100%);
+}
+
 .editor-dialog-head {
   display: flex;
   align-items: center;
