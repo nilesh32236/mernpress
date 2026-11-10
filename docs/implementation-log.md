@@ -6147,3 +6147,13 @@ admin editor 45.
 - Gates: format/lint/typecheck 0, 1011 unit/integration (API 577, admin 265,
   web 71, contracts 26, block-system 72), 36 E2E with `--workers=1`, seven
   builds.
+
+**Deployment (focus traps, release `20261110T051149Z-0165417`):**
+- API and web restarted; `/api/health` 200.
+- Real-browser check at 375px on the production editor (existing post, temp
+  administrator): opening Document settings moved focus **inside** the panel
+  (`startInside: true`), twelve Tab presses stayed inside (`afterTabs: true`),
+  Escape closed the panel (`closed: true`) and focus returned to the Settings
+  button (`focusRestored: true`); `scrollWidth === innerWidth === 375`.
+- Cleanup removed the temporary administrator/session and recent audit events;
+  production is back to 1 user, 2 posts.
