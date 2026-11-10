@@ -6241,3 +6241,13 @@ admin editor 45.
 - Fixed the Welcome guide width to WordPress's 312px card.
 - Gates: format/lint/typecheck 0, 1011 unit/integration, 37 E2E, 108 baselines
   green twice, seven builds.
+
+**Deployment (measured pass 2, release `20261110T091848Z-3b6e238`):**
+- API and web restarted; `/api/health` 200.
+- Live measurements confirm the fixes: post title **35.2px at 375**, **36.96px at
+  512** and **48px at 1440** (WordPress 35.13 / 36.96 / 48); body copy 18px;
+  375px admin bar 46px. The Welcome guide is now a **312px** card, matching the
+  reference, with focus trapped inside.
+- Cleanup removed both temporary MERNPress administrators/sessions and recent
+  audit events (back to 1 user, 2 posts); the reference WordPress server was
+  stopped and its `audit-admin` user deleted.
