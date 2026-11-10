@@ -6213,3 +6213,15 @@ admin editor 45.
   Customizer and Site Editor preview iframes.
 - Gates: format/lint/typecheck 0, 1011 unit/integration, 37 E2E, 108 baselines
   green twice, seven builds.
+
+**Deployment (WordPress-alignment pass, release `20261110T085722Z-4dfeb7c`):**
+- API and web restarted; `/api/health` 200.
+- Live measurements confirm the two fixes: the Preferences modal is **750px**
+  and the Keyboard shortcuts modal **629px** (both focus-trapped), and the
+  public body copy is **18px / 25.2px line-height / weight 300** with the
+  645px measure at 1440 — the same values measured on WordPress 7.1.4.
+- At 375px the body stays 18px, the post title remains 36px (documented
+  deviation from the reference's 35.13px clamp) and `scrollWidth === 375`.
+- Cleanup removed the temporary administrator/session and recent audit events;
+  production is back to 1 user, 2 posts. The reference WordPress server was
+  stopped and its temporary `audit-admin` user deleted.
