@@ -1252,6 +1252,19 @@ export function ContentList({ user, type }: { user: AuthUser; type: ContentType 
                           >
                             <span className="dashicons dashicons-arrow-down" aria-hidden="true" />
                           </button>
+                          {/* WordPress shows the status and date under the title on
+                              phones (the other columns are hidden there). */}
+                          <span className="row-mobile-meta">
+                            {post.status === 'PUBLISHED'
+                              ? 'Published'
+                              : post.status === 'DRAFT'
+                                ? 'Draft'
+                                : 'Trashed'}
+                            {' · '}
+                            {formatWpDate(
+                              post.status === 'PUBLISHED' ? post.publishedAt : post.updatedAt,
+                            )}
+                          </span>
                           <div className="row-actions">
                             {editable ? (
                               <a

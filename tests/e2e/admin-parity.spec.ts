@@ -1237,3 +1237,34 @@ test('settings, profile and customizer keep the WordPress measurements', async (
   // WordPress 7.1.4: 300px Customizer sidebar, 46px header.
   expect(customizer).toEqual({ panelWidth: 300, headerHeight: 46 });
 });
+
+test('phone-width list rows are touch-sized like WordPress', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await login(page);
+  // This suite starts from an empty content table; create one draft so a real
+  // row can be measured.
+  await page.goto('http://127.0.0.1:5173/admin/posts/new');
+  await expect(page.getByLabel('Title', { exact: true })).toBeVisible();
+  await page.getByLabel('Title', { exact: true }).fill('Mobile row metrics');
+  await page.getByRole('button', { name: 'Save draft' }).click();
+  await expect(page.getByText('Content created.')).toBeVisible();
+  await page.goto('http://127.0.0.1:5173/admin/posts');
+  await expect(page.getByRole('heading', { level: 1, name: 'Posts' })).toBeVisible();
+  const row = page.locator('.content-table tbody tr', { hasText: 'Mobile row metrics' });
+  await expect(row).toBeVisible();
+
+  const metrics = await page.evaluate(() => {
+    const firstRow = document.querySelector('.content-table tbody tr');
+    const checkbox = firstRow?.querySelector('.check-column input[type="checkbox"]');
+    return {
+      rowHeight: firstRow ? Math.round(firstRow.getBoundingClientRect().height) : null,
+      checkboxSize: checkbox ? Math.round(checkbox.getBoundingClientRect().width) : null,
+      scrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
+    };
+  });
+  // WordPress 7.1.4 at 375: 67px rows and 25px checkboxes.
+  expect(metrics.rowHeight).toBeGreaterThanOrEqual(60);
+  expect(metrics.checkboxSize).toBe(25);
+  expect(metrics.scrollWidth).toBe(metrics.innerWidth);
+});

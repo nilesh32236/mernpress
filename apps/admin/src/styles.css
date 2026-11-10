@@ -14373,3 +14373,34 @@ button.button-link.is-danger {
   min-height: calc(24px + env(safe-area-inset-bottom, 0px));
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* WordPress list tables at phone widths: taller rows for touch (measured 67px
+   on 7.1.4) and 25px checkboxes instead of the 16px desktop size. */
+@media (max-width: 782px) {
+  .wp-list-screen .content-table tbody td,
+  .wp-list-screen .content-table tbody th {
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+
+  .wp-list-screen .content-table .check-column input[type='checkbox'] {
+    width: 25px;
+    height: 25px;
+  }
+}
+
+/* Phone-width list rows show the status and date beneath the title, the way
+   WordPress does once the other columns are hidden. */
+.row-mobile-meta {
+  display: none;
+}
+
+@media (max-width: 782px) {
+  .row-mobile-meta {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #646970;
+  }
+}

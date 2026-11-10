@@ -216,6 +216,8 @@ associated code changes. Superseded decisions stay visible.
 
 | D-138 | 2026-11-10 | Measured pass 3 against WordPress 7.1.4: Settings form-table geometry matches exactly (1238px table, 210px labels, 14px text, 40px controls, 2px radius, 40px submit), Tools cards match at 520px, Export Personal Data matches. Fixed the Profile submit height (32 → 40px) and the Customizer sidebar width (320 → 300px); a DOM contract pins all of these. Public comment typography could not be compared because the reference single template renders no comments block even with an approved comment (documented). | accepted | [design audit](docs/verification/design-audit-2026-11-05.md) |
 
+| D-139 | 2026-11-10 | Measured pass 4 at 375px against WordPress 7.1.4: phone list rows now match the reference touch density (67px vs 35px) by adding a 12px status/date line under the title (the columns WordPress shows on phones), 14px row padding and 25px checkboxes at ≤782; Profile/Personal Data/Tools widths and control heights already matched. A DOM contract pins row height ≥60px, checkbox 25px and no overflow. Media stays a documented composition difference (folder bar + toolbar vs WordPress's single 198px filter bar). | accepted | [design audit](docs/verification/design-audit-2026-11-05.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

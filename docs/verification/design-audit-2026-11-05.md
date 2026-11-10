@@ -132,6 +132,31 @@ both WordPress and the Settings panels) and the Customizer sidebar width
 geometry (210/40/14/2/40), the Profile submit height and the Customizer width so
 they cannot drift.
 
+
+## Measured pass 4 — phone-width lists, Media, Profile, Personal Data (2026-11-10)
+
+Fourth side-by-side run at 375px (reference had one imported image in its media
+library so the grid could be measured).
+
+| State | WordPress 7.1.4 | MERNPress | Result |
+| --- | --- | --- | --- |
+| Posts list row (375) | 67 px tall, row actions present, 25 px checkbox | 35 px, 16 px checkbox, actions in the chevron toggle | **fixed**: status/date meta line + 14 px row padding + 25 px checkbox at ≤782 |
+| Media grid (375) | 116x116 tiles, 198 px toolbar, 38 px view toggle | 2-up grid, folder bar + toolbar (130 px), 32 px toggles | tile/toolbar composition differs (MERNPress adds folders); documented |
+| Profile (375) | labels stacked full width, 40 px inputs, 40 px submit | same | match |
+| Export Personal Data (375) | table 353 px, 40 px input | 355 px content width, 40 px input | match |
+| Tools (375) | card 353 px | card 355 px | match |
+| Backups / Scheduled Actions | not in core | present | **addition** |
+| All phone screens | scrollWidth = innerWidth = 375 | same | match |
+
+The phone list row now matches WordPress's touch density: a 12 px
+status/date line under the title (the columns WordPress shows there), 14 px
+vertical padding and 25 px checkboxes. A DOM contract pins row height ≥ 60 px,
+checkbox size 25 px and no horizontal overflow.
+
+Media remains a documented composition difference: WordPress's toolbar is a
+single 198 px filter bar, MERNPress has a folder bar plus a toolbar because it
+ships virtual folders; the grid is 2-up at phone widths in both.
+
 ## Remaining deviations (deliberate)
 
 | Deviation | Reason |

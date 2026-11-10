@@ -6286,3 +6286,19 @@ admin editor 45.
 - Cleanup removed the temporary administrator/session and recent audit events
   (back to 1 user, 2 posts); the reference WordPress server was stopped and its
   `audit-admin` user and audit comment deleted.
+
+### 2026-11-10 — Measured pass 4: phone list density, Media, Profile, Personal Data
+
+- 375px comparison against WordPress 7.1.4: Profile labels stack with 40px
+  inputs and a 40px submit, Export Personal Data is 353px with 40px inputs and
+  Tools cards are 353px wide — all match. Media differs in composition
+  (MERNPress ships a folder bar plus toolbar; WordPress has one 198px filter
+  bar) and is documented.
+- Fixed the phone list row: WordPress rows are 67px and use 25px checkboxes;
+  MERNPress was 35px with 16px checkboxes. Added a 12px status/date line under
+  the title (the columns WordPress shows on phones), 14px vertical padding and
+  25px checkboxes at ≤782.
+- New `admin-parity` contract: row height ≥60px, checkbox 25px, no horizontal
+  overflow at 375.
+- Gates: format/lint/typecheck 0, 1011 unit/integration, 39 E2E, 108 baselines
+  green twice, seven builds.
