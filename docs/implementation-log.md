@@ -6453,3 +6453,32 @@ admin editor 45.
   stylesheet.
 - The toggle's label is briefly "Switch to dark mode" for a dark-OS visitor
   without a cookie; the palette itself is correct on the first byte.
+
+**Deployment (colour scheme + hover menu, release `20261112T140330Z-42c5da9`):**
+- Built from `42c5da9` (7/7 tasks, no cache), API and web restarted; `/api/health`
+  200.
+- **The writable theme store refreshed itself on API start**: the release ships
+  theme manifests at version 1.1.0 (dark palettes), and the store now replaces a
+  bundled package when the release ships a newer version. The log shows
+  `theme package refreshed from the release` for `mernpress`, `journal` and
+  `minimal`; `/opt/mernpress/themes/mernpress/theme.json` is 1.1.0 with a dark
+  palette. Without this the store would have kept the 1.0.0 manifest seeded on
+  2026-11-05 and the public site would never have received a dark palette.
+- **Public verification (live)**: with no cookie and a light OS the body is
+  `rgb(255,255,255)` and no `data-color-scheme` attribute is set; clicking the
+  header switch sets `data-color-scheme="dark"`, writes
+  `mernpress_color_scheme=dark; path=/; SameSite=Lax`, paints
+  `rgb(18,18,18)` with `rgb(232,232,232)` text, and a subsequent raw document
+  request already contains `data-color-scheme="dark"` (no flash).
+  `/api/public/site` publishes the theme's `tokens.dark`. On a live post the
+  comment form follows the palette (input `rgb(22,22,22)`/`rgb(242,242,242)`,
+  submit inverted). The consent banner keeps its WordPress chrome colours, as
+  documented.
+- **Admin verification (live)**: collapsed the menu, moved the pointer away and
+  blurred: the labels are hidden and the rail keeps its icons. Hovering the
+  rail reveals the panel at x=0..196 with the labels starting at x=36 (the
+  rail's right edge) and the document does not widen (`scrollWidth` 1440 =
+  `innerWidth`). Leaving and blurring hides it again.
+- Cleanup: the temporary administrator, its session and audit rows were
+  deleted (1 user, 1 session); the two superseded releases were pruned (17 GB
+  free).
