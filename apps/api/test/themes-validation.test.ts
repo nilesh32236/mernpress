@@ -1,4 +1,12 @@
-import { mkdtempSync, readFileSync, rmSync, existsSync, readdirSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  existsSync,
+  readdirSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -52,6 +60,52 @@ describe('theme manifest validation', () => {
     expect(inject({ headerAlign: 'justify' })).toBeNull();
   });
 
+  it('accepts an optional dark palette and exposes it', () => {
+    const dark = {
+      background: '#121212',
+      surface: '#1c1c1c',
+      text: '#e8e8e8',
+      muted: '#a1a1a1',
+      accent: '#7aa7ff',
+    };
+    const tokens = { ...baseManifest().tokens, dark };
+    const validated = validateThemeManifest(baseManifest({ tokens }));
+    expect(validated?.tokens.dark).toEqual(dark);
+  });
+
+  it('keeps the manifest valid when no dark palette is declared', () => {
+    const validated = validateThemeManifest(baseManifest());
+    expect(validated).not.toBeNull();
+    expect(validated?.tokens.dark).toBeUndefined();
+  });
+
+  it('rejects a malformed dark palette instead of half-dark themes', () => {
+    const withDark = (dark: Record<string, unknown>) =>
+      validateThemeManifest(baseManifest({ tokens: { ...baseManifest().tokens, dark } }));
+    // A missing colour, a non-hex colour and a CSS injection are all rejected.
+    expect(
+      withDark({ background: '#121212', surface: '#1c1c1c', text: '#e8e8e8', muted: '#a1a1a1' }),
+    ).toBeNull();
+    expect(
+      withDark({
+        background: '#121212',
+        surface: '#1c1c1c',
+        text: '#e8e8e8',
+        muted: '#a1a1a1',
+        accent: 'red; background-image: url(https://evil/x)',
+      }),
+    ).toBeNull();
+    expect(
+      withDark({
+        background: '#121212',
+        surface: '#1c1c1c',
+        text: '#e8e8e8',
+        muted: '#a1a1a1',
+        accent: 'var(--x)',
+      }),
+    ).toBeNull();
+  });
+
   it('rejects traversal, remote screenshots and bad identifiers', () => {
     expect(validateThemeManifest(baseManifest({ screenshot: '/../etc/passwd' }))).toBeNull();
     expect(
@@ -75,6 +129,75 @@ describe('theme manifest validation', () => {
 });
 
 describe('theme store seeding', () => {
+  it('refreshes a bundled theme when the release ships a newer version', async () => {
+    const storeDir = mkdtempSync(path.join(tmpdir(), 'mernpress-theme-refresh-'));
+    const seedDir = mkdtempSync(path.join(tmpdir(), 'mernpress-theme-seed-'));
+    try {
+      const writeTheme = (dir: string, version: string, background: string) => {
+        mkdirSync(path.join(dir, 'sample'), { recursive: true });
+        writeFileSync(
+          path.join(dir, 'sample', 'theme.json'),
+          JSON.stringify({
+            ...baseManifest(),
+            id: 'sample',
+            version,
+            tokens: { ...baseManifest().tokens, background },
+          }),
+        );
+      };
+      // Installed 1.0.0 has no dark palette; the release ships 1.1.0 with one.
+      writeTheme(storeDir, '1.0.0', '#ffffff');
+      writeFileSync(path.join(storeDir, '.initialized'), 'seeded\n');
+      writeTheme(seedDir, '1.1.0', '#101010');
+
+      await seedThemeStore({ storeDir, seedDir });
+
+      const installed = JSON.parse(
+        readFileSync(path.join(storeDir, 'sample', 'theme.json'), 'utf8'),
+      ) as { version: string; tokens: { background: string } };
+      expect(installed.version).toBe('1.1.0');
+      expect(installed.tokens.background).toBe('#101010');
+    } finally {
+      rmSync(storeDir, { recursive: true, force: true });
+      rmSync(seedDir, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps an installed theme that is not older than the release', async () => {
+    const storeDir = mkdtempSync(path.join(tmpdir(), 'mernpress-theme-keep-'));
+    const seedDir = mkdtempSync(path.join(tmpdir(), 'mernpress-theme-keepseed-'));
+    try {
+      const writeTheme = (dir: string, version: string, background: string) => {
+        mkdirSync(path.join(dir, 'sample'), { recursive: true });
+        writeFileSync(
+          path.join(dir, 'sample', 'theme.json'),
+          JSON.stringify({
+            ...baseManifest(),
+            id: 'sample',
+            version,
+            tokens: { ...baseManifest().tokens, background },
+          }),
+        );
+      };
+      // The installed copy is newer than the bundled one (for example a future
+      // package the operator installed): it must not be downgraded.
+      writeTheme(storeDir, '2.0.0', '#222222');
+      writeFileSync(path.join(storeDir, '.initialized'), 'seeded\n');
+      writeTheme(seedDir, '1.9.0', '#101010');
+
+      await seedThemeStore({ storeDir, seedDir });
+
+      const installed = JSON.parse(
+        readFileSync(path.join(storeDir, 'sample', 'theme.json'), 'utf8'),
+      ) as { version: string; tokens: { background: string } };
+      expect(installed.version).toBe('2.0.0');
+      expect(installed.tokens.background).toBe('#222222');
+    } finally {
+      rmSync(storeDir, { recursive: true, force: true });
+      rmSync(seedDir, { recursive: true, force: true });
+    }
+  });
+
   it('retries a failed seed instead of marking the store complete', async () => {
     const storeDir = mkdtempSync(path.join(tmpdir(), 'mernpress-theme-store-'));
     try {

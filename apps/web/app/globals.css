@@ -6,16 +6,72 @@
 
 :root {
   --content-width: 645px;
-  --site-text: #111111;
-  --site-muted: #686868;
+
+  /* Colour scheme.
+
+     The active theme publishes a light and a dark palette as inline custom
+     properties on <html> (--theme-light-* / --theme-dark-*), so the palette
+     follows the theme instead of being hard-coded here. `light-dark()`
+     resolves against the used colour scheme, which means one attribute on
+     <html> switches the whole site. The declaration before each `light-dark()`
+     call is the fallback for browsers without support (they stay light). */
+  color-scheme: light dark;
+
+  --site-text: var(--theme-light-text, #111111);
+  --site-text: light-dark(var(--theme-light-text, #111111), var(--theme-dark-text, #e8e8e8));
+  --site-muted: var(--theme-light-muted, #686868);
+  --site-muted: light-dark(var(--theme-light-muted, #686868), var(--theme-dark-muted, #a1a1a1));
+  --site-accent: var(--theme-light-accent, #111111);
+  --site-accent: light-dark(var(--theme-light-accent, #111111), var(--theme-dark-accent, #7aa7ff));
+  --site-bg: var(--theme-light-bg, #ffffff);
+  --site-bg: light-dark(var(--theme-light-bg, #ffffff), var(--theme-dark-bg, #121212));
+  --site-surface: var(--theme-light-surface, #ffffff);
+  --site-surface: light-dark(
+    var(--theme-light-surface, #ffffff),
+    var(--theme-dark-surface, #1c1c1c)
+  );
+
+  /* Derived tokens: site-owned colours that are not theme tokens but still
+     have to follow the palette (borders, code blocks, form controls, …). */
   --site-border: #dddddd;
+  --site-border: light-dark(#dddddd, #3a3a3a);
   --site-accent-6: rgba(17, 17, 17, 0.2);
-  --site-bg: #ffffff;
-  --site-surface: #ffffff;
-  --site-accent: #111111;
-  --site-heading-font: var(--font-manrope), Manrope, sans-serif;
-  --site-body-font: var(--font-manrope), Manrope, sans-serif;
+  --site-accent-6: light-dark(rgba(17, 17, 17, 0.2), rgba(255, 255, 255, 0.24));
+  --site-code-bg: #f5f5f5;
+  --site-code-bg: light-dark(#f5f5f5, #1d1d1d);
+  --site-input-bg: #ffffff;
+  --site-input-bg: light-dark(#ffffff, #161616);
+  --site-input-text: #000000;
+  --site-input-text: light-dark(#000000, #f2f2f2);
+  --site-input-border: rgba(17, 17, 17, 0.2);
+  --site-input-border: light-dark(rgba(17, 17, 17, 0.2), rgba(255, 255, 255, 0.24));
+  --site-inverse-bg: #111111;
+  --site-inverse-bg: light-dark(#111111, #f2f2f2);
+  --site-inverse-text: #ffffff;
+  --site-inverse-text: light-dark(#ffffff, #111111);
+  --site-focus-ring: #686868;
+  --site-focus-ring: light-dark(#686868, #9aa0a6);
+  --site-error: #b32d2e;
+  --site-error: light-dark(#b32d2e, #f86368);
+  --site-avatar-bg: #f0f0f1;
+  --site-avatar-bg: light-dark(#f0f0f1, #2b2b2b);
+  --site-avatar-text: #50575e;
+  --site-avatar-text: light-dark(#50575e, #c3c4c7);
+
+  --site-heading-font: var(--theme-heading-font, var(--font-manrope), Manrope, sans-serif);
+  --site-body-font: var(--theme-body-font, var(--font-manrope), Manrope, sans-serif);
   --site-radius: 0px;
+}
+
+/* An explicit visitor choice pins the scheme. Without the attribute the
+   stylesheet follows the operating system preference through the
+   `color-scheme: light dark` declaration above. */
+:root[data-color-scheme='light'] {
+  color-scheme: light;
+}
+
+:root[data-color-scheme='dark'] {
+  color-scheme: dark;
 }
 
 *,
@@ -82,7 +138,7 @@ a:hover {
   z-index: 100;
   padding: 8px 16px;
   background: var(--site-text);
-  color: #ffffff;
+  color: var(--site-inverse-text);
   font-size: 16px;
 }
 
@@ -115,6 +171,62 @@ a:hover {
   font-size: 18px;
   font-weight: 300;
   line-height: 1.4;
+}
+
+/* The navigation and the colour switch share the right-hand side of the
+   header, so the navigation keeps the edge it had before the switch existed. */
+.site-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* Light/dark switch. It sits in the header next to the navigation and keeps
+   the same quiet typography as the rest of the site chrome. Its height stays
+   below the site title's, so the header keeps its measured 71px. */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  padding: 4px 12px;
+  border: 1px solid var(--site-accent-6);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--site-text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.theme-toggle:hover {
+  border-color: var(--site-text);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--site-focus-ring);
+  outline-offset: 2px;
+}
+
+.theme-toggle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-toggle-icon svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+.theme-toggle-text {
+  white-space: nowrap;
 }
 
 /* Main column. */
@@ -377,7 +489,7 @@ a:hover {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   padding: 30px;
-  background: #f5f5f5;
+  background: var(--site-code-bg);
 }
 
 .entry-content table {
@@ -566,6 +678,29 @@ a:hover {
     padding: 20px 24px;
   }
 
+  /* On narrow screens the switch keeps its icon only; the accessible name
+     stays on the button. */
+  .theme-toggle {
+    padding: 4px 8px;
+  }
+
+  .site-header-actions {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  .theme-toggle-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   /* A wrapped row keeps its 24px row gap; the navigation may itself wrap when
      the site has several page links. */
   .site-nav {
@@ -728,10 +863,10 @@ a:hover {
   height: auto;
   margin: 0;
   padding: 8px 25px;
-  border: 1px solid rgba(17, 17, 17, 0.2);
+  border: 1px solid var(--site-input-border);
   border-radius: 3.125rem;
-  background: #fff;
-  color: #000;
+  background: var(--site-input-bg);
+  color: var(--site-input-text);
   font-family: inherit;
   font-size: 1.125rem;
   font-weight: inherit;
@@ -746,7 +881,7 @@ a:hover {
 }
 
 .search-form-input:focus {
-  outline: 2px solid #686868;
+  outline: 2px solid var(--site-focus-ring);
   outline-offset: 2px;
 }
 
@@ -758,8 +893,8 @@ a:hover {
   padding: 1rem 2.25rem;
   border: 0;
   border-radius: 3.125rem;
-  background: #111;
-  color: #fff;
+  background: var(--site-inverse-bg);
+  color: var(--site-inverse-text);
   font-family: inherit;
   font-size: 1.125rem;
   font-weight: 300;
@@ -770,11 +905,11 @@ a:hover {
 }
 
 .search-form-button:hover {
-  background: color-mix(in srgb, #111 85%, transparent);
+  background: color-mix(in srgb, var(--site-inverse-bg) 85%, transparent);
 }
 
 .search-form-button:focus-visible {
-  outline: 2px solid #686868;
+  outline: 2px solid var(--site-focus-ring);
   outline-offset: 2px;
 }
 
@@ -1061,8 +1196,8 @@ html.has-public-admin-bar {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: #f0f0f1;
-  color: #50575e;
+  background: var(--site-avatar-bg);
+  color: var(--site-avatar-text);
   font-size: 18px;
   font-weight: 600;
   flex: 0 0 auto;
@@ -1168,8 +1303,8 @@ html.has-public-admin-bar {
   padding: 14px;
   border: 1px solid var(--site-accent-6);
   border-radius: 0.25rem;
-  background: #fff;
-  color: #000;
+  background: var(--site-input-bg);
+  color: var(--site-input-text);
   font: inherit;
   font-size: 18px;
   line-height: 1.4;
@@ -1190,7 +1325,7 @@ html.has-public-admin-bar {
 }
 
 .comment-error {
-  color: #b32d2e;
+  color: var(--site-error);
   font-size: 14px;
 }
 
@@ -1199,8 +1334,8 @@ html.has-public-admin-bar {
   padding: 1rem 2.25rem;
   border: 0;
   border-radius: 9999px;
-  background: #111;
-  color: #fff;
+  background: var(--site-inverse-bg);
+  color: var(--site-inverse-text);
   font: inherit;
   font-size: 18px;
   font-weight: 300;
@@ -1209,7 +1344,7 @@ html.has-public-admin-bar {
 }
 
 .form-submit .submit:hover:not(:disabled) {
-  background: color-mix(in srgb, #111 85%, transparent);
+  background: color-mix(in srgb, var(--site-inverse-bg) 85%, transparent);
 }
 
 .form-submit .submit:disabled {
@@ -1246,6 +1381,11 @@ html.has-public-admin-bar {
 [data-layout='journal'] .site-nav {
   gap: 22px;
   font-size: 16px;
+}
+
+[data-layout='journal'] .theme-toggle {
+  margin-top: 4px;
+  font-size: 14px;
 }
 
 [data-layout='journal'] .site-main {
@@ -1324,7 +1464,7 @@ html.has-public-admin-bar {
 }
 
 .post-password-error {
-  color: #b32d2e;
+  color: var(--site-error);
 }
 
 /* Single post: related posts (same category, fallback newest). */

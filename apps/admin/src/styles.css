@@ -789,50 +789,6 @@ a.nav-sublink.is-active:hover {
   position: relative;
 }
 
-.wp-shell.sidebar-collapsed .rail-flyout {
-  display: none;
-  position: absolute;
-  left: 52px;
-  top: 0;
-  z-index: 60;
-  min-width: 190px;
-  padding: 4px 0;
-  border: 1px solid #3c434a;
-  border-radius: 0 6px 6px 0;
-  background: var(--wp-sidebar-deep);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
-}
-
-.wp-shell.sidebar-collapsed .nav-item:hover .rail-flyout,
-.wp-shell.sidebar-collapsed .nav-item:focus-within .rail-flyout {
-  display: block;
-}
-
-.rail-flyout-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  padding: 8px 14px;
-  border-bottom: 1px solid rgba(60, 67, 74, 0.7);
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.rail-flyout-link {
-  display: block;
-  padding: 6px 14px;
-  color: #c3c4c7;
-  font-size: 13px;
-}
-
-.rail-flyout-link.is-active {
-  background: var(--wp-sidebar-hover);
-  color: #ffffff;
-  font-weight: 600;
-}
-
 .sidebar-footer {
   margin-top: auto;
   padding: 12px;
@@ -2634,10 +2590,6 @@ a.glance-chip:hover {
   .wp-shell.sidebar-collapsed .nav-link {
     justify-content: flex-start;
     padding: 10px 4px 10px 8px;
-  }
-
-  .wp-shell.sidebar-collapsed .rail-flyout {
-    display: none !important;
   }
 
   .wp-shell.sidebar-open .sidebar-backdrop {
@@ -14410,4 +14362,78 @@ button.button-link.is-danger {
    page edge, like WordPress's full-screen Site Editor. */
 .wp-shell.editor-mode .site-editor {
   inset: var(--wp-admin-bar-h) 0 0 0;
+}
+
+/* ==========================================================================
+   Hover-revealed admin menu.
+
+   With the sidebar collapsed the shell keeps a 36px icon rail in flow. On
+   pointer devices, hovering (or focusing) the rail reveals the full menu in a
+   panel to the *right* of the rail; the panel is hidden again as soon as the
+   pointer leaves, so it never permanently covers the content. Touch devices
+   keep the tap-to-open behaviour and the existing collapse toggle stays the
+   keyboard-accessible way to expand the menu.
+   ========================================================================== */
+
+.admin-sidebar-panel {
+  display: contents;
+}
+
+@media (hover: hover) and (pointer: fine) and (min-width: 1024px) {
+  .wp-shell.sidebar-collapsed .admin-sidebar {
+    /* The rail must not clip the revealed panel. */
+    overflow: visible;
+  }
+
+  .wp-shell.sidebar-collapsed .admin-sidebar-panel {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 60;
+    width: 196px;
+    padding-top: 12px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--wp-sidebar);
+    border-right: 1px solid var(--wp-sidebar-border);
+    box-shadow: 12px 0 28px rgba(0, 0, 0, 0.18);
+    /* Only the 36px icon rail is painted until the pointer arrives. The clip
+       does not affect layout, so revealing the menu never widens the page. */
+    clip-path: inset(0 160px 0 0);
+    transition: clip-path 140ms ease;
+  }
+
+  .wp-shell.sidebar-collapsed .admin-sidebar:hover .admin-sidebar-panel,
+  .wp-shell.sidebar-collapsed .admin-sidebar:focus-within .admin-sidebar-panel {
+    clip-path: inset(0);
+  }
+
+  /* The icons keep their 36px slot, so the menu opens without the rail
+     shifting sideways. */
+  .wp-shell.sidebar-collapsed .nav-link {
+    justify-content: flex-start;
+    padding: 10px 0;
+  }
+
+  /* The revealed panel shows the full menu, so the rail-only labels and the
+     sub-menus come back. */
+  .wp-shell.sidebar-collapsed .admin-sidebar:hover .nav-link-text,
+  .wp-shell.sidebar-collapsed .admin-sidebar:focus-within .nav-link-text,
+  .wp-shell.sidebar-collapsed .admin-sidebar:hover .nav-submenu,
+  .wp-shell.sidebar-collapsed .admin-sidebar:focus-within .nav-submenu,
+  .wp-shell.sidebar-collapsed .admin-sidebar:hover .nav-chevron,
+  .wp-shell.sidebar-collapsed .admin-sidebar:focus-within .nav-chevron,
+  .wp-shell.sidebar-collapsed .admin-sidebar:hover .collapse-label,
+  .wp-shell.sidebar-collapsed .admin-sidebar:focus-within .collapse-label {
+    display: revert;
+  }
+
+  .wp-shell.sidebar-collapsed .admin-sidebar:hover .collapse-toggle,
+  .wp-shell.sidebar-collapsed .admin-sidebar:focus-within .collapse-toggle {
+    justify-content: flex-start;
+    padding: 0 12px;
+  }
 }

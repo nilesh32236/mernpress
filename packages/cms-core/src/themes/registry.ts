@@ -21,6 +21,20 @@ export interface ThemeTokens {
   contentWidth: string;
   radius: string;
   headerAlign: 'left' | 'center';
+  /**
+   * Optional dark palette. When present the public site can offer a
+   * light/dark switch; the values replace the five colour tokens in dark mode.
+   */
+  dark?: ThemeDarkTokens | undefined;
+}
+
+/** The five colours a theme may override for the dark palette. */
+export interface ThemeDarkTokens {
+  background: string;
+  surface: string;
+  text: string;
+  muted: string;
+  accent: string;
 }
 
 export interface ThemeFont {
@@ -69,6 +83,26 @@ const FONT_STACK_PATTERN = /^[A-Za-z0-9 _,'"()\-.,%]+$/;
 /** Bundled screenshot assets only: a rooted file name, no traversal or scheme. */
 const SCREENSHOT_PATTERN = /^\/[A-Za-z0-9._-]+$/;
 
+/**
+ * Validate the optional dark palette. A present but malformed palette rejects
+ * the manifest instead of silently falling back to a half-dark theme.
+ */
+function darkTokenGroup(value: unknown): ThemeDarkTokens | null | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== 'object' || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  const background = text(record['background'], 60);
+  const surface = text(record['surface'], 60);
+  const color = text(record['text'], 60);
+  const muted = text(record['muted'], 60);
+  const accent = text(record['accent'], 60);
+  if (!background || !surface || !color || !muted || !accent) return null;
+  if (![background, surface, color, muted, accent].every((token) => COLOR_PATTERN.test(token))) {
+    return null;
+  }
+  return { background, surface, text: color, muted, accent };
+}
+
 function tokenGroup(value: unknown): ThemeTokens | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
   const record = value as Record<string, unknown>;
@@ -106,6 +140,8 @@ function tokenGroup(value: unknown): ThemeTokens | null {
   ) {
     return null;
   }
+  const dark = darkTokenGroup(record['dark']);
+  if (dark === null) return null;
   return {
     background,
     surface,
@@ -117,6 +153,7 @@ function tokenGroup(value: unknown): ThemeTokens | null {
     contentWidth,
     radius,
     headerAlign: headerAlign as ThemeTokens['headerAlign'],
+    ...(dark ? { dark } : {}),
   };
 }
 
@@ -208,19 +245,58 @@ export interface ThemeStoreOptions {
   logger?: (message: string, meta?: Record<string, unknown>) => void;
 }
 
-/** Seed the theme store exactly once (marker-guarded, like the plugin store). */
+/** Stores already verified against the release seed in this process. */
+const verifiedThemeStores = new Set<string>();
+
+/** Compare dotted numeric versions so 1.10.0 sorts after 1.9.0. */
+function compareVersions(left: string, right: string): number {
+  const a = left.split('.');
+  const b = right.split('.');
+  for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
+    const difference =
+      (Number.parseInt(a[index] ?? '0', 10) || 0) - (Number.parseInt(b[index] ?? '0', 10) || 0);
+    if (difference !== 0) return difference;
+  }
+  return 0;
+}
+
+/** The version declared by a theme package, or null when it cannot be read. */
+async function themeVersion(dir: string): Promise<string | null> {
+  try {
+    const raw = await fs.readFile(path.join(dir, 'theme.json'), 'utf8');
+    const parsed = JSON.parse(raw) as { version?: unknown };
+    return typeof parsed.version === 'string' ? parsed.version : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Seed the theme store (marker-guarded, like the plugin store) and keep the
+ * bundled themes current.
+ *
+ * A release can add or change fields in a bundled manifest (the dark palette,
+ * for example). The store is writable, so a package that was seeded once would
+ * otherwise pin the old manifest forever. Theme packages cannot be edited in
+ * the admin (the file editors are excluded by decision), so replacing an older
+ * bundled version cannot overwrite an operator's work. The check runs on every
+ * manifest read, so the result is memoised per process.
+ */
 export async function seedThemeStore({
   storeDir,
   seedDir,
   logger,
 }: ThemeStoreOptions): Promise<void> {
+  if (verifiedThemeStores.has(storeDir)) return;
+
+  let seeded = true;
   try {
     await fs.access(path.join(storeDir, STORE_MARKER));
-    return;
   } catch {
-    // Not seeded yet.
+    seeded = false;
   }
-  await fs.mkdir(storeDir, { recursive: true });
+  if (!seeded) await fs.mkdir(storeDir, { recursive: true });
+
   let entries: Dirent[] = [];
   let complete = true;
   try {
@@ -232,14 +308,20 @@ export async function seedThemeStore({
   for (const entry of entries) {
     if (!entry.isDirectory() || entry.name.startsWith('.')) continue;
     const destination = path.join(storeDir, entry.name);
-    try {
-      await fs.access(destination);
-      continue;
-    } catch {
-      // Copy the bundled package.
+    if (seeded) {
+      const [seedVersion, installedVersion] = await Promise.all([
+        themeVersion(path.join(seedDir, entry.name)),
+        themeVersion(destination),
+      ]);
+      // No newer bundled version: keep the installed package untouched.
+      if (!seedVersion) continue;
+      if (installedVersion && compareVersions(seedVersion, installedVersion) <= 0) continue;
     }
     try {
-      await fs.cp(path.join(seedDir, entry.name), destination, { recursive: true });
+      await fs.cp(path.join(seedDir, entry.name), destination, { recursive: true, force: true });
+      if (seeded) {
+        logger?.('theme package refreshed from the release', { theme: entry.name });
+      }
     } catch (error) {
       complete = false;
       logger?.('theme seed copy failed', {
@@ -252,11 +334,14 @@ export async function seedThemeStore({
   // missing seed directory) is retried on the next start instead of leaving a
   // permanently half-seeded store.
   if (!complete) return;
-  await fs.writeFile(
-    path.join(storeDir, STORE_MARKER),
-    `seeded ${new Date().toISOString()}\n`,
-    'utf8',
-  );
+  if (!seeded) {
+    await fs.writeFile(
+      path.join(storeDir, STORE_MARKER),
+      `seeded ${new Date().toISOString()}\n`,
+      'utf8',
+    );
+  }
+  verifiedThemeStores.add(storeDir);
 }
 
 /** Read every valid theme manifest from the store. */

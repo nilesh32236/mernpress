@@ -1422,76 +1422,80 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
           aria-label="Primary navigation"
           ref={sidebarRef}
         >
-          <nav className="sidebar-nav" aria-label="Primary">
-            <ul>
-              {visibleItems.map((item) => {
-                const hasSubs = item.subs.length > 0;
-                return (
-                  <li
-                    key={item.to + item.label}
-                    className={`nav-item${item.active ? ' is-active' : ''}${railMode && !mobileOpen ? ' rail-item' : ''}`}
-                  >
-                    <div className="nav-row">
-                      <a
-                        className={`nav-link${item.active ? ' nav-link-active' : ''}`}
-                        href={item.to}
-                        aria-current={item.active ? 'page' : undefined}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          go(item.subs[0]?.to ?? item.to);
-                        }}
-                        title={railMode && !mobileOpen ? item.label : undefined}
-                      >
-                        <span className="nav-icon" aria-hidden="true">
-                          {item.icon}
-                        </span>
-                        <span className="nav-link-text">{item.label}</span>
-                        {item.badge ? <span className="nav-badge">{item.badge}</span> : null}
-                      </a>
-                    </div>
-                    {hasSubs && !(railMode && !mobileOpen) ? (
-                      <ul className="nav-submenu">
-                        {item.subs.map((sub) => (
-                          <li key={sub.label}>
-                            <a
-                              className={`nav-sublink${sub.active ? ' is-active' : ''}`}
-                              href={sub.to}
-                              aria-current={sub.active ? 'page' : undefined}
-                              onClick={(event) => {
-                                event.preventDefault();
-                                go(sub.to);
-                              }}
-                            >
-                              <span>{sub.label}</span>
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-          <button
-            type="button"
-            className="collapse-toggle"
-            aria-label={railMode ? 'Expand Menu' : 'Collapse Menu'}
-            title={railMode ? 'Expand Menu' : 'Collapse Menu'}
-            onClick={() => {
-              if (!mobileOpen) {
-                setCollapsed((value) => !value);
-              } else {
-                setMobileOpen(false);
-              }
-            }}
-          >
-            <span className="collapse-label">{mobileOpen ? 'Close Menu' : 'Collapse Menu'}</span>
-            <span
-              className={`dashicons dashicons-collapse collapse-glyph${railMode && !mobileOpen ? ' is-collapsed' : ''}`}
-              aria-hidden="true"
-            />
-          </button>
+          {/* The panel is a separate layer so the collapsed rail can reveal the
+              full menu to its right on hover (desktop, pointer devices). */}
+          <div className="admin-sidebar-panel">
+            <nav className="sidebar-nav" aria-label="Primary">
+              <ul>
+                {visibleItems.map((item) => {
+                  const hasSubs = item.subs.length > 0;
+                  return (
+                    <li
+                      key={item.to + item.label}
+                      className={`nav-item${item.active ? ' is-active' : ''}${railMode && !mobileOpen ? ' rail-item' : ''}`}
+                    >
+                      <div className="nav-row">
+                        <a
+                          className={`nav-link${item.active ? ' nav-link-active' : ''}`}
+                          href={item.to}
+                          aria-current={item.active ? 'page' : undefined}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            go(item.subs[0]?.to ?? item.to);
+                          }}
+                          title={railMode && !mobileOpen ? item.label : undefined}
+                        >
+                          <span className="nav-icon" aria-hidden="true">
+                            {item.icon}
+                          </span>
+                          <span className="nav-link-text">{item.label}</span>
+                          {item.badge ? <span className="nav-badge">{item.badge}</span> : null}
+                        </a>
+                      </div>
+                      {hasSubs ? (
+                        <ul className="nav-submenu">
+                          {item.subs.map((sub) => (
+                            <li key={sub.label}>
+                              <a
+                                className={`nav-sublink${sub.active ? ' is-active' : ''}`}
+                                href={sub.to}
+                                aria-current={sub.active ? 'page' : undefined}
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  go(sub.to);
+                                }}
+                              >
+                                <span>{sub.label}</span>
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
+            <button
+              type="button"
+              className="collapse-toggle"
+              aria-label={railMode ? 'Expand Menu' : 'Collapse Menu'}
+              title={railMode ? 'Expand Menu' : 'Collapse Menu'}
+              onClick={() => {
+                if (!mobileOpen) {
+                  setCollapsed((value) => !value);
+                } else {
+                  setMobileOpen(false);
+                }
+              }}
+            >
+              <span className="collapse-label">{mobileOpen ? 'Close Menu' : 'Collapse Menu'}</span>
+              <span
+                className={`dashicons dashicons-collapse collapse-glyph${railMode && !mobileOpen ? ' is-collapsed' : ''}`}
+                aria-hidden="true"
+              />
+            </button>
+          </div>
         </aside>
 
         <div className="admin-main">

@@ -573,3 +573,42 @@ Regression caught by this reconciliation: gating `/api/admin/health` on
 `manage_options` made the editor dashboard request it and log two console 403s
 (e2e `content.spec`); the dashboard now hides the Site Health widget and skips
 the request for non-administrators.
+
+## Public colour scheme and admin hover menu pass (2026-11-12)
+
+Two owner-requested features were measured against the running system rather
+than only described.
+
+### Public light/dark switch (ADR 0064)
+
+| Property | WordPress 7.1.4 / Twenty Twenty-Five | MERNPress after this pass |
+| --- | --- | --- |
+| Public dark mode | none (the reference has no public colour scheme) | theme-owned dark palette, OS-aware by default, explicit choice in a cookie |
+| Palette source | — | `theme.json` → `tokens.dark`, validated like every other token |
+| First paint | — | the cookie is read during SSR, so the first byte already carries `data-color-scheme` |
+| Switch control | — | one button in the site header, label from the theme strings |
+
+Measured in Chromium: with the OS preference "light" the body paints the
+theme's light background, with "dark" the theme's dark background, and the
+explicit `data-color-scheme="light"` / `"dark"` attribute overrides the OS in
+both directions. The switch is a documented difference from the reference, not
+a parity gap.
+
+Deviations kept deliberately: authored inline colours in post content do not
+flip (they are the author's markup), the customizer overrides the light
+palette only, and the WordPress chrome (public admin bar, consent banner,
+language switcher) keeps its own colours.
+
+### Admin hover-revealed menu
+
+| State | WordPress folded admin menu | MERNPress after this pass |
+| --- | --- | --- |
+| Collapsed rail | 36px icon column | 36px icon column (unchanged) |
+| Hover | a flyout for the hovered item | the full menu — labels and sub-menus — in a panel to the right of the rail |
+| Panel lifetime | until the pointer leaves | until the pointer leaves; the panel is clipped, so the document never grows |
+| Keyboard | the collapse toggle expands the menu | unchanged (the toggle stays the accessible way to expand) |
+
+The first implementation revealed the panel but also hid the rail icons with
+it, which left an empty column to hover. The panel now paints the icon rail
+through a `clip-path`, so the icons stay exactly where they were and the menu
+opens beside them.

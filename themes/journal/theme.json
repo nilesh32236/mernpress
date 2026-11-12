@@ -1,8 +1,11 @@
 {
   "id": "journal",
   "name": "MERNPress Journal",
-  "version": "1.0.0",
-  "author": { "name": "MERNPress", "url": null },
+  "version": "1.1.0",
+  "author": {
+    "name": "MERNPress",
+    "url": null
+  },
   "description": "A calm, editorial theme for long-form writing: serif headings, a warm paper background, a centred masthead and a wider measure. It uses the same block content and server renderer as the default theme, so switching is instant and nothing is rebuilt.",
   "tags": [
     "Blog",
@@ -23,8 +26,16 @@
     "Threaded comments"
   ],
   "fonts": [
-    { "family": "Georgia", "weights": [400, 700], "source": "system" },
-    { "family": "Manrope", "weights": [300, 400, 600], "source": "theme" }
+    {
+      "family": "Georgia",
+      "weights": [400, 700],
+      "source": "system"
+    },
+    {
+      "family": "Manrope",
+      "weights": [300, 400, 600],
+      "source": "theme"
+    }
   ],
   "tokens": {
     "background": "#f7f2e8",
@@ -36,6 +47,13 @@
     "bodyFont": "var(--font-manrope), Manrope, sans-serif",
     "contentWidth": "700px",
     "radius": "10px",
-    "headerAlign": "center"
+    "headerAlign": "center",
+    "dark": {
+      "background": "#16130f",
+      "surface": "#1f1a15",
+      "text": "#ece5d8",
+      "muted": "#a89c8c",
+      "accent": "#e08a6b"
+    }
   }
 }

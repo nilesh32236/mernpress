@@ -172,6 +172,7 @@ unchanged.**
 | P7-05 | Safe HTML rendering | done | P5-06 | Only sanitized `renderedContent` is injected (ADR 0007 contract); raw `content` never rendered; 31-payload XSS suite + public-route integration tests |
 | P7-06 | Cache/revalidation | partial | P7-01 | `revalidate: 60` fetch cache; preview no-store enforced. Secret revalidation webhook deferred (U-007) |
 | P7-07 | Starter theme | partial | P7-02..P7-05 | Minimal accessible readable theme (content column, focus styles, prose typography, chips). Token/theme-package system remains Phase 10 |
+| P7-08 | Public light/dark colour scheme | done | P7-07 | Theme manifests publish an optional dark palette; the layout publishes both palettes and the stylesheet switches with `light-dark()`; the visitor's choice is a cookie read during SSR (no flash); OS preference followed without a cookie. [ADR 0064](docs/adr/0064-public-colour-scheme.md) |
 
 ## Phase 8 — Editorial reliability
 

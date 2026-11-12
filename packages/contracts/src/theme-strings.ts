@@ -16,6 +16,18 @@ export const THEME_STRING_KEYS = [
   { key: 'feed', label: 'Feed link', fallback: 'Feed', max: 40 },
   { key: 'primaryNav', label: 'Primary navigation label', fallback: 'Primary', max: 60 },
   { key: 'footerNav', label: 'Footer navigation label', fallback: 'Footer', max: 60 },
+  {
+    key: 'toggleDarkMode',
+    label: 'Colour scheme: switch to dark',
+    fallback: 'Switch to dark mode',
+    max: 60,
+  },
+  {
+    key: 'toggleLightMode',
+    label: 'Colour scheme: switch to light',
+    fallback: 'Switch to light mode',
+    max: 60,
+  },
   { key: 'dateLocale', label: 'Date locale (BCP 47)', fallback: 'en-US', max: 35 },
   { key: 'writtenBy', label: 'Post meta: written by', fallback: 'Written by', max: 60 },
   { key: 'minRead', label: 'Post meta: read time suffix', fallback: 'min read', max: 40 },
@@ -180,7 +192,7 @@ export const THEME_STRING_KEYS = [
 export type ThemeStringKey = (typeof THEME_STRING_KEYS)[number]['key'];
 
 /**
- * Presentation groups for the 62 theme strings. Kept next to the keys so the
+ * Presentation groups for the theme strings. Kept next to the keys so the
  * admin and any future editor share one grouping instead of maintaining a
  * second hand-written list.
  */
@@ -198,6 +210,8 @@ export const THEME_STRING_GROUPS = [
       'primaryNav',
       'footerNav',
       'languagesLabel',
+      'toggleDarkMode',
+      'toggleLightMode',
     ],
   },
   {

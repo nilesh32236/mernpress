@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import type { CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
 import { Manrope } from 'next/font/google';
@@ -11,7 +11,9 @@ import JsonLd from '@/components/JsonLd';
 import { ViewTracker } from '@/components/ViewTracker';
 import { WebVitals } from '@/components/WebVitals';
 import { ConsentBanner, ConsentSettingsButton } from '@/components/ConsentBanner';
+import ThemeToggle from '@/components/ThemeToggle';
 import { DEFAULT_CONSENT, themeStringsFor } from '@mernpress/contracts';
+import { COLOR_SCHEME_ATTRIBUTE, COLOR_SCHEME_COOKIE, isColorScheme } from '@/lib/color-scheme';
 import { siteGraph } from '@/lib/seo';
 import { siteUrl } from '@/lib/api';
 
@@ -84,24 +86,48 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   }
   const strings = themeStringsFor(settings?.themeStrings ?? null, requestLanguage, defaultLanguage);
   const languageMenu = settings?.languageMenus?.[requestLanguage] ?? null;
+  // The colour scheme is a cookie so the server can paint the right palette on
+  // the first byte. Without an explicit choice the stylesheet follows the
+  // operating system preference (ADR 0064).
+  let colorScheme: 'light' | 'dark' | null = null;
+  try {
+    const raw = (await cookies()).get(COLOR_SCHEME_COOKIE)?.value;
+    colorScheme = isColorScheme(raw) ? raw : null;
+  } catch {
+    // Outside a request (unit tests, static rendering): follow the OS, which
+    // is what the null value means.
+  }
+  // Palettes are published as separate light/dark custom properties so the
+  // stylesheet can switch them with one attribute (ADR 0064). Writing
+  // `--site-*` inline would win over any stylesheet rule and block the switch.
   const style: Record<string, string> = {};
   if (theme) {
-    style['--site-bg'] = theme.tokens.background;
-    style['--site-surface'] = theme.tokens.surface;
-    style['--site-text'] = theme.tokens.text;
-    style['--site-muted'] = theme.tokens.muted;
-    style['--site-accent'] = theme.tokens.accent;
-    style['--site-heading-font'] = theme.tokens.headingFont;
-    style['--site-body-font'] = theme.tokens.bodyFont;
+    style['--theme-light-bg'] = theme.tokens.background;
+    style['--theme-light-surface'] = theme.tokens.surface;
+    style['--theme-light-text'] = theme.tokens.text;
+    style['--theme-light-muted'] = theme.tokens.muted;
+    style['--theme-light-accent'] = theme.tokens.accent;
+    style['--theme-heading-font'] = theme.tokens.headingFont;
+    style['--theme-body-font'] = theme.tokens.bodyFont;
     style['--content-width'] = theme.tokens.contentWidth;
     style['--site-radius'] = theme.tokens.radius;
+    const dark = theme.tokens.dark;
+    if (dark) {
+      style['--theme-dark-bg'] = dark.background;
+      style['--theme-dark-surface'] = dark.surface;
+      style['--theme-dark-text'] = dark.text;
+      style['--theme-dark-muted'] = dark.muted;
+      style['--theme-dark-accent'] = dark.accent;
+    }
   }
+  // Customizer colours are the light palette; dark mode uses the theme's own
+  // dark colours (documented in ADR 0064).
   if (customColors) {
-    if (customColors.background) style['--site-bg'] = customColors.background;
-    if (customColors.surface) style['--site-surface'] = customColors.surface;
-    if (customColors.text) style['--site-text'] = customColors.text;
-    if (customColors.muted) style['--site-muted'] = customColors.muted;
-    if (customColors.accent) style['--site-accent'] = customColors.accent;
+    if (customColors.background) style['--theme-light-bg'] = customColors.background;
+    if (customColors.surface) style['--theme-light-surface'] = customColors.surface;
+    if (customColors.text) style['--theme-light-text'] = customColors.text;
+    if (customColors.muted) style['--theme-light-muted'] = customColors.muted;
+    if (customColors.accent) style['--theme-light-accent'] = customColors.accent;
   }
   const themeStyle = Object.keys(style).length > 0 ? (style as CSSProperties) : undefined;
   const menu =
@@ -117,6 +143,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       className={manrope.variable}
       data-theme={theme?.id}
       data-layout={theme?.layout}
+      {...(colorScheme ? { [COLOR_SCHEME_ATTRIBUTE]: colorScheme } : {})}
       style={themeStyle}
     >
       <body>
@@ -147,34 +174,44 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <Link href="/" className="site-title">
             {siteTitle}
           </Link>
-          {menu ? (
-            <nav className="site-nav" aria-label={strings.primaryNav}>
-              {menu.map((item, index) =>
-                item.url.startsWith('/') ? (
-                  <Link key={`${item.url}-${index}`} href={item.url}>
-                    {item.label}
+          {/* The navigation and the colour switch share one group, so the
+              navigation keeps the right-hand edge of the header. The switch
+              comes first, so the navigation stays exactly where it was. */}
+          <div className="site-header-actions">
+            <ThemeToggle
+              darkLabel={strings.toggleDarkMode}
+              lightLabel={strings.toggleLightMode}
+              initialScheme={colorScheme}
+            />
+            {menu ? (
+              <nav className="site-nav" aria-label={strings.primaryNav}>
+                {menu.map((item, index) =>
+                  item.url.startsWith('/') ? (
+                    <Link key={`${item.url}-${index}`} href={item.url}>
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <a
+                      key={`${item.url}-${index}`}
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {item.label}
+                    </a>
+                  ),
+                )}
+              </nav>
+            ) : requestLanguage === defaultLanguage && pageLinks.length > 0 ? (
+              <nav className="site-nav" aria-label={strings.primaryNav}>
+                {pageLinks.map((page) => (
+                  <Link key={page.id} href={`/${page.slug}`}>
+                    {page.title}
                   </Link>
-                ) : (
-                  <a
-                    key={`${item.url}-${index}`}
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {item.label}
-                  </a>
-                ),
-              )}
-            </nav>
-          ) : requestLanguage === defaultLanguage && pageLinks.length > 0 ? (
-            <nav className="site-nav" aria-label={strings.primaryNav}>
-              {pageLinks.map((page) => (
-                <Link key={page.id} href={`/${page.slug}`}>
-                  {page.title}
-                </Link>
-              ))}
-            </nav>
-          ) : null}
+                ))}
+              </nav>
+            ) : null}
+          </div>
         </header>
         {children}
         <footer className="site-footer">

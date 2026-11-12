@@ -90,6 +90,14 @@ export interface PublicPost {
   terms: { categories: PublicTerm[]; tags: PublicTerm[] };
 }
 
+export interface ThemeDarkTokens {
+  background: string;
+  surface: string;
+  text: string;
+  muted: string;
+  accent: string;
+}
+
 export interface ThemeTokens {
   background: string;
   surface: string;
@@ -101,6 +109,8 @@ export interface ThemeTokens {
   contentWidth: string;
   radius: string;
   headerAlign: 'left' | 'center';
+  /** Optional dark palette; absent means the site has no dark variant. */
+  dark?: ThemeDarkTokens;
 }
 
 /** Public theme data: identity, layout variant and design tokens only. */

@@ -1303,3 +1303,63 @@ test('the Site Editor uses the full-width WordPress canvas', async ({ page }) =>
   }));
   expect(narrow.scrollWidth).toBe(narrow.innerWidth);
 });
+
+test('the collapsed admin rail reveals the menu to its right on hover', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await login(page);
+  await page.goto('http://127.0.0.1:5173/admin/posts');
+  await expect(page.getByRole('heading', { level: 1, name: 'Posts' })).toBeVisible();
+
+  const rail = page.locator('#admin-sidebar');
+  const panel = page.locator('.admin-sidebar-panel');
+  const firstLabel = panel.locator('.nav-link-text').first();
+
+  await page.getByRole('button', { name: 'Collapse Menu' }).click();
+  await expect(rail).toHaveCSS('width', '36px');
+
+  // The panel is open while the pointer is over the rail, so the pointer and
+  // the focus leave the rail before the collapsed state is asserted.
+  await page.mouse.move(1200, 700);
+  await page.evaluate(() => {
+    const active = document.activeElement;
+    if (active instanceof HTMLElement) active.blur();
+  });
+  // The rail keeps its icons; the labels only exist in the revealed panel.
+  await expect(firstLabel).toBeHidden();
+
+  await rail.hover();
+  await expect(firstLabel).toBeVisible();
+
+  const geometry = await page.evaluate(() => {
+    const railElement = document.getElementById('admin-sidebar');
+    const panelElement = document.querySelector('.admin-sidebar-panel');
+    const labelElement = document.querySelector('.admin-sidebar-panel .nav-link-text');
+    const railRect = railElement?.getBoundingClientRect();
+    const panelRect = panelElement?.getBoundingClientRect();
+    const labelRect = labelElement?.getBoundingClientRect();
+    return {
+      railLeft: railRect ? Math.round(railRect.left) : null,
+      railRight: railRect ? Math.round(railRect.right) : null,
+      panelLeft: panelRect ? Math.round(panelRect.left) : null,
+      panelRight: panelRect ? Math.round(panelRect.right) : null,
+      labelLeft: labelRect ? Math.round(labelRect.left) : null,
+      scrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
+    };
+  });
+  // The menu opens at the right edge of the rail and extends into the content
+  // area without widening the document.
+  expect(geometry.labelLeft).toBeGreaterThanOrEqual((geometry.railRight ?? 0) - 1);
+  expect(geometry.panelRight).toBeGreaterThan((geometry.railRight ?? 0) + 100);
+  expect(geometry.panelLeft).toBeLessThanOrEqual((geometry.railLeft ?? 0) + 1);
+  expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.innerWidth);
+
+  // Leaving the rail hides the menu again. The panel also stays open while it
+  // holds the focus, so the focused element is released first.
+  await page.mouse.move(1200, 700);
+  await page.evaluate(() => {
+    const active = document.activeElement;
+    if (active instanceof HTMLElement) active.blur();
+  });
+  await expect(firstLabel).toBeHidden();
+});

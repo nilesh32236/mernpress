@@ -133,6 +133,19 @@ async function settle(page: Page) {
   // when a page logs an error; it never renders in production, so hide the host
   // before capturing.
   await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+  // The Customizer renders the public site in a cross-origin iframe. Playwright
+  // cannot paint its mask over an iframe's content, so the preview ends up in
+  // the capture — wait for the frame to finish loading, otherwise the capture
+  // is taken against an empty preview whenever the web server is compiling.
+  for (const frame of page.frames()) {
+    if (frame === page.mainFrame()) continue;
+    if (frame.url() === 'about:blank') {
+      await frame
+        .waitForURL((url) => url.toString() !== 'about:blank', { timeout: 20_000 })
+        .catch(() => {});
+    }
+    await frame.waitForLoadState('load').catch(() => {});
+  }
   await page.evaluate(async () => {
     await document.fonts.ready;
     await Promise.all(

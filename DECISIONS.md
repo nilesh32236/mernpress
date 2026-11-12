@@ -226,6 +226,10 @@ associated code changes. Superseded decisions stay visible.
 
 | D-143 | 2026-11-10 | Closed the last measured block mismatch: h3 renders at the fluid body size (18.2px @375 → 22px @1440, weight 400, line-height 1.125) as in Twenty Twenty-Five, instead of a fixed 24px. The block contract now pins h2, h3, paragraph, quote, cite, pre/code, caption and table cells at 1440 plus the 375 paragraph size. | accepted | [design audit](docs/verification/design-audit-2026-11-05.md) |
 
+| D-144 | 2026-11-12 | Public light/dark colour scheme (ADR 0064). The theme manifest gains an optional `dark` palette (same five colours); a malformed dark palette rejects the manifest instead of producing a half-dark theme. The layout publishes both palettes as `--theme-light-*`/`--theme-dark-*` inline variables and the stylesheet maps them onto the semantic `--site-*` names with `light-dark()`, because an inline declaration would beat any stylesheet rule and could never be switched. The visitor's choice is the `mernpress_color_scheme` cookie, read during SSR so the first byte already carries the right palette (no flash); without a cookie the site follows the operating-system preference through `color-scheme: light dark`. The toggle is a client component whose labels come from the theme strings (`toggleDarkMode`/`toggleLightMode`). Customizer colours stay light-only. Authored inline colours in post content do not flip (documented). | accepted | [ADR 0064](docs/adr/0064-public-colour-scheme.md) |
+
+| D-145 | 2026-11-12 | The collapsed admin rail reveals the full menu in a panel to its right, on hover or focus-within only, on pointer devices. The panel is a separate layer (`.admin-sidebar-panel`) so the 36px rail can stay in flow without clipping it; the menu returns to the rail-only state as soon as the pointer leaves, touch devices keep the tap-to-open behaviour, and the collapse toggle stays the keyboard-accessible way to expand the menu. | accepted | [implementation log](docs/implementation-log.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

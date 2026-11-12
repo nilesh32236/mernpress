@@ -6402,3 +6402,54 @@ admin editor 45.
   (identical to WordPress 7.1.4) and **18.2172px** at 375, with the paragraph at
   22px. The probe post was removed after measuring; production is back to
   1 user, 2 posts.
+
+### 2026-11-12 — Public light/dark colour scheme (ADR 0064) and hover-revealed admin menu
+
+**Public colour scheme**
+
+- The theme manifest gained an optional `dark` palette (the same five colours as
+  the light one). A present but malformed dark palette rejects the manifest
+  instead of producing a half-dark theme; all three bundled themes ship a dark
+  palette.
+- The layout publishes **both** palettes as inline custom properties
+  (`--theme-light-*`, `--theme-dark-*`). The old inline `--site-*` variables are
+  gone: an inline declaration beats every stylesheet rule, so it could never be
+  switched. The stylesheet now maps the palettes onto the semantic `--site-*`
+  names with `light-dark()`, so one attribute switches the whole site and no
+  colour rule is duplicated.
+- The visitor's choice is the `mernpress_color_scheme` cookie, read during SSR
+  with `cookies()`; the layout renders `data-color-scheme` on `<html>`, so the
+  first byte already carries the right palette (no flash). Without a cookie the
+  site follows the operating-system preference through `color-scheme: light
+  dark`.
+- New `ThemeToggle` client component in the site header; its labels come from
+  the theme strings (`toggleDarkMode` / `toggleLightMode`) so a translated site
+  can localise them.
+- Derived tokens (`--site-border`, `--site-code-bg`, `--site-input-*`,
+  `--site-inverse-*`, `--site-focus-ring`, `--site-error`, `--site-avatar-*`)
+  replaced hard-coded colour literals in the public stylesheet, so the code
+  blocks, search and comment forms, buttons and focus rings follow the
+  palette. The WordPress chrome (public admin bar, consent banner, language
+  switcher) keeps its own colours and is documented as such.
+- Customizer colours stay light-only (documented in the ADR). Authored inline
+  colours in post content do not flip.
+
+**Admin hover menu**
+
+- With the sidebar collapsed the shell keeps a 36px icon rail; hovering (or
+  focusing) the rail now reveals the full menu — labels and sub-menus — in a
+  panel to the *right* of the rail, and the panel closes again as soon as the
+  pointer leaves. The panel is clipped (not laid out) with `clip-path`, so
+  revealing it never widens the document.
+- The dead `.rail-flyout` stylesheet (no markup referenced them) were removed,
+  and the sub-menu markup is now always rendered — the collapsed rail hides it
+  with CSS, the revealed panel shows it.
+
+**Known limitations**
+
+- `light-dark()` needs a browser from 2024 (Chrome 123, Safari 17.5, Firefox
+  120). Older browsers keep the light palette.
+- A theme without a dark palette falls back to a neutral dark palette in the
+  stylesheet.
+- The toggle's label is briefly "Switch to dark mode" for a dark-OS visitor
+  without a cookie; the palette itself is correct on the first byte.

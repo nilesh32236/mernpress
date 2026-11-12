@@ -1,8 +1,11 @@
 {
   "id": "mernpress",
   "name": "MERNPress",
-  "version": "0.2.0",
-  "author": { "name": "MERNPress", "url": null },
+  "version": "1.1.0",
+  "author": {
+    "name": "MERNPress",
+    "url": null
+  },
   "description": "The default MERNPress theme. A block theme for the public site: blog index, single posts and pages, category, tag and author archives, search, comments and a site editor-ready header and footer. It is built on the same block contracts as the admin editor, so published block markup renders server-side.",
   "tags": [
     "Blog",
@@ -25,8 +28,16 @@
     "Wide blocks"
   ],
   "fonts": [
-    { "family": "Manrope", "weights": [300, 400, 600, 700], "source": "theme" },
-    { "family": "System UI", "weights": [400, 600], "source": "system" }
+    {
+      "family": "Manrope",
+      "weights": [300, 400, 600, 700],
+      "source": "theme"
+    },
+    {
+      "family": "System UI",
+      "weights": [400, 600],
+      "source": "system"
+    }
   ],
   "tokens": {
     "background": "#ffffff",
@@ -38,6 +49,13 @@
     "bodyFont": "var(--font-manrope), Manrope, sans-serif",
     "contentWidth": "645px",
     "radius": "0px",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "dark": {
+      "background": "#121212",
+      "surface": "#1c1c1c",
+      "text": "#e8e8e8",
+      "muted": "#a1a1a1",
+      "accent": "#7aa7ff"
+    }
   }
 }
