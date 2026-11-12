@@ -103,6 +103,16 @@ PNG or SVG and reference it as `/theme-<id>.svg`.
    `.initialized` marker in development to reseed).
 4. Activate it in Appearance → Themes.
 
+## Changing a bundled theme
+
+The store is writable and is seeded once (`.initialized` marker), but the
+bundled themes ship with the release: on every start the seed compares the
+release manifest's `version` with the installed one and copies the release
+package over an older installed copy. **Bump `version` in `themes/<id>/theme.json`
+whenever you change a bundled manifest** (the dark palette shipped as 1.1.0) or
+existing installations will keep the old one. An installed package that is the
+same version or newer is never touched.
+
 Themes cannot execute code, add templates or change content queries. Layout
 variants are a closed set implemented in `apps/web/app/globals.css`; adding one
 requires code and documentation.
