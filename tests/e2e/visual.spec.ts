@@ -265,6 +265,19 @@ test('public visual baselines', async ({ page }) => {
 
 test('admin visual baselines', async ({ page }) => {
   await login(page);
+  // The General Settings screen previews today's date and the current time in
+  // the Date/Time Format rows, so the capture would change every day and every
+  // minute. Freeze the browser clock so the baseline stays reproducible.
+  await page.clock.setFixedTime(new Date('2026-11-07T12:00:00Z'));
+  // The Events and News widget shows live WordPress.org data, which changes
+  // every day; serve a fixed payload instead.
+  await page.route('**/api/admin/dashboard/feeds*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(dashboardFeedsFixture),
+    });
+  });
 
   const desktopScreens: Array<[string, string, string, string?]> = [
     ['posts', '/admin/posts', 'Posts', 'Welcome to MERNPress'],
@@ -399,7 +412,11 @@ test('admin visual baselines', async ({ page }) => {
     }
   }
   await page.goto('http://127.0.0.1:5173/admin/analytics', { waitUntil: 'domcontentloaded' });
-  await expect(page.getByRole('heading', { name: 'Core Web Vitals (field data)' })).toBeVisible();
+  // The admin shell resolves the session before it renders the screen, so the
+  // capture waits for the panel instead of the bare navigation.
+  await expect(page.getByRole('heading', { name: 'Core Web Vitals (field data)' })).toBeVisible({
+    timeout: 20_000,
+  });
   await expect(page.getByText(/No field samples in this period/)).toBeVisible();
   await settle(page);
   await expect(page.locator('[aria-labelledby="analytics-vitals-heading"]')).toHaveScreenshot(
@@ -496,7 +513,42 @@ test('admin visual baselines', async ({ page }) => {
       ...(name === 'customize' ? { mask: [page.locator('.customize-preview-frame')] } : {}),
     });
   }
+
+  await page.unroute('**/api/admin/dashboard/feeds*');
 });
+
+/**
+ * Fixed dashboard feed payload. The Events and News widget fetches live
+ * WordPress.org data, so the dashboard capture would change with the news of
+ * the day; the stub keeps the baseline reproducible.
+ */
+const dashboardFeedsFixture = {
+  events: [
+    {
+      title: 'WordCamp Europe',
+      url: 'https://wordpress.org/news/wordcamp-europe/',
+      location: 'Berlin, Germany',
+      date: '2026-09-24',
+    },
+  ],
+  news: [
+    {
+      title: 'WordPress 7.1.4 is available',
+      url: 'https://wordpress.org/news/wordpress-7-1-4/',
+      publishedAt: '2026-10-28',
+    },
+    {
+      title: 'A second field note',
+      url: 'https://wordpress.org/news/a-second-field-note/',
+      publishedAt: '2026-10-20',
+    },
+  ],
+  eventsConfigured: true,
+  newsConfigured: true,
+  eventsError: null,
+  newsError: null,
+  location: '',
+};
 
 const analyticsFixture = {
   days: 7,

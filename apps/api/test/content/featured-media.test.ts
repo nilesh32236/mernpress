@@ -1,6 +1,3 @@
-import { mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import sharp from 'sharp';
@@ -13,13 +10,14 @@ import {
   loginAs,
   seedAdmin,
 } from '../helpers/auth.js';
+import { makeTempDir } from '../helpers/temp-storage.js';
 
 let app: FastifyInstance;
 let headers: Record<string, string>;
 
 beforeEach(async () => {
   app = await createTestApp({
-    MEDIA_STORAGE_DIR: mkdtempSync(path.join(tmpdir(), 'mernpress-fm-media-')),
+    MEDIA_STORAGE_DIR: makeTempDir('mernpress-fm-media-'),
   });
   await seedAdmin(app);
   const { cookieHeader, csrfToken } = await loginAs(app, ADMIN_USERNAME, ADMIN_PASSWORD);

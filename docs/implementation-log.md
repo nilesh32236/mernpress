@@ -6482,3 +6482,45 @@ admin editor 45.
 - Cleanup: the temporary administrator, its session and audit rows were
   deleted (1 user, 1 session); the two superseded releases were pruned (17 GB
   free).
+
+### 2026-11-13 — WordPress-style admin menu dropdowns, pinned visual clock, temp-directory leak fix
+
+**Admin menu dropdowns (D-146)**
+
+- Measured against the running WordPress 7.1.4 reference: hovering a menu item
+  with sub-menus opens a dropdown at the **right edge of the sidebar**
+  (`left: 160px`, `top: -1px`, 160px wide, `#2c3338`-style background,
+  `0 3px 5px rgba(0,0,0,0.2)`); the section you are in keeps its sub-menu open
+  **inside** the sidebar. MERNPress previously expanded the sub-menu inline on
+  hover, which pushed the menu down and never showed a dropdown.
+- The sub-link padding now matches WordPress (`5px 16px 5px 14px`).
+- The dropdown has to escape the sidebar, so the menu no longer clips
+  (`overflow: visible` on the sidebar and the nav, as in `#adminmenu`). Below
+  700px of viewport height there is no room for a dropdown: the menu scrolls
+  again and the sub-menus open inline. The mobile drawer and the collapsed
+  rail's hover panel keep their inline sub-menus.
+- New E2E contract: the current section stays inline, another section flies
+  out at the sidebar's right edge (160px wide) without widening the document,
+  and leaving the item closes it again.
+
+**Visual clock (D-147)**
+
+- The General Settings screen previews today's date and the current time in the
+  Date/Time Format rows, and the Languages screen shows the time a language
+  option was last written — so those captures changed every day and every
+  minute. The admin visual test now freezes the browser clock
+  (`page.clock.setFixedTime(2026-11-07T12:00:00Z)`); 17 baselines were
+  regenerated and the diff is confined to the sidebar sub-menu padding and the
+  pinned preview.
+
+**Test temp-directory leak (D-148)**
+
+- `makeTestEnv` created four `mernpress-test-*` directories per call and never
+  removed them. Repeated runs had left ~120,000 directories in the host's
+  `/tmp` and filled its tmpfs; MySQL then refused to write ("Disk got full"),
+  which broke the WordPress reference server and any database write.
+- The directories now live inside one storage root per run, created by a vitest
+  `globalSetup` and removed when the run ends. The cleanup lives there on
+  purpose: a worker thread never runs `process.on('exit')`, so a per-worker
+  exit handler would still leak (~46,000 leftovers were cleaned up; a full API
+  suite run now leaves the temp directory unchanged).

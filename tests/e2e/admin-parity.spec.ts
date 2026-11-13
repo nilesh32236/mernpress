@@ -1304,6 +1304,60 @@ test('the Site Editor uses the full-width WordPress canvas', async ({ page }) =>
   expect(narrow.scrollWidth).toBe(narrow.innerWidth);
 });
 
+test('a menu with sub-menus opens a dropdown to the right of the sidebar', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await login(page);
+  await page.goto('http://127.0.0.1:5173/admin/posts');
+  await expect(page.getByRole('heading', { level: 1, name: 'Posts' })).toBeVisible();
+
+  const navItem = (label: string) =>
+    page
+      .locator('.admin-sidebar-panel .nav-item')
+      .filter({ has: page.locator('.nav-link-text', { hasText: new RegExp(`^${label}$`) }) })
+      .first();
+
+  // The section you are in keeps its sub-menu in the sidebar (WordPress).
+  const postsSub = navItem('Posts').locator(':scope > .nav-submenu');
+  await expect(postsSub).toBeVisible();
+  await expect(postsSub).toHaveCSS('position', 'relative');
+
+  // Every other section flies out to the right of the sidebar on hover.
+  const mediaItem = navItem('Media');
+  const mediaSub = mediaItem.locator(':scope > .nav-submenu');
+  await expect(mediaSub).toBeHidden();
+  await mediaItem.locator('.nav-link').hover();
+  await expect(mediaSub).toBeVisible();
+
+  const geometry = await page.evaluate(() => {
+    const rail = document.getElementById('admin-sidebar')?.getBoundingClientRect();
+    const flyout = document
+      .querySelector('.admin-sidebar-panel .nav-item:nth-of-type(3) > .nav-submenu')
+      ?.getBoundingClientRect();
+    const visible = [...document.querySelectorAll('.admin-sidebar-panel .nav-submenu')]
+      .filter((element) => {
+        const style = getComputedStyle(element);
+        return style.position === 'absolute' && style.display !== 'none';
+      })
+      .map((element) => element.getBoundingClientRect())[0];
+    return {
+      railRight: rail ? Math.round(rail.right) : null,
+      flyoutLeft: visible ? Math.round(visible.left) : null,
+      flyoutWidth: visible ? Math.round(visible.width) : null,
+      flyoutHeight: flyout ? Math.round(flyout.height) : null,
+      scrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
+    };
+  });
+  // The dropdown starts at the sidebar's right edge and never widens the page.
+  expect(geometry.flyoutLeft).toBeGreaterThanOrEqual((geometry.railRight ?? 0) - 1);
+  expect(geometry.flyoutWidth).toBe(160);
+  expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.innerWidth);
+
+  // Leaving the item closes the dropdown again.
+  await page.mouse.move(1200, 700);
+  await expect(mediaSub).toBeHidden();
+});
+
 test('the collapsed admin rail reveals the menu to its right on hover', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await login(page);

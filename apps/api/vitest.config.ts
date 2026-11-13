@@ -35,6 +35,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['test/**/*.test.ts'],
+    // One temporary storage root per run, removed when the run ends.
+    globalSetup: ['./test/global-setup.ts'],
     testTimeout: 15_000,
     hookTimeout: 15_000,
     fileParallelism: false,

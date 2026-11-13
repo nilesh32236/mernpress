@@ -612,3 +612,25 @@ The first implementation revealed the panel but also hid the rail icons with
 it, which left an empty column to hover. The panel now paints the icon rail
 through a `clip-path`, so the icons stay exactly where they were and the menu
 opens beside them.
+
+## Admin menu dropdown pass (2026-11-13)
+
+Measured against WordPress 7.1.4 (`http://127.0.0.1:8080`, temporary
+`audit-admin`).
+
+| Property | WordPress 7.1.4 | MERNPress before | MERNPress after |
+| --- | --- | --- | --- |
+| Sub-menu of the current section | inline in the sidebar | inline in the sidebar | inline in the sidebar |
+| Sub-menu of another section | dropdown at the sidebar's right edge | inline (pushed the menu down) | dropdown at the sidebar's right edge |
+| Dropdown position | `left: 160px`, `top: -1px` | — | `left: 160px`, `top: -1px` |
+| Dropdown size | 160px content (166px with the border) | — | 160px |
+| Dropdown background / shadow | `#0c0c0c` (scheme colour) / `0 3px 5px rgba(0,0,0,0.2)` | `--wp-sidebar-deep` / same shadow | same |
+| Sub-link padding | `5px 16px 5px 14px`, 13px | `5px 12px` | `5px 16px 5px 14px` |
+| Menu clipping | `#adminmenu` has `overflow: visible` | `overflow-y: auto` | `overflow: visible` (below 700px height it scrolls and the sub-menus open inline) |
+
+The collapsed 36px rail keeps its own behaviour: hovering it reveals the full
+menu — labels and sub-menus — in a panel to its right, and the panel closes
+again as soon as the pointer leaves.
+
+Deliberate difference: WordPress folds the menu automatically when the
+browser window is short; MERNPress keeps the menu expanded and scrolls it.

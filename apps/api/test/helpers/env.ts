@@ -1,8 +1,6 @@
-import { mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadEnv, type Env } from '../../src/config/env.js';
+import { makeTempDir } from './temp-storage.js';
 
 const loadedEnv = loadEnv();
 const configuredTestDatabaseUrl = process.env['TEST_DATABASE_URL'];
@@ -32,15 +30,16 @@ export function makeTestEnv(overrides: Partial<Env> = {}): Env {
     SESSION_IDLE_MINUTES: 30,
     LOGIN_RATE_LIMIT_MAX: 5,
     LOGIN_RATE_LIMIT_WINDOW_MINUTES: 15,
-    // Per-app storage root: upload tests never touch the repo or each other
-    // (reference test-setup pattern).
-    MEDIA_STORAGE_DIR: mkdtempSync(path.join(tmpdir(), 'mernpress-test-media-')),
+    // Per-test storage root: upload tests never touch the repo or each other
+    // (reference test-setup pattern). The directories are removed when the
+    // test worker exits, so a run leaves nothing behind in the temp folder.
+    MEDIA_STORAGE_DIR: makeTempDir('mernpress-test-media-'),
     SCHEDULER_ENABLED: false,
-    PLUGIN_STORAGE_DIR: mkdtempSync(path.join(tmpdir(), 'mernpress-test-plugins-')),
+    PLUGIN_STORAGE_DIR: makeTempDir('mernpress-test-plugins-'),
     PLUGIN_SEED_DIR: fileURLToPath(new URL('../../../../plugins', import.meta.url)),
-    THEME_STORAGE_DIR: mkdtempSync(path.join(tmpdir(), 'mernpress-test-themes-')),
+    THEME_STORAGE_DIR: makeTempDir('mernpress-test-themes-'),
     THEME_SEED_DIR: fileURLToPath(new URL('../../../../themes', import.meta.url)),
-    BACKUP_STORAGE_DIR: mkdtempSync(path.join(tmpdir(), 'mernpress-test-backups-')),
+    BACKUP_STORAGE_DIR: makeTempDir('mernpress-test-backups-'),
     BACKUP_RETENTION: 5,
     ...overrides,
   };
