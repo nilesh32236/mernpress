@@ -236,6 +236,10 @@ associated code changes. Superseded decisions stay visible.
 
 | D-148 | 2026-11-13 | The API test suite no longer leaks temporary directories: `makeTestEnv` created four `mernpress-test-*` directories per call and never removed them, so repeated runs left tens of thousands of directories in the host's temp folder and filled its tmpfs (which then broke PostgreSQL and the WordPress reference server). The directories now live inside one storage root per run, created by a vitest `globalSetup` and removed when the run ends (a worker thread never runs `process.on('exit')`, so a per-worker cleanup still leaked). | accepted | [implementation log](docs/implementation-log.md) |
 
+| D-149 | 2026-11-13 | The admin declares `color-scheme: light` on `:root`: `index.html` advertises `light dark`, so a visitor whose desktop is in dark mode got dark inputs, textareas, selects, checkboxes and radio buttons inside the light admin. The admin content area is light in every WordPress palette, so the page now tells the browser exactly that. Reported by the owner with the Quick Draft fields and the Screen Options radios. | accepted | [ADR 0065](docs/adr/0065-admin-dark-theme.md) |
+
+| D-150 | 2026-11-13 | Admin dark theme (ADR 0065): a tenth palette id `dark` joins the shared scheme list (the `users.admin_color` column already stores a scheme id, so no migration). The dark look lives in `apps/admin/src/dark-theme.css`, loaded after `styles.css` and scoped to `:root[data-color-scheme='dark']`, so the light palettes cannot change by a pixel (108 visual baselines keep guarding them). A switch in the admin bar toggles between `dark` and the palette in use, remembers that palette in localStorage and persists the choice through `PATCH /api/admin/profile`. WordPress has no dark admin: documented difference. | accepted | [ADR 0065](docs/adr/0065-admin-dark-theme.md) |
+
 ## Proposed / unresolved
 
 These are deliberately not decided yet. Do not implement them as if settled.

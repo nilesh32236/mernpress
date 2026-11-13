@@ -12,6 +12,13 @@
 :root {
   --wp-admin-bar-h: 32px;
 
+  /* The admin content area is a light surface in every palette, so the browser
+     must draw the form controls (inputs, textareas, selects, checkboxes and
+     radio buttons) light as well. Without this the page inherits the operating
+     system preference from the `color-scheme` meta tag and a visitor with a
+     dark desktop gets dark inputs inside a light admin. */
+  color-scheme: light;
+
   /* WP admin chrome (WordPress 7.1 "Fresh" scheme, used by the reference). */
   --wp-admin-bar: #1d2327;
   --wp-sidebar: #1d2327;
@@ -468,6 +475,36 @@ h2 {
   font-weight: 600;
   color: #ffffff;
   white-space: nowrap;
+}
+
+/* Light/dark switch in the admin bar (the `dark` palette, ADR 0065). */
+.admin-bar-scheme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--wp-bar-text);
+  cursor: pointer;
+}
+
+.admin-bar-scheme-toggle:hover {
+  background: var(--wp-sidebar-hover);
+  color: var(--wp-menu-hover);
+}
+
+.admin-bar-scheme-toggle:focus-visible {
+  outline: 2px solid var(--wp-menu-hover);
+  outline-offset: -2px;
+}
+
+.admin-bar-scheme-toggle:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .admin-bar-user {

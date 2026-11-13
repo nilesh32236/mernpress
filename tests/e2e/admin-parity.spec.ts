@@ -1304,6 +1304,60 @@ test('the Site Editor uses the full-width WordPress canvas', async ({ page }) =>
   expect(narrow.scrollWidth).toBe(narrow.innerWidth);
 });
 
+test('the admin bar switches the whole admin to the dark theme', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await login(page);
+  await page.goto('http://127.0.0.1:5173/admin/posts');
+  await expect(page.getByRole('heading', { level: 1, name: 'Posts' })).toBeVisible();
+
+  const toggle = page.getByTestId('color-scheme-toggle');
+  await expect(toggle).toHaveAccessibleName('Switch to the dark admin theme');
+
+  const readTheme = () =>
+    page.evaluate(() => {
+      const main = document.querySelector('.admin-main');
+      const card = document.querySelector('.postbox, .content-card, .card');
+      return {
+        scheme: document.documentElement.getAttribute('data-color-scheme'),
+        colorScheme: getComputedStyle(document.documentElement).colorScheme,
+        bodyBg: getComputedStyle(document.body).backgroundColor,
+        mainBg: main ? getComputedStyle(main).backgroundColor : null,
+        cardBg: card ? getComputedStyle(card).backgroundColor : null,
+        inputScheme: (() => {
+          const input = document.querySelector('.main-content input[type="text"]');
+          return input ? getComputedStyle(input).colorScheme : null;
+        })(),
+      };
+    });
+
+  const light = await readTheme();
+  expect(light.scheme).not.toBe('dark');
+  expect(light.colorScheme).toBe('light');
+
+  await toggle.click();
+  await expect(page.locator('html')).toHaveAttribute('data-color-scheme', 'dark');
+  const dark = await readTheme();
+  expect(dark.colorScheme).toBe('dark');
+  // The content area follows the palette instead of staying light.
+  expect(dark.mainBg).not.toBe(light.mainBg);
+  expect(dark.bodyBg).not.toBe(light.bodyBg);
+  if (light.cardBg && dark.cardBg) expect(dark.cardBg).not.toBe(light.cardBg);
+  // Form controls are part of the dark surface too (no light inputs).
+  if (dark.inputScheme) expect(dark.inputScheme).toBe('dark');
+  await expect(toggle).toHaveAccessibleName('Switch to the light admin theme');
+
+  // The choice is stored on the server: a reload paints dark from the session.
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-color-scheme', 'dark');
+
+  // Switching back restores the palette that was in use.
+  await page.getByTestId('color-scheme-toggle').click();
+  await expect(page.locator('html')).not.toHaveAttribute('data-color-scheme', 'dark');
+  await expect(page.getByTestId('color-scheme-toggle')).toHaveAccessibleName(
+    'Switch to the dark admin theme',
+  );
+});
+
 test('a menu with sub-menus opens a dropdown to the right of the sidebar', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await login(page);

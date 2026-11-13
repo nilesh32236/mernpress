@@ -4,9 +4,17 @@ import {
   fetchPluginToolbar,
   fetchPosts,
   logout,
+  updateProfile,
   type AdminPost,
   type AuthUser,
 } from './api.js';
+import ColorSchemeToggle from './ColorSchemeToggle.js';
+import {
+  applyColorScheme,
+  DEFAULT_ADMIN_COLOR_SCHEME,
+  toggleColorScheme,
+  type ColorScheme,
+} from './colorScheme.js';
 import type { Route } from './router.js';
 import { navigate, newContentPath } from './router.js';
 import { useNavigationGuard } from './navigation-guard.js';
@@ -631,6 +639,12 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const [newMenuOpen, setNewMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  // The admin theme in use. The server value is authoritative; the toggle
+  // writes the new choice back to the profile (ADR 0065).
+  const [colorScheme, setColorScheme] = useState<ColorScheme>(
+    user.adminColor ?? DEFAULT_ADMIN_COLOR_SCHEME,
+  );
+  const [colorSchemeBusy, setColorSchemeBusy] = useState(false);
   const [commentPending, setCommentPending] = useState(0);
   const [pluginLyric, setPluginLyric] = useState<string | null>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -1172,6 +1186,21 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
   }
 
   const visibleItems = navItems.filter((item) => item.show);
+  async function toggleAdminColorScheme() {
+    const next = toggleColorScheme(colorScheme);
+    setColorScheme(next);
+    applyColorScheme(next);
+    setColorSchemeBusy(true);
+    try {
+      await updateProfile({ adminColor: next });
+    } catch {
+      // Keep the local choice: the admin bar keeps working offline and the
+      // next session restores the server value.
+    } finally {
+      setColorSchemeBusy(false);
+    }
+  }
+
   const railMode = collapsed;
 
   return (
@@ -1328,6 +1357,13 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
           ) : null}
         </div>
         <div className="admin-bar-right">
+          <ColorSchemeToggle
+            scheme={colorScheme}
+            onToggle={() => {
+              void toggleAdminColorScheme();
+            }}
+            busy={colorSchemeBusy}
+          />
           <div className={`admin-bar-menu user-menu${userMenuOpen ? ' is-open' : ''}`}>
             <button
               type="button"

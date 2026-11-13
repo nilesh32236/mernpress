@@ -6535,3 +6535,31 @@ admin editor 45.
   that does not widen the document (`scrollWidth` 1440 = `innerWidth`).
 - Cleanup: the temporary administrator, its session and audit rows were
   deleted (1 user left: `admin`).
+
+### 2026-11-13 — Admin light/dark: form controls follow the palette, dark palette + admin-bar switch
+
+**Form controls (D-149)**
+
+- The owner reported dark inputs in the Quick Draft widget and dark radio
+  buttons in Screen Options while the admin itself was light. Cause: the admin
+  `index.html` advertises `color-scheme: light dark`, so the browser drew the
+  native controls with the operating system theme. The admin content area is
+  light in every palette, so `:root` now declares `color-scheme: light`; inputs,
+  textareas, selects, checkboxes and radio buttons render light again (verified
+  with `prefers-color-scheme: dark` emulated: white fields, light radios).
+
+**Admin dark theme (D-150, ADR 0065)**
+
+- A tenth palette id `dark` joins the shared scheme list. `users.admin_color`
+  already stores a scheme id, so no migration was needed and the profile picker
+  lists it automatically.
+- The dark look lives in `apps/admin/src/dark-theme.css`, loaded after
+  `styles.css`, with every rule scoped to `:root[data-color-scheme='dark']`, so
+  the nine light palettes are untouched (guarded by the 108 visual baselines).
+- The dark palette redefines the content tokens (`--wp-bg`, `--wp-card`,
+  `--wp-alt-row`, `--wp-hover-row`, `--wp-border`, `--wp-input-border`,
+  `--wp-text`, `--wp-muted`, the status pills) and sets `color-scheme: dark`.
+- `ColorSchemeToggle` in the admin bar switches between `dark` and the palette
+  in use. The palette to return to is remembered in `localStorage` (a display
+  preference); the choice is persisted per user through
+  `PATCH /api/admin/profile`.

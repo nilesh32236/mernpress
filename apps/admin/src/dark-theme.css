@@ -1,0 +1,1874 @@
+/*
+ * Admin dark palette (the `dark` colour scheme, ADR 0065).
+ *
+ * Loaded after `styles.css`; every rule is scoped to
+ * `:root[data-color-scheme='dark']`, so the light palettes are untouched.
+ */
+
+:root[data-color-scheme='dark'] {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --wp-bg: #14181c;
+  --wp-card: #1c2126;
+  --wp-alt-row: #21262c;
+  --wp-hover-row: #262c33;
+  --wp-border: #333b43;
+  --wp-input-border: #4a525a;
+
+  /* Text */
+  --wp-text: #e2e4e6;
+  --wp-muted: #a2a9b1;
+
+  /* Status pills */
+  --pill-published-bg: #14301f;
+  --pill-published-text: #7fd1a0;
+  --pill-draft-bg: #3a2f0d;
+  --pill-draft-text: #e5c07b;
+  --pill-trash-bg: #3d1d21;
+  --pill-trash-text: #e79ba3;
+}
+
+/* ==========================================================================
+   Dark-mode-only tokens.
+
+   `--wp-text-strong` is read by newer rules as `var(--wp-text-strong, #1d2327)`;
+   defining it here re-colours those rules without touching the light palette.
+   The tint tokens give status surfaces a dark counterpart that stays legible.
+   ========================================================================== */
+
+:root[data-color-scheme='dark'] {
+  --wp-text-strong: #f0f0f1;
+
+  --wp-success-bg: #14301f;
+  --wp-success-text: #7fd1a0;
+  --wp-warning-bg: #3a2f0d;
+  --wp-warning-text: #e5c07b;
+  --wp-danger-bg: #3d1d21;
+  --wp-danger-text: #e79ba3;
+  --wp-info-bg: #1b2a38;
+  --wp-info-text: #9ec2e6;
+  --wp-neutral-bg: #262c33;
+  --wp-neutral-text: #a2a9b1;
+}
+
+/* The content column is the only place links are re-tinted: the admin bar and
+   sidebar sit outside `.admin-main` and keep their own palette variables. */
+:root[data-color-scheme='dark'] .admin-main {
+  --wp-blue: #72aee6;
+  --wp-blue-hover: #9ec2e6;
+  --wp-danger: #e65054;
+  --focus: #72aee6;
+}
+
+/* ==========================================================================
+   Base canvas and type
+   ========================================================================== */
+
+:root[data-color-scheme='dark'] body {
+  background: var(--wp-bg);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .admin-main,
+:root[data-color-scheme='dark'] .main-content,
+:root[data-color-scheme='dark'] .wrap,
+:root[data-color-scheme='dark'] .content {
+  background: var(--wp-bg);
+  color: var(--wp-text);
+}
+
+/* The base sheet paints headings #1d2327, so the two global heading rules must
+   be re-pointed at the text token. White-on-dark bands re-assert their own
+   colour further down. */
+:root[data-color-scheme='dark'] h1,
+:root[data-color-scheme='dark'] h2 {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .breadcrumbs {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .breadcrumbs li + li::before,
+:root[data-color-scheme='dark'] .term-note,
+:root[data-color-scheme='dark'] .footer-version {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .field-label-text {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] hr {
+  border-color: var(--wp-border);
+}
+
+/* ==========================================================================
+   Cards, postboxes, dashboard widgets and welcome panels
+   ========================================================================== */
+
+:root[data-color-scheme='dark'] .main-content .card,
+:root[data-color-scheme='dark'] .main-content .panel,
+:root[data-color-scheme='dark'] .main-content .card-content,
+:root[data-color-scheme='dark'] .dash-card,
+:root[data-color-scheme='dark'] .postbox,
+:root[data-color-scheme='dark'] .postbox .inside,
+:root[data-color-scheme='dark'] .welcome-banner {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .dash-card-head,
+:root[data-color-scheme='dark'] .postbox-header,
+:root[data-color-scheme='dark'] .postbox-header .hndle {
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .welcome-banner h2,
+:root[data-color-scheme='dark'] .dash-card-head h2,
+:root[data-color-scheme='dark'] .dash-title-row h1,
+:root[data-color-scheme='dark'] .page-header h1,
+:root[data-color-scheme='dark'] .wp-list-screen .list-title-row h1,
+:root[data-color-scheme='dark'] .settings-panel > h2,
+:root[data-color-scheme='dark'] .settings-section-title,
+:root[data-color-scheme='dark'] .profile-section-title,
+:root[data-color-scheme='dark'] .profile-panel .profile-section-title,
+:root[data-color-scheme='dark'] .tools-section h2,
+:root[data-color-scheme='dark'] .terms-add-form > h2,
+:root[data-color-scheme='dark'] .wp-list-screen .terms-add-form h2 {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .dash-card-body,
+:root[data-color-scheme='dark'] .glance-chip,
+:root[data-color-scheme='dark'] .plugin-description,
+:root[data-color-scheme='dark'] .plugin-version,
+:root[data-color-scheme='dark'] .import-description {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .glance-chip svg,
+:root[data-color-scheme='dark'] .glance-icon,
+:root[data-color-scheme='dark'] .user-cell svg {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .activity-block h3,
+:root[data-color-scheme='dark'] #dashboard_quick_press label,
+:root[data-color-scheme='dark'] .activity-list li {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .activity-block,
+:root[data-color-scheme='dark'] .activity-list li,
+:root[data-color-scheme='dark'] .activity-block:last-child {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] #published-posts li,
+:root[data-color-scheme='dark'] #published-posts li:nth-child(odd),
+:root[data-color-scheme='dark'] .no-activity {
+  background: transparent;
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] #published-posts li:nth-child(odd) {
+  background: var(--wp-alt-row);
+}
+
+/* WordPress welcome panel: the header art is already dark; only the lower
+   column strip was white. */
+:root[data-color-scheme='dark'] .welcome-panel .welcome-panel-column-container {
+  background: var(--wp-card);
+}
+
+:root[data-color-scheme='dark'] .welcome-panel-header,
+:root[data-color-scheme='dark'] .welcome-panel-header * {
+  color: #ffffff;
+}
+
+:root[data-color-scheme='dark'] .welcome-panel .welcome-panel-close {
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   Tables and list screens
+   ========================================================================== */
+
+:root[data-color-scheme='dark'] .content-table {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .content-table th,
+:root[data-color-scheme='dark'] .content-table td,
+:root[data-color-scheme='dark'] .content-table tfoot th,
+:root[data-color-scheme='dark'] .content-table tfoot td,
+:root[data-color-scheme='dark'] .wp-list-screen .content-table th,
+:root[data-color-scheme='dark'] .wp-list-screen .content-table td {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .content-table thead th,
+:root[data-color-scheme='dark'] .content-table tfoot th,
+:root[data-color-scheme='dark'] .wp-list-screen .content-table thead th,
+:root[data-color-scheme='dark'] .wp-list-screen .content-table tfoot th {
+  background: var(--wp-card);
+  color: var(--wp-text);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .content-table.striped tbody tr:nth-child(odd),
+:root[data-color-scheme='dark'] .wp-list-screen .content-table tbody tr:nth-child(odd) {
+  background: var(--wp-alt-row);
+}
+
+:root[data-color-scheme='dark'] .content-table tbody tr:hover,
+:root[data-color-scheme='dark'] .content-table.media-list tbody tr:hover,
+:root[data-color-scheme='dark'] .content-table.media-list tbody tr:hover td,
+:root[data-color-scheme='dark'] .content-table.media-list tbody tr:hover th {
+  background: var(--wp-hover-row);
+}
+
+:root[data-color-scheme='dark'] .content-table.media-list .row-actions {
+  background: var(--wp-alt-row);
+}
+
+:root[data-color-scheme='dark'] .wp-list-screen .content-table .row-actions {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .wp-status-prefix,
+:root[data-color-scheme='dark'] .wp-status-prefix.is-draft,
+:root[data-color-scheme='dark'] .wp-status-prefix.is-published,
+:root[data-color-scheme='dark'] .wp-list-screen .wp-status-prefix.is-published,
+:root[data-color-scheme='dark'] .sortable-column,
+:root[data-color-scheme='dark'] .list-top .search-form input[type='search'],
+:root[data-color-scheme='dark'] .media-toolbar-bar .attachment-filters,
+:root[data-color-scheme='dark'] .media-search label {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .wp-status-prefix.is-trashed {
+  color: var(--wp-danger-text);
+}
+
+:root[data-color-scheme='dark'] .sorting-indicator.asc {
+  border-bottom-color: #787c82;
+}
+
+:root[data-color-scheme='dark'] .sorting-indicator.desc {
+  border-top-color: #787c82;
+}
+
+:root[data-color-scheme='dark'] .sorting-indicator.is-sorted.asc {
+  border-bottom-color: #f0f0f1;
+}
+
+:root[data-color-scheme='dark'] .sorting-indicator.is-sorted.desc {
+  border-top-color: #f0f0f1;
+}
+
+:root[data-color-scheme='dark'] .content-table .no-items td,
+:root[data-color-scheme='dark'] .content-table .column-comments,
+:root[data-color-scheme='dark'] .no-row-actions,
+:root[data-color-scheme='dark'] .no-terms,
+:root[data-color-scheme='dark'] .row-mobile-meta,
+:root[data-color-scheme='dark'] .sort-indicator {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .update-table {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .update-table td {
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .update-table .update-version {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .editor-shortcuts td,
+:root[data-color-scheme='dark'] .editor-shortcuts th,
+:root[data-color-scheme='dark'] .analytics-table td {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .analytics-table th,
+:root[data-color-scheme='dark'] .analytics-bars li {
+  color: var(--wp-muted);
+}
+
+/* ==========================================================================
+   Forms and controls
+   ========================================================================== */
+
+:root[data-color-scheme='dark'] .admin-main input[type='text'],
+:root[data-color-scheme='dark'] .admin-main input[type='email'],
+:root[data-color-scheme='dark'] .admin-main input[type='url'],
+:root[data-color-scheme='dark'] .admin-main input[type='number'],
+:root[data-color-scheme='dark'] .admin-main input[type='password'],
+:root[data-color-scheme='dark'] .admin-main input[type='search'],
+:root[data-color-scheme='dark'] .admin-main input[type='tel'],
+:root[data-color-scheme='dark'] .admin-main input[type='date'],
+:root[data-color-scheme='dark'] .admin-main input[type='datetime-local'],
+:root[data-color-scheme='dark'] .admin-main input[type='time'],
+:root[data-color-scheme='dark'] .admin-main input[type='month'],
+:root[data-color-scheme='dark'] .admin-main input[type='week'],
+:root[data-color-scheme='dark'] .admin-main input:not([type]),
+:root[data-color-scheme='dark'] .admin-main select,
+:root[data-color-scheme='dark'] .admin-main textarea {
+  background-color: var(--wp-card);
+  border-color: var(--wp-input-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .admin-main ::placeholder {
+  color: #8c8f94;
+  opacity: 1;
+}
+
+:root[data-color-scheme='dark'] .admin-main input:focus-visible,
+:root[data-color-scheme='dark'] .admin-main select:focus-visible,
+:root[data-color-scheme='dark'] .admin-main textarea:focus-visible {
+  border-color: var(--wp-blue);
+  box-shadow: 0 0 0 1px var(--wp-blue);
+}
+
+:root[data-color-scheme='dark'] .admin-main input:disabled,
+:root[data-color-scheme='dark'] .admin-main input[readonly],
+:root[data-color-scheme='dark'] .admin-main select:disabled,
+:root[data-color-scheme='dark'] .admin-main textarea:disabled,
+:root[data-color-scheme='dark'] .profile-panel .field input[disabled],
+:root[data-color-scheme='dark'] .profile-panel .field input[readonly],
+:root[data-color-scheme='dark'] .wp-list-screen .tablenav .button:disabled {
+  background: var(--wp-alt-row);
+  border-color: var(--wp-border);
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .field label,
+:root[data-color-scheme='dark'] .field legend,
+:root[data-color-scheme='dark'] .field > label,
+:root[data-color-scheme='dark'] .settings-panel .field > label,
+:root[data-color-scheme='dark'] .settings-panel .field > .field-label,
+:root[data-color-scheme='dark'] .terms-add-form .field > label,
+:root[data-color-scheme='dark'] .wp-list-screen .terms-add-form .field > label,
+:root[data-color-scheme='dark'] .quick-edit-fields label,
+:root[data-color-scheme='dark'] .inline-edit-legend,
+:root[data-color-scheme='dark'] .inline-edit-col .title,
+:root[data-color-scheme='dark'] .bulk-edit-field,
+:root[data-color-scheme='dark'] .bulk-edit-taxonomy legend,
+:root[data-color-scheme='dark'] .permalink-structure legend,
+:root[data-color-scheme='dark'] .tools-choice legend,
+:root[data-color-scheme='dark'] .export-filter,
+:root[data-color-scheme='dark'] .settings-pings-label,
+:root[data-color-scheme='dark'] .media-drawer-form .field > label {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .field-help,
+:root[data-color-scheme='dark'] .admin-main .field-help,
+:root[data-color-scheme='dark'] .admin-main .description,
+:root[data-color-scheme='dark'] .wp-list-screen .terms-add-form .field-help,
+:root[data-color-scheme='dark'] .media-drawer-form .field > .field-help,
+:root[data-color-scheme='dark'] .languages-strings-group .field-help,
+:root[data-color-scheme='dark'] .settings-panel .field > .field-help {
+  color: var(--wp-muted);
+}
+
+/* Checkboxes and radios: draw the control ourselves so the dark surface does
+   not depend on the platform checkbox rendering. `accent-color` is retained
+   for browsers that ignore `appearance`. */
+:root[data-color-scheme='dark'] .admin-main input[type='checkbox'],
+:root[data-color-scheme='dark'] .login-card input[type='checkbox'] {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  min-height: 16px;
+  border: 1px solid var(--wp-input-border);
+  border-radius: 2px;
+  background-color: var(--wp-card);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 16px 16px;
+  color: var(--wp-text);
+  cursor: pointer;
+  vertical-align: text-bottom;
+  accent-color: #72aee6;
+}
+
+:root[data-color-scheme='dark'] .admin-main input[type='checkbox']:checked,
+:root[data-color-scheme='dark'] .login-card input[type='checkbox']:checked {
+  border-color: #2271b1;
+  background-color: #2271b1;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M14.83 4.89l1.34.94-5.81 8.38H9.02L5.78 9.67l1.34-1.25 2.57 2.4z' fill='%23ffffff'/%3E%3C/svg%3E");
+}
+
+:root[data-color-scheme='dark'] .admin-main input[type='checkbox']:indeterminate {
+  border-color: #2271b1;
+  background-color: #2271b1;
+  background-image: linear-gradient(#ffffff, #ffffff);
+  background-size: 10px 2px;
+}
+
+:root[data-color-scheme='dark'] .admin-main input[type='radio'],
+:root[data-color-scheme='dark'] .login-card input[type='radio'] {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  min-height: 16px;
+  border: 1px solid var(--wp-input-border);
+  border-radius: 50%;
+  background-color: var(--wp-card);
+  cursor: pointer;
+  vertical-align: text-bottom;
+  accent-color: #72aee6;
+}
+
+:root[data-color-scheme='dark'] .admin-main input[type='radio']:checked,
+:root[data-color-scheme='dark'] .login-card input[type='radio']:checked {
+  border-color: #2271b1;
+  background-color: #2271b1;
+  box-shadow: inset 0 0 0 3px var(--wp-card);
+}
+
+:root[data-color-scheme='dark'] .admin-main input[type='checkbox']:disabled,
+:root[data-color-scheme='dark'] .admin-main input[type='radio']:disabled,
+:root[data-color-scheme='dark'] .login-card input[type='checkbox']:disabled,
+:root[data-color-scheme='dark'] .login-card input[type='radio']:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+:root[data-color-scheme='dark'] .password-strength {
+  background: var(--wp-alt-row);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .password-strength em {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .profile-panel .color-option:hover,
+:root[data-color-scheme='dark'] .profile-panel .color-option.selected {
+  background: var(--wp-hover-row);
+}
+
+:root[data-color-scheme='dark'] .profile-panel .color-option label {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .color-scheme-option {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .color-scheme-label {
+  color: var(--wp-muted);
+}
+
+/* ==========================================================================
+   Buttons and row actions
+   ========================================================================== */
+
+/* Secondary/outline buttons: WordPress dark mode lifts their accent to the
+   lighter link blue. Primary buttons keep `--wp-button` (WordPress blue). */
+:root[data-color-scheme='dark'] .admin-main .secondary-button,
+:root[data-color-scheme='dark'] .admin-main .button.secondary-button,
+:root[data-color-scheme='dark'] .admin-main .media-toolbar-bar .button,
+:root[data-color-scheme='dark'] .admin-main .wp-tools-grid .card .button,
+:root[data-color-scheme='dark'] .admin-main .list-top .search-form .button,
+:root[data-color-scheme='dark'] .admin-main .terms-search-row .search-form .button,
+:root[data-color-scheme='dark'] .admin-main .wp-list-screen .tablenav .button:not(.primary-button),
+:root[data-color-scheme='dark'] .admin-main .editor-topbar-text-button {
+  background: transparent;
+  border-color: #72aee6;
+  color: #72aee6;
+}
+
+:root[data-color-scheme='dark'] .admin-main .secondary-button:hover:not(:disabled),
+:root[data-color-scheme='dark'] .admin-main .button.secondary-button:hover:not(:disabled),
+:root[data-color-scheme='dark'] .admin-main .media-toolbar-bar .button:hover:not(:disabled),
+:root[data-color-scheme='dark'] .admin-main .wp-tools-grid .card .button:hover,
+:root[data-color-scheme='dark'] .admin-main .list-top .search-form .button:hover:not(:disabled),
+:root[data-color-scheme='dark'] .admin-main .terms-search-row .search-form .button:hover,
+:root[data-color-scheme='dark']
+  .admin-main
+  .wp-list-screen
+  .tablenav
+  .button:not(.primary-button):hover:not(:disabled),
+:root[data-color-scheme='dark'] .admin-main .editor-topbar-text-button:hover:not(:disabled) {
+  background: rgba(114, 174, 230, 0.1);
+  border-color: #9ec2e6;
+  color: #9ec2e6;
+}
+
+:root[data-color-scheme='dark'] .page-title-action:hover,
+:root[data-color-scheme='dark'] .list-add-new:hover {
+  background: var(--wp-hover-row);
+}
+
+:root[data-color-scheme='dark'] .title-badge,
+:root[data-color-scheme='dark'] .avatar-circle,
+:root[data-color-scheme='dark'] .skip-link {
+  background: #2271b1;
+  color: #ffffff;
+}
+
+:root[data-color-scheme='dark'] .row-action-icon:hover {
+  background: var(--wp-hover-row);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .row-action-icon.is-danger:hover {
+  background: var(--wp-danger-bg);
+  border-color: #b32d2e;
+}
+
+:root[data-color-scheme='dark'] .revision-link:hover:not(:disabled) {
+  background: var(--wp-hover-row);
+}
+
+:root[data-color-scheme='dark'] .button-link-delete,
+:root[data-color-scheme='dark'] .row-action-link.is-danger,
+:root[data-color-scheme='dark'] .media-delete-button,
+:root[data-color-scheme='dark'] .button.is-danger {
+  color: var(--wp-danger-text);
+}
+
+:root[data-color-scheme='dark'] .button-link-delete:hover:not(:disabled),
+:root[data-color-scheme='dark'] .row-action-link.is-danger:hover,
+:root[data-color-scheme='dark'] .media-delete-button:hover:not(:disabled) {
+  color: #f1aeb5;
+}
+
+:root[data-color-scheme='dark'] .publish-panel .button.delete-link:hover:not(:disabled),
+:root[data-color-scheme='dark'] .media-delete-button:hover:not(:disabled) {
+  background: #b32d2e;
+  border-color: #b32d2e;
+  color: #ffffff;
+}
+
+:root[data-color-scheme='dark'] .button.is-danger {
+  border-color: #b32d2e;
+  background: #b32d2e;
+  color: #ffffff;
+}
+
+:root[data-color-scheme='dark'] .button.is-danger:hover:not(:disabled) {
+  border-color: #8a2424;
+  background: #8a2424;
+  color: #ffffff;
+}
+
+:root[data-color-scheme='dark'] .button-link:disabled,
+:root[data-color-scheme='dark'] button.button-link:disabled,
+:root[data-color-scheme='dark'] .note-actions .button-link:disabled,
+:root[data-color-scheme='dark'] .filter-link.is-disabled,
+:root[data-color-scheme='dark'] .wp-list-screen .tablenav .button:disabled {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .sub-count,
+:root[data-color-scheme='dark'] .user-cell,
+:root[data-color-scheme='dark'] .you-badge,
+:root[data-color-scheme='dark'] .row-actions,
+:root[data-color-scheme='dark'] .row-action-link {
+  color: #72aee6;
+}
+
+/* ==========================================================================
+   Notices, errors and empty states
+   ========================================================================== */
+
+:root[data-color-scheme='dark'] .notice {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .notice-info {
+  background: var(--wp-info-bg);
+  border-left-color: #72aee6;
+}
+
+:root[data-color-scheme='dark'] .notice-success {
+  background: var(--wp-success-bg);
+  border-left-color: var(--wp-success);
+}
+
+:root[data-color-scheme='dark'] .notice-warning {
+  background: var(--wp-warning-bg);
+  border-left-color: var(--wp-warning);
+}
+
+:root[data-color-scheme='dark'] .notice-error {
+  background: var(--wp-danger-bg);
+  border-left-color: #e65054;
+}
+
+:root[data-color-scheme='dark'] .form-error,
+:root[data-color-scheme='dark'] .conflict-panel,
+:root[data-color-scheme='dark'] .login-error {
+  background: var(--wp-card);
+  border-color: #b32d2e;
+  border-left-color: #e65054;
+}
+
+:root[data-color-scheme='dark'] .error-state,
+:root[data-color-scheme='dark'] .empty-state,
+:root[data-color-scheme='dark'] .skeleton {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .skeleton-line {
+  background: linear-gradient(90deg, #262c33 25%, #30373f 37%, #262c33 63%);
+  background-size: 200% 100%;
+}
+
+:root[data-color-scheme='dark'] .loading-state,
+:root[data-color-scheme='dark'] .error-state p,
+:root[data-color-scheme='dark'] .empty-state p {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .empty-state-icon {
+  color: var(--wp-border);
+}
+
+/* ==========================================================================
+   Status surfaces (pills, badges, job/health/mail states)
+   ========================================================================== */
+
+:root[data-color-scheme='dark'] .comment-status.is-approved,
+:root[data-color-scheme='dark'] .health-pill.is-pass,
+:root[data-color-scheme='dark'] .mail-status-sent,
+:root[data-color-scheme='dark'] .job-status.is-completed,
+:root[data-color-scheme='dark'] .vitals-rating.is-good,
+:root[data-color-scheme='dark'] .translation-status.is-published,
+:root[data-color-scheme='dark'] .note-anchor.is-exact,
+:root[data-color-scheme='dark'] .note-resolved-badge,
+:root[data-color-scheme='dark'] .spam-guard-badge.is-active {
+  background: var(--wp-success-bg);
+  color: var(--wp-success-text);
+}
+
+:root[data-color-scheme='dark'] .comment-status.is-pending,
+:root[data-color-scheme='dark'] .health-pill.is-recommended,
+:root[data-color-scheme='dark'] .job-status.is-pending,
+:root[data-color-scheme='dark'] .vitals-rating.is-needs-improvement,
+:root[data-color-scheme='dark'] .translation-status.is-draft,
+:root[data-color-scheme='dark'] .note-anchor.is-moved,
+:root[data-color-scheme='dark'] .editor-structure-banner,
+:root[data-color-scheme='dark'] .autosave-recovery,
+:root[data-color-scheme='dark'] .settings-pings-notice {
+  background: var(--wp-warning-bg);
+  color: var(--wp-warning-text);
+}
+
+:root[data-color-scheme='dark'] .comment-status.is-trashed,
+:root[data-color-scheme='dark'] .health-pill.is-critical,
+:root[data-color-scheme='dark'] .mail-status-failed,
+:root[data-color-scheme='dark'] .job-status.is-failed,
+:root[data-color-scheme='dark'] .vitals-rating.is-poor,
+:root[data-color-scheme='dark'] .note-anchor.is-changed,
+:root[data-color-scheme='dark'] .note-thread.is-trashed {
+  background: var(--wp-danger-bg);
+  color: var(--wp-danger-text);
+}
+
+:root[data-color-scheme='dark'] .job-status,
+:root[data-color-scheme='dark'] .job-status.is-cancelled,
+:root[data-color-scheme='dark'] .vitals-rating,
+:root[data-color-scheme='dark'] .translation-status,
+:root[data-color-scheme='dark'] .note-anchor,
+:root[data-color-scheme='dark'] .spam-guard-badge {
+  background: var(--wp-neutral-bg);
+  color: var(--wp-neutral-text);
+}
+
+:root[data-color-scheme='dark'] .job-status.is-running {
+  background: var(--wp-info-bg);
+  color: var(--wp-info-text);
+}
+
+:root[data-color-scheme='dark'] .health-pass,
+:root[data-color-scheme='dark'] .plugin-activated,
+:root[data-color-scheme='dark'] .connector-status {
+  color: var(--wp-success-text);
+}
+
+:root[data-color-scheme='dark'] .health-warning {
+  color: var(--wp-warning-text);
+}
+
+:root[data-color-scheme='dark'] .health-critical,
+:root[data-color-scheme='dark'] .update-available,
+:root[data-color-scheme='dark'] .import-errors,
+:root[data-color-scheme='dark'] .jobs-error,
+:root[data-color-scheme='dark'] .backup-job-error {
+  color: var(--wp-danger-text);
+}
+
+:root[data-color-scheme='dark'] .site-health .health-overall {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .site-health-progress svg circle {
+  stroke: var(--wp-border);
+}
+
+/* ==========================================================================
+   Tabs, toolbars and pagination
+   ========================================================================== */
+
+:root[data-color-scheme='dark'] .subsubsub {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .subsubsub li + li::before {
+  color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .subsubsub-tab[aria-current='true'] {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .subsubsub-tab .count {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .settings-tabs {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .settings-tab {
+  background: var(--wp-alt-row);
+  border-color: var(--wp-border);
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .settings-tab:hover,
+:root[data-color-scheme='dark'] .settings-tab.is-active {
+  background: var(--wp-hover-row);
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+/* The app uses `.subsubsub` / `.settings-tab`; these aliases keep the
+   WordPress tab vocabulary covered for shared markup. */
+:root[data-color-scheme='dark'] .nav-tab {
+  background: var(--wp-alt-row);
+  border-color: var(--wp-border);
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .nav-tab-active {
+  background: var(--wp-card);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .tablenav .button:disabled,
+:root[data-color-scheme='dark'] .wp-list-screen .tablenav .displaying-num {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .tablenav-pages .current-page {
+  border-color: var(--wp-input-border);
+}
+
+:root[data-color-scheme='dark'] .page-numbers.current,
+:root[data-color-scheme='dark'] .tablenav-pages {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .taxonomy-tabs {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .taxonomy-tabs .button {
+  background: var(--wp-alt-row);
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .taxonomy-tabs .button.nav-link-active,
+:root[data-color-scheme='dark'] .taxonomy-tabs .button:hover:not(:disabled) {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+/* ==========================================================================
+   Screen options and contextual help
+   ========================================================================== */
+
+:root[data-color-scheme='dark'] .screen-meta-links .show-settings {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .screen-meta-links .show-settings:hover,
+:root[data-color-scheme='dark'] .screen-meta-links .show-settings:active,
+:root[data-color-scheme='dark'] .screen-meta-links .show-settings:focus {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .screen-meta-links .show-settings.is-active {
+  background: var(--wp-card);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .screen-meta-panel,
+:root[data-color-scheme='dark'] #screen-options-wrap,
+:root[data-color-scheme='dark'] .screen-options-wrap {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .screen-meta-panel h2,
+:root[data-color-scheme='dark'] .screen-meta-panel h3,
+:root[data-color-scheme='dark'] .screen-meta-panel p {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .contextual-help-tabs,
+:root[data-color-scheme='dark'] .contextual-help-sidebar {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .contextual-help-tabs li.active a {
+  background: var(--wp-alt-row);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] ::selection {
+  background: rgba(114, 174, 230, 0.35);
+}
+
+/* ==========================================================================
+   Modals, dialogs and popovers
+   ========================================================================== */
+
+:root[data-color-scheme='dark'] .modal-overlay {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+:root[data-color-scheme='dark'] .modal-overlay .content-card,
+:root[data-color-scheme='dark'] .revision-modal,
+:root[data-color-scheme='dark'] .site-icon-dialog,
+:root[data-color-scheme='dark'] .bulk-edit-panel,
+:root[data-color-scheme='dark'] .editor-dialog,
+:root[data-color-scheme='dark'] .command-palette,
+:root[data-color-scheme='dark'] .mention-suggestions,
+:root[data-color-scheme='dark'] .editor-options-panel,
+:root[data-color-scheme='dark'] .editor-summary-menu-panel {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .revision-content {
+  background: var(--wp-alt-row);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .revision-field-label,
+:root[data-color-scheme='dark'] .revision-date {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .revision-modal-head,
+:root[data-color-scheme='dark'] .revision-modal-actions,
+:root[data-color-scheme='dark'] .media-editor-header,
+:root[data-color-scheme='dark'] .media-editor-scale-bar,
+:root[data-color-scheme='dark'] .command-footer,
+:root[data-color-scheme='dark'] .command-palette input[type='search'] {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .command-item,
+:root[data-color-scheme='dark'] .command-heading,
+:root[data-color-scheme='dark'] .command-empty,
+:root[data-color-scheme='dark'] .command-footer,
+:root[data-color-scheme='dark'] .bulk-edit-panel h2,
+:root[data-color-scheme='dark'] .editor-dialog-head h2 {
+  background: transparent;
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .command-palette input[type='search'] {
+  background: var(--wp-card);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .site-icon-item {
+  background: var(--wp-alt-row);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .site-icon-current img,
+:root[data-color-scheme='dark'] .profile-picture svg,
+:root[data-color-scheme='dark'] .media-list-open img {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .command-item:hover,
+:root[data-color-scheme='dark'] .command-item:focus-visible {
+  background: var(--wp-hover-row);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .command-badge {
+  background: var(--wp-neutral-bg);
+  border-color: var(--wp-border);
+  color: var(--wp-neutral-text);
+}
+
+:root[data-color-scheme='dark'] .mention-empty {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .mention-suggestions [role='option'] span {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .mention-suggestions [role='option'] {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .mention-suggestions [role='option']:hover {
+  background: #2271b1;
+  color: #ffffff;
+}
+
+:root[data-color-scheme='dark'] .mention-suggestions [role='option']:hover span {
+  background: transparent;
+  color: #f0f0f1;
+}
+
+:root[data-color-scheme='dark'] .editor-options-panel button,
+:root[data-color-scheme='dark'] .editor-summary-menu-panel button {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .editor-options-panel button:hover:not(:disabled),
+:root[data-color-scheme='dark'] .editor-summary-menu-panel button:hover,
+:root[data-color-scheme='dark'] .editor-summary-edit:hover,
+:root[data-color-scheme='dark'] .editor-topbar-tool:hover:not(:disabled),
+:root[data-color-scheme='dark'] .editor-topbar-icon-button:hover:not(:disabled) {
+  background: var(--wp-hover-row);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .editor-options-panel button:disabled {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .format-option {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .format-option code {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .editor-code-textarea {
+  background: var(--wp-card);
+  border-color: var(--wp-input-border);
+  color: var(--wp-text);
+}
+
+/* ==========================================================================
+   Editor screen (block editor shell, document, sidebar, canvas)
+   ========================================================================== */
+
+:root[data-color-scheme='dark'] .editor-screen,
+:root[data-color-scheme='dark'] .editor-canvas {
+  background: var(--wp-bg);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .editor-topbar,
+:root[data-color-scheme='dark'] .editor-toolbar {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .editor-topbar-tool,
+:root[data-color-scheme='dark'] .editor-topbar-icon-button,
+:root[data-color-scheme='dark'] .editor-options-menu > summary,
+:root[data-color-scheme='dark'] .editor-topbar-button,
+:root[data-color-scheme='dark'] .editor-back {
+  background: transparent;
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .editor-back:hover {
+  background: var(--wp-hover-row);
+}
+
+:root[data-color-scheme='dark'] .editor-topbar-tool.is-active,
+:root[data-color-scheme='dark'] .editor-topbar-gear.is-active,
+:root[data-color-scheme='dark'] .editor-topbar-gear:hover {
+  background: var(--wp-hover-row);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .editor-topbar-divider {
+  background: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .editor-document-pill {
+  background: var(--wp-alt-row);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .editor-document-pill:hover {
+  background: var(--wp-hover-row);
+}
+
+:root[data-color-scheme='dark'] .editor-document-type,
+:root[data-color-scheme='dark'] .editor-document-shortcut,
+:root[data-color-scheme='dark'] .editor-summary-edit,
+:root[data-color-scheme='dark'] .editor-word-count,
+:root[data-color-scheme='dark'] .editor-last-edited,
+:root[data-color-scheme='dark'] .editor-summary-menu > summary,
+:root[data-color-scheme='dark'] .editor-eyebrow,
+:root[data-color-scheme='dark'] .editor-save-state {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .editor-topbar-title {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .editor-document {
+  background: var(--wp-card);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .editor-document .editor-title-input {
+  background: transparent;
+  border-color: transparent;
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .editor-document .editor-title-input::placeholder {
+  color: #8c8f94;
+}
+
+:root[data-color-scheme='dark'] .editor-document .editor-slug-input {
+  background: transparent;
+  border-color: transparent;
+  color: #72aee6;
+}
+
+:root[data-color-scheme='dark'] .editor-document .editor-slug-input:focus {
+  background: var(--wp-card);
+  outline-color: #72aee6;
+}
+
+:root[data-color-scheme='dark'] .editor-permalink {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .editor-footer {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .editor-sidebar {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .editor-sidebar-head {
+  background: var(--wp-alt-row);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .editor-panel {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .editor-panel h3 {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .editor-side-tab {
+  background: transparent;
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .editor-side-tab:hover,
+:root[data-color-scheme='dark'] .editor-side-tab.is-active {
+  background: var(--wp-card);
+  border-bottom-color: #72aee6;
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .editor-summary-title,
+:root[data-color-scheme='dark'] .publish-panel .publish-label,
+:root[data-color-scheme='dark'] .editor-term-panel summary,
+:root[data-color-scheme='dark'] .editor-status-value {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .editor-status-value.is-trashed .editor-status-dot {
+  background: #e65054;
+}
+
+:root[data-color-scheme='dark'] .editor-status-dot,
+:root[data-color-scheme='dark'] .editor-status-value .editor-status-dot {
+  background: #72aee6;
+  box-shadow:
+    0 0 0 2px var(--wp-card),
+    0 0 0 3px #72aee6;
+}
+
+:root[data-color-scheme='dark'] .editor-featured-button {
+  background: var(--wp-card);
+  border-color: var(--wp-input-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .editor-featured-button:hover {
+  background: var(--wp-hover-row);
+}
+
+:root[data-color-scheme='dark'] .editor-term-panel {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .editor-structure-status {
+  color: var(--wp-warning-text);
+}
+
+:root[data-color-scheme='dark'] .permalink-input {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .permalink-input > span {
+  background: var(--wp-alt-row);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .permalink-pattern,
+:root[data-color-scheme='dark'] .permalink-preview code {
+  background: var(--wp-alt-row);
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .featured-current,
+:root[data-color-scheme='dark'] .featured-picker {
+  background: var(--wp-alt-row);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .featured-picker-item:hover {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .schedule-editor input[type='datetime-local'] {
+  background: var(--wp-card);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .quick-edit-row > td,
+:root[data-color-scheme='dark'] .quick-edit-row > td.colspanchange {
+  background: var(--wp-alt-row);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .bulk-edit-summary {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .inline-edit-pings-note {
+  color: var(--wp-muted);
+}
+
+/* Block canvas (Gutenberg). `.block-canvas-root` sets `color-scheme: light`
+   in the lazily loaded editor chunk; the scoped selector wins on specificity
+   regardless of chunk order. */
+:root[data-color-scheme='dark'] .block-canvas-root {
+  color-scheme: dark;
+  background: var(--wp-card);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .block-canvas-scroll {
+  background: var(--wp-card);
+}
+
+:root[data-color-scheme='dark'] .block-canvas-sheet,
+:root[data-color-scheme='dark'] .block-canvas-sheet .block-editor-writing-flow {
+  background: transparent;
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .block-canvas-help {
+  background: var(--wp-alt-row);
+  border-color: var(--wp-border);
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .block-canvas-help kbd {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+/* The empty-canvas appender is a WordPress black square; on the dark card the
+   pure-black fill disappears, so lift it to the border tone. */
+:root[data-color-scheme='dark'] .block-canvas-appender-button {
+  background: #3c434a;
+  color: #ffffff;
+}
+
+:root[data-color-scheme='dark'] .block-canvas-listview,
+:root[data-color-scheme='dark'] .block-canvas-inspector {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .block-canvas-panel-head {
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .block-canvas-panel-close,
+:root[data-color-scheme='dark'] .block-canvas-hint {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .block-canvas-panel-close:hover {
+  background: var(--wp-hover-row);
+  color: var(--wp-text);
+}
+
+/* ==========================================================================
+   Media library, drawers and image editor
+   ========================================================================== */
+
+:root[data-color-scheme='dark'] .media-card .media-check {
+  background: var(--wp-alt-row);
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .media-card.is-selected .media-check {
+  background: #2271b1;
+  color: #ffffff;
+}
+
+:root[data-color-scheme='dark'] .media-card.is-selected {
+  box-shadow:
+    inset 0 0 0 5px var(--wp-alt-row),
+    inset 0 0 0 7px var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .media-thumb,
+:root[data-color-scheme='dark'] .theme-screenshot,
+:root[data-color-scheme='dark'] .connector-icon,
+:root[data-color-scheme='dark'] .analytics-bar-track,
+:root[data-color-scheme='dark'] .theme-add-new-icon {
+  background: var(--wp-alt-row);
+}
+
+:root[data-color-scheme='dark'] .media-card-label {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .media-add-new {
+  background: var(--wp-card);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .media-add-new:hover {
+  background: var(--wp-hover-row);
+}
+
+:root[data-color-scheme='dark'] .media-toolbar-bar {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .media-view-toggle,
+:root[data-color-scheme='dark'] .view-toggle-button {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .view-toggle-button {
+  background: var(--wp-card);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .view-toggle-button.is-active {
+  background: #2271b1;
+  color: #ffffff;
+}
+
+:root[data-color-scheme='dark'] .media-toolbar-bar .view-toggle-button {
+  background: transparent;
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .media-toolbar-bar .view-toggle-button:hover {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .media-toolbar-bar .view-toggle-button.is-active {
+  background: transparent;
+  color: #72aee6;
+}
+
+:root[data-color-scheme='dark'] .media-search-input-label,
+:root[data-color-scheme='dark'] .media-showing,
+:root[data-color-scheme='dark'] .media-list-filename,
+:root[data-color-scheme='dark'] .media-regenerate-progress {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .media-drawer,
+:root[data-color-scheme='dark'] .media-drawer-head,
+:root[data-color-scheme='dark'] .media-drawer-preview,
+:root[data-color-scheme='dark'] .media-drawer-sidebar {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .media-drawer-head h2 {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .media-drawer-close,
+:root[data-color-scheme='dark'] .media-drawer-nav,
+:root[data-color-scheme='dark'] .media-drawer-links {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .media-meta-list {
+  /* The base sheet forces the WordPress-white metadata block with
+     `!important`; matching that is the only way to re-colour it. */
+  background: var(--wp-alt-row) !important;
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .media-drawer-links,
+:root[data-color-scheme='dark'] .media-drawer-nav,
+:root[data-color-scheme='dark'] .media-drawer-sidebar,
+:root[data-color-scheme='dark'] .media-drawer-head,
+:root[data-color-scheme='dark'] .media-drawer-head-actions .media-drawer-close {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .media-editor,
+:root[data-color-scheme='dark'] .media-editor-header,
+:root[data-color-scheme='dark'] .media-editor-aspect {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .media-editor-header h2 {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .media-editor-scale-bar,
+:root[data-color-scheme='dark'] .media-editor-crop-bar {
+  background: var(--wp-alt-row);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .media-editor-tool:disabled {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .media-folder-bar,
+:root[data-color-scheme='dark'] .folder-manager,
+:root[data-color-scheme='dark'] .backup-job {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .folder-tree-row,
+:root[data-color-scheme='dark'] .folder-tree-editor select {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .folder-tree-name[aria-current='true'] {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .folder-tree-count,
+:root[data-color-scheme='dark'] .jobs-intro,
+:root[data-color-scheme='dark'] .backup-job-meta {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .folder-tree-row.is-drop-target {
+  background: var(--wp-hover-row);
+}
+
+:root[data-color-scheme='dark'] .jobs-toolbar input[type='search'] {
+  background: var(--wp-card);
+  border-color: var(--wp-input-border);
+  color: var(--wp-text);
+}
+
+/* ==========================================================================
+   Appearance: themes, customizer, site editor, fonts
+   ========================================================================== */
+
+:root[data-color-scheme='dark'] .theme {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .theme-add-new {
+  background: var(--wp-alt-row);
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .theme-add-new:hover {
+  background: var(--wp-hover-row);
+  border-color: var(--wp-input-border);
+}
+
+:root[data-color-scheme='dark'] .theme-add-new-icon {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .theme-overlay {
+  background: var(--wp-card);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .theme-overlay-bar,
+:root[data-color-scheme='dark'] .theme-overlay-tags,
+:root[data-color-scheme='dark'] .theme-overlay-actions {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .theme-overlay-close {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .theme-overlay-close:hover {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .theme-overlay-version,
+:root[data-color-scheme='dark'] .theme-overlay-author,
+:root[data-color-scheme='dark'] .theme-overlay-tags,
+:root[data-color-scheme='dark'] .theme-overlay-description {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .wp-filter {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .themes-search,
+:root[data-color-scheme='dark'] .filter-link.is-disabled {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .theme-count {
+  background: var(--wp-neutral-bg);
+  color: var(--wp-neutral-text);
+}
+
+:root[data-color-scheme='dark'] .customize-screen,
+:root[data-color-scheme='dark'] .site-editor {
+  background: var(--wp-bg);
+}
+
+:root[data-color-scheme='dark'] .customize-header,
+:root[data-color-scheme='dark'] .customize-panel {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .customize-header h1,
+:root[data-color-scheme='dark'] .customize-close,
+:root[data-color-scheme='dark'] .customize-section-link {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .customize-footnote {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .customize-sections,
+:root[data-color-scheme='dark'] .customize-section-link,
+:root[data-color-scheme='dark'] .customize-panel,
+:root[data-color-scheme='dark'] .customize-menu-item {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .customize-preview-frame {
+  border-color: var(--wp-border);
+  /* The preview iframe renders the public (light) site; the frame stays white
+     on purpose so the mocked page is not mistaken for admin chrome. */
+  background: #ffffff;
+}
+
+:root[data-color-scheme='dark'] .customize-empty,
+:root[data-color-scheme='dark'] .customize-menu-item {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .site-editor-sidebar,
+:root[data-color-scheme='dark'] .site-editor-heading h1 {
+  color: #ffffff;
+}
+
+:root[data-color-scheme='dark'] .fonts-screen,
+:root[data-color-scheme='dark'] .fonts-panel {
+  background: var(--wp-card);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .fonts-tabs,
+:root[data-color-scheme='dark'] .fonts-list,
+:root[data-color-scheme='dark'] .fonts-row + .fonts-row,
+:root[data-color-scheme='dark'] .fonts-footer {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .fonts-title,
+:root[data-color-scheme='dark'] .fonts-tab.is-active,
+:root[data-color-scheme='dark'] .fonts-row-name {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .fonts-tab,
+:root[data-color-scheme='dark'] .fonts-section-label,
+:root[data-color-scheme='dark'] .fonts-row-meta,
+:root[data-color-scheme='dark'] .fonts-source {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .fonts-row-button {
+  background: var(--wp-card);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .fonts-row-button:hover {
+  background: var(--wp-hover-row);
+}
+
+/* ==========================================================================
+   Plugins, tools, updates and Events/News
+   ========================================================================== */
+
+:root[data-color-scheme='dark'] .wp-tools-grid .card {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .wp-tools-grid .card p {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .plugin-title strong {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .plugin-title .row-action-sep {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .plugins-empty,
+:root[data-color-scheme='dark'] .import-form-panel,
+:root[data-color-scheme='dark'] .personal-data-panel,
+:root[data-color-scheme='dark'] .personal-data-empty,
+:root[data-color-scheme='dark'] .application-password-empty,
+:root[data-color-scheme='dark'] .redirect-empty,
+:root[data-color-scheme='dark'] .mail-log-empty,
+:root[data-color-scheme='dark'] .backup-empty,
+:root[data-color-scheme='dark'] .notes-empty,
+:root[data-color-scheme='dark'] .spam-guard-card,
+:root[data-color-scheme='dark'] .consent-categories,
+:root[data-color-scheme='dark'] .consent-preview-card,
+:root[data-color-scheme='dark'] .analytics-card,
+:root[data-color-scheme='dark'] .analytics-panel,
+:root[data-color-scheme='dark'] .note-thread {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .plugins-screen .content-table.plugins tr.active td,
+:root[data-color-scheme='dark'] .plugins-screen .content-table.plugins tr.active th,
+:root[data-color-scheme='dark'] .plugins-screen .content-table.plugins tr.active:hover td,
+:root[data-color-scheme='dark'] .plugins-screen .content-table.plugins tr.active:hover th {
+  background: var(--wp-info-bg);
+}
+
+:root[data-color-scheme='dark'] .plugin-details-note,
+:root[data-color-scheme='dark'] .application-password-new,
+:root[data-color-scheme='dark'] .two-factor-codes {
+  background: var(--wp-info-bg);
+}
+
+:root[data-color-scheme='dark'] .update-source-note code,
+:root[data-color-scheme='dark'] .plugin-install-description code,
+:root[data-color-scheme='dark'] .application-password-new code,
+:root[data-color-scheme='dark'] .note-mention-hint code,
+:root[data-color-scheme='dark'] .translation-meta code {
+  background: var(--wp-alt-row);
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .update-auto,
+:root[data-color-scheme='dark'] .update-list,
+:root[data-color-scheme='dark'] .plugin-details-meta {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .events-intro,
+:root[data-color-scheme='dark'] .events-date,
+:root[data-color-scheme='dark'] .events-more {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .events-list li {
+  background: var(--wp-info-bg);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .events-list li + li,
+:root[data-color-scheme='dark'] .events-more,
+:root[data-color-scheme='dark'] .events-footer {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .events-footer,
+:root[data-color-scheme='dark'] .events-row-source,
+:root[data-color-scheme='dark'] .events-icon {
+  color: var(--wp-muted);
+}
+
+/* ==========================================================================
+   Tools pages: privacy, connectors, redirects, mail, backups, notes
+   ========================================================================== */
+
+:root[data-color-scheme='dark'] .personal-data-panel .field label,
+:root[data-color-scheme='dark'] .connector-copy strong,
+:root[data-color-scheme='dark'] .connector-connect input,
+:root[data-color-scheme='dark'] .spam-guard-thresholds input,
+:root[data-color-scheme='dark'] .export-filter input,
+:root[data-color-scheme='dark'] .analytics-range select,
+:root[data-color-scheme='dark'] .media-folder-inline input {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .connector-row {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .connector-icon {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .connectors-banner {
+  background: linear-gradient(100deg, #2b1f33 0%, #261f3a 60%, #232039 100%);
+}
+
+:root[data-color-scheme='dark'] .connectors-banner p {
+  color: var(--wp-text-strong);
+}
+
+:root[data-color-scheme='dark'] .connectors-intro,
+:root[data-color-scheme='dark'] .connector-description,
+:root[data-color-scheme='dark'] .connectors-footer {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .spam-guard-stats,
+:root[data-color-scheme='dark'] .spam-guard-akismet,
+:root[data-color-scheme='dark'] .analytics-updating,
+:root[data-color-scheme='dark'] .analytics-privacy,
+:root[data-color-scheme='dark'] .analytics-card-label,
+:root[data-color-scheme='dark'] .analytics-card-help,
+:root[data-color-scheme='dark'] .consent-intro,
+:root[data-color-scheme='dark'] .languages-intro,
+:root[data-color-scheme='dark'] .link-check-status,
+:root[data-color-scheme='dark'] .redirect-source-slug,
+:root[data-color-scheme='dark'] .redirect-target,
+:root[data-color-scheme='dark'] .media-folder-inline label {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .spam-guard-akismet strong,
+:root[data-color-scheme='dark'] .note-meta strong,
+:root[data-color-scheme='dark'] .note-content,
+:root[data-color-scheme='dark'] .vitals-label strong {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .spam-guard-akismet,
+:root[data-color-scheme='dark'] .application-passwords,
+:root[data-color-scheme='dark'] .two-factor-panel,
+:root[data-color-scheme='dark'] .vitals-row,
+:root[data-color-scheme='dark'] .translation-list li,
+:root[data-color-scheme='dark'] .languages-strings-group h3,
+:root[data-color-scheme='dark'] .note-replies,
+:root[data-color-scheme='dark'] .note-reply-form {
+  border-color: var(--wp-border);
+}
+
+:root[data-color-scheme='dark'] .note-meta,
+:root[data-color-scheme='dark'] .note-anchor-line,
+:root[data-color-scheme='dark'] .note-trash-meta,
+:root[data-color-scheme='dark'] .notes-count,
+:root[data-color-scheme='dark'] .notes-trash-toggle.is-active,
+:root[data-color-scheme='dark'] .vitals-label code,
+:root[data-color-scheme='dark'] .vitals-samples {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .notes-empty {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .note-thread {
+  border-left-color: #dba617;
+}
+
+:root[data-color-scheme='dark'] .note-thread.is-resolved {
+  border-left-color: var(--wp-success);
+}
+
+:root[data-color-scheme='dark'] .note-thread.is-trashed {
+  border-left-color: #e65054;
+}
+
+:root[data-color-scheme='dark'] .note-anchor {
+  background: var(--wp-neutral-bg);
+  color: var(--wp-neutral-text);
+}
+
+:root[data-color-scheme='dark'] .note-anchor.is-missing {
+  background: var(--wp-neutral-bg);
+  color: var(--wp-danger-text);
+}
+
+:root[data-color-scheme='dark'] .application-password-new {
+  border-left-color: #72aee6;
+}
+
+:root[data-color-scheme='dark'] .two-factor-codes {
+  border-left-color: #72aee6;
+}
+
+:root[data-color-scheme='dark'] .editor-structure-banner {
+  border-left-color: #dba617;
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .settings-pings-notice {
+  border-color: var(--wp-border);
+  border-left-color: #dba617;
+}
+
+:root[data-color-scheme='dark'] .autosave-recovery {
+  border-color: #dba617;
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .personal-data-done,
+:root[data-color-scheme='dark'] .import-unavailable {
+  color: var(--wp-muted);
+}
+
+/* ==========================================================================
+   Comments
+   ========================================================================== */
+
+:root[data-color-scheme='dark'] .recent-comment-excerpt,
+:root[data-color-scheme='dark'] .post-comment-count {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] #recent-comments li {
+  border-color: var(--wp-border);
+}
+
+/* ==========================================================================
+   Login screen (rendered outside the admin shell)
+   ========================================================================== */
+
+:root[data-color-scheme='dark'] .login-card {
+  background: var(--wp-card);
+  border-color: var(--wp-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .login-card h1,
+:root[data-color-scheme='dark'] .login-card h1#lost-password-heading {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .login-card .field label,
+:root[data-color-scheme='dark'] .login-remember {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .login-card .field input {
+  background: var(--wp-card);
+  border-color: var(--wp-input-border);
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .login-card .field input:focus {
+  border-color: #72aee6;
+  box-shadow: 0 0 0 1px #72aee6;
+}
+
+:root[data-color-scheme='dark'] .login-show-password,
+:root[data-color-scheme='dark'] .login-help,
+:root[data-color-scheme='dark'] .login-back,
+:root[data-color-scheme='dark'] .login-back a,
+:root[data-color-scheme='dark'] .login-card-links a {
+  color: var(--wp-muted);
+}
+
+:root[data-color-scheme='dark'] .login-back a:hover,
+:root[data-color-scheme='dark'] .login-card-links a:hover {
+  color: var(--wp-text);
+}
+
+:root[data-color-scheme='dark'] .login-back a {
+  color: #72aee6;
+}
+
+:root[data-color-scheme='dark'] .login-error {
+  color: var(--wp-text);
+}

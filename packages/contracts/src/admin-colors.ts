@@ -6,7 +6,17 @@
  * live in the admin stylesheet, keyed by `data-color-scheme`.
  */
 export type AdminColorScheme =
-  'modern' | 'fresh' | 'light' | 'blue' | 'coffee' | 'ectoplasm' | 'midnight' | 'ocean' | 'sunrise';
+  | 'modern'
+  | 'fresh'
+  | 'light'
+  | 'blue'
+  | 'coffee'
+  | 'ectoplasm'
+  | 'midnight'
+  | 'ocean'
+  | 'sunrise'
+  /** MERNPress addition: the whole admin (chrome *and* content) in dark. */
+  | 'dark';
 
 export interface AdminColorSchemeOption {
   id: AdminColorScheme;
@@ -27,6 +37,8 @@ export const ADMIN_COLOR_SCHEMES: readonly AdminColorSchemeOption[] = [
   { id: 'midnight', label: 'Midnight', swatch: ['#232a2e', '#333c42', '#69a8bb', '#cf4339'] },
   { id: 'ocean', label: 'Ocean', swatch: ['#627c83', '#738e96', '#9ebaa0', '#aa9d88'] },
   { id: 'sunrise', label: 'Sunrise', swatch: ['#1d2327', '#2c3338', '#dd823b', '#ccaf0b'] },
+  // MERNPress addition: a full dark admin, not only a dark chrome.
+  { id: 'dark', label: 'Dark', swatch: ['#14181c', '#1c2126', '#e2e4e6', '#72aee6'] },
 ];
 
 export const ADMIN_COLOR_SCHEME_IDS: readonly AdminColorScheme[] = ADMIN_COLOR_SCHEMES.map(

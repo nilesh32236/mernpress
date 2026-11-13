@@ -90,10 +90,11 @@ describe('permalink structures', () => {
 });
 
 describe('admin colour schemes', () => {
-  it('lists the nine WordPress choices and validates ids', async () => {
+  it('lists the WordPress choices plus the MERNPress dark theme and validates ids', async () => {
     const { ADMIN_COLOR_SCHEMES, DEFAULT_ADMIN_COLOR_SCHEME, isAdminColorScheme } =
       await import('../src/admin-colors.js');
-    expect(ADMIN_COLOR_SCHEMES).toHaveLength(9);
+    // Nine WordPress chrome palettes plus MERNPress's full dark admin (ADR 0065).
+    expect(ADMIN_COLOR_SCHEMES).toHaveLength(10);
     expect(ADMIN_COLOR_SCHEMES.map((scheme) => scheme.id)).toEqual([
       'fresh',
       'light',
@@ -104,9 +105,11 @@ describe('admin colour schemes', () => {
       'midnight',
       'ocean',
       'sunrise',
+      'dark',
     ]);
     expect(DEFAULT_ADMIN_COLOR_SCHEME).toBe('fresh');
     expect(isAdminColorScheme('midnight')).toBe(true);
+    expect(isAdminColorScheme('dark')).toBe(true);
     expect(isAdminColorScheme('default')).toBe(false);
     expect(isAdminColorScheme(null)).toBe(false);
   });
