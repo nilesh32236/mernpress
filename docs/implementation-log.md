@@ -6524,3 +6524,14 @@ admin editor 45.
   purpose: a worker thread never runs `process.on('exit')`, so a per-worker
   exit handler would still leak (~46,000 leftovers were cleaned up; a full API
   suite run now leaves the temp directory unchanged).
+
+**Deployment (admin menu dropdowns, release `20261113T071052Z-d07892a`):**
+- Built from `d07892a` (7/7 tasks, no cache); API and web restarted;
+  `/api/health`, the public site and `/admin/` answer 200; the superseded
+  release was pruned (17 GB free).
+- **Live check**: on `/admin/posts` the section in use keeps its sub-menu in
+  the sidebar (`position: relative`), and hovering "Media" opens a dropdown at
+  the sidebar's right edge (`x=160`, 160px wide, `Library` / `Add Media File`)
+  that does not widen the document (`scrollWidth` 1440 = `innerWidth`).
+- Cleanup: the temporary administrator, its session and audit rows were
+  deleted (1 user left: `admin`).
