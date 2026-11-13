@@ -6563,3 +6563,17 @@ admin editor 45.
   in use. The palette to return to is remembered in `localStorage` (a display
   preference); the choice is persisted per user through
   `PATCH /api/admin/profile`.
+
+**Deployment (admin light/dark, release `20261113T123940Z-335093b`):**
+- Built from `335093b` (7/7 tasks); API and web restarted; `/api/health` and
+  `/admin/` answer 200; the superseded release was pruned.
+- **Live check with a dark desktop preference** (the reported case): the light
+  palette's Quick Draft title and content fields are `rgb(255,255,255)` with
+  black text, and the Screen Options radio reports `color-scheme: light`.
+- Clicking the admin-bar switch sets `data-color-scheme="dark"` and
+  `color-scheme: dark`, paints the page `rgb(20,24,28)` with
+  `rgb(226,228,230)` text, and the label becomes "Switch to the light admin
+  theme"; a reload stays dark (the choice is stored on the profile); clicking
+  again returns to the default palette.
+- Cleanup: the temporary administrator, its session and audit rows were deleted
+  (1 user left: `admin`).
