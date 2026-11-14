@@ -127,6 +127,94 @@ no DuckDNS token is stored in the Caddyfile.
 - API start: `/opt/node24/bin/node dist/server.js` from
   `/opt/mernpress/current/apps/api`.
 
+## Release procedure (current — verified 2026-11-13)
+
+Do not run this without an explicit deploy authorization: the owner gates
+production separately from implementation. One release stays on disk.
+
+### 1. Preflight
+
+- The working tree is clean and the commit is the one that passed CI.
+- `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`, `pnpm build`
+  and `pnpm test:e2e` are green.
+- A database backup exists when the release adds a migration.
+
+### 2. Build the release directory
+
+```bash
+cd /srv/mernpress
+TS=$(date -u +%Y%m%dT%H%M%SZ); SHA=$(git rev-parse --short HEAD)
+REL=/opt/mernpress/releases/$TS-$SHA
+sudo mkdir -p "$REL"; sudo chown admin:admin "$REL"
+rsync -a --delete \
+  --exclude .git --exclude node_modules --exclude .data --exclude .next \
+  --exclude test-results --exclude playwright-report --exclude .playwright-mcp \
+  --exclude .env --exclude .turbo ./ "$REL"/
+printf 'commit=%s\nbuilt_at=%s\nsource=/srv/mernpress\n' "$SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$REL/BUILD-INFO"
+
+cd "$REL"
+NODE_ENV=production pnpm install --frozen-lockfile
+export DATABASE_URL="$(sudo grep '^DATABASE_URL=' /etc/mernpress/mernpress.env | cut -d= -f2-)"
+export MERNPRESS_SITE_URL=https://mernpress.duckdns.org
+export MERNPRESS_API_URL=http://127.0.0.1:4000
+NODE_ENV=production pnpm db:generate
+NODE_ENV=production pnpm build
+```
+
+### 3. Switch and restart
+
+```bash
+sudo ln -sfn "$REL" /opt/mernpress/current
+sudo systemctl restart mernpress-api mernpress-web
+sleep 8
+systemctl is-active mernpress-api mernpress-web
+curl -s -o /dev/null -w "api:%{http_code}\n" http://127.0.0.1:4000/api/health
+curl -s -o /dev/null -w "web:%{http_code}\n" http://127.0.0.1:3100/
+curl -s -o /dev/null -w "admin:%{http_code}\n" https://mernpress.duckdns.org/admin/
+```
+
+Restart **both** services. The web service runs the standalone Next.js build
+from the release, so moving the symlink without a restart keeps the old site.
+
+The API refreshes bundled themes from the release on start (a bundled
+`theme.json` is copied over an older installed copy — bump its `version`), so
+theme-manifest changes take effect with the restart.
+
+### 4. Verify
+
+- Public routes: `/`, `/posts`, `/admin/`, `/api/health`, `/feed`,
+  `/sitemap.xml`.
+- `sudo journalctl -u mernpress-api --since "10 min ago" --no-pager |
+  grep -cE '"level":(50|60)'` → `0`.
+- Exercise the slice that changed. Live checks that need an administrator use a
+  temporary account created by a one-off script (never committed), then delete
+  the user, its sessions and its audit rows:
+
+```sql
+DELETE FROM audit_events WHERE actor_user_id = '<id>' OR target_user_id = '<id>';
+DELETE FROM sessions WHERE user_id = '<id>';
+DELETE FROM users WHERE id = '<id>';
+```
+
+- Prune the superseded release — keep exactly one. The disk filled to 100% once
+  and caused a 502 through CHDIR:
+
+```bash
+sudo rm -rf /opt/mernpress/releases/<old-release>
+ls /opt/mernpress/releases/; df -h /opt | tail -1
+```
+
+- Record the release id, the commands and the numbers in
+  `docs/implementation-log.md`.
+
+### 5. Rollback
+
+- Code only: keep the previous release on disk until the new one is verified,
+  then `sudo ln -sfn /opt/mernpress/releases/<previous> /opt/mernpress/current`
+  and restart both services.
+- Migrations are forward-only. Restore a backup only when a schema change has to
+  be reverted, and say so in the implementation log.
+
 ## Services and secrets
 
 - `mernpress-api.service` — enabled, API on `127.0.0.1:4000`, runs as
@@ -194,7 +282,8 @@ no DuckDNS token is stored in the Caddyfile.
 - Health: `curl -sS http://127.0.0.1:4000/api/health`,
   `curl -sS http://127.0.0.1:4000/api/ready`.
 - Release switch: point `/opt/mernpress/current` at a new release, then
-  `systemctl restart mernpress-api` and reload Caddy.
+  restart `mernpress-api` **and** `mernpress-web` (see the release procedure
+  above).
 - Rollback: restore the timestamped Caddyfile, reload Caddy, disable/stop
   `mernpress-api`, and leave the production database intact. The rollback was
   not destructively tested.

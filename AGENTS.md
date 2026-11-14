@@ -187,6 +187,10 @@ Before claiming a slice is complete:
 5. Inspect `git diff` for secrets, unsafe HTML, missing authorization, dead code,
    scope creep and generated artifacts.
 6. Record exact commands and results. Label skipped tests and blockers.
+7. For any UI change: regenerate the affected visual baselines and prove the
+   diff is limited to the new element with `scripts/png-diff.mjs` — see
+   [visual baselines](docs/verification/visual-baselines.md). A baseline
+   regenerated over an unintended layout shift is worse than a failing test.
 
 Minimum commands once Phase 1 exists (names may be refined there):
 
@@ -252,7 +256,8 @@ See [local setup](docs/operations/local-setup.md).
   slices, not marketplace features.)
 - Do not port Qrolic's `qrolic/*` blocks or its Service/Job/Portfolio/Team CPTs
   into core. They are site-specific.
-- Do not claim WordPress parity. Document differences.
+- Do not claim WordPress parity. Document differences, and measure them with the
+  [reference harness](docs/verification/wordpress-reference.md).
 - Do not run destructive commands (`rm -rf`, force-push, reset --hard, clean -fdx)
   against this repository or the references.
 - Do not change global OpenCode configuration without a timestamped backup and a

@@ -263,7 +263,9 @@ Start here, then follow the links.
 | [TASKS.md](TASKS.md) | Staged backlog, statuses, dependencies and acceptance criteria |
 | [DECISIONS.md](DECISIONS.md) | Decision index and links to ADRs |
 | [docs/operations/local-setup.md](docs/operations/local-setup.md) | Prerequisites, PostgreSQL, env, commands and troubleshooting |
-| [docs/operations/production-hosting.md](docs/operations/production-hosting.md) | DuckDNS + Caddy + systemd production hosting, current status and rollback |
+| [docs/operations/production-hosting.md](docs/operations/production-hosting.md) | DuckDNS + Caddy + systemd production hosting, release procedure and rollback |
+| [docs/verification/visual-baselines.md](docs/verification/visual-baselines.md) | Changing the UI without breaking the screenshot guard: regeneration and diff proof |
+| [docs/verification/wordpress-reference.md](docs/verification/wordpress-reference.md) | Measuring parity against the WordPress 7.1.4 reference harness |
 | [docs/testing/phase-1-manual-test.md](docs/testing/phase-1-manual-test.md) | Owner's step-by-step Phase 1 acceptance checklist (approved) |
 | [docs/testing/phase-2-manual-test.md](docs/testing/phase-2-manual-test.md) | Owner's step-by-step auth-slice acceptance checklist |
 | [docs/testing/phase-3-manual-acceptance.md](docs/testing/phase-3-manual-acceptance.md) | Phase 3 acceptance evidence and reproducible checklist |
