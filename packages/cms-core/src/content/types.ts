@@ -206,6 +206,12 @@ export interface AdminListQuery {
 
 export interface PublicListQuery {
   type?: ContentType | undefined;
+  /** WordPress `s`: case-insensitive match on title/excerpt. */
+  search?: string | undefined;
+  /** WordPress `category_name`: a category term slug. */
+  category?: string | undefined;
+  /** WordPress `tag`: a tag term slug. */
+  tag?: string | undefined;
   page: number;
   perPage: number;
 }

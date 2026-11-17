@@ -11,6 +11,7 @@ export type Route =
   | { name: 'terms' }
   | { name: 'media' }
   | { name: 'users' }
+  | { name: 'audit' }
   | { name: 'profile' }
   | { name: 'settings' }
   | { name: 'notFound' };
@@ -56,6 +57,9 @@ export function parseRoute(pathname: string): Route {
   }
   if (typeSegment === 'users' && parts.length === 1) {
     return { name: 'users' };
+  }
+  if (typeSegment === 'audit' && parts.length === 1) {
+    return { name: 'audit' };
   }
   if (typeSegment === 'profile' && parts.length === 1) {
     return { name: 'profile' };
@@ -160,6 +164,8 @@ export function breadcrumbs(route: Route): Array<{ label: string; to?: string }>
       return [{ label: 'Dashboard', to: '/' }, { label: 'Media' }];
     case 'users':
       return [{ label: 'Dashboard', to: '/' }, { label: 'Users' }];
+    case 'audit':
+      return [{ label: 'Dashboard', to: '/' }, { label: 'Audit Log' }];
     case 'profile':
       return [{ label: 'Dashboard', to: '/' }, { label: 'Profile' }];
     case 'settings':

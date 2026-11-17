@@ -20,7 +20,8 @@ export type Capability =
   | 'content.publish.any'
   | 'content.trash.any'
   | 'content.trash.own'
-  | 'manage_options';
+  | 'manage_options'
+  | 'audit.read';
 
 export type Role = 'administrator' | 'editor' | 'author' | 'contributor' | 'subscriber';
 
@@ -37,6 +38,7 @@ const ADMIN: readonly Capability[] = [
   'content.trash.any',
   'content.trash.own',
   'manage_options',
+  'audit.read',
 ];
 
 const ROLE_CAPABILITIES: Readonly<Record<Role, ReadonlySet<Capability>>> = {
@@ -48,7 +50,8 @@ const ROLE_CAPABILITIES: Readonly<Record<Role, ReadonlySet<Capability>>> = {
         capability !== 'manage_options' &&
         capability !== 'content.edit.own' &&
         capability !== 'content.publish.own' &&
-        capability !== 'content.trash.own',
+        capability !== 'content.trash.own' &&
+        capability !== 'audit.read',
     ),
   ),
   author: new Set([

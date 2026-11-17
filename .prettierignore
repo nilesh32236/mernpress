@@ -8,5 +8,22 @@ pnpm-lock.yaml
 packages/database/src/generated/
 apps/web/next-env.d.ts
 
+# Read-only upstream WordPress reference source and Craft Anything's own records.
+docs/wordpress/
+craft.json
+feed.json
+usage.json
+build-activity.log
+build-activity.old.log
+agent-session.jsonl
+transcript.json
+extract-transcript.json
+inbox/
+checks/
+capture/
+reference/
+attachments/
+investigation.cany/
+
 # Phase 0/1 prose is hand-wrapped for review; Prettier manages code and config.
 *.md

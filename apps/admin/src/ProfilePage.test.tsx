@@ -9,6 +9,7 @@ import {
   type UserProfile,
 } from './api.js';
 import { ProfilePage } from './ProfilePage.js';
+import { formatDateTime } from './format.js';
 
 vi.mock('./api.js', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
@@ -51,7 +52,7 @@ describe('profile page', () => {
 
     expect(((await screen.findByLabelText('Username')) as HTMLInputElement).value).toBe('admin');
     expect(screen.getByText('Administrator')).toBeDefined();
-    expect(screen.getByText('Oct 1, 2026, 9:00 AM')).toBeDefined();
+    expect(screen.getByText(formatDateTime('2026-10-01T09:00:00.000Z'))).toBeDefined();
   });
 
   it('saves the username and notifies the parent', async () => {

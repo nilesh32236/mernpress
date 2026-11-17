@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdminPost, AuthUser, Paged } from './api.js';
 import { ContentList } from './ContentList.js';
+import { formatDateTime } from './format.js';
 
 beforeEach(() => {
   window.history.replaceState(null, '', '/posts');
@@ -80,7 +81,7 @@ describe('content lists', () => {
     expect(await screen.findByRole('link', { name: 'First post' })).toBeDefined();
     expect(screen.getByText('Draft')).toBeDefined();
     expect(screen.getByText('Another user')).toBeDefined();
-    expect(screen.getByText('Oct 27, 2026, 11:00 AM')).toBeDefined();
+    expect(screen.getByText(formatDateTime('2026-10-27T11:00:00.000Z'))).toBeDefined();
     expect(screen.getByText('11 Posts')).toBeDefined();
     expect((screen.getByRole('button', { name: '« Previous' }) as HTMLButtonElement).disabled).toBe(
       true,

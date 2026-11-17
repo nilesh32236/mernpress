@@ -1126,6 +1126,26 @@ export function createContentService(options: ContentServiceOptions): ContentSer
     if (query.type) {
       where.type = query.type;
     }
+    // Public archives use the same published/scheduled gate as the plain list;
+    // filters are additive and each is matched against published content only.
+    const and: Prisma.PostWhereInput[] = [];
+    if (query.search) {
+      and.push({
+        OR: [
+          { title: { contains: query.search, mode: 'insensitive' } },
+          { excerpt: { contains: query.search, mode: 'insensitive' } },
+        ],
+      });
+    }
+    if (query.category) {
+      and.push({ terms: { some: { term: { taxonomy: 'category', slug: query.category } } } });
+    }
+    if (query.tag) {
+      and.push({ terms: { some: { term: { taxonomy: 'tag', slug: query.tag } } } });
+    }
+    if (and.length > 0) {
+      where.AND = and;
+    }
     const [rows, total] = await prisma.$transaction([
       prisma.post.findMany({
         where,

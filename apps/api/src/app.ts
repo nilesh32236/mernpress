@@ -8,6 +8,7 @@ import {
   createContentService,
   createHookRegistry,
   createTaxonomyService,
+  createAuditLogService,
   createUserAdminService,
   createOptionService,
   createScheduleService,
@@ -24,6 +25,7 @@ import { registerContentRoutes } from './routes/content.js';
 import { registerPublicContentRoutes } from './routes/public-content.js';
 import { registerTaxonomyRoutes } from './routes/taxonomy.js';
 import { registerUserRoutes } from './routes/users.js';
+import { registerAuditRoutes } from './routes/audit.js';
 import { registerProfileRoutes } from './routes/profile.js';
 import { registerOptionRoutes } from './routes/options.js';
 import { registerScheduleRoutes } from './routes/schedule.js';
@@ -123,6 +125,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   const users = createUserAdminService({ prisma: database });
   app.decorate('users', users);
 
+  const audit = createAuditLogService({ prisma: database });
+  app.decorate('audit', audit);
+
   const optionService = createOptionService({ prisma: database });
 
   const schedule = createScheduleService({
@@ -179,6 +184,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerContentRoutes(app, { env, auth, content });
   registerTaxonomyRoutes(app, { env, auth, taxonomy });
   registerUserRoutes(app, { env, auth, users });
+  registerAuditRoutes(app, { env, auth, audit });
   registerProfileRoutes(app, { env, auth, users });
   registerOptionRoutes(app, { env, auth, options: optionService });
   registerScheduleRoutes(app, { env, auth, schedule });

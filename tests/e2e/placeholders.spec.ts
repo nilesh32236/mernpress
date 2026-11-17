@@ -1,7 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const ADMIN_URL = 'http://127.0.0.1:5173/admin/';
-const WEB_URL = 'http://localhost:3000';
+// The web dev server binds to 127.0.0.1 (apps/web/package.json dev script).
+// Use the IPv4 literal here: on hosts where `localhost` resolves to ::1 first,
+// Chrome cannot reach the IPv4-only listener and the smoke test fails.
+const WEB_URL = 'http://127.0.0.1:3000';
 const API_URL = 'http://127.0.0.1:4000';
 
 function trackBrowserErrors(page: Page): {
@@ -54,11 +57,14 @@ test('public site boots without console or asset errors', async ({ page }) => {
 
   await page.goto(WEB_URL);
   await expect(page.getByRole('heading', { level: 1, name: 'MERNPress' })).toBeVisible();
-  // The site renders real content now: either the latest posts or the empty state.
+  // The home header always renders "Latest published posts." and, when the
+  // database is empty, also renders the empty-state text. `.or()` alone matches
+  // both and trips strict mode, so take the first match.
   await expect(
     page
       .getByText('Latest published posts.')
-      .or(page.getByText('No posts published yet. Nothing to read yet.')),
+      .or(page.getByText('No posts published yet. Nothing to read yet.'))
+      .first(),
   ).toBeVisible();
 
   expect(errors.consoleErrors).toEqual([]);

@@ -30,3 +30,13 @@ apps/web/next-env.d.ts
 var/media
 apps/api/var/
 .playwright-mcp/
+
+# Local reference copies and agent tooling artifacts (never commit)
+docs/wordpress/
+capture/
+checks/
+inbox/
+investigation.cany/
+craft.json
+feed.json
+usage.json

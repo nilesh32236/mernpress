@@ -7,6 +7,7 @@ import { MediaPage } from './MediaPage.js';
 import { Dashboard } from './Dashboard.js';
 import { LoginForm } from './LoginForm.js';
 import { UsersPage } from './UsersPage.js';
+import { AuditLogPage } from './AuditLogPage.js';
 import { ProfilePage } from './ProfilePage.js';
 import { SettingsPage } from './SettingsPage.js';
 import { AdminShell } from './AdminShell.js';
@@ -166,6 +167,8 @@ function pageTitle(route: Route): string {
       return 'MERNPress admin · Media';
     case 'users':
       return 'MERNPress admin · Users';
+    case 'audit':
+      return 'MERNPress admin · Audit Log';
     case 'profile':
       return 'MERNPress admin · Profile';
     case 'settings':
@@ -209,6 +212,8 @@ function RouteView({
       return <MediaPage user={user} />;
     case 'users':
       return user.role === 'administrator' ? <UsersPage user={user} /> : <Forbidden />;
+    case 'audit':
+      return user.role === 'administrator' ? <AuditLogPage /> : <Forbidden />;
     case 'profile':
       return <ProfilePage user={user} onProfileUpdated={onUserUpdated} />;
     case 'settings':

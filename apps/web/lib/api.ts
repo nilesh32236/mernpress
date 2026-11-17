@@ -81,13 +81,30 @@ async function apiFetch(path: string): Promise<Response> {
   return fetch(url, { next: { revalidate: 60 } } as RequestInit);
 }
 
+export interface PublicListFilters {
+  /** WordPress `s`: search term. */
+  search?: string;
+  /** WordPress `category_name`: category slug. */
+  category?: string;
+  /** WordPress `tag`: tag slug. */
+  tag?: string;
+}
+
 export async function listPublished(
   type: ContentType = 'post',
   page = 1,
   perPage = 10,
+  filters: PublicListFilters = {},
 ): Promise<PostsPage | null> {
-  const path = `/api/public/posts?type=${type}&page=${page}&perPage=${perPage}`;
-  const res = await apiFetch(path);
+  const params = new URLSearchParams({
+    type,
+    page: String(page),
+    perPage: String(perPage),
+  });
+  if (filters.search) params.set('search', filters.search);
+  if (filters.category) params.set('category', filters.category);
+  if (filters.tag) params.set('tag', filters.tag);
+  const res = await apiFetch(`/api/public/posts?${params.toString()}`);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Failed to list ${type}s: ${res.status}`);
   return (await res.json()) as PostsPage;
@@ -95,6 +112,21 @@ export async function listPublished(
 
 export async function listPublishedPosts(page = 1, perPage = 10): Promise<PostsPage | null> {
   return listPublished('post', page, perPage);
+}
+
+/** WordPress search results (`/?s=…`). */
+export function searchPosts(term: string, page = 1, perPage = 10): Promise<PostsPage | null> {
+  return listPublished('post', page, perPage, { search: term });
+}
+
+/** WordPress category archive (`/category/{slug}/`). */
+export function listByCategory(slug: string, page = 1, perPage = 10): Promise<PostsPage | null> {
+  return listPublished('post', page, perPage, { category: slug });
+}
+
+/** WordPress tag archive (`/tag/{slug}/`). */
+export function listByTag(slug: string, page = 1, perPage = 10): Promise<PostsPage | null> {
+  return listPublished('post', page, perPage, { tag: slug });
 }
 
 export async function getPublishedBySlug(

@@ -88,6 +88,11 @@ export const adminListQuerySchema = z
 export const publicListQuerySchema = z
   .object({
     type: contentType.optional(),
+    // Public archive filters mirror WordPress public query vars: s (search),
+    // category_name and tag. Term filters match a term slug, not an id.
+    search: z.string().trim().max(200).optional(),
+    category: slug.optional(),
+    tag: slug.optional(),
     ...pagination,
   })
   .strict();

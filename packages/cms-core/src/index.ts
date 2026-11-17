@@ -66,6 +66,18 @@ export {
   type Role,
 } from './auth/capabilities.js';
 
+// ---- Audit log (D-051) ----
+export {
+  createAuditLogService,
+  AUDIT_EVENT_TYPES,
+  type AuditEventDto,
+  type AuditEventType,
+  type AuditLogService,
+  type AuditLogServiceOptions,
+  type AuditMetadata,
+  type ListAuditEventsQuery,
+} from './auth/audit-log.js';
+
 // ---- Phase 3: content, taxonomy, hooks ----
 export { createHookRegistry } from './hooks/registry.js';
 export { HookRejectedError } from './hooks/types.js';

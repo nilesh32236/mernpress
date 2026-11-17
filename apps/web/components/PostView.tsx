@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { mediaUrl, type PublicPost } from '@/lib/api';
 
 function formatDateUtc(iso: string | null): string | null {
@@ -35,14 +36,22 @@ export default function PostView({ post }: { post: PublicPost }) {
           {post.terms.categories.length > 0 || post.terms.tags.length > 0 ? (
             <div className="mt-3 flex flex-wrap gap-1" aria-label="Terms">
               {post.terms.categories.map((term) => (
-                <span key={`c-${term.id}`} className="chip">
+                <Link
+                  key={`c-${term.id}`}
+                  href={`/category/${encodeURIComponent(term.slug)}`}
+                  className="chip hover:underline focus-visible:underline"
+                >
                   {term.name}
-                </span>
+                </Link>
               ))}
               {post.terms.tags.map((term) => (
-                <span key={`t-${term.id}`} className="chip">
+                <Link
+                  key={`t-${term.id}`}
+                  href={`/tag/${encodeURIComponent(term.slug)}`}
+                  className="chip hover:underline focus-visible:underline"
+                >
                   {term.name}
-                </span>
+                </Link>
               ))}
             </div>
           ) : null}
