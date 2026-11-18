@@ -6972,3 +6972,50 @@ runtime dependency is affected. CI run `44237736736` completed with
 
 **Next proposed slice (not started):** media where-used view + editor library
 picker, or the backup/restore drill.
+
+### 2026-11-18 — Merged `origin/master` and deployed the merged release
+
+The owner asked to pull the main branch, resolve conflicts and make it live.
+`origin/master` was 4 commits ahead (`5173de7` audit log + public archives +
+licence package + Next.js 16.4.6, then three CI fixes); the local `master` was
+337 commits ahead with all the design/parity, colour-scheme and admin dark-theme
+work. A backup tag (`backup/pre-merge-20261118`) was created before merging.
+
+**Conflict resolutions (22 files):**
+
+- Admin shell: kept the measured WordPress nav, added the remote's
+  administrator Audit Log item with a dashicon; the remote's Tailwind-era icon
+  refactor and plain search header were dropped.
+- API: registered the audit service/route alongside the local profile and user
+  routes; `audit.read` joined the capability union. Public list schemas keep the
+  local `author`/`lang` filters and use the remote's slug validation.
+- Content: kept ranked full-text search (`searchPostIds`) and added the remote's
+  category/tag slug semantics; the remote's `LIKE` search was a subset.
+- Web API: `listPublished` accepts both the sitemap's positional
+  `(language, noStore)` call and the new filters object. The archive/search
+  pages keep the local implementation (real term lookup, JSON-LD, theme
+  strings); the remote's unused `ArchiveList` component was removed.
+- Both documentation histories were preserved. The remote's D-048..D-052 were
+  renumbered to D-151..D-155 (those ids already existed locally) and every
+  cross-reference was updated; the remote P4-11 became P4-14.
+- 76 admin visual baselines were regenerated for the new Audit Log nav item;
+  the diff is confined to an 85×85 box in the sidebar (x=10).
+
+**Gates:** prettier, lint, typecheck 11/11, 1062 unit/integration, 50 E2E,
+107 visual baselines, build 7/7.
+
+**Deployment (release `20261118T054616Z-87a4551`):**
+
+- API and web restarted; `/`, `/posts`, `/admin/`, `/api/health`, `/feed` and
+  `/sitemap.xml` all return 200; 0 API errors.
+- Live checks: `/admin/audit` renders with the new nav item; the local dark
+  switch, sidebar hover panel and list tables still work; dark mode paints
+  `rgb(20,24,28)`; `/search?q=mernpress` renders the local design.
+- `/category/news` and `/tag/demo` return 404 in production because the
+  production database has zero terms — correct 404s, not a route failure.
+- Cleanup: the temporary administrator, its session and audit rows were
+  deleted (1 user left: `admin`); the superseded release was pruned (one
+  release retained).
+
+**Not done:** the merge commit has not been pushed to GitHub — publishing needs
+explicit owner authorization (AGENTS.md §1).
