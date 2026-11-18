@@ -258,8 +258,9 @@ pnpm build
 pnpm test:e2e
 ```
 
-For E2E, set `E2E_API_URL` to the API port actually used when another service
-owns port 4000 (the `preview.spec.ts` default assumes 4100).
+For E2E, set `E2E_API_PORT` when another service owns port 4000; the tests and
+the Playwright webServer use the same port (default 4000). `E2E_API_URL` can
+still override the full URL.
 
 `pnpm test` expects the dedicated test PostgreSQL database. It covers API liveness,
 readiness 200/503, environment validation, bootstrap, Argon2id, generic login

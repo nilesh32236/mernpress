@@ -2045,9 +2045,10 @@ that clicking a category/tag chip on a post opens its archive.
 
 **Known limitations:** search matches title and excerpt only (not full body);
 term archives key on slug, not WordPress's numeric `cat` id; author/date
-archives and RSS remain deferred. E2E needs `E2E_API_URL` pointing at the API
-port actually used (the `preview.spec.ts` default of 4100 assumes a production
-service owns 4000). No WordPress source was copied; no REA reverse engineering
+archives and RSS remain deferred. E2E uses `E2E_API_PORT` (default 4000)
+consistently in the Playwright webServer and `preview.spec.ts`; a stale 4100
+default in that spec broke CI and was fixed in the follow-up commit. No WordPress
+source was copied; no REA reverse engineering
 was applied to the WordPress PHP source (REA targets binaries/minified JS/live
 pages, not plain source). This review does not replace owner acceptance.
 
@@ -2235,6 +2236,30 @@ exist but no handler writes audit rows (the old gap-matrix claim was corrected).
 No content-change attribution is claimed. `from`/`to` filters exist in the API
 but are not surfaced in the UI. Audit identifiers are pseudonymous, not anonymous
 (threat model §8). The residual dev-only `minimatch` advisory remains open.
+
+**Next proposed slice (not started):** media where-used view + editor library
+picker, backup/restore drill, or the residual `minimatch` advisory.
+
+### CI failure fix — E2E API port default (2026-11-18)
+
+**Observation:** push `5173de7` produced CI run `44094051555`, which failed only
+at "Browser smoke tests". The log showed
+`apiRequestContext.get: connect ECONNREFUSED 127.0.0.1:4100` in `preview.spec.ts`:
+that spec defaulted `E2E_API_URL` to port 4100 while `playwright.config.ts`
+starts the API on `E2E_API_PORT` (default 4000). Locally the mismatch had been
+masked by an explicit `E2E_API_URL` override; CI has none.
+
+**Changed files:** `tests/e2e/preview.spec.ts` (default API URL now derives from
+`E2E_API_PORT`, default 4000 — same source as the webServer), `README.md`,
+`TASKS.md` (X-10), this log.
+
+**Validation:** `pnpm format:check` pass; `git diff --check` clean;
+`pnpm test:e2e` with **no** `E2E_API_URL` override — 23/23 pass (CI-equivalent).
+The local test cluster had stopped during host restarts; restarted with
+`MERNPRESS_LOCAL_DB_PORT=55433 pnpm db:local:start` (no `.env` change).
+
+**Known limitations:** CI re-run needed to confirm the fix end-to-end. The
+`minimatch` advisory remains moderate-only and CI audits at `high`.
 
 **Next proposed slice (not started):** media where-used view + editor library
 picker, backup/restore drill, or the residual `minimatch` advisory.

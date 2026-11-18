@@ -9,7 +9,11 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../
 loadDotenv({ path: path.join(repoRoot, '.env'), quiet: true });
 
 const ADMIN_URL = 'http://127.0.0.1:5173/admin/';
-const API_URL = process.env['E2E_API_URL'] ?? 'http://127.0.0.1:4100';
+// Keep this in sync with playwright.config.ts: the webServer API listens on
+// E2E_API_PORT (default 4000). The old 4100 default assumed a production
+// service owned 4000 and broke CI, where no override is set.
+const apiPort = process.env['E2E_API_PORT'] ?? '4000';
+const API_URL = process.env['E2E_API_URL'] ?? `http://127.0.0.1:${apiPort}`;
 const suffix = randomUUID().slice(0, 10);
 const editorUsername = `e2e_prev_${suffix}`;
 const password = `E2E-${randomUUID()}-Aa1!`;
