@@ -2,6 +2,14 @@ packages:
   - 'apps/*'
   - 'packages/*'
 
+# Reviewed security-audit exception (D-052). GHSA-fc5q-39xc-vjpf is a high
+# ReDoS in picomatch with no patched version; it is reachable only through the
+# dev-only Vitest/Vite toolchain and is never shipped to users. Revisit when
+# upstream publishes a fix. All other advisories remain active in CI.
+audit:
+  ignore:
+    - GHSA-fc5q-39xc-vjpf
+
 # pnpm blocks dependency build scripts by default. Allow only the packages that
 # need them for this workspace; everything else stays blocked.
 allowBuilds:

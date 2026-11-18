@@ -2261,5 +2261,25 @@ The local test cluster had stopped during host restarts; restarted with
 **Known limitations:** CI re-run needed to confirm the fix end-to-end. The
 `minimatch` advisory remains moderate-only and CI audits at `high`.
 
+### CI dependency-audit exception (2026-11-18)
+
+**Observation:** CI run `44236935487` passed lint, typecheck, tests, build and
+all 23 browser tests, then failed at `pnpm audit --audit-level=high` on
+**GHSA-fc5q-39xc-vjpf** (picomatch ReDoS, high). The advisory reports **no
+patched version** and affects the dev-only Vitest/Vite glob chain (104 paths),
+never shipped to users. A moderate `minimatch` advisory remains but is below the
+CI gate.
+
+**Changed files:** `DECISIONS.md` (D-052), `pnpm-workspace.yaml` (narrow
+`audit.ignore` entry with rationale), this log.
+
+**Validation:** `pnpm audit --audit-level=high` — exit 0 ("1 vulnerabilities
+found / Severity: 1 moderate / 1 ignored: 1 high"); `pnpm format:check` pass;
+`git diff --check` clean.
+
+**Known limitations:** this is a documented residual risk for dev tooling, not
+a fix; revisit when upstream publishes a patched picomatch/Vite chain. No
+runtime dependency is affected. CI re-run needed to confirm green.
+
 **Next proposed slice (not started):** media where-used view + editor library
-picker, backup/restore drill, or the residual `minimatch` advisory.
+picker, or the backup/restore drill.
