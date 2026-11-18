@@ -2258,8 +2258,9 @@ masked by an explicit `E2E_API_URL` override; CI has none.
 The local test cluster had stopped during host restarts; restarted with
 `MERNPRESS_LOCAL_DB_PORT=55433 pnpm db:local:start` (no `.env` change).
 
-**Known limitations:** CI re-run needed to confirm the fix end-to-end. The
-`minimatch` advisory remains moderate-only and CI audits at `high`.
+**Known limitations:** the `minimatch` advisory remains moderate-only and CI
+audits at `high`. Confirmed green in CI run `44236935487` (all browser tests
+passed) after the follow-up audit exception.
 
 ### CI dependency-audit exception (2026-11-18)
 
@@ -2279,7 +2280,8 @@ found / Severity: 1 moderate / 1 ignored: 1 high"); `pnpm format:check` pass;
 
 **Known limitations:** this is a documented residual risk for dev tooling, not
 a fix; revisit when upstream publishes a patched picomatch/Vite chain. No
-runtime dependency is affected. CI re-run needed to confirm green.
+runtime dependency is affected. CI run `44237736736` completed with
+`conclusion=success` (all steps green), confirming both CI fixes end-to-end.
 
 **Next proposed slice (not started):** media where-used view + editor library
 picker, or the backup/restore drill.
