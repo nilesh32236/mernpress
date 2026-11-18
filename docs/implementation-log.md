@@ -7023,3 +7023,93 @@ App to create or update workflow .github/workflows/ci.yml without workflow
 scope`); the push succeeded over SSH, which the owner's `gh` account supports
 (`Git operations protocol: ssh`). Local and `origin/master` are both at
 `7eee777` (0 ahead, 0 behind).
+
+### Code-editor dirty/save correctness fix (2026-11-18)
+
+**Owner request:** pull all git changes, use REA, and make the Gutenberg editor
+correct and proper.
+
+**REA use (bounded):** REA was connected and used on the shipped admin bundle
+(`apps/admin/dist`) via `analyze_javascript_application` with exact source paths
+for the entry and editor chunks. Both returned valid Evidence
+(`ev_9050b8fa…` for `index-CJLPJMAd.js`, `ev_1fcaf43c…` for `BlockCanvas-*.js`)
+but **skipped semantic parsing** of the minified files
+(`parsed_javascript_files: 0`) — no module graph was recoverable, so REA added
+no editor-behaviour facts. Per the REA skill, a complete source repository is
+analysed with normal tools; the defects below were found in source, not inferred
+from the bundle. No WordPress PHP source was reverse engineered.
+
+**Root cause verified in source:** the Code editor's textarea called
+`updateForm('content', …)`, which never sets `contentTouched`, while the block
+canvas reports edits through `onDirty`. Consequences: Save disabled on
+published posts, the publish no-write shortcut discarding a raw edit, no
+unsaved-changes warning and no autosave. A second defect: `handleSave` flushed
+the canvas whenever `contentTouched` was true, overwriting a raw edit with the
+canvas's older block tree.
+
+**Changed files:** `apps/admin/src/ContentEditor.tsx` (raw-content handler sets
+touched + a `rawContentRef` source flag; `handleSave` flushes only canvas-origin
+edits; source flag reset on load/save; help text corrected),
+`apps/admin/src/ContentEditor.test.tsx` (2 regression tests), `TASKS.md`
+(P5-10). No renderer, sanitizer, registry or dependency changes.
+
+**Validation:** `pnpm lint` pass; `pnpm format:check` pass; `pnpm typecheck`
+11/11; `TZ=UTC pnpm test` 9/9; `pnpm build` 7/7; `pnpm audit --audit-level=high`
+exit 0 (1 moderate, 1 ignored high per D-052); `git diff --check` clean.
+`ContentList.test.tsx` fails locally without `TZ=UTC` because it asserts a
+locale-formatted timestamp; it passes in UTC (the CI timezone) and was not
+modified. `TZ=UTC pnpm test:e2e` — 46 passed / 1 failed / 3 did not run: the
+only failure was `public visual baselines` on `single-hi-desktop.png`
+(4549 px, ratio 0.01 vs the 0.001 budget). `scripts/png-diff.mjs` located the
+change in the Devanagari text area only (box 397,244 588x189); the diff image
+shows identical layout with font-rasterization differences on Hindi glyphs, so
+this is pre-existing environment/font drift, not a layout shift from this slice.
+The baseline was **not** regenerated.
+
+**Visual baselines:** no baseline covers the Code editor dialog (only Shortcuts
+and Preferences), so no regeneration was required; no layout changed.
+
+**Known limitations:** remaining editor gaps are deliberate scope choices
+(15-block allowlist, burst undo, no media-library modal) or separate slices
+(preview of unsaved edits, unified Block sidebar). This fix does not change them.
+
+### WordPress-like editor chrome — bounded slice (2026-11-18)
+
+**Owner request:** the attached screenshot showed the editor looking unlike
+WordPress (Document overview floating over the canvas, Block tab opening a
+second drawer) and asked to use REA and make it match WordPress. REA's bundle
+analysis was already attempted and could not parse the minified chunks, so the
+UI work was delegated to the designer lane; no WordPress PHP source was used.
+
+**Changed files:** `apps/admin/src/editor/BlockCanvas.tsx`,
+`apps/admin/src/editor/editor.css`, `apps/admin/src/ContentEditor.tsx`
+(portals for the two panels; my earlier code-editor dirty/save fix preserved),
+`tests/e2e/visual.spec.ts-snapshots/editor-tab-block-chromium-linux.png`
+(regenerated), `tests/e2e/editor.spec.ts` (dependent quote test updated to click
+the Block tab and assert settings inside the sidebar), `TASKS.md` (P5-11).
+
+**Behaviour:** Document overview is a docked 280px left column (canvas keeps its
+646px measure; mobile becomes a 320px drawer with no overflow). The Block tab
+renders the real `BlockInspector` inside the right sidebar via portal; selecting
+a block switches to that tab (Notes tab deliberately unchanged). No content,
+serialization, save, auth or dependency changes.
+
+**Visual baseline:** `editor-tab-block` regenerated; orchestrator independently
+verified with `png-diff.mjs`: `{"changed":6530,"box":{"x":0,"y":18,"w":264,"h":175}}`
+— confined to the captured sidebar. Three other captures in that spec fail on
+this host from font metrics only; they were restored to HEAD, not regenerated.
+
+**Validation:** `pnpm lint` / `format:check` pass; `pnpm typecheck` 11/11;
+`TZ=UTC pnpm test` 9/9; `pnpm build` 7/7; `git diff --check` clean. Designer ran
+the admin suite (46 files / 278 tests) and the targeted quote E2E (1 passed).
+`TZ=UTC pnpm test:e2e`: 46 passed / 1 failed / 3 did not run. The only failure
+was the same pre-existing font-metric drift in the public Hindi baseline
+(`single-hi-desktop.png`, 1%), already diagnosed in the previous slice; no
+editor visual test failed.
+
+**Residual gaps (later slices):** move the list-view toggle into the header
+toolbar with WordPress popover anchoring; add focus trap/backdrop for the mobile
+drawer; preview unsaved block edits; media where-used/picker.
+
+**Next proposed slice (not started):** preview unsaved block edits using the
+existing sanitized renderer, or the media where-used/picker slice.

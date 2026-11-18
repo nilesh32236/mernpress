@@ -76,8 +76,6 @@ export interface SelectedBlockInfo {
 export interface BlockCanvasHandle {
   /** Serialize the latest keystrokes and hand them to the parent synchronously. */
   flush: () => string;
-  /** Open the block-settings inspector (the editor sidebar's Block tab). */
-  openInspector: () => void;
   /** Anchor for the selected block (null when nothing is selected). */
   getSelectedBlockInfo: () => SelectedBlockInfo | null;
   /**
@@ -113,6 +111,19 @@ export interface BlockCanvasProps {
   structureLocked?: boolean;
   /** Called when a structural edit is rejected while the structure is locked. */
   onStructureBlocked?: () => void;
+  /**
+   * DOM node that docks the Document overview as a column of the editor
+   * workspace. When absent the panel renders inside the canvas (standalone use).
+   */
+  listViewSlot?: HTMLElement | null;
+  /**
+   * DOM node inside the editor sidebar's Block tab where block settings render.
+   * Portalling keeps the inspector inside this provider while moving its DOM
+   * out of the canvas, so there is no second floating drawer.
+   */
+  inspectorSlot?: HTMLElement | null;
+  /** Mount the inspector only while the Block tab is visible. */
+  inspectorActive?: boolean;
 }
 
 /**
@@ -196,6 +207,9 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
     toolbarSlot,
     structureLocked = false,
     onStructureBlocked,
+    listViewSlot,
+    inspectorSlot,
+    inspectorActive = false,
   },
   ref,
 ) {
@@ -223,7 +237,6 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
   const onSelectionAnchorRef = useRef(onSelectionAnchor);
   onSelectionAnchorRef.current = onSelectionAnchor;
   const contentRef = useRef<HTMLDivElement>(null);
-  const [inspectorOpen, setInspectorOpen] = useState(false);
 
   const lastEmitted = useRef(initialContent);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -455,7 +468,6 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
         clearTimer();
         return emit(blocksRef.current);
       },
-      openInspector: () => setInspectorOpen(true),
       getSelectedBlockInfo: () => {
         const clientId = selectedClientIdRef.current;
         if (!clientId) return null;
@@ -529,6 +541,28 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
       </div>
     );
   }
+
+  // Docked by the post/page editor into the left column of the workspace. The
+  // portal keeps this tree inside BlockEditorProvider, so ListView still reads
+  // the same store, while the DOM leaves the narrow document sheet.
+  const listViewPanel = (
+    <div className="block-canvas-listview" aria-label="Document overview">
+      <div className="block-canvas-panel-head">
+        <span>Document overview</span>
+        <button
+          type="button"
+          className="block-canvas-panel-close"
+          onClick={() => setListViewOpen(false)}
+          aria-label="Close document overview"
+        >
+          <Icon icon={close} size={16} />
+        </button>
+      </div>
+      <div className="block-canvas-listview-scroll">
+        <ListView />
+      </div>
+    </div>
+  );
 
   return (
     <div className="block-canvas-root" onKeyDownCapture={handleKeyDown}>
@@ -614,24 +648,11 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
               : null}
 
             <div className="block-canvas-body">
-              {listViewOpen ? (
-                <div className="block-canvas-listview" aria-label="Document overview">
-                  <div className="block-canvas-panel-head">
-                    <span>Document overview</span>
-                    <button
-                      type="button"
-                      className="block-canvas-panel-close"
-                      onClick={() => setListViewOpen(false)}
-                      aria-label="Close document overview"
-                    >
-                      <Icon icon={close} size={16} />
-                    </button>
-                  </div>
-                  <div className="block-canvas-listview-scroll">
-                    <ListView />
-                  </div>
-                </div>
-              ) : null}
+              {listViewOpen
+                ? listViewSlot
+                  ? createPortal(listViewPanel, listViewSlot)
+                  : listViewPanel
+                : null}
 
               <div className="block-canvas-scroll" ref={contentRef}>
                 <div className="block-canvas-sheet editor-styles-wrapper">
@@ -664,31 +685,23 @@ export const BlockCanvas = forwardRef<BlockCanvasHandle, BlockCanvasProps>(funct
                 </div>
               </div>
 
-              {inspectorOpen ? (
-                <aside className="block-canvas-inspector" aria-label="Block settings">
-                  <div className="block-canvas-panel-head">
-                    <span>Block settings</span>
-                    <button
-                      type="button"
-                      className="block-canvas-panel-close"
-                      onClick={() => setInspectorOpen(false)}
-                      aria-label="Close block settings"
-                    >
-                      <Icon icon={close} size={16} />
-                    </button>
-                  </div>
-                  <div className="block-canvas-inspector-scroll">
-                    {hasSelection ? (
-                      <BlockInspector />
-                    ) : (
-                      <p className="block-canvas-hint">
-                        Select a block to edit its settings. Text formatting lives in the block
-                        toolbar.
-                      </p>
-                    )}
-                  </div>
-                </aside>
-              ) : null}
+              {inspectorSlot && inspectorActive
+                ? createPortal(
+                    <aside className="block-canvas-inspector" aria-label="Block settings">
+                      <div className="block-canvas-inspector-scroll">
+                        {hasSelection ? (
+                          <BlockInspector />
+                        ) : (
+                          <p className="block-canvas-hint">
+                            Select a block to edit its settings. Text formatting lives in the block
+                            toolbar.
+                          </p>
+                        )}
+                      </div>
+                    </aside>,
+                    inspectorSlot,
+                  )
+                : null}
             </div>
 
             <p className="block-canvas-help">

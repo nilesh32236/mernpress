@@ -166,6 +166,63 @@
   border-left: 1px solid #dcdcde;
 }
 
+/* Docked Document overview. The editor workspace owns this column, so opening
+   the list view no longer steals width from the centred document sheet. */
+.editor-listview-slot {
+  position: sticky;
+  top: calc(var(--wp-admin-bar-h) + 64px);
+  align-self: flex-start;
+  flex: 0 0 280px;
+  width: 280px;
+  height: calc(100vh - var(--wp-admin-bar-h) - 64px);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.editor-listview-slot:empty {
+  display: none;
+}
+
+.editor-listview-slot .block-canvas-listview {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  border-right: 1px solid #e0e0e0;
+}
+
+/* Block settings now render in the sidebar's Block tab, not as a second
+   floating drawer inside the canvas. */
+.editor-block-panel {
+  padding-top: 0;
+}
+
+.editor-block-settings-slot {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.editor-block-settings-slot .block-canvas-inspector {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  border-left: 0;
+  background: transparent;
+}
+
+/* The canvas gives the inspector a definite height; the sidebar does not, so
+   let its content size the scroll area instead of flex-basis: 0 collapsing it. */
+.editor-block-settings-slot .block-canvas-inspector-scroll {
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+/* A design pass hides the canvas's own bottom hint globally; the sidebar's
+   empty-selection message is a different control and must remain visible. */
+.editor-block-settings-slot .block-canvas-inspector .block-canvas-hint {
+  display: block !important;
+}
+
 .block-canvas-panel-head {
   display: flex;
   align-items: center;
@@ -243,18 +300,32 @@
     padding: 4px 0 28px;
   }
 
-  .block-canvas-listview,
-  .block-canvas-inspector {
-    position: absolute;
-    inset: 0 auto 0 0;
-    z-index: 20;
-    width: min(320px, 88%);
-    flex-basis: auto;
-    box-shadow: 0 0 24px rgba(0, 0, 0, 0.2);
+  /* On small screens the docked column becomes a drawer again, matching the
+     settings drawer's offset and stacking. */
+  .editor-listview-slot {
+    position: static;
+    flex: 0 0 0;
+    width: 0;
+    min-width: 0;
+    height: auto;
+    max-height: none;
+    overflow: visible;
   }
 
-  .block-canvas-inspector {
-    inset: 0 0 0 auto;
+  .editor-listview-slot .block-canvas-listview {
+    position: fixed;
+    inset: 94px auto 0 0;
+    z-index: 70;
+    width: min(320px, 88%);
+    height: auto;
+    flex-basis: auto;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+  }
+}
+
+@media (max-width: 640px) {
+  .editor-listview-slot .block-canvas-listview {
+    inset: 0 auto 0 0;
   }
 }
 

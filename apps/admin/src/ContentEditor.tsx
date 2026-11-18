@@ -308,6 +308,10 @@ export function ContentEditor({
   const [createdPost, setCreatedPost] = useState<AdminPost | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [contentTouched, setContentTouched] = useState(false);
+  // The canvas and the Code editor both write form.content, but only the canvas
+  // needs a synchronous flush before save. A raw edit must not be clobbered by
+  // `canvas.flush()` returning the canvas's older block tree.
+  const rawContentRef = useRef(false);
   const sidebarRef = useRef<HTMLElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const [sidebarOpen, setSidebarOpen] = useState(() =>
@@ -338,6 +342,11 @@ export function ContentEditor({
   const [previewBusy, setPreviewBusy] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<string | null>(null);
   const [toolbarSlot, setToolbarSlot] = useState<HTMLElement | null>(null);
+  // Portals for the two editor panels that must sit outside the narrow canvas
+  // sheet: the Document overview docks left of the document, and Block settings
+  // render inside the right-hand sidebar's Block tab.
+  const [listViewSlot, setListViewSlot] = useState<HTMLElement | null>(null);
+  const [inspectorSlot, setInspectorSlot] = useState<HTMLElement | null>(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [scheduleInput, setScheduleInput] = useState('');
   const [scheduleBusy, setScheduleBusy] = useState(false);
@@ -497,6 +506,7 @@ export function ContentEditor({
           language: loaded.language,
         });
         setContentTouched(false);
+        rawContentRef.current = false;
         setLoading(false);
       })
       .catch((caught) => {
@@ -862,7 +872,22 @@ export function ContentEditor({
   }
 
   function updateContent(value: string) {
+    rawContentRef.current = false;
     setForm((current) => (current.content === value ? current : { ...current, content: value }));
+  }
+
+  /**
+   * The Code editor writes raw markup straight into the form, bypassing the
+   * block canvas's onDirty callback. Mark the content touched here as well, or
+   * the edit is invisible to `dirty`: Save stays disabled on published posts,
+   * the publish shortcut drops the content, and no unsaved-changes warning or
+   * autosave runs. The source flag stops handleSave from flushing the canvas
+   * over this edit.
+   */
+  function updateRawContent(value: string) {
+    rawContentRef.current = true;
+    updateForm('content', value);
+    setContentTouched(true);
   }
 
   function toggleId(ids: string[], termId: string): string[] {
@@ -911,6 +936,7 @@ export function ContentEditor({
       language: nextPost.language,
     });
     setContentTouched(false);
+    rawContentRef.current = false;
   }
 
   async function handleSave(intent: SaveIntent) {
@@ -969,7 +995,9 @@ export function ContentEditor({
     // normalizes attributes (e.g. it drops a heading's default level).
     const lockChanged = post ? structureLocked !== post.structureLocked : false;
     const content =
-      contentTouched || lockChanged ? (canvasRef.current?.flush() ?? form.content) : form.content;
+      !rawContentRef.current && (contentTouched || lockChanged)
+        ? (canvasRef.current?.flush() ?? form.content)
+        : form.content;
 
     setSaving(true);
     setNotice(null);
@@ -1644,6 +1672,7 @@ export function ContentEditor({
           </div>
         ) : (
           <div className="editor-layout">
+            <div className="editor-listview-slot" ref={setListViewSlot} />
             <div className="editor-main-column">
               <div className="editor-document">
                 <div className="editor-title-block">
@@ -1676,7 +1705,18 @@ export function ContentEditor({
                     initialContent={form.content}
                     onChange={updateContent}
                     onDirty={() => setContentTouched(true)}
-                    onSelectionAnchor={setSelectedBlockAnchor}
+                    onSelectionAnchor={(anchor) => {
+                      setSelectedBlockAnchor(anchor);
+                      // WordPress switches the inspector to Block when a block is
+                      // selected. Leave the Notes tab alone: it is where a note
+                      // anchors the current block.
+                      if (anchor) {
+                        setSideTab((current) => (current === 'post' ? 'block' : current));
+                      }
+                    }}
+                    listViewSlot={listViewSlot}
+                    inspectorSlot={inspectorSlot}
+                    inspectorActive={sideTab === 'block'}
                     structureLocked={structureLocked}
                     onStructureBlocked={() =>
                       setNotice({
@@ -2794,19 +2834,12 @@ export function ContentEditor({
                 </div>
 
                 <div hidden={sideTab !== 'block'}>
-                  <section className="editor-panel" aria-labelledby="block-heading">
+                  <section
+                    className="editor-panel editor-block-panel"
+                    aria-labelledby="block-heading"
+                  >
                     <h3 id="block-heading">Block</h3>
-                    <p className="field-help">
-                      Block settings are available in the canvas inspector. Select a block, then
-                      open the inspector.
-                    </p>
-                    <button
-                      type="button"
-                      className="button secondary-button"
-                      onClick={() => canvasRef.current?.openInspector()}
-                    >
-                      Open block settings
-                    </button>
+                    <div className="editor-block-settings-slot" ref={setInspectorSlot} />
                   </section>
                 </div>
 
@@ -2867,14 +2900,15 @@ export function ContentEditor({
             {editorDialog === 'code' ? (
               <>
                 <p className="field-help">
-                  Edit the raw block markup. The server validates and sanitizes it when you save;
-                  invalid markup is rejected rather than stored.
+                  Edit the raw block markup. The server checks size, block count and depth, then
+                  sanitizes HTML when rendering. Unknown or unusual markup is preserved rather than
+                  rewritten.
                 </p>
                 <textarea
                   className="editor-code-textarea"
                   aria-label="Raw block markup"
                   value={form.content}
-                  onChange={(event) => updateForm('content', event.target.value)}
+                  onChange={(event) => updateRawContent(event.target.value)}
                   spellCheck={false}
                   rows={18}
                 />

@@ -1098,6 +1098,82 @@ describe('editor autosave (P8-02)', () => {
     const welcome = await screen.findByRole('dialog', { name: 'Welcome guide' });
     expect(within(welcome).getByText(/The top bar holds the inserter/)).toBeDefined();
   });
+
+  it('marks a raw code-editor edit as dirty so Save stays enabled on a published post', async () => {
+    const post = makePost({ status: 'PUBLISHED' });
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes('/api/admin/terms')) return response(termsPage());
+      if (url.endsWith('/autosave')) {
+        return response({ autosave: null, postUpdatedAt: post.updatedAt });
+      }
+      return response(post);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA, post.id);
+    await screen.findByLabelText('Title');
+
+    // A published post's primary Save is disabled until the document is dirty.
+    const save = screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement;
+    expect(save.disabled).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Code editor' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Code editor' });
+    expect(within(dialog).getByText(/The server checks size, block count and depth/)).toBeDefined();
+    fireEvent.change(within(dialog).getByLabelText('Raw block markup'), {
+      target: { value: '<!-- wp:paragraph --><p>Raw edit</p>' },
+    });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+
+    expect(save.disabled).toBe(false);
+  });
+
+  it('sends raw code-editor content when publishing a draft instead of dropping the edit', async () => {
+    const post = makePost();
+    const saved = makePost({ content: '<!-- wp:paragraph --><p>Raw edit</p>', version: 2 });
+    const published = makePost({
+      status: 'PUBLISHED',
+      content: saved.content,
+      version: 3,
+      publishedAt: '2026-10-27T12:00:00.000Z',
+    });
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes('/api/admin/terms')) return response(termsPage());
+      if (url.endsWith('/autosave')) {
+        return response({ autosave: null, postUpdatedAt: post.updatedAt });
+      }
+      if (url.endsWith('/publish')) return response(published);
+      if (url.endsWith(`/api/admin/posts/${post.id}`)) return response(saved);
+      return response(post);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderEditor(authorA, post.id);
+    await screen.findByLabelText('Title');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Code editor' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Code editor' });
+    fireEvent.change(within(dialog).getByLabelText('Raw block markup'), {
+      target: { value: saved.content },
+    });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+
+    // Save draft always persists; this proves the raw edit is not clobbered by
+    // the canvas flush that used to run for every touched document.
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+
+    await waitFor(() => {
+      const patch = fetchMock.mock.calls.find(
+        (call) =>
+          String(call[0]).endsWith(`/api/admin/posts/${post.id}`) && call[1]?.method === 'PATCH',
+      );
+      expect(patch).toBeDefined();
+      expect(JSON.parse(String(patch?.[1]?.body))).toMatchObject({ content: saved.content });
+    });
+  });
+
   it('applies editor preferences immediately', async () => {
     window.localStorage.removeItem('mernpress.editorPreferences');
     const fetchMock = vi

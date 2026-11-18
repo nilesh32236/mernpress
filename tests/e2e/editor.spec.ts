@@ -221,15 +221,18 @@ test('inserts a quote and shows real block settings in the inspector', async ({ 
   await insertBlock(page, 'quote', /^Quote/);
   await page.keyboard.type('A line worth quoting.');
 
-  // The inspector must show the selected block's settings, not the empty hint.
-  await page.getByRole('tab', { name: 'Block' }).click();
-  await page.getByRole('button', { name: 'Open block settings' }).click();
-  const inspector = page.locator('.block-canvas-inspector');
-  // Typing focuses the quote's inner paragraph, so the inspector shows that
-  // block's real settings rather than the empty-selection hint.
+  // Block settings now render in place inside the right sidebar's Block tab.
+  // Select the block explicitly so the inspector shows its real settings rather
+  // than the empty-selection hint, then assert the panel is docked in the
+  // sidebar and not a second floating overlay over the canvas.
+  const sidebar = page.locator('#editor-document-settings');
+  await sidebar.getByRole('tab', { name: 'Block' }).click();
+  await page.locator('.block-canvas-sheet .wp-block-quote').first().click();
+  const inspector = sidebar.locator('.block-canvas-inspector');
+  await expect(inspector).toBeVisible();
   await expect(inspector).toContainText('Typography');
   await expect(inspector).not.toContainText('Select a block to edit its settings');
-  await page.getByRole('button', { name: 'Close block settings' }).click();
+  await expect(page.locator('.block-canvas-body .block-canvas-inspector')).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Save draft' }).click();
   await expect(page.getByText('Content created.')).toBeVisible();
