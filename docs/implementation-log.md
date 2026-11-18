@@ -7017,5 +7017,9 @@ work. A backup tag (`backup/pre-merge-20261118`) was created before merging.
   deleted (1 user left: `admin`); the superseded release was pruned (one
   release retained).
 
-**Not done:** the merge commit has not been pushed to GitHub — publishing needs
-explicit owner authorization (AGENTS.md §1).
+**Publish:** after explicit owner authorization, the merge was pushed to GitHub.
+The first attempt over HTTPS was rejected by GitHub (`refusing to allow an OAuth
+App to create or update workflow .github/workflows/ci.yml without workflow
+scope`); the push succeeded over SSH, which the owner's `gh` account supports
+(`Git operations protocol: ssh`). Local and `origin/master` are both at
+`7eee777` (0 ahead, 0 behind).
