@@ -10,15 +10,39 @@ The name is a project name, not a database mandate. MERNPress uses **PostgreSQL*
 
 ## Current phase
 
-**Phase 4 — the admin content UX is implemented locally and awaiting owner
-review.** Phase 3 was accepted by the owner on 2026-10-27 and published as
-`46bd5c1`. Phase 1 is approved; the Phase 2 authentication first slice still
-awaits owner acceptance. Phase 4 adds the responsive admin shell, real dashboard
-counts, posts/pages lists, create/edit forms using the Phase 3 API, lifecycle
-actions, taxonomy assignment, accessible feedback and keyboard/responsive
-coverage. The Phase 4 working tree is uncommitted and not CI-verified; Gutenberg
-(Phase 5), media (Phase 6), public rendering/themes (Phase 7/10), revisions and
-scheduling (Phase 8) and plugins (Phase 9) remain later phases.
+This file used to lag behind the code. `TASKS.md` and the git history are the
+source of truth: phases 1–8 are implemented and released on `master` (latest
+release `20261103T074100Z-dadce21`), including the Gutenberg editor, media
+library, public site with SEO, revisions, autosave, preview and scheduling.
+Themes/plugins runtime (Phases 9–10) and the Phase 11+ items remain future work.
+The [2026-11-17 feature check](docs/feature-check-2026-11-17.md) gives a careful,
+evidence-based answer to "does it have all the WordPress features?".
+
+The working tree also carries the licence/compliance package added on
+2026-11-17: GPL-3.0-or-later, third-party notices, a compliance review, an
+improvement shortlist and the feature check. Production cutover and any new
+feature slice still need explicit owner approval (AGENTS.md §1).
+
+## Project status
+
+MERNPress is an **independent hobby and learning project**, built and maintained
+in the owner's free time. It is **not a professional or commercial product**:
+there is no warranty, support contract, service-level agreement, security
+certification or professional security review. A passing build or test suite is
+not a production-security claim. Do not store regulated, confidential or
+sensitive personal data in it without a separate review. The full list of what
+is and is not claimed is in the
+[compliance review](docs/legal/compliance-review.md).
+
+The canonical project name is **MERNPress**. Informal variants such as
+"meanpress" or "mearnpress" are not used in code, packages or documentation.
+
+MERNPress is **not affiliated with, endorsed by, sponsored by or connected to**
+WordPress or Automattic. "WordPress" is a trademark of its respective owner;
+the name is used here only to describe the inspiration and the behavioural
+reference. MERNPress contains no WordPress source code. A local WordPress source
+copy under `docs/wordpress/` is read-only reference material, is
+GPLv2-or-later, and is excluded from version control (decision D-049).
 
 ## Quick start
 
@@ -26,13 +50,15 @@ Prerequisites: Node.js **24.22.1**, pnpm **12.15.0**, PostgreSQL **18.x**. Docke
 optional and not required.
 
 ```bash
-nvm install 24.22.1
-nvm use 24.22.1
+# Use whichever version manager is installed (see local-setup.md for fnm):
+#   nvm install 24.22.1 && nvm use 24.22.1
+#   fnm install 24.22.1 && fnm use 24.22.1
 npm install -g pnpm@12.15.0
 
 pnpm install --frozen-lockfile
 cp .env.example .env
-# set DATABASE_URL, TEST_DATABASE_URL and AUTH_HASH_PEPPER in .env
+# set DATABASE_URL, TEST_DATABASE_URL and NODE_ENV=development in .env
+# (AUTH_HASH_PEPPER and CORS_ORIGINS have development fallbacks)
 # (see docs/operations/local-setup.md)
 
 pnpm setup
@@ -48,7 +74,7 @@ Open:
 | API | http://127.0.0.1:4000/api/ready | Readiness (PostgreSQL check) |
 | API | http://127.0.0.1:4000/api/auth/session | Current session (401 when anonymous) |
 | Admin | http://127.0.0.1:5173 | React/Vite login/session shell |
-| Public web | http://localhost:3000 | Next.js App Router placeholder |
+| Public web | http://127.0.0.1:3000 | Next.js App Router public site |
 
 No-sudo local database (uses the installed PostgreSQL binaries, no Docker):
 
@@ -79,7 +105,7 @@ troubleshooting: [local setup](docs/operations/local-setup.md).
 | `pnpm db:generate` | Generates the Prisma client |
 | `pnpm db:migrate` | Applies pending migrations and verifies connectivity |
 | `pnpm db:seed` | Idempotent demo content (dev/test only; refuses production; never creates an administrator) |
-| `pnpm db:migrate:test` / `pnpm db:reset:test` | Migrates/resets the dedicated test database |
+| `pnpm db:migrate:test` / `pnpm db:reset:test` | Migrates/**destructively truncates** the dedicated test database — confirm `TEST_DATABASE_URL` first |
 | `pnpm db:verify` | Checks PostgreSQL connectivity, UTC session and `uuidv7()` |
 | `pnpm setup` | Validates Node/pnpm, generates client, migrates, seeds |
 | `pnpm db:local:*` | Optional loopback-only PostgreSQL cluster in `.local/` |
@@ -138,27 +164,29 @@ troubleshooting: [local setup](docs/operations/local-setup.md).
 
 ## What is deliberately not implemented
 
-Gutenberg editor (Phase 5), media library (Phase 6), public rendering and themes
-(Phase 7), revisions/autosave/preview/scheduled publishing (Phase 8), plugin
-runtime and SDK (Phase 9), and theme contracts (Phase 10) are not implemented.
-User administration (P2-05), profile editing, password reset/email and MFA/SSO
-remain deferred. Media upload and a featured-image picker are not present. Bulk
-multi-item actions are deferred until the API provides bulk endpoints. There are
-no fake buttons or unimplemented controls.
+Full WordPress parity is not the goal (AGENTS.md §12). As verified in the
+[2026-11-17 feature check](docs/feature-check-2026-11-17.md), the main absences
+are: themes/theme switching and a visual customizer, plugins and a public plugin
+SDK, custom post types and custom fields, comments, site menus, archive/category/
+tag and search pages, RSS feeds, password reset by email, two-factor sign-in and
+SSO, SVG/video/audio uploads, a backup/restore button, and multilingual/multisite/
+e-commerce/forms/CRM. The administrator audit-log screen is now implemented
+(`/admin/audit`); it shows the recorded auth/user events only — content/taxonomy
+changes are not currently written to the audit table.
+The editor ships 15 vetted blocks rather than the full WordPress block library.
+See the [improvement shortlist](docs/roadmap/improvements-2026-11.md).
 
 ## Database behavior
 
-There are four additive migrations:
-
-1. `20261024201137_phase2_auth` — `users`, `sessions`, `audit_events`,
-   `login_attempts`.
-2. `20261025085158_auth_hardening` — the `login_attempts(attempted_at)` index.
-3. `20261027120000_phase3_content_taxonomy` — `posts`, `post_slug_history`,
-   `terms`, `post_terms`, status/check constraints and indexes.
-4. `20261027130000_phase2_roles` — the additive five-role `UserRole` enum values.
+There are nine forward-only additive migrations: auth + rate-limit index
+(`20261024201137_phase2_auth`, `20261025085158_auth_hardening`), content and
+taxonomy (`20261027120000_phase3_content_taxonomy`), the roles enum
+(`20261027130000_phase2_roles`), options, media/revisions/preview/scheduling,
+revision kind, featured media and user name/email. See
+`packages/database/prisma/migrations/` for the exact list.
 
 - `pnpm db:migrate` runs `prisma migrate deploy` and verifies connectivity. On a
-  fresh database it applies all four migrations.
+  fresh database it applies all nine migrations.
 - `pnpm db:seed` creates idempotent demo content (one post, one page, two
   categories, two tags) in development/test only. It refuses
   `NODE_ENV=production`, never creates an administrator and never overwrites
@@ -186,8 +214,8 @@ There are four additive migrations:
 | Validation | Zod | **4.6.7** |
 | Passwords | `@node-rs/argon2` | **2.2.2**, Argon2id 64 MiB / 3 passes / 1 lane |
 | Admin | React + Vite | React **19.3.1**, Vite **8.3.5** |
-| Editor | official `@wordpress/*` packages | Phase 5; not installed yet |
-| Public frontend | Next.js App Router | **16.4.3**, React 19.3.1, Tailwind **4.3.3** |
+| Editor | official `@wordpress/*` packages | Phase 5; 12 direct GPL-2.0-or-later packages, lazy editor chunk |
+| Public frontend | Next.js App Router | **16.4.6** (security patch, D-050), React 19.3.1, Tailwind **4.3.3** |
 | Unit/integration tests | Vitest | **5.0.5** |
 | Browser tests | Playwright | **1.64.1** |
 | Lint/format | ESLint + Prettier | ESLint **10.13.0**, typescript-eslint **8.72.0**, Prettier **3.9.10** |
@@ -221,6 +249,7 @@ Local gate:
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm exec playwright install chromium   # one-time browser download for E2E
 pnpm lint
 pnpm format:check
 pnpm typecheck
@@ -228,6 +257,10 @@ pnpm test
 pnpm build
 pnpm test:e2e
 ```
+
+For E2E, set `E2E_API_PORT` when another service owns port 4000; the tests and
+the Playwright webServer use the same port (default 4000). `E2E_API_URL` can
+still override the full URL.
 
 `pnpm test` expects the dedicated test PostgreSQL database. It covers API liveness,
 readiness 200/503, environment validation, bootstrap, Argon2id, generic login
@@ -239,9 +272,11 @@ request IDs and log redaction. It also covers the Phase 3 content lifecycle,
 slug rules, taxonomy hierarchy/assignment, optimistic concurrency, published-only
 public reads, the role x capability matrix, cross-author visibility, the hook
 contract and the development-only role-account audit event. The current local
-gate is **216 API + 47 admin + 1 web = 264 tests** plus 12 Playwright tests.
-Playwright signs in, signs out, keyboard-submits, checks browser storage and
-opens both placeholders without unexpected console/asset errors.
+gate is **337 API + 47 admin + 17 web + 65 block-system tests** plus 23 Playwright
+tests. Playwright signs in, signs out, keyboard-submits, checks browser storage,
+exercises the editor and media and opens the public site without unexpected
+console/asset errors. Because `pnpm licenses` only scans the current workspace,
+run the licence inventory per workspace (see `THIRD_PARTY_NOTICES.md` §3).
 
 CI is configured in `.github/workflows/ci.yml` with an ephemeral PostgreSQL 18
 service. Phase 1 passed in run `40127072446`; the Phase 2 auth slice passed in
@@ -250,8 +285,10 @@ run `40166039330` (commit `3f29e9f`); the auth hardening follow-up passed in run
 passed in run `40468067008`; the roles/capabilities + dev CLI commit `0bf7754`
 passed in run `40475649080`; the accepted Phase 3 hardening commit `46bd5c1`
 passed in run `40507958602`. The earlier Turborepo `DATABASE_URL` filtering bug
-is fixed via `globalEnv`. The current **uncommitted Phase 4** work is not
-CI-verified; only the local gate above applies.
+is fixed via `globalEnv`. Phase 4 was accepted and published at commit `b3fc337`
+(CI run `40652450339`). The working tree also carries uncommitted archive/search
+and licence-package work (2026-11-17); verify it locally with the gate above
+before relying on it.
 
 ## Documentation
 
@@ -312,25 +349,35 @@ Start here, then follow the links.
 | [docs/roadmap/mvp-definition.md](docs/roadmap/mvp-definition.md) | MVP scope, non-goals and definition of done |
 | [docs/testing/strategy.md](docs/testing/strategy.md) | Unit, integration, E2E, migration, serialization, security and a11y testing |
 | [docs/security/threat-model.md](docs/security/threat-model.md) | Assets, trust boundaries, threats, mitigations and residual risks |
+| [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) | Dependency and reference-material licence catalogue |
+| [docs/legal/compliance-review.md](docs/legal/compliance-review.md) | Owner-facing legal/compliance risk register and pre-distribution checklist |
+| [docs/roadmap/improvements-2026-11.md](docs/roadmap/improvements-2026-11.md) | Prioritized improvement shortlist for the owner |
+| [docs/feature-check-2026-11-17.md](docs/feature-check-2026-11-17.md) | Careful, evidence-based answer to whether the project has all WordPress features |
 
 ## Licensing status
 
-The MERNPress project licence is **not chosen yet**. Do not distribute the
-project publicly until it is. The reference Qrolic repositories have **no root
-LICENSE file and no `package.json` licence field**; treat them as
-proprietary/unclear and do not copy their source. WordPress is GPLv2-or-later,
-and the official `@wordpress/*` packages are GPL-2.0-or-later; a dependency and
-licence review is required before shipping a Gutenberg-based distribution.
-Details are in the
+MERNPress is licensed **GPL-3.0-or-later** (see [LICENSE](LICENSE)). The owner
+chose this on 2026-11-17 so the project can be shared and stays coherent with
+the GPL-licensed WordPress editor packages it uses. See
+[third-party notices](THIRD_PARTY_NOTICES.md) and the
+[compliance review](docs/legal/compliance-review.md).
+
+The reference Qrolic repositories still have **no root LICENSE file and no
+`package.json` licence field**; treat them as proprietary/unclear and do not
+copy their source. WordPress is GPLv2-or-later and the official `@wordpress/*`
+packages are GPL-2.0-or-later. A complete, tool-generated dependency licence
+inventory and a GPL distribution review are still required before publishing a
+Gutenberg-based build. Details are in the
 [reference audit](docs/research/reference-codebase-audit.md#9-licensing-observations).
 
 ## Next step
 
-Phase 3 was accepted by the owner on 2026-10-27 and published as `46bd5c1`
-(CI run `40507958602`). Phase 4 is implemented locally and awaits owner review;
-its changes are uncommitted and not CI-verified. Do not commit, push or start
-Phase 5 without explicit owner authorization. P2-05 user administration remains
-deferred, as do the Phase 5–10 editor, media, rendering, reliability, plugin and
-theme slices.
+Read the [2026-11-17 feature check](docs/feature-check-2026-11-17.md) for the
+honest completeness answer and the
+[improvement shortlist](docs/roadmap/improvements-2026-11.md) for ranked
+candidates. MERNPress is GPL-3.0-or-later; distribution still needs the
+dependency licence scan and GPL review in the
+[compliance review](docs/legal/compliance-review.md). Per AGENTS.md §1, choose
+one slice and authorise it before any new feature work begins.
 
 - [WordPress 7.1.4 parity matrix](docs/verification/wordpress-parity-matrix.md) — screen-by-screen status.

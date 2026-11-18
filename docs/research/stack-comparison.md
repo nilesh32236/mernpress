@@ -173,8 +173,10 @@ static build.
 | Astro | Excellent content-site performance, islands | Different component model; dynamic CMS/editor preview integration less direct; theme SDK would be Astro-specific | Not selected |
 | Plain React + custom SSR | Maximum control | Rebuilds routing, data loading, caching, metadata, image handling | Not appropriate |
 
-**Decision: Next.js 16.4.3 App Router**, Node self-hosting (`output: "standalone"`),
-no Vercel requirement. Reasons:
+**Decision: Next.js App Router**, Node self-hosting (`output: "standalone"`), no
+Vercel requirement. The baseline was 16.4.3; on 2026-11-17 it was bumped to
+**16.4.6** for the November 2026 security release (D-050) — the framework choice
+is unchanged. Reasons:
 
 - The user's existing frontend knowledge and both reference frontends are Next 16.
 - SEO/SSR, metadata, sitemap/robots and image optimization are first-class.

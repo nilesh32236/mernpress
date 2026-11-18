@@ -54,6 +54,8 @@ Capabilities (object-level checks live in the service, not the route):
 | `content.publish.any` | ✓ | ✓ | — | — | — |
 | `content.trash.any` | ✓ | ✓ | — | — | — |
 | `content.trash.own` | ✓ | ✓ | ✓ | — | — |
+| `manage_options` | ✓ | — | — | — | — |
+| `audit.read` (added 2026-11-17, D-154) | ✓ | — | — | — | — |
 
 Rules enforced server-side:
 

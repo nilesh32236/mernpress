@@ -1060,6 +1060,14 @@ export function AdminShell({ user, route, onSignedOut, children }: AdminShellPro
       ],
     },
     {
+      to: '/audit',
+      label: 'Audit Log',
+      active: route.name === 'audit',
+      show: isAdmin,
+      icon: <span className="dashicons dashicons-list-view" />,
+      subs: [],
+    },
+    {
       to: '/tools',
       label: 'Tools',
       active:

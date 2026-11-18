@@ -3,6 +3,13 @@
 Date: 2026-10-29. Baseline: master `9f74f5f` (deployed release
 `20261029T103000Z-7dd1a1d`), audit branch `feat/cms-completion`.
 
+> **2026-11-17 verification note:** this matrix is a dated snapshot. A later
+> careful check found that **bulk actions** and **autosave** (listed as partial
+> or pending below) are now real, working features in the code, and the editor
+> ships 15 blocks, not 11. See
+> [docs/feature-check-2026-11-17.md](../feature-check-2026-11-17.md) for the
+> current, evidence-based answer to what MERNPress does and does not have.
+
 Statuses: **done** (verified), **partial** (exists but incomplete/unverified),
 **missing**, **n/a** (not appropriate for generic MERNPress), **blocked**
 (dependency/architecture gate).
@@ -64,7 +71,7 @@ Evidence columns point at MERNPress paths and the reference implementation
 | SEO meta rendering (public) | **missing** | done | Next.js generateMetadata fallback chains |
 | Sitemap/robots | **missing** | done | `app/sitemap.ts`, `app/robots.ts` |
 | Author attribution | done (authorId) | done | shown in lists; no reassignment UI (P2-05 deferred) |
-| Audit logging | done (auth events) | done | content events via hooks; audit-log **UI** still **missing** |
+| Audit logging | done (auth events) | done + UI (2026-11-17) | 14 `auth.*`/`user.*` events recorded; administrator-only `/admin/audit` + `GET /api/admin/audit` (D-154). **Correction:** content/taxonomy hooks exist but no handler writes audit rows — "content events via hooks" was misleading |
 | Dashboard counts/activity | done | done | At a Glance chips + Activity card |
 
 ## 5. Public site (apps/web)
@@ -96,7 +103,8 @@ Evidence columns point at MERNPress paths and the reference implementation
    `@wordpress/media-utils`. Upload-from-device + URL + featured-image picker
    work today.
 2. Media usage tracking (reference `GET /:id/usage`) + replace flow.
-3. Audit-log viewer UI (events exist via hooks; no screen).
+3. ~~Audit-log viewer UI~~ — delivered 2026-11-17 (D-154). Content-change
+   auditing remains a separate gap: hooks exist but no handler writes rows.
 4. Render cache columns (`rendered_html`/`render_hash`): render-on-read is
    the current contract; add cache only after measurement (ADR 0007 §4).
 5. Password reset (blocked: needs mail delivery/token architecture).

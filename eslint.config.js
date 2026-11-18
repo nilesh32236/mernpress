@@ -13,6 +13,8 @@ export default tseslint.config(
       '**/playwright-report/**',
       '**/test-results/**',
       '**/packages/database/src/generated/**',
+      // Read-only upstream WordPress reference source; never linted as project code.
+      'docs/wordpress/**',
     ],
   },
   js.configs.recommended,

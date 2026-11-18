@@ -1,8 +1,9 @@
 # Local setup
 
-Status: Phase 1 foundation + Phase 2 authentication first slice (including the
-hardening follow-up). This page is the supported local path; Docker is optional
-and not required.
+Status: phased implementation through Phase 8 (content, editor, media, public
+site with SEO, archives/search) is in the source and released; see `TASKS.md` and
+`README.md` for the current phase. This page is the supported local path; Docker
+is optional and not required.
 
 ## 1. Prerequisites
 
@@ -15,9 +16,15 @@ and not required.
 The repository pins Node in `.nvmrc` and pnpm in `package.json#packageManager`.
 Do not run the foundation checks on Node 22 and call them verified.
 
+Use whichever Node version manager is installed. If neither is present, install
+Node 24.22.1 by your OS package manager or from nodejs.org first.
+
 ```bash
-nvm install 24.22.1
-nvm use 24.22.1
+# nvm (if installed)
+nvm install 24.22.1 && nvm use 24.22.1
+# fnm (if installed) — equivalent commands
+fnm install 24.22.1 && fnm use 24.22.1
+# fnm users can also rely on the committed .nvmrc:  fnm use
 npm install -g pnpm@12.15.0
 ```
 
@@ -49,7 +56,9 @@ TEST_DATABASE_URL=postgresql://mernpress:replace-me@127.0.0.1:5432/mernpress_tes
 ### Option B — project-local cluster (no sudo, no Docker)
 
 This uses the installed PostgreSQL binaries and creates a loopback-only cluster
-under the gitignored `.local/` directory on port `55432`.
+under the gitignored `.local/` directory. The default port is `55432`; set
+`MERNPRESS_LOCAL_DB_PORT` if that port is taken (the printed URLs show the port
+actually in use).
 
 ```bash
 pnpm db:local:init
@@ -79,7 +88,10 @@ cp .env.example .env
 validates the environment at startup and fails with an actionable message when a
 required value is missing or malformed. `CORS_ORIGINS` must be an explicit
 comma-separated list; wildcards are rejected because credentialed CORS is
-enabled. `NODE_ENV` is required. Production also requires explicit non-loopback
+enabled. **`NODE_ENV` is required even in development** — set
+`NODE_ENV=development` in `.env` or a plain `pnpm dev` fails at startup with
+`Invalid environment configuration`. `AUTH_HASH_PEPPER` and `CORS_ORIGINS` have
+development fallbacks but should be set explicitly. Production also requires explicit non-loopback
 HTTPS origins and a real `AUTH_HASH_PEPPER`; a partial production environment
 fails closed.
 
@@ -104,25 +116,28 @@ administrator exists.
 
 ### What the database commands actually do
 
-Phase 2 has four auth tables and two additive migrations: the initial auth
-schema (`users`, `sessions`, `audit_events`, `login_attempts`) and the
-`login_attempts(attempted_at)` hardening index. Migrations are forward-only; an
-applied migration is never edited.
+Nine forward-only additive migrations exist: auth (`users`, `sessions`,
+`audit_events`, `login_attempts`), the rate-limit index, content/taxonomy
+(`posts`, `post_slug_history`, `terms`, `post_terms`), the roles enum, options,
+media/revisions/preview/scheduling, revision kind, featured media and user
+name/email. An applied migration is never edited.
 
 - `pnpm db:generate` generates the typed Prisma client into
   `packages/database/src/generated/prisma` (gitignored).
-- `pnpm db:migrate` runs `prisma migrate deploy`, applies the auth migration on a
-  fresh database, and verifies connectivity. No content/CMS tables exist.
-- `pnpm db:seed` connects, verifies the UTC session, prints an explicit no-op
-  message, and exits 0. It creates no administrator or CMS data. Re-running is
-  safe and produces the same result.
+- `pnpm db:migrate` runs `prisma migrate deploy`, applies **all** migrations on a
+  fresh database, and verifies connectivity (UTC session + `uuidv7()`).
+- `pnpm db:seed` connects, verifies the UTC session and inserts idempotent demo
+  content (one post, one page, two categories, two tags) in development/test
+  only. It refuses production, never creates an administrator and never
+  overwrites existing content; re-running is safe.
 - `pnpm db:verify` checks the connection, the UTC session timezone and
   PostgreSQL 18's `uuidv7()`.
 - `pnpm auth:bootstrap` creates exactly one administrator. It is not a seed and
   not a public endpoint.
 - `pnpm db:migrate:test` / `pnpm db:reset:test` migrate or truncate only the
-  dedicated test database. `reset:test` refuses a database name without
-  `test`/`e2e`.
+  dedicated test database. **Destructive:** `reset:test` truncates every test
+  table; it refuses a database name without `test`/`e2e`, but always confirm
+  `TEST_DATABASE_URL` before running it. `pnpm test:e2e` invokes the reset.
 
 ## 5. Run
 

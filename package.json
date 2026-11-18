@@ -2,6 +2,7 @@
   "name": "mernpress",
   "version": "0.1.0",
   "private": true,
+  "license": "GPL-3.0-or-later",
   "type": "module",
   "packageManager": "pnpm@12.15.0",
   "engines": {

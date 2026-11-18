@@ -304,20 +304,58 @@ export async function getSiteSettings(): Promise<SiteSettings> {
   return (await res.json()) as SiteSettings;
 }
 
+export interface PublicListFilters {
+  /** WordPress `s`: search term. */
+  search?: string;
+  /** WordPress `category_name`: category slug. */
+  category?: string;
+  /** WordPress `tag`: tag slug. */
+  tag?: string;
+  /** MERNPress: language variant. */
+  language?: string;
+  /** MERNPress: bypass the public cache (sitemap generation). */
+  noStore?: boolean;
+}
+
 export async function listPublished(
   type: ContentType = 'post',
   page = 1,
   perPage = 10,
-  language?: string,
+  // Both call shapes exist: the older positional (language, noStore) form used
+  // by the sitemap and the archive-filter object used by the archive helpers.
+  filtersOrLanguage: PublicListFilters | string = {},
   noStore = false,
 ): Promise<PostsPage | null> {
+  const filters: PublicListFilters =
+    typeof filtersOrLanguage === 'string'
+      ? { language: filtersOrLanguage, noStore }
+      : filtersOrLanguage;
   return listPublicPosts({
     type,
     page,
     perPage,
-    ...(language ? { lang: language } : {}),
-    ...(noStore ? { noStore: true } : {}),
+    ...(filters.search ? { search: filters.search } : {}),
+    ...(filters.category ? { category: filters.category } : {}),
+    ...(filters.tag ? { tag: filters.tag } : {}),
+    ...(filters.language ? { lang: filters.language } : {}),
+    ...(filters.noStore ? { noStore: true } : {}),
   });
+}
+
+/** WordPress search results (`/?s=…`). */
+
+export function searchPosts(term: string, page = 1, perPage = 10): Promise<PostsPage | null> {
+  return listPublished('post', page, perPage, { search: term });
+}
+
+/** WordPress category archive (`/category/{slug}/`). */
+export function listByCategory(slug: string, page = 1, perPage = 10): Promise<PostsPage | null> {
+  return listPublished('post', page, perPage, { category: slug });
+}
+
+/** WordPress tag archive (`/tag/{slug}/`). */
+export function listByTag(slug: string, page = 1, perPage = 10): Promise<PostsPage | null> {
+  return listPublished('post', page, perPage, { tag: slug });
 }
 
 export async function getPublishedBySlug(

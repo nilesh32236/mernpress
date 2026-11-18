@@ -1,0 +1,3249 @@
+{
+  "generated": "2026-11-17 (after Next.js 16.4.6 bump)",
+  "method": "pnpm licenses list --json per workspace, deduplicated by name+version",
+  "uniquePackages": 530,
+  "packages": [
+    {
+      "name": "@alloc/quick-lru",
+      "versions": ["5.3.0"],
+      "license": "MIT",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "@ariakit/components",
+      "versions": ["0.1.15"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@ariakit/react",
+      "versions": ["0.4.42"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@ariakit/react-components",
+      "versions": ["0.7.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@ariakit/react-store",
+      "versions": ["0.1.13"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@ariakit/react-utils",
+      "versions": ["0.2.8"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@ariakit/store",
+      "versions": ["0.1.11"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@ariakit/utils",
+      "versions": ["0.2.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@arraypress/waveform-player",
+      "versions": ["1.30.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@asamuzakjp/css-color",
+      "versions": ["7.1.7"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@asamuzakjp/dom-selector",
+      "versions": ["10.0.5"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@babel/code-frame",
+      "versions": ["7.29.7"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@babel/helper-string-parser",
+      "versions": ["7.29.11"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@babel/helper-validator-identifier",
+      "versions": ["7.29.7"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@babel/parser",
+      "versions": ["7.29.11"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@babel/runtime",
+      "versions": ["7.29.10"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@babel/types",
+      "versions": ["7.29.11"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@base-ui/react",
+      "versions": ["1.9.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@base-ui/utils",
+      "versions": ["0.5.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@bramus/specificity",
+      "versions": ["2.4.3"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@csstools/color-helpers",
+      "versions": ["6.1.2"],
+      "license": "MIT-0",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@csstools/css-calc",
+      "versions": ["3.4.3"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@csstools/css-color-parser",
+      "versions": ["4.2.6"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@csstools/css-parser-algorithms",
+      "versions": ["4.0.2"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@csstools/css-syntax-patches-for-csstree",
+      "versions": ["1.1.15"],
+      "license": "MIT-0",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@csstools/css-tokenizer",
+      "versions": ["4.0.2"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@date-fns/tz",
+      "versions": ["1.5.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@date-fns/utc",
+      "versions": ["2.1.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@daypicker/react",
+      "versions": ["10.0.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@electric-sql/pglite",
+      "versions": ["0.4.3"],
+      "license": "Apache-2.0",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@electric-sql/pglite-socket",
+      "versions": ["0.1.3"],
+      "license": "Apache-2.0",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@electric-sql/pglite-tools",
+      "versions": ["0.3.3"],
+      "license": "Apache-2.0",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@esbuild/linux-x64",
+      "versions": ["0.25.12"],
+      "license": "MIT",
+      "workspaces": [
+        "apps/api",
+        "apps/admin",
+        "apps/web",
+        "packages/database",
+        "packages/block-system"
+      ]
+    },
+    {
+      "name": "@exodus/bytes",
+      "versions": ["1.16.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@fastify/ajv-compiler",
+      "versions": ["4.0.7"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "@fastify/busboy",
+      "versions": ["3.2.4"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "@fastify/cookie",
+      "versions": ["11.1.3"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "@fastify/cors",
+      "versions": ["11.3.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "@fastify/deepmerge",
+      "versions": ["3.2.4"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "@fastify/error",
+      "versions": ["4.2.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "@fastify/fast-json-stringify-compiler",
+      "versions": ["5.1.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "@fastify/forwarded",
+      "versions": ["3.1.2"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "@fastify/helmet",
+      "versions": ["13.2.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "@fastify/merge-json-schemas",
+      "versions": ["0.2.2"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "@fastify/multipart",
+      "versions": ["10.1.6"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "@fastify/proxy-addr",
+      "versions": ["5.1.2"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "@floating-ui/core",
+      "versions": ["1.8.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@floating-ui/dom",
+      "versions": ["1.8.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@floating-ui/react-dom",
+      "versions": ["2.1.9"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@floating-ui/utils",
+      "versions": ["0.2.12"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@img/colour",
+      "versions": ["1.1.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/web", "packages/cms-core"]
+    },
+    {
+      "name": "@img/sharp-libvips-linux-x64",
+      "versions": ["1.3.4"],
+      "license": "LGPL-3.0-or-later",
+      "workspaces": ["apps/api", "apps/web", "packages/cms-core"]
+    },
+    {
+      "name": "@img/sharp-linux-x64",
+      "versions": ["0.35.5"],
+      "license": "Apache-2.0",
+      "workspaces": ["apps/api", "apps/web", "packages/cms-core"]
+    },
+    {
+      "name": "@jridgewell/gen-mapping",
+      "versions": ["0.3.13"],
+      "license": "MIT",
+      "workspaces": ["apps/admin", "apps/web"]
+    },
+    {
+      "name": "@jridgewell/remapping",
+      "versions": ["2.3.5"],
+      "license": "MIT",
+      "workspaces": ["apps/admin", "apps/web"]
+    },
+    {
+      "name": "@jridgewell/resolve-uri",
+      "versions": ["3.1.2"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@jridgewell/sourcemap-codec",
+      "versions": ["1.6.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@jridgewell/trace-mapping",
+      "versions": ["0.3.31"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@next/env",
+      "versions": ["16.4.6"],
+      "license": "MIT",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "@next/swc-linux-x64-gnu",
+      "versions": ["16.4.6"],
+      "license": "MIT",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "@node-rs/argon2",
+      "versions": ["2.2.2"],
+      "license": "MIT",
+      "workspaces": ["packages/cms-core"]
+    },
+    {
+      "name": "@node-rs/argon2-linux-x64-gnu",
+      "versions": ["2.2.2"],
+      "license": "MIT",
+      "workspaces": ["packages/cms-core"]
+    },
+    {
+      "name": "@oxc-project/types",
+      "versions": ["0.155.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@pinojs/redact",
+      "versions": ["0.4.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "@playwright/test",
+      "versions": ["1.64.1"],
+      "license": "Apache-2.0",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "@preact/signals",
+      "versions": ["1.3.4"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@preact/signals-core",
+      "versions": ["1.14.5"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@prisma/adapter-pg",
+      "versions": ["7.10.1"],
+      "license": "Apache-2.0",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@prisma/client",
+      "versions": ["7.10.1"],
+      "license": "Apache-2.0",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@prisma/client-runtime-utils",
+      "versions": ["7.10.1"],
+      "license": "Apache-2.0",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@prisma/config",
+      "versions": ["7.10.1"],
+      "license": "Apache-2.0",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@prisma/debug",
+      "versions": ["7.2.0", "7.10.1"],
+      "license": "Apache-2.0",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@prisma/dev",
+      "versions": ["0.24.17"],
+      "license": "ISC",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@prisma/driver-adapter-utils",
+      "versions": ["7.10.1"],
+      "license": "Apache-2.0",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@prisma/engines",
+      "versions": ["7.10.1"],
+      "license": "Apache-2.0",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@prisma/engines-version",
+      "versions": ["8.1.0-1.d1b3f377ca835d73fd50954a5e22128b9ebdd6b8"],
+      "license": "Apache-2.0",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@prisma/fetch-engine",
+      "versions": ["7.10.1"],
+      "license": "Apache-2.0",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@prisma/get-platform",
+      "versions": ["7.2.0", "7.10.1"],
+      "license": "Apache-2.0",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@prisma/query-plan-executor",
+      "versions": ["7.2.0"],
+      "license": "Apache-2.0",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@prisma/streams-local",
+      "versions": ["0.1.11"],
+      "license": "Apache-2.0",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@prisma/studio-core",
+      "versions": ["0.33.0"],
+      "license": "Apache-2.0",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@radix-ui/primitive",
+      "versions": ["1.2.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@radix-ui/primitive",
+      "versions": ["1.1.3"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@radix-ui/react-compose-refs",
+      "versions": ["1.1.2", "1.1.5"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@radix-ui/react-compose-refs",
+      "versions": ["1.1.2"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@radix-ui/react-context",
+      "versions": ["1.3.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@radix-ui/react-dialog",
+      "versions": ["1.3.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@radix-ui/react-dismissable-layer",
+      "versions": ["1.2.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@radix-ui/react-focus-guards",
+      "versions": ["1.2.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@radix-ui/react-focus-scope",
+      "versions": ["1.3.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@radix-ui/react-id",
+      "versions": ["1.1.4"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@radix-ui/react-portal",
+      "versions": ["1.2.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@radix-ui/react-presence",
+      "versions": ["1.1.11"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@radix-ui/react-primitive",
+      "versions": ["2.1.3", "2.2.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@radix-ui/react-primitive",
+      "versions": ["2.1.3"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@radix-ui/react-slot",
+      "versions": ["1.2.3", "1.5.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@radix-ui/react-slot",
+      "versions": ["1.2.3"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@radix-ui/react-toggle",
+      "versions": ["1.1.10"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@radix-ui/react-use-callback-ref",
+      "versions": ["1.1.5"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@radix-ui/react-use-controllable-state",
+      "versions": ["1.3.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@radix-ui/react-use-controllable-state",
+      "versions": ["1.2.2"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@radix-ui/react-use-effect-event",
+      "versions": ["0.0.5"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@radix-ui/react-use-effect-event",
+      "versions": ["0.0.2"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@radix-ui/react-use-layout-effect",
+      "versions": ["1.1.4"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@radix-ui/react-use-layout-effect",
+      "versions": ["1.1.1"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@react-spring/animated",
+      "versions": ["10.1.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@react-spring/core",
+      "versions": ["10.1.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@react-spring/rafz",
+      "versions": ["10.1.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@react-spring/shared",
+      "versions": ["10.1.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@react-spring/types",
+      "versions": ["10.1.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@react-spring/web",
+      "versions": ["10.1.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@rolldown/binding-linux-x64-gnu",
+      "versions": ["1.2.15"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@rolldown/pluginutils",
+      "versions": ["1.0.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@standard-schema/spec",
+      "versions": ["1.1.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@swc/helpers",
+      "versions": ["0.5.23"],
+      "license": "Apache-2.0",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "@tailwindcss/node",
+      "versions": ["4.3.3"],
+      "license": "MIT",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "@tailwindcss/oxide",
+      "versions": ["4.3.3"],
+      "license": "MIT",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "@tailwindcss/oxide-linux-x64-gnu",
+      "versions": ["4.3.3"],
+      "license": "MIT",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "@tailwindcss/postcss",
+      "versions": ["4.3.3"],
+      "license": "MIT",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "@tannin/compile",
+      "versions": ["1.1.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@tannin/evaluate",
+      "versions": ["1.2.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@tannin/plural-forms",
+      "versions": ["1.1.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@tannin/postfix",
+      "versions": ["1.1.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@tannin/sprintf",
+      "versions": ["1.3.4"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@testing-library/dom",
+      "versions": ["10.4.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@testing-library/react",
+      "versions": ["16.3.3"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@types/aria-query",
+      "versions": ["5.0.4"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@types/chai",
+      "versions": ["5.2.3"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@types/d3-array",
+      "versions": ["3.0.3"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@types/d3-color",
+      "versions": ["3.1.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@types/d3-delaunay",
+      "versions": ["6.0.1"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@types/d3-format",
+      "versions": ["3.0.1"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@types/d3-geo",
+      "versions": ["3.1.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@types/d3-interpolate",
+      "versions": ["3.0.1"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@types/d3-path",
+      "versions": ["3.1.1"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@types/d3-scale",
+      "versions": ["4.0.2"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@types/d3-shape",
+      "versions": ["3.1.7"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@types/d3-time",
+      "versions": ["3.0.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@types/d3-time-format",
+      "versions": ["2.1.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@types/deep-eql",
+      "versions": ["4.0.2"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@types/dom-mediacapture-transform",
+      "versions": ["0.1.12"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@types/dom-webcodecs",
+      "versions": ["0.1.13"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@types/estree",
+      "versions": ["1.0.9"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@types/geojson",
+      "versions": ["7946.0.16"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@types/highlight-words-core",
+      "versions": ["1.2.3"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@types/jsdom",
+      "versions": ["30.0.0"],
+      "license": "MIT",
+      "workspaces": ["packages/block-system"]
+    },
+    {
+      "name": "@types/lodash",
+      "versions": ["4.17.27"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@types/mousetrap",
+      "versions": ["1.6.15"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@types/node",
+      "versions": ["24.19.2"],
+      "license": "MIT",
+      "workspaces": [
+        "apps/api",
+        "apps/admin",
+        "apps/web",
+        "packages/cms-core",
+        "packages/database",
+        "packages/block-system"
+      ]
+    },
+    {
+      "name": "@types/pg",
+      "versions": ["8.23.1"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@types/react",
+      "versions": ["19.3.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin", "apps/web", "packages/database"]
+    },
+    {
+      "name": "@types/react-dom",
+      "versions": ["19.3.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin", "apps/web", "packages/database"]
+    },
+    {
+      "name": "@types/tough-cookie",
+      "versions": ["4.0.5"],
+      "license": "MIT",
+      "workspaces": ["packages/block-system"]
+    },
+    {
+      "name": "@types/trusted-types",
+      "versions": ["2.0.7"],
+      "license": "MIT",
+      "workspaces": ["packages/block-system"]
+    },
+    {
+      "name": "@use-gesture/core",
+      "versions": ["10.3.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@use-gesture/react",
+      "versions": ["10.3.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@visx/curve",
+      "versions": ["4.0.1-alpha.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@visx/event",
+      "versions": ["4.0.1-alpha.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@visx/grid",
+      "versions": ["4.0.1-alpha.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@visx/group",
+      "versions": ["4.0.1-alpha.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@visx/point",
+      "versions": ["4.0.1-alpha.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@visx/responsive",
+      "versions": ["4.0.1-alpha.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@visx/scale",
+      "versions": ["4.0.1-alpha.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@visx/shape",
+      "versions": ["4.0.1-alpha.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@visx/vendor",
+      "versions": ["4.0.0-alpha.0"],
+      "license": "MIT and ISC",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "@vitejs/plugin-react",
+      "versions": ["6.1.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin", "apps/web"]
+    },
+    {
+      "name": "@vitest/mocker",
+      "versions": ["5.0.5"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@vitest/spy",
+      "versions": ["5.0.5"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "@wordpress/a11y",
+      "versions": ["5.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/api-fetch",
+      "versions": ["8.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/autop",
+      "versions": ["5.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/base-styles",
+      "versions": ["14.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/blob",
+      "versions": ["5.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/block-editor",
+      "versions": ["19.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/block-library",
+      "versions": ["12.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/block-serialization-default-parser",
+      "versions": ["6.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/api", "apps/admin", "packages/block-system"]
+    },
+    {
+      "name": "@wordpress/blocks",
+      "versions": ["17.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/commands",
+      "versions": ["2.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/components",
+      "versions": ["43.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/compose",
+      "versions": ["9.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/core-data",
+      "versions": ["9.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/data",
+      "versions": ["11.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/dataviews",
+      "versions": ["21.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/date",
+      "versions": ["6.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/deprecated",
+      "versions": ["5.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/dom",
+      "versions": ["5.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/dom-ready",
+      "versions": ["5.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/element",
+      "versions": ["10.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/escape-html",
+      "versions": ["4.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/format-library",
+      "versions": ["6.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/global-styles-engine",
+      "versions": ["2.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/hooks",
+      "versions": ["5.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/html-entities",
+      "versions": ["5.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/i18n",
+      "versions": ["7.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/icons",
+      "versions": ["19.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/image-cropper",
+      "versions": ["2.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/interactivity",
+      "versions": ["8.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/interactivity-router",
+      "versions": ["3.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/is-shallow-equal",
+      "versions": ["6.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/kebab-case",
+      "versions": ["2.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/keyboard-shortcuts",
+      "versions": ["6.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/keycodes",
+      "versions": ["5.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/latex-to-mathml",
+      "versions": ["2.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/notices",
+      "versions": ["6.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/patterns",
+      "versions": ["3.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/preferences",
+      "versions": ["5.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/primitives",
+      "versions": ["5.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/priority-queue",
+      "versions": ["4.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/private-apis",
+      "versions": ["3.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/react-inert-value",
+      "versions": ["2.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/redux-routine",
+      "versions": ["6.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/rich-text",
+      "versions": ["8.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/server-side-render",
+      "versions": ["7.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/shortcode",
+      "versions": ["5.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/style-engine",
+      "versions": ["3.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/style-runtime",
+      "versions": ["0.14.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/sync",
+      "versions": ["3.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/theme",
+      "versions": ["3.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/token-list",
+      "versions": ["4.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/ui",
+      "versions": ["0.25.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/undo-manager",
+      "versions": ["2.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/upload-media",
+      "versions": ["0.43.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/url",
+      "versions": ["5.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/video-conversion",
+      "versions": ["0.9.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/vips",
+      "versions": ["5.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/warning",
+      "versions": ["4.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/wordcount",
+      "versions": ["5.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "@wordpress/worker-threads",
+      "versions": ["2.0.0"],
+      "license": "GPL-2.0-or-later",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "abstract-logging",
+      "versions": ["2.0.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "ajv",
+      "versions": ["8.20.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "packages/database"]
+    },
+    {
+      "name": "ajv-formats",
+      "versions": ["3.0.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "ansi-regex",
+      "versions": ["5.0.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "ansi-styles",
+      "versions": ["5.2.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "aria-hidden",
+      "versions": ["1.2.6"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "aria-query",
+      "versions": ["5.3.0"],
+      "license": "Apache-2.0",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "assertion-error",
+      "versions": ["2.0.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "atomic-sleep",
+      "versions": ["1.0.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "avvio",
+      "versions": ["9.3.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "aws-ssl-profiles",
+      "versions": ["1.1.2"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "baseline-browser-mapping",
+      "versions": ["2.11.32"],
+      "license": "Apache-2.0",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "better-result",
+      "versions": ["2.10.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "bidi-js",
+      "versions": ["1.1.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "c12",
+      "versions": ["3.3.4"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "camel-case",
+      "versions": ["4.1.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "caniuse-lite",
+      "versions": ["1.0.30001819"],
+      "license": "CC-BY-4.0",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "capital-case",
+      "versions": ["1.0.4"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "chai",
+      "versions": ["6.3.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "change-case",
+      "versions": ["4.1.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "chokidar",
+      "versions": ["5.0.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "classnames",
+      "versions": ["2.5.1"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "client-only",
+      "versions": ["0.0.1"],
+      "license": "MIT",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "clsx",
+      "versions": ["2.1.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "cmdk",
+      "versions": ["1.1.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "colord",
+      "versions": ["2.10.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "colorjs.io",
+      "versions": ["0.7.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "comctx",
+      "versions": ["1.7.6"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "confbox",
+      "versions": ["0.2.4", "0.3.1"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "constant-case",
+      "versions": ["3.0.4"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "cookie",
+      "versions": ["2.0.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "cross-spawn",
+      "versions": ["7.0.6"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "css-tree",
+      "versions": ["3.2.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "csstype",
+      "versions": ["3.2.3"],
+      "license": "MIT",
+      "workspaces": ["apps/admin", "apps/web", "packages/database"]
+    },
+    {
+      "name": "d3-array",
+      "versions": ["3.2.1", "3.2.4"],
+      "license": "ISC",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "d3-color",
+      "versions": ["3.1.0"],
+      "license": "ISC",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "d3-delaunay",
+      "versions": ["6.0.2"],
+      "license": "ISC",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "d3-format",
+      "versions": ["3.1.0"],
+      "license": "ISC",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "d3-geo",
+      "versions": ["3.1.0"],
+      "license": "ISC",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "d3-interpolate",
+      "versions": ["3.0.1"],
+      "license": "ISC",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "d3-path",
+      "versions": ["3.1.0"],
+      "license": "ISC",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "d3-scale",
+      "versions": ["4.0.2"],
+      "license": "ISC",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "d3-shape",
+      "versions": ["3.2.0"],
+      "license": "ISC",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "d3-time",
+      "versions": ["3.1.0"],
+      "license": "ISC",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "d3-time-format",
+      "versions": ["4.1.0"],
+      "license": "ISC",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "data-urls",
+      "versions": ["8.0.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "date-fns",
+      "versions": ["4.4.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "decimal.js",
+      "versions": ["10.6.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "deepmerge",
+      "versions": ["4.3.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "deepmerge-ts",
+      "versions": ["8.0.2"],
+      "license": "BSD-3-Clause",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "defu",
+      "versions": ["6.1.7"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "delaunator",
+      "versions": ["5.1.0"],
+      "license": "ISC",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "dequal",
+      "versions": ["2.0.3"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin"]
+    },
+    {
+      "name": "destr",
+      "versions": ["2.0.5"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "detect-libc",
+      "versions": ["2.1.2"],
+      "license": "Apache-2.0",
+      "workspaces": [
+        "apps/api",
+        "apps/admin",
+        "apps/web",
+        "packages/cms-core",
+        "packages/block-system"
+      ]
+    },
+    {
+      "name": "detect-node-es",
+      "versions": ["1.1.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "diff",
+      "versions": ["8.0.4"],
+      "license": "BSD-3-Clause",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "dom-accessibility-api",
+      "versions": ["0.5.16"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "dom-serializer",
+      "versions": ["2.0.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "domelementtype",
+      "versions": ["2.3.0"],
+      "license": "BSD-2-Clause",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "domhandler",
+      "versions": ["5.0.3"],
+      "license": "BSD-2-Clause",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "dompurify",
+      "versions": ["3.4.17"],
+      "license": "(MPL-2.0 OR Apache-2.0)",
+      "workspaces": ["packages/block-system"]
+    },
+    {
+      "name": "domutils",
+      "versions": ["3.2.2"],
+      "license": "BSD-2-Clause",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "dot-case",
+      "versions": ["3.0.4"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "dotenv",
+      "versions": ["18.0.9"],
+      "license": "BSD-2-Clause",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "dotenv",
+      "versions": ["17.4.2", "18.0.9"],
+      "license": "BSD-2-Clause",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "effect",
+      "versions": ["3.20.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "elkjs",
+      "versions": ["0.11.1"],
+      "license": "EPL-2.0",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "empathic",
+      "versions": ["2.0.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "encoding",
+      "versions": ["0.1.14"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "enhanced-resolve",
+      "versions": ["5.26.0"],
+      "license": "MIT",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "entities",
+      "versions": ["8.1.0"],
+      "license": "BSD-2-Clause",
+      "workspaces": ["apps/api", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "entities",
+      "versions": ["4.5.0", "7.0.1", "8.1.0"],
+      "license": "BSD-2-Clause",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "env-paths",
+      "versions": ["3.0.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "equivalent-key-map",
+      "versions": ["0.2.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "es-module-lexer",
+      "versions": ["2.3.2"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "es-module-lexer",
+      "versions": ["1.7.0", "2.3.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "esbuild",
+      "versions": ["0.25.12"],
+      "license": "MIT",
+      "workspaces": [
+        "apps/api",
+        "apps/admin",
+        "apps/web",
+        "packages/database",
+        "packages/block-system"
+      ]
+    },
+    {
+      "name": "estree-walker",
+      "versions": ["3.0.3"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "expect-type",
+      "versions": ["1.4.0"],
+      "license": "Apache-2.0",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "exsolve",
+      "versions": ["1.1.3"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "fast-average-color",
+      "versions": ["9.6.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "fast-check",
+      "versions": ["3.23.2"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "fast-decode-uri-component",
+      "versions": ["1.0.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "packages/database"]
+    },
+    {
+      "name": "fast-deep-equal",
+      "versions": ["3.1.3"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "packages/database"]
+    },
+    {
+      "name": "fast-json-stringify",
+      "versions": ["7.1.3"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "fast-querystring",
+      "versions": ["1.1.2"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "packages/database"]
+    },
+    {
+      "name": "fast-uri",
+      "versions": ["3.1.9", "4.2.3"],
+      "license": "BSD-3-Clause",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "fast-uri",
+      "versions": ["3.1.9"],
+      "license": "BSD-3-Clause",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "fastify",
+      "versions": ["5.12.7"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "fastify-plugin",
+      "versions": ["6.0.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "fastq",
+      "versions": ["1.20.3"],
+      "license": "ISC",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "fdir",
+      "versions": ["6.5.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "find-my-way",
+      "versions": ["9.10.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "find-my-way",
+      "versions": ["9.7.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "foreground-child",
+      "versions": ["3.3.1"],
+      "license": "ISC",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "framer-motion",
+      "versions": ["11.18.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "generate-function",
+      "versions": ["2.3.1"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "get-nonce",
+      "versions": ["1.0.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "get-port-please",
+      "versions": ["3.2.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "get-tsconfig",
+      "versions": ["4.14.3"],
+      "license": "MIT",
+      "workspaces": [
+        "apps/api",
+        "apps/admin",
+        "apps/web",
+        "packages/database",
+        "packages/block-system"
+      ]
+    },
+    {
+      "name": "gettext-parser",
+      "versions": ["1.4.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "giget",
+      "versions": ["3.3.1"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "graceful-fs",
+      "versions": ["4.2.11"],
+      "license": "ISC",
+      "workspaces": ["apps/web", "packages/database"]
+    },
+    {
+      "name": "gradient-parser",
+      "versions": ["1.2.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "grammex",
+      "versions": ["3.1.13"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "graphmatch",
+      "versions": ["1.1.1"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "header-case",
+      "versions": ["2.0.4"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "helmet",
+      "versions": ["8.3.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "highlight-words-core",
+      "versions": ["1.2.3"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "hpq",
+      "versions": ["1.4.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "html-dom-parser",
+      "versions": ["5.1.8"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "html-encoding-sniffer",
+      "versions": ["7.0.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "html-react-parser",
+      "versions": ["5.2.17"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "htmlparser2",
+      "versions": ["10.1.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "iconv-lite",
+      "versions": ["0.7.3"],
+      "license": "MIT",
+      "workspaces": ["apps/admin", "packages/database"]
+    },
+    {
+      "name": "inline-style-parser",
+      "versions": ["0.2.7"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "internmap",
+      "versions": ["2.0.3"],
+      "license": "ISC",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "ipaddr.js",
+      "versions": ["2.5.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "is-plain-object",
+      "versions": ["5.1.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "is-potential-custom-element-name",
+      "versions": ["1.0.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "is-promise",
+      "versions": ["4.0.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "is-property",
+      "versions": ["1.0.2"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "isexe",
+      "versions": ["2.0.0"],
+      "license": "ISC",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "isomorphic.js",
+      "versions": ["0.2.5"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "jiti",
+      "versions": ["2.7.0"],
+      "license": "MIT",
+      "workspaces": [
+        "apps/api",
+        "apps/admin",
+        "apps/web",
+        "packages/database",
+        "packages/block-system"
+      ]
+    },
+    {
+      "name": "js-tokens",
+      "versions": ["4.0.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "jsdom",
+      "versions": ["30.1.3"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "json-schema-ref-resolver",
+      "versions": ["3.0.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "json-schema-traverse",
+      "versions": ["1.0.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "packages/database"]
+    },
+    {
+      "name": "lib0",
+      "versions": ["0.2.119"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "light-my-request",
+      "versions": ["6.8.0"],
+      "license": "BSD-3-Clause",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "lightningcss",
+      "versions": ["1.33.0"],
+      "license": "MPL-2.0",
+      "workspaces": ["apps/api", "apps/admin", "packages/block-system"]
+    },
+    {
+      "name": "lightningcss",
+      "versions": ["1.32.0", "1.33.0"],
+      "license": "MPL-2.0",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "lightningcss-linux-x64-gnu",
+      "versions": ["1.33.0"],
+      "license": "MPL-2.0",
+      "workspaces": ["apps/api", "apps/admin", "packages/block-system"]
+    },
+    {
+      "name": "lightningcss-linux-x64-gnu",
+      "versions": ["1.32.0", "1.33.0"],
+      "license": "MPL-2.0",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "lodash",
+      "versions": ["4.18.1"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "long",
+      "versions": ["5.3.2"],
+      "license": "Apache-2.0",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "lower-case",
+      "versions": ["2.0.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "lru-cache",
+      "versions": ["11.5.3"],
+      "license": "BlueOak-1.0.0",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "lru.min",
+      "versions": ["1.1.5"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "lz-string",
+      "versions": ["1.5.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "magic-string",
+      "versions": ["1.4.3"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "packages/block-system"]
+    },
+    {
+      "name": "magic-string",
+      "versions": ["0.30.21", "1.4.3"],
+      "license": "MIT",
+      "workspaces": ["apps/admin", "apps/web"]
+    },
+    {
+      "name": "marked",
+      "versions": ["18.1.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "mdn-data",
+      "versions": ["2.27.1"],
+      "license": "CC0-1.0",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "mediabunny",
+      "versions": ["1.62.1"],
+      "license": "MPL-2.0",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "memize",
+      "versions": ["2.1.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "moment",
+      "versions": ["2.31.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "moment-timezone",
+      "versions": ["0.5.48"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "motion-dom",
+      "versions": ["11.18.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "motion-utils",
+      "versions": ["11.18.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "mousetrap",
+      "versions": ["1.6.5"],
+      "license": "Apache-2.0 WITH LLVM-exception",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "mysql2",
+      "versions": ["3.24.4"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "named-placeholders",
+      "versions": ["1.1.6"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "nanoid",
+      "versions": ["3.3.20"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "next",
+      "versions": ["16.4.6"],
+      "license": "MIT",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "no-case",
+      "versions": ["3.0.4"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "normalize-wheel",
+      "versions": ["1.0.1"],
+      "license": "BSD-3-Clause",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "obug",
+      "versions": ["3.0.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "ohash",
+      "versions": ["2.0.12"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "on-exit-leak-free",
+      "versions": ["2.1.2"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "param-case",
+      "versions": ["3.0.4"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "parse5",
+      "versions": ["8.0.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "parsel-js",
+      "versions": ["1.2.3"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "pascal-case",
+      "versions": ["3.1.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "path-case",
+      "versions": ["3.0.4"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "path-key",
+      "versions": ["3.1.1"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "path-to-regexp",
+      "versions": ["6.3.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "pathe",
+      "versions": ["2.0.3"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "perfect-debounce",
+      "versions": ["2.1.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "pg",
+      "versions": ["8.23.1"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "pg-cloudflare",
+      "versions": ["1.4.1"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "pg-connection-string",
+      "versions": ["2.14.1"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "pg-int8",
+      "versions": ["1.0.1"],
+      "license": "ISC",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "pg-pool",
+      "versions": ["3.14.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "pg-protocol",
+      "versions": ["1.16.1"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "pg-types",
+      "versions": ["2.2.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "pgpass",
+      "versions": ["1.0.5"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "picocolors",
+      "versions": ["1.1.1"],
+      "license": "ISC",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "picomatch",
+      "versions": ["4.0.7"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "pino",
+      "versions": ["10.4.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "pino-abstract-transport",
+      "versions": ["3.0.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "pino-std-serializers",
+      "versions": ["7.1.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "pkg-types",
+      "versions": ["2.4.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "playwright",
+      "versions": ["1.64.1"],
+      "license": "Apache-2.0",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "playwright-core",
+      "versions": ["1.64.1"],
+      "license": "Apache-2.0",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "postcss",
+      "versions": ["8.5.31"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "packages/block-system"]
+    },
+    {
+      "name": "postcss",
+      "versions": ["8.5.23", "8.5.31"],
+      "license": "MIT",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "postcss-prefix-selector",
+      "versions": ["1.16.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "postcss-urlrebase",
+      "versions": ["1.4.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "postcss-value-parser",
+      "versions": ["4.2.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "postgres",
+      "versions": ["3.4.7"],
+      "license": "Unlicense",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "postgres-array",
+      "versions": ["2.0.0", "3.0.4"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "postgres-bytea",
+      "versions": ["1.0.1"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "postgres-date",
+      "versions": ["1.0.7"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "postgres-interval",
+      "versions": ["1.2.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "preact",
+      "versions": ["10.29.8"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "pretty-format",
+      "versions": ["27.5.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "prisma",
+      "versions": ["7.10.1"],
+      "license": "Apache-2.0",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "process-warning",
+      "versions": ["5.1.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "proper-lockfile",
+      "versions": ["4.1.2"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "punycode",
+      "versions": ["2.3.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "pure-rand",
+      "versions": ["6.1.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "quick-format-unescaped",
+      "versions": ["4.0.4"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "rc9",
+      "versions": ["3.1.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "re-resizable",
+      "versions": ["6.11.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "react",
+      "versions": ["19.3.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin", "apps/web", "packages/database"]
+    },
+    {
+      "name": "react-colorful",
+      "versions": ["5.8.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "react-day-picker",
+      "versions": ["10.0.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "react-dom",
+      "versions": ["19.3.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin", "apps/web", "packages/database"]
+    },
+    {
+      "name": "react-easy-crop",
+      "versions": ["5.5.7"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "react-is",
+      "versions": ["17.0.2", "19.3.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "react-property",
+      "versions": ["2.0.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "react-remove-scroll",
+      "versions": ["2.7.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "react-remove-scroll-bar",
+      "versions": ["2.3.8"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "react-style-singleton",
+      "versions": ["2.2.3"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "readdirp",
+      "versions": ["5.1.1"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "real-require",
+      "versions": ["1.0.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "redux",
+      "versions": ["5.0.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "remeda",
+      "versions": ["2.33.4"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "rememo",
+      "versions": ["4.0.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "remove-accents",
+      "versions": ["0.5.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "requestidlecallback",
+      "versions": ["0.3.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "require-from-string",
+      "versions": ["2.0.2"],
+      "license": "MIT",
+      "workspaces": [
+        "apps/api",
+        "apps/admin",
+        "apps/web",
+        "packages/database",
+        "packages/block-system"
+      ]
+    },
+    {
+      "name": "reselect",
+      "versions": ["5.3.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "resolve-pkg-maps",
+      "versions": ["1.0.0"],
+      "license": "MIT",
+      "workspaces": [
+        "apps/api",
+        "apps/admin",
+        "apps/web",
+        "packages/database",
+        "packages/block-system"
+      ]
+    },
+    {
+      "name": "ret",
+      "versions": ["0.5.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "packages/database"]
+    },
+    {
+      "name": "retry",
+      "versions": ["0.12.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "reusify",
+      "versions": ["1.1.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "rfdc",
+      "versions": ["1.4.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "robust-predicates",
+      "versions": ["3.0.3"],
+      "license": "Unlicense",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "rolldown",
+      "versions": ["1.2.15"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "rungen",
+      "versions": ["0.3.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "safe-buffer",
+      "versions": ["5.2.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "safe-regex2",
+      "versions": ["5.1.2"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "packages/database"]
+    },
+    {
+      "name": "safe-stable-stringify",
+      "versions": ["2.5.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "safer-buffer",
+      "versions": ["2.1.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin", "packages/database"]
+    },
+    {
+      "name": "saxes",
+      "versions": ["6.0.0"],
+      "license": "ISC",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "scheduler",
+      "versions": ["0.28.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin", "apps/web", "packages/database"]
+    },
+    {
+      "name": "secure-json-parse",
+      "versions": ["4.1.1"],
+      "license": "BSD-3-Clause",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "semver",
+      "versions": ["7.8.5"],
+      "license": "ISC",
+      "workspaces": ["apps/api", "apps/web", "packages/cms-core"]
+    },
+    {
+      "name": "sentence-case",
+      "versions": ["3.0.4"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "set-cookie-parser",
+      "versions": ["3.2.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "sharp",
+      "versions": ["0.35.5"],
+      "license": "Apache-2.0",
+      "workspaces": ["apps/api", "apps/web", "packages/cms-core"]
+    },
+    {
+      "name": "shebang-command",
+      "versions": ["2.0.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "shebang-regex",
+      "versions": ["3.0.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "signal-exit",
+      "versions": ["3.0.7", "4.1.0"],
+      "license": "ISC",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "simple-html-tokenizer",
+      "versions": ["0.5.11"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "snake-case",
+      "versions": ["3.0.4"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "sonic-boom",
+      "versions": ["4.2.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "source-map-js",
+      "versions": ["1.2.2"],
+      "license": "BSD-3-Clause",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "split2",
+      "versions": ["4.2.0"],
+      "license": "ISC",
+      "workspaces": ["apps/api", "packages/database"]
+    },
+    {
+      "name": "sql-escaper",
+      "versions": ["1.5.2"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "std-env",
+      "versions": ["4.3.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "std-env",
+      "versions": ["3.10.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "style-to-js",
+      "versions": ["1.1.21"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "style-to-object",
+      "versions": ["1.0.14"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "styled-jsx",
+      "versions": ["5.1.6"],
+      "license": "MIT",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "tabbable",
+      "versions": ["6.5.1"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "tailwindcss",
+      "versions": ["4.3.3"],
+      "license": "MIT",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "tannin",
+      "versions": ["1.2.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "tapable",
+      "versions": ["2.3.3"],
+      "license": "MIT",
+      "workspaces": ["apps/web"]
+    },
+    {
+      "name": "temml",
+      "versions": ["0.10.34"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "thread-stream",
+      "versions": ["4.2.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "tinybench",
+      "versions": ["6.2.2"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "tinyexec",
+      "versions": ["1.3.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "tinyglobby",
+      "versions": ["0.2.17"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "tldts",
+      "versions": ["7.4.19"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "tldts-core",
+      "versions": ["7.4.19"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "toad-cache",
+      "versions": ["3.7.4"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    },
+    {
+      "name": "tough-cookie",
+      "versions": ["6.0.2"],
+      "license": "BSD-3-Clause",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "tr46",
+      "versions": ["7.0.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "tslib",
+      "versions": ["2.8.1"],
+      "license": "0BSD",
+      "workspaces": ["apps/admin", "apps/web"]
+    },
+    {
+      "name": "tsx",
+      "versions": ["4.20.6"],
+      "license": "MIT",
+      "workspaces": [
+        "apps/api",
+        "apps/admin",
+        "apps/web",
+        "packages/database",
+        "packages/block-system"
+      ]
+    },
+    {
+      "name": "typescript",
+      "versions": ["5.9.3"],
+      "license": "Apache-2.0",
+      "workspaces": [
+        "apps/api",
+        "apps/admin",
+        "apps/web",
+        "packages/cms-core",
+        "packages/database",
+        "packages/block-system"
+      ]
+    },
+    {
+      "name": "undici",
+      "versions": ["8.12.3"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "undici-types",
+      "versions": ["7.24.6"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/cms-core", "packages/database"]
+    },
+    {
+      "name": "undici-types",
+      "versions": ["7.24.6", "8.12.3"],
+      "license": "MIT",
+      "workspaces": ["packages/block-system"]
+    },
+    {
+      "name": "upper-case",
+      "versions": ["2.0.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "upper-case-first",
+      "versions": ["2.0.2"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "use-callback-ref",
+      "versions": ["1.3.3"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "use-sidecar",
+      "versions": ["1.1.3"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "use-sync-external-store",
+      "versions": ["1.7.0"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "uuid",
+      "versions": ["14.0.3"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "valibot",
+      "versions": ["1.4.2"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "vite",
+      "versions": ["8.3.5"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "vitest",
+      "versions": ["5.0.5"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "w3c-xmlserializer",
+      "versions": ["6.0.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "wasm-vips",
+      "versions": ["0.0.18"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "webidl-conversions",
+      "versions": ["8.0.1"],
+      "license": "BSD-2-Clause",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "whatwg-mimetype",
+      "versions": ["5.0.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "whatwg-url",
+      "versions": ["17.3.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "which",
+      "versions": ["2.0.2"],
+      "license": "ISC",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "why-is-node-running",
+      "versions": ["3.2.1"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "xml-name-validator",
+      "versions": ["5.0.0"],
+      "license": "Apache-2.0",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "xmlchars",
+      "versions": ["2.2.0"],
+      "license": "MIT",
+      "workspaces": ["apps/api", "apps/admin", "apps/web", "packages/block-system"]
+    },
+    {
+      "name": "xtend",
+      "versions": ["4.0.2"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "y-protocols",
+      "versions": ["1.0.7"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "yjs",
+      "versions": ["13.6.33"],
+      "license": "MIT",
+      "workspaces": ["apps/admin"]
+    },
+    {
+      "name": "zeptomatch",
+      "versions": ["2.1.0"],
+      "license": "MIT",
+      "workspaces": ["packages/database"]
+    },
+    {
+      "name": "zod",
+      "versions": ["4.6.7"],
+      "license": "MIT",
+      "workspaces": ["apps/api"]
+    }
+  ]
+}

@@ -6577,3 +6577,398 @@ admin editor 45.
   again returns to the default palette.
 - Cleanup: the temporary administrator, its session and audit rows were deleted
   (1 user left: `admin`).
+
+## 2026-11-17 — Legal compliance package and improvement shortlist
+
+**Status:** documentation-only slice; no product source changed.
+
+The owner asked to review the existing WordPress-clone project, check legal
+compliance and look for improvements. The project already contains a broad
+implementation (Phases 0-8), so this slice closed the concrete open gaps rather
+than starting a new feature phase.
+
+### What changed
+
+- Added `LICENSE`: GNU GPL v3, 29 June 2007, canonical text fetched from
+  `https://www.gnu.org/licenses/gpl-3.0.txt` (35,149 bytes).
+- Chose **GPL-3.0-or-later** (decision D-151) because the admin bundles
+  `@wordpress/*` packages that are GPL-2.0-or-later; a compatible copyleft
+  licence keeps distribution obligations coherent. The owner's question was
+  auto-answered with "decide yourself" for this project.
+- Added `THIRD_PARTY_NOTICES.md` from the evidence in
+  `docs/research/reference-codebase-audit.md` §9.
+- Added `docs/legal/compliance-review.md`: plain-language risk register and
+  pre-distribution checklist.
+- Added `docs/roadmap/improvements-2026-11.md`: ten ranked improvements.
+- Updated `README.md` (licensing status + documentation links), `DECISIONS.md`
+  (D-151) and the root `package.json` (`license` field) so the docs agree.
+
+### Verification and limits
+
+- No dependency licence scan: no installed packages and local Node 22 vs the
+  pinned Node 24.22.1. The inventory is explicitly marked partial.
+- No product build/test run in this slice (documentation only).
+- No legal advice given; the compliance review records what the project's own
+  evidence says and what a professional review would need to cover.
+
+### Public archives and search using the downloaded WordPress 7.1.4 source (2026-11-17)
+
+**Owner context:** the owner placed the current WordPress source at
+`docs/wordpress` (verified `$wp_version = '7.1.4'` in `wp-includes/version.php`)
+and asked for `app/` to be improved using it, then rebuilt.
+
+**Grounding:** `docs/wordpress/wp-includes/class-wp.php` declares public query
+vars including `s`, `category_name`, `tag`, `author`, `year` and `monthnum`. This
+slice implements the three directly useful ones for the public site: search,
+category archives and tag archives. It does not claim WordPress parity and does
+not add comments, menus, themes or plugins (still out of scope).
+
+**Changed files:**
+- `apps/api/src/routes/content-schemas.ts` — `publicListQuerySchema` now
+  accepts `search`, `category` and `tag` alongside `type`/pagination.
+- `packages/cms-core/src/content/types.ts` — `PublicListQuery` gains the same
+  three optional filters.
+- `packages/cms-core/src/content/service.ts` — `listPublic` applies them inside
+  the existing PUBLISHED + publishedAt gate (title/excerpt `contains` with
+  `mode: 'insensitive'`; term filters match a category/tag term slug). Filters
+  are combined with `AND` so category+tag can be used together.
+- `apps/web/lib/api.ts` — `listPublished` takes a filters object; added
+  `searchPosts`, `listByCategory`, `listByTag`. Existing callers unchanged.
+- `apps/web/app/search/page.tsx`, `apps/web/app/category/[slug]/page.tsx`,
+  `apps/web/app/tag/[slug]/page.tsx` — new server-rendered archive routes with
+  WordPress-style titles, SEO metadata, empty/error states and pagination.
+- `apps/web/components/ArchiveList.tsx` — shared list/pagination rendering.
+- `apps/web/components/PostView.tsx` — category/tag chips are now links to
+  their archives.
+- `apps/web/app/layout.tsx` — small header with a site search form.
+- `apps/web/test/archive.test.ts` — 4 new tests for search, category, tag and
+  API-down behaviour.
+
+**Validation commands/results:**
+- `pnpm build` — passed (6/6 tasks; Next.js routes now include `/search`,
+  `/category/[slug]`, `/tag/[slug]`).
+- `pnpm --filter @mernpress/web test` — passed (4 files, 17 tests).
+- `pnpm test` — passed (7/7 tasks; API 337 tests in 35 files, web 17 tests).
+- API schema smoke check: `publicListQuerySchema.parse({type:'post',
+  search:'hello', category:'news', tag:'wp', page:'2', perPage:'10'})` returned
+  the expected coerced object.
+- `pnpm exec eslint <changed files>` — no findings.
+- `pnpm exec prettier --check <changed files>` — passed after formatting 3 files.
+
+**Manual test steps:** with API + web running, open `/search?q=<term>`,
+`/category/<slug>` and `/tag/<slug>`; confirm filtered results, working
+pagination, and that clicking a category/tag chip on a post opens its archive.
+
+**Known limitations:** term archives key on slug, not the numeric WordPress
+`cat` id; `author`, date archives and RSS remain deferred. Search matches only
+title and excerpt (not full body). No live browser click-through was done; the
+verification was build + automated tests (including the DB-backed API suite).
+
+**Next proposed slice (not started):** author and date archives, or an RSS feed
+— pick one before starting.
+
+### Legal, naming and hobby-project hardening (2026-11-17)
+
+**Owner request:** check licensing and naming to avoid legal issues, state
+clearly that MERNPress is a hobby project, and keep the WordPress reference
+source out of the repository.
+
+**Changed files:** `.gitignore`, `DECISIONS.md` (D-152), `README.md`,
+`docs/legal/compliance-review.md`, `THIRD_PARTY_NOTICES.md`, `TASKS.md`.
+
+**What changed:** one canonical name (MERNPress); an explicit hobby,
+not-professional status with no security, certification or support claims; a
+no-affiliation and trademark statement; `.gitignore` rules for `docs/wordpress/`
+and local agent tooling artifacts; and a dated decision record. No application
+code changed.
+
+**Validation commands/results:** `git check-ignore -v` confirms the reference
+source and tooling artifacts are now ignored; markdown links checked during
+review. No build or tests were run because this slice is documentation-only.
+
+**Known limitations:** this is a risk register, not legal advice. The dependency
+licence scan and GPL distribution review in the compliance checklist remain
+outstanding. The uncommitted archive/search work and the earlier licence package
+were left untouched.
+
+**Next proposed slice (not started):** review and accept (or revise) the pending
+archive/search/category/tag work, then run the dependency licence scan.
+
+### Archive/search slice review and verification (2026-11-17)
+
+**Owner request:** continue to the next slice — review the pending
+archive/search/category/tag work and verify it properly.
+
+**What was reviewed:** the uncommitted public query filters
+(`publicListQuerySchema`, `PublicListQuery`, `listPublic`) and the new web routes
+(`/search`, `/category/[slug]`, `/tag/[slug]`, shared `ArchiveList`, term chips,
+site search form) plus `apps/web/test/archive.test.ts`. The service adds the
+filters with a fresh `where.AND` on top of the existing published/scheduled gate;
+no clause is overwritten. XSS is not a concern: all dynamic text is rendered
+through JSX/React escaping and the search input is capped at 200 characters by
+the Zod schema.
+
+**Changed files this slice:** `TASKS.md` (P7-03 refreshed, X-07 added),
+`tests/e2e/placeholders.spec.ts` (two pre-existing portability fixes: use
+`127.0.0.1` instead of `localhost` because the web dev server binds IPv4-only;
+`.first()` on an `.or()` locator that matched both the always-present header
+text and the empty-state text). No archive application code was changed — it was
+reviewed and left intact for owner acceptance.
+
+**Validation commands/results:**
+- `pnpm lint` — pass; `pnpm format:check` — pass; `pnpm typecheck` — pass 9/9.
+- `pnpm test` — pass 7/7 (API 337 tests / 35 files, admin, web 17, block-system 65).
+- `pnpm --filter @mernpress/web test -- --run` — 4 files, 17 tests pass.
+- `pnpm build` — pass 6/6; routes `/search`, `/category/[slug]`, `/tag/[slug]` emitted.
+- `E2E_API_URL=http://127.0.0.1:4000 pnpm test:e2e` — 23/23 pass.
+- Toolchain note: turbo initially failed with `Exec format error (os error 8)`
+  because pnpm 12.15.0's shebang-less placeholder bin shim had never been
+  replaced by its native binary. Fixed locally (with a timestamped backup of the
+  placeholder) by linking the shim to the already-downloaded native executable.
+
+**Manual test steps:** with API + web running, open `/search?q=<term>`,
+`/category/<slug>` and `/tag/<slug>`; confirm filtered results, pagination, and
+that clicking a category/tag chip on a post opens its archive.
+
+**Known limitations:** search matches title and excerpt only (not full body);
+term archives key on slug, not WordPress's numeric `cat` id; author/date
+archives and RSS remain deferred. E2E uses `E2E_API_PORT` (default 4000)
+consistently in the Playwright webServer and `preview.spec.ts`; a stale 4100
+default in that spec broke CI and was fixed in the follow-up commit. No WordPress
+source was copied; no REA reverse engineering
+was applied to the WordPress PHP source (REA targets binaries/minified JS/live
+pages, not plain source). This review does not replace owner acceptance.
+
+**Next proposed slice (not started):** run the dependency licence scan
+(`pnpm licenses list --json`) and update `THIRD_PARTY_NOTICES.md`, then pick one
+bounded improvement (audit-log screen or backup/restore drill).
+
+### Dependency licence scan (2026-11-17)
+
+**Owner request:** continue automatically for this session, reviewing carefully
+and using sub-agents where useful. Two read-only review lanes were launched in
+parallel (GPL-in-bundle audit; fresh-owner usability audit). This slice is the
+licence scan they do not overlap with.
+
+**Changed files:** `docs/legal/license-inventory-2026-11-17.json` (new, 530
+unique packages), `THIRD_PARTY_NOTICES.md` (§1 status, §3 replaced with the scan
+results and obligations), `docs/legal/compliance-review.md` (§2 inventory row,
+§6 checklist scan item, §7 limitation note), `TASKS.md`.
+
+**Validation commands/results:**
+- `pnpm licenses list --json` run in each of the 6 workspaces — all exit 0.
+- Root-only scan returned 216 entries and **missed all `@wordpress/*` packages**;
+  per-workspace scans found them (60 unique GPL-2.0-or-later packages).
+- Deduplicated totals: MIT 380, GPL-2.0-or-later 60, Apache-2.0 30, ISC 25,
+  BSD-3 9, BSD-2 8, MPL-2.0 5, LGPL-3.0-or-later 1, plus smaller groups. No
+  UNLICENSED, unknown or AGPL packages.
+- `pnpm exec prettier --check` on changed docs — pass; `git diff --check` — clean.
+
+**Known limitations:** this is an installed-dependency inventory, not a proof of
+what is bundled in the built admin editor chunk; that separate check is pending
+from the parallel GPL audit lane. The GPL source-offer packaging and a
+distribution review remain outstanding. Refresh the scan after any dependency
+change. Not legal advice.
+
+**Next proposed slice (not started):** reconcile the parallel audit lanes;
+close the bundle-level GPL checklist item; then fix the highest-priority
+usability blocker found by the fresh-owner audit.
+
+### Audit reconciliation and usability fixes (2026-11-17)
+
+**Owner request:** continue automatically; review everything carefully, use
+sub-agents, and verify before proceeding.
+
+**GPL bundle audit reconciled (read-only lane):** a fresh admin build confirmed
+the main chunk (383 kB) contains no `@wordpress` literals; every GPL-family
+package is `@wordpress/*` GPL-2.0-or-later inside the lazy `BlockCanvas` editor
+chunk (~5.98 MB) and its worker sub-chunks. `@img/sharp-libvips-linux-x64`
+(LGPL-3.0-or-later) is server-side only (`apps/api`, `packages/cms-core`), not in
+the admin bundle; no UNLICENSED/custom package in the admin graph. This closes
+the §6 checklist item; `THIRD_PARTY_NOTICES.md` §3 and the compliance review now
+record it.
+
+**Usability audit findings addressed:**
+- **Confirmed blocker:** a plain `pnpm dev` failed at startup with
+  `Invalid environment configuration: NODE_ENV` because the local gitignored
+  `.env` had only the two DB URLs. Added `NODE_ENV=development` via EnvSitter
+  (value never printed). Verified: API starts with no errors, `/api/health` and
+  `/api/ready` return 200.
+- Applied the 9 pending migrations to the development database (the scheduler
+  had been failing with `relation "posts" does not exist`). Verified clean boot.
+- Documented fnm as an alternative to nvm in `README.md` and
+  `docs/operations/local-setup.md` (nvm is absent on this machine).
+- Corrected stale docs: 9 migrations (not 4), editor packages installed (not
+  "not installed yet"), Phase 4 published (not "uncommitted"), test counts
+  updated to current values, `localhost` → `127.0.0.1` for the web URL, the
+  one-time `playwright install chromium` step added to the README gate,
+  `E2E_API_URL` note added, and a bold warning on the destructive
+  `db:reset:test`. Added optional env-key hints to `.env.example`.
+- Fixed two pre-existing E2E portability bugs in
+  `tests/e2e/placeholders.spec.ts` (IPv4 literal; `.first()` on a two-match
+  `.or()` locator).
+
+**Validation:** `pnpm format:check` — pass; `git diff --check` — clean;
+`pnpm exec prettier --write` on the generated licence JSON; API boot probe —
+health/ready 200, 0 scheduler errors.
+
+**Known limitations:** the `.env` change is local and gitignored — a fresh clone
+still needs its own `.env` with `NODE_ENV=development` (now documented). The
+audit's remaining annoyances (shadow DB URL, E2E port default) are documented,
+not code-fixed. GPL source-offer packaging and distribution review remain
+outstanding. No application source was changed in this slice.
+
+**Next proposed slice (not started):** pick one bounded improvement from
+`docs/roadmap/improvements-2026-11.md` — smallest are the audit-log screen and
+the media where-used/picker work; or the backup/restore drill.
+
+### Final gate and Next.js advisory observation (2026-11-17)
+
+**Validation:** `pnpm lint` pass; `pnpm format:check` pass; `pnpm typecheck`
+9/9; `pnpm test` 7/7; `pnpm build` 6/6; `E2E_API_URL=http://127.0.0.1:4000
+pnpm test:e2e` 23/23; `git diff --check` clean.
+
+**E2E flakiness root cause (observed):** the public-site smoke test failed
+intermittently with `ERR_CONNECTION_REFUSED localhost:3000`. The failing run's
+log showed Next.js 16.4.3 printing a security-upgrade nudge and `next dev`
+exiting with code 1 before Playwright's webServer was available ("This command
+stopped to show the upgrade recommendation. Retry the same command to continue").
+Re-running the identical E2E command passed 23/23. This is a toolchain advisory,
+not an archive-code defect; the embedded "ask the user to run next upgrade"
+instruction was treated as untrusted tool output and not acted on.
+
+**Security note:** the pinned Next.js 16.4.3 has an npm security advisory. A
+version bump is a dependency change under AGENTS.md §11 and needs an explicit
+owner decision (and ideally an ADR note); it was NOT performed here. Tracked as
+X-09.
+
+**Next proposed slice (not started):** owner decision on the Next.js advisory
+(version bump + regression run), then one bounded improvement from the
+2026-11 shortlist.
+
+### Next.js security bump 16.4.3 → 16.4.6 (2026-11-17)
+
+**Owner decision:** investigate the patch and upgrade. Recorded as D-153 before
+any code change. Primary sources: Next.js November 2026 security release
+(16.4.5 fixed the November advisories), npm `dist-tags` (`latest` = 16.4.6,
+`backport` = 15.5.29, canary = 16.5.0-canary.*). 16.4.3 already contained the
+October 14 fixes (from 16.4.1); the remaining advisories were fixed in 16.4.5.
+Rejected 15.5.29 (EOL line) and canary (prereleases forbidden by AGENTS.md §11).
+
+**Changed files:** `apps/web/package.json` (exact pin 16.4.6), `pnpm-lock.yaml`,
+`DECISIONS.md` (D-153), `README.md`, `docs/adr/0001-baseline-stack.md`,
+`docs/research/stack-comparison.md`, `docs/legal/license-inventory-2026-11-17.json`
+(regenerated after the bump; still 530 unique packages, next now 16.4.6),
+`TASKS.md` (X-09 done).
+
+**Validation commands/results:**
+- `pnpm install` — updated lockfile; `pnpm install --frozen-lockfile` — pass.
+- `node -e ... next/package.json` — 16.4.6; `pnpm why sharp` — 0.35.5 (patched),
+  shared by `@mernpress/api`, `@mernpress/cms-core` and Next.
+- `pnpm audit` — 1 residual **moderate** finding: `minimatch` DoS
+  (GHSA-g3hv-75wg-m249) in the dev-only ESLint toolchain, 35 paths; not a
+  runtime dependency and not `next`. Left for a separate dependency decision.
+- Full regression gate: `pnpm lint` pass; `pnpm format:check` pass;
+  `pnpm typecheck` 9/9; `pnpm test` 7/7; `pnpm build` 6/6;
+  `E2E_API_URL=http://127.0.0.1:4000 pnpm test:e2e` **23/23** (the previously
+  flaky public-site smoke test passed; the Next.js security nudge no longer
+  stops `next dev`). `git diff --check` clean.
+- Note: two host restarts interrupted foreground E2E runs; the final E2E was
+  run as a background task and completed with exit 0.
+
+**Known limitations:** the `minimatch` dev-toolchain advisory remains open and
+should be handled under the dependency policy; no other dependencies were
+changed. This is a hobby project; no production security claim is made.
+
+**Next proposed slice (not started):** one bounded improvement from
+`docs/roadmap/improvements-2026-11.md` — audit-log screen, media where-used/
+picker, or backup/restore drill — or address the residual `minimatch` advisory.
+
+### Administrator audit-log screen (2026-11-17)
+
+**Owner instruction:** continue automatically, review carefully, use sub-agents
+and verify before proceeding. A read-only discovery lane mapped the slice; two
+non-overlapping fixer lanes implemented backend and frontend against a fixed DTO
+contract, both verified directly by the orchestrator before merging.
+
+**Decision:** D-154 recorded before code — `audit.read` capability granted only
+to administrator; all 14 recorded `auth.*`/`user.*` events exposed; deny-by-default
+metadata allow-list (`role`, `reason`, `fromRole`, `toRole`, `fromStatus`,
+`toStatus`, `revokedSessionCount`); `ipHash`/`identifierHash`/raw JSON suppressed;
+ADR 0004 D-3 matrix updated (also added the previously omitted `manage_options`).
+
+**Changed files:** backend — `packages/cms-core/src/auth/capabilities.ts`,
+`audit-log.ts` (new), `packages/cms-core/src/index.ts`,
+`apps/api/src/routes/audit.ts` (new), `apps/api/src/app.ts`,
+`apps/api/test/audit/audit.test.ts` (new, 12 tests). Frontend —
+`apps/admin/src/api.ts`, `router.ts`, `App.tsx`, `AdminShell.tsx`,
+`AuditLogPage.tsx` (new), `AuditLogPage.test.tsx` (new, 6 tests). Docs —
+`DECISIONS.md`, ADR 0004, `README.md`, `TASKS.md` (P4-11), capability-gap matrix,
+improvement shortlist. No DB migration or dependency change.
+
+**Validation commands/results:** `pnpm lint` pass; `pnpm format:check` pass;
+`pnpm typecheck` 9/9; `pnpm test` 7/7 (API 349 tests / 36 files after the new
+suite); `pnpm build` 6/6; `E2E_API_URL=http://127.0.0.1:4000 pnpm test:e2e`
+23/23 (background run, exit 0); `git diff --check` clean. Lane-level checks:
+admin suite 17 files / 128 tests, admin build passed, audit API suite 12/12.
+
+**Deviation recorded:** the planned `packages/cms-core/src/auth/audit-log.test.ts`
+was not created — cms-core has no test runner (`pnpm --filter @mernpress/cms-core
+test` is a silent no-op) and adding one would require forbidden dependency/config
+changes. Unit tests for the service were placed in `apps/api/test/audit/audit.test.ts`
+where vitest resolves and the service is importable.
+
+**Known limitations:** only auth/user events are recorded; content/taxonomy hooks
+exist but no handler writes audit rows (the old gap-matrix claim was corrected).
+No content-change attribution is claimed. `from`/`to` filters exist in the API
+but are not surfaced in the UI. Audit identifiers are pseudonymous, not anonymous
+(threat model §8). The residual dev-only `minimatch` advisory remains open.
+
+**Next proposed slice (not started):** media where-used view + editor library
+picker, backup/restore drill, or the residual `minimatch` advisory.
+
+### CI failure fix — E2E API port default (2026-11-18)
+
+**Observation:** push `5173de7` produced CI run `44094051555`, which failed only
+at "Browser smoke tests". The log showed
+`apiRequestContext.get: connect ECONNREFUSED 127.0.0.1:4100` in `preview.spec.ts`:
+that spec defaulted `E2E_API_URL` to port 4100 while `playwright.config.ts`
+starts the API on `E2E_API_PORT` (default 4000). Locally the mismatch had been
+masked by an explicit `E2E_API_URL` override; CI has none.
+
+**Changed files:** `tests/e2e/preview.spec.ts` (default API URL now derives from
+`E2E_API_PORT`, default 4000 — same source as the webServer), `README.md`,
+`TASKS.md` (X-10), this log.
+
+**Validation:** `pnpm format:check` pass; `git diff --check` clean;
+`pnpm test:e2e` with **no** `E2E_API_URL` override — 23/23 pass (CI-equivalent).
+The local test cluster had stopped during host restarts; restarted with
+`MERNPRESS_LOCAL_DB_PORT=55433 pnpm db:local:start` (no `.env` change).
+
+**Known limitations:** the `minimatch` advisory remains moderate-only and CI
+audits at `high`. Confirmed green in CI run `44236935487` (all browser tests
+passed) after the follow-up audit exception.
+
+### CI dependency-audit exception (2026-11-18)
+
+**Observation:** CI run `44236935487` passed lint, typecheck, tests, build and
+all 23 browser tests, then failed at `pnpm audit --audit-level=high` on
+**GHSA-fc5q-39xc-vjpf** (picomatch ReDoS, high). The advisory reports **no
+patched version** and affects the dev-only Vitest/Vite glob chain (104 paths),
+never shipped to users. A moderate `minimatch` advisory remains but is below the
+CI gate.
+
+**Changed files:** `DECISIONS.md` (D-155), `pnpm-workspace.yaml` (narrow
+`audit.ignore` entry with rationale), this log.
+
+**Validation:** `pnpm audit --audit-level=high` — exit 0 ("1 vulnerabilities
+found / Severity: 1 moderate / 1 ignored: 1 high"); `pnpm format:check` pass;
+`git diff --check` clean.
+
+**Known limitations:** this is a documented residual risk for dev tooling, not
+a fix; revisit when upstream publishes a patched picomatch/Vite chain. No
+runtime dependency is affected. CI run `44237736736` completed with
+`conclusion=success` (all steps green), confirming both CI fixes end-to-end.
+
+**Next proposed slice (not started):** media where-used view + editor library
+picker, or the backup/restore drill.

@@ -43,7 +43,7 @@ The stack was not chosen by benchmark or popularity. Versions were checked on
 | ORM/migrations | **Prisma 7.10.1**, pinned exactly (`prisma`, `@prisma/client`, `@prisma/adapter-pg`) |
 | Admin | **React 19.3.1 + Vite 8.3.5** SPA |
 | Editor | official `@wordpress/*` set: `block-editor 19.0.0`, `blocks 17.0.0`, `block-library 12.0.0`, etc. |
-| Public web | **Next.js 16.4.3** App Router, React 19.3.1, Tailwind 4.3.3, Node self-hosting |
+| Public web | **Next.js 16.4.6** App Router (bumped 2026-11-17 for the November security release; D-050), React 19.3.1, Tailwind 4.3.3, Node self-hosting |
 | Tests | **Vitest 5.0.5**, **Playwright 1.64.1**, Testing Library 16.3.3, jsdom 30.1.3 |
 | Lint/format | **ESLint 10.13.0 + @eslint/js 10.0.1 + typescript-eslint 8.72.0 + jsx-a11y 6.10.2 + Prettier 3.9.10** |
 | Content | WordPress-compatible serialized block markup, versioned; API renders canonical HTML |

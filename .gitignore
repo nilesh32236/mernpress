@@ -33,3 +33,13 @@ apps/api/var/
 
 # Local runtime state (plugin store, caches)
 .data/
+
+# Local reference copies and agent tooling artifacts (never commit)
+docs/wordpress/
+capture/
+checks/
+inbox/
+investigation.cany/
+craft.json
+feed.json
+usage.json

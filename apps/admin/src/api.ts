@@ -1884,6 +1884,46 @@ export async function fetchUsers(
   return readJson<AdminUserList>(response);
 }
 
+/** A redacted audit row. Sensitive hashes/identifiers are never part of the DTO. */
+export interface AdminAuditEvent {
+  id: string;
+  eventType: string;
+  actorUserId: string | null;
+  targetUserId: string | null;
+  createdAt: string;
+  metadata: Record<string, string | number>;
+}
+
+export interface AuditListParams {
+  eventType?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  perPage?: number;
+}
+
+export async function fetchAuditEvents(
+  params: AuditListParams = {},
+): Promise<Paged<AdminAuditEvent>> {
+  const response = await fetch(
+    `/api/admin/audit${queryString({
+      eventType: params.eventType,
+      from: params.from,
+      to: params.to,
+      page: params.page,
+      perPage: params.perPage,
+    })}`,
+    {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { accept: 'application/json' },
+    },
+  );
+
+  return readJson<Paged<AdminAuditEvent>>(response);
+}
+
 export async function createUser(payload: {
   username: string;
   password: string;
